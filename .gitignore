@@ -1,0 +1,17 @@
+# IDE
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Python (tools, tests)
+__pycache__/
+*.pyc
+
+# Local notes and overrides
+prompt.txt
+*.local.json
