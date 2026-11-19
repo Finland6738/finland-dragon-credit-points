@@ -598,9 +598,34 @@ tools/ check_docs.py, build/release
 
 ### 8.5 Localizzazione
 
-Interfaccia in italiano e inglese (AceLocale). I pattern dei messaggi di sistema (`RANDOM_ROLL_RESULT`,
-`LOOT_ITEM`, …) si costruiscono dalle stringhe globali del client, non scritti a mano, così funzionano in ogni
-lingua del gioco.
+L'addon nasce **multilingua**: all'inizio **italiano (`itIT`) e inglese (`enUS`)**, ma aggiungere una lingua
+deve voler dire solo aggiungere un file, senza toccare il codice.
+
+- **Nessun testo nel codice.** Ogni stringa visibile (finestre, popup, tooltip, messaggi in chat, motivazioni
+  delle proposte, avvisi in `/raid`, nomi di categorie e risposte del preset) passa da una chiave di traduzione
+  (AceLocale). Un controllo in CI fallisce se trova testo scritto direttamente in `UI/` o `Domain/`.
+- **File di lingua**: `Locale/enUS.lua` è la base e contiene tutte le chiavi; `Locale/itIT.lua` le traduce. Una
+  chiave mancante in una lingua ricade sull'inglese, mai su una chiave vuota. Uno script segnala le chiavi non
+  tradotte, così una nuova lingua (`deDE`, `frFR`, `esES`…) si aggiunge con un file e una riga nel TOC.
+- **Quale lingua si vede.** Di base quella del client (`GetLocale()`); ogni giocatore può sceglierne un'altra
+  nelle preferenze personali (serve un `/reload`).
+- **Lingua della gilda**: i testi che vanno **a tutti** (annunci e avviso in `/raid`, motivazioni nel registro,
+  esportazione per il sito e Discord) usano la lingua scelta dal GM nella configurazione, non quella di chi li
+  manda, così il raid legge sempre la stessa lingua. I testi dell'avviso restano modificabili dal GM.
+- **Il registro è neutro.** Gli eventi salvano codici e numeri (es. `reason = "LOWER_CREDITS"`, `credits = 0`,
+  `roll = 76`), non frasi: ogni client compone la motivazione nella propria lingua. Solo le note scritte a mano da
+  ML e council restano nella lingua in cui sono state scritte.
+- **Testi della configurazione**: i nomi di categorie, risposte ed etichette creati dal GM possono avere una
+  versione per lingua; se manca, si mostra quella che c'è.
+- **Messaggi del gioco**: i pattern dei messaggi di sistema (`RANDOM_ROLL_RESULT`, `LOOT_ITEM`, …) si costruiscono
+  dalle stringhe globali del client, non scritti a mano, così il riconoscimento di roll e loot funziona in ogni
+  lingua del gioco, anche in quelle che l'interfaccia dell'addon non ha ancora.
+- **Numeri e date**: separatore decimale e formato della data seguono la lingua (es. "1,5 crediti" e "19/11" in
+  italiano, "1.5 credits" e "11/19" in inglese).
+- **Test**: la suite offline gira in entrambe le lingue e verifica che nessuna chiave manchi.
+
+Documentazione: come in Accord, codice, commenti, commit e ADR in inglese; specifiche e analisi in italiano;
+README e manuale utente in entrambe le lingue.
 
 ---
 
@@ -691,7 +716,7 @@ più le preferenze personali: posizione dei popup, suoni, pesi delle statistiche
 | Milestone | Contenuto | Uscita |
 |---|---|---|
 | **M0 Spike** | Addon sonda: master loot in raid Forever, lettura `LOOT_OPENED`, `GiveMasterLoot`, roll da `CHAT_MSG_SYSTEM` dentro/fuori boss, messaggi `RAID` dopo `ENCOUNTER_END`, `GetItemStatDelta` su pezzi raid, specializzazioni | Rapporto: cosa funziona, cosa serve il piano B |
-| **M1 Fondamenta** | TOC, Ace3, Compat (da Accord), Config, Log, Locale, test offline, CI, Theme di base | Addon che si carica, `/fdcp` apre una finestra vuota a tema |
+| **M1 Fondamenta** | TOC, Ace3, Compat (da Accord), Config, Log, Locale (itIT + enUS, controllo chiavi mancanti e testo nel codice), test offline, CI, Theme di base | Addon che si carica, `/fdcp` apre una finestra vuota a tema |
 | **M2 Motore e registro** | Rules, Pricing, Classifier, Priority, Ledger, Season, preset "Patto", test con i tre esempi | Tutte le regole funzionano offline |
 | **M3 Roster e serate** | Pool, main/alt, lineup, panchina, cambi, presenze per boss, calendario, controllo "addon nel raid" e avviso in `/raid` | Il ML apre e chiude una serata e sa chi non ha l'addon |
 | **M4 Sessione di loot** | SessionFSM, raccolta dal corpo, popup del giocatore, roll, reroll, conferma, consegna, protocollo RAID | Un boss intero gestito dall'addon |
@@ -727,7 +752,7 @@ M2 e M3 possono procedere in parallelo dopo M1; M4 dipende da M0, M2 e M3.
    l'indirizzo noreply di GitHub, non con l'email personale.
 8. **Pesi delle statistiche**: vi basta l'item level + pesi predefiniti, o avete già pesi/BiS list per spec da
    importare?
-9. **Lingua**: interfaccia italiano + inglese, documentazione come Accord (codice e ADR in inglese, specifiche in
-   italiano)?
+9. **Lingua** **Risolta (19/11/2026)**: addon multilingua, all'inizio italiano e inglese, con altre lingue
+   aggiungibili tramite un file (§8.5). Documentazione come Accord.
 10. **Sito della community**: va bene estendere `loot.json` con `start` (crediti iniziali) e `kind` (assegnazione /
     correzione), o l'addon deve restare dentro il formato attuale (§7.1)?
