@@ -62,6 +62,13 @@ Riferimenti interni già pronti e da riusare (stesso autore, GPL-3.0):
 - **`../WoW-Addons`**: dump API, definizioni LSP (`types/WowForeverAPI.lua`), `deploy.ps1` per
   collegare l'addon alla cartella del gioco, `src/SuicideKings` come esempio (vecchio, TBC) di addon a lista di loot.
 
+**Compat (M1-3).** `Core/Compat.lua` è l'unica porta verso queste API. Nel dump **non ci sono** le globali `GetLootMethod`,
+`GetItemInfo` / `GetItemStats` / `GetItemInfoInstant`, `GetSpecialization*` e `GetGuildRankOrder` (ci sono solo le
+versioni `C_Item.*`, `C_SpecializationInfo.*`, `C_GuildInfo.*`): Compat usa quelle e tiene le globali come ripiego
+marcato `[verify]`. Ogni chiamata è protetta (`pcall`): un'API mancante, che solleva un errore o che risponde con un
+valore segreto spegne **quella** funzione e mai l'addon. `/fdcp debug` stampa lo stato di ogni funzione
+(`available` / `missing` / `unknown` / `restricted` / `error`), senza nomi.
+
 **Non ancora verificato** (lo spike M0 serve a questo, §12): master loot in un raid Forever; se `CHAT_MSG_SYSTEM`
 dei roll è leggibile (o segreto) dentro l'istanza; se i messaggi addon `RAID` passano fra un boss e l'altro; se
 `GetItemStats` riflette i bonus "contestuali" dell'equipaggiamento raid di Forever.

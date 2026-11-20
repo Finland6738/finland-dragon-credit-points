@@ -11,6 +11,7 @@
 | Voglio… | Leggi |
 |---|---|
 | Installare l'addon | [[Installazione|Installation-it]] |
+| Conoscere i comandi | [[Comandi|Commands-it]] |
 
 Altre pagine (rollare per il loot, la tabella dei crediti, la guida del master looter, il council, le impostazioni) arrivano con le funzioni.
 

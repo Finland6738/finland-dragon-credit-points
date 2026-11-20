@@ -11,6 +11,7 @@
 | I want to… | Read |
 |---|---|
 | Install the addon | [[Installation|Installation]] |
+| Know the commands | [[Commands|Commands]] |
 
 More pages (rolling for loot, the credits table, the master looter's guide, the council, settings) are added as the features are built.
 

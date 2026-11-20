@@ -37,7 +37,8 @@ Until the spike results arrive, M1 follows plan A and keeps every unverified API
 - Analysis: §1 (whole table), §8.1 (Adapters via Compat)
 - Scope: `Core/Compat.lua` adapted from Accord (guarded calls, secret values, restrictions, chat lockdown) plus the FDCP areas: loot window and master loot, loot method and threshold, `RandomRoll` and the system-message patterns from globals, encounters, `C_Item.*` and item stats, specializations, guild ranks, group roster, calendar; `Compat:Probe()` with `available` / `missing` / `unknown` per feature; `/fdcp debug` in chat (no names). Mock client areas for each.
 - Done when:
-  - [ ] Every unverified API degrades without errors in the mock (missing, erroring, secret).
+  - [x] Every unverified API degrades without errors in the mock (missing, erroring, secret).
+  - [ ] `/fdcp debug` shows the capability table on the real client. *(in game)*
 - Tests: `Tests/test_compat.lua`.
 - Docs: CHANGELOG; wiki Commands page (EN + IT) with `/fdcp help` and `/fdcp debug`.
 - Real client: `/fdcp debug` capability table.
