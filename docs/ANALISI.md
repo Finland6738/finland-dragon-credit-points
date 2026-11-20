@@ -220,6 +220,33 @@ finestra di intervento configurabile), `council` (decide sempre il council a vot
 I tre esempi del regolamento diventano test automatici del motore: anello (stessi crediti, vince 76), spallina
 (meno crediti, vince 34), mantello (pari crediti e roll, reroll fra Bryn e Corin).
 
+**Come è fatto (M2-2).** `Domain/Priority.lua`, Lua puro: `Priority.Evaluate(stato, config)` rigioca i round
+tenuti finora (risposte, roll in ordine di arrivo, crediti) e restituisce il prossimo round da tenere (`ROLL` di un
+tier o del free roll, `REROLL` solo fra i pari) oppure la proposta `{kind, winner, cost, reasons, flags}` con codici
+neutri (`MAIN_SPEC_TIER`, `OFFSPEC_TIER`, `LOWER_CREDITS`, `HIGHER_ROLL`, `REROLL_WON`, `ONLY_CANDIDATE`, `BOE_BANK`,
+`FALLBACK_*`, `TIE_ML`), mai frasi. Ogni roll scartato ha un codice (`NOT_1_100`, `DUPLICATE`, `NOT_PRESENT`,
+`NO_ADDON`, `NOT_ELIGIBLE`, `BEFORE_OPEN`, `AFTER_CLOSE`, `BAD_VALUE`). Scelte fatte dove il testo sopra non decideva
+(tutte modificabili):
+
+- ogni tier ha il **suo round**: chi ha risposto off-spec rolla solo quando si apre il tier 2; un tier senza
+  risposte non chiede nessun round; un roll di chi non è candidato del round viene scartato (`NOT_ELIGIBLE`);
+- "primo roll del round" = il primo roll **1-100**: un `/roll 1000` viene scartato e non consuma il turno;
+- al reroll, chi fra i pari non rolla perde; se nessuno rolla, il reroll si ripete fra gli stessi; dopo
+  `maxRerolls` (preset 5) reroll di fila decide il ML (`REROLL_LIMIT`);
+- senza `reroll` in `tieBreak`, la parità totale va al ML (`TIE_UNRESOLVED`); senza `roll`, a parità di metrica si
+  va subito al reroll;
+- metrica "crediti per serata": crediti / serate giocate, con 0 serate contate come 1;
+- un BoE senza candidati main-spec va a `boe.fallback` (preset banca) **prima** del tier off-spec, salvo
+  `boe.fallback = offspec`; senza personaggio banca configurato la proposta resta "banca" con il segnale
+  `NO_BANK_CHARACTER`;
+- fallback per gli altri oggetti senza candidati: **ML** nel preset (`ml` | `disenchant` | `freeroll`); il free roll
+  è aperto a tutti i presenti con l'addon, vince il roll più alto (pari: reroll), costo `freeRollCost` (preset 0);
+- un costo deciso dal council (cella "council" di §3.2) lascia `cost` vuoto con il segnale `COST_BY_COUNCIL`.
+
+I tre esempi sono in `Tests/test_priority.lua`: anello (Aurel, Bryn, Corin a 0 crediti; roll 45, 76, 12: vince Bryn
+con 76), spallina (crediti 0, 2, 3; roll 34, 90, 99: vince Aurel con 34), mantello (tutti a 1 credito; Bryn e Corin
+88, Aurel 40: reroll solo fra Bryn e Corin, il roll di Aurel nel reroll è scartato, vince Corin).
+
 ### 3.5 Nuovi arrivati a season iniziata
 
 `members.lateJoin` = `average` | `median` | `min` | `zero` | `fixed`; arrotondamento `floor` | `round` | `ceil`;

@@ -24,8 +24,8 @@ Everything in this milestone is pure Lua in `FinlandDragonCreditPoints/Domain/`,
 - Analysis: §3.3, §3.4, §3.8
 - Scope: `Domain/Priority.lua`, a pure function from (responses, rolls, credits, config) to a result: tiers from the lowest, valid rolls only (1–100, first of the round, present, addon active), metric (credits, credits per night, roll only), tie-breaks, reroll rounds among the tied only, the next tier when a tier is empty, the fallback (BoE → bank, disenchant, free roll, ML); the **proposal** `{winner, cost, reason codes, flags}` with neutral reason codes (`LOWER_CREDITS`, `HIGHER_ROLL`, `REROLL_WON`, `OFFSPEC_TIER`, …), never sentences.
 - Done when:
-  - [ ] The three regulation examples pass: ring (same credits, 76 wins), shoulder (fewer credits, 34 wins), cloak (tie on credits and roll, reroll between Bryn and Corin).
-  - [ ] Off-spec opens only when no main-spec; BoE without MS goes to the bank fallback.
+  - [x] The three regulation examples pass: ring (same credits, 76 wins), shoulder (fewer credits, 34 wins), cloak (tie on credits and roll, reroll between Bryn and Corin).
+  - [x] Off-spec opens only when no main-spec; BoE without MS goes to the bank fallback.
 - Tests: `Tests/test_priority.lua`.
 - Docs: CHANGELOG.
 - Real client: nothing.
