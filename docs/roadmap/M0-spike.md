@@ -30,7 +30,7 @@ The probe addon `FDCP_Probe` lives in `tools/probe/`, is **never distributed**, 
 - Scope: `tools/probe/FDCP_Probe/` (`FDCP_Probe.toc` and `FDCP_Probe_Camelot.toc`, Interface 16001), a registry of checks, `/fdcpp list | run <id> | runall | export | reset`, results `{id, result, details, build, time}` in `FDCP_ProbeDB`, an export frame with all results as selected text; event recorder (event name, time, encounter state, restriction state, secret flags — never names); `tools/install_probe.py` (links or copies the probe into `<WoW folder>/_forever_/Interface/AddOns/`, path from `tools/local.example.ini` → `*.local.ini`, git-ignored); `docs/spike/README.md` with the in-game procedure skeleton (English, with the steps in Italian too) and `docs/spike/M0-results.md` as an empty results template (check id, plan A result, plan B needed?).
 - Done when:
   - [ ] The probe loads on Forever and `/fdcpp list` lists the checks. *(in game)*
-  - [ ] Offline: files, commands, check registry, export frame and install script exist; `check_docs.py` passes.
+  - [x] Offline: files, commands, check registry, export frame and install script exist; `check_docs.py` passes.
 - Tests: a small Lua syntax check of the probe files (luac-free: parsed with Python `lupa` if available, else skipped with a notice).
 - Docs: `docs/spike/README.md`, `docs/spike/M0-results.md`, CHANGELOG.
 - Real client: everything; result "probe ready, results pending owner run".

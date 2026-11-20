@@ -4,6 +4,11 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Spike
+
+- M0-1: the probe addon `FDCP_Probe` in `tools/probe/FDCP_Probe/` (TOC files `FDCP_Probe.toc` and `FDCP_Probe_Camelot.toc`, Interface 16001; never distributed): a registry of checks with baseline checks `B1`-`B4`, `/fdcpp list | run <id> | runall | export | reset`, results `{id, result, details, build, time}` in `FDCP_ProbeDB`, an export frame with the results as selected text, and an event recorder (event name, time, encounter state, restriction state, secret flags; never names or message text). `tools/install_probe.py` (links or copies the probe into the WoW folder from `tools/local.ini`, git-ignored, template `tools/local.example.ini`), `tools/check_probe.py` (Lua syntax check through `lupa`, skipped with a notice if missing, also run by CI), `docs/spike/README.md` (procedure skeleton, English and Italian) and `docs/spike/M0-results.md` (empty results template).
+- Not verified in game: that the probe loads on WoW Forever, that `/fdcpp list` shows the checks, that the export frame and the event recorder work, and that the installer links into a real WoW folder. Status: probe ready, results pending owner run.
+
 ### Design
 
 - Functional and technical analysis in `docs/ANALISI.md` (Italian): domain model, the guild's rules as a configurable engine, loot session flow, mandatory addon and the `/raid` notice, upgrade hints, roster and rotation, history and the community-site export, architecture, localization, Material Design 3 interface, risks, milestones and open questions.

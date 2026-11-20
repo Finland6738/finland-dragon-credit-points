@@ -1,0 +1,13 @@
+## Interface: 16001
+## Title: FDCP Probe
+## Notes: Spike probe for Finland Dragon Credit Points. Never distributed.
+## Notes-itIT: Sonda di verifica per Finland Dragon Credit Points. Mai distribuita.
+## Author: Finland6738
+## Version: 0.1.0
+## SavedVariables: FDCP_ProbeDB
+
+Core.lua
+Checks.lua
+Events.lua
+Export.lua
+Commands.lua

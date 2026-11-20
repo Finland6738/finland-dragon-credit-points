@@ -38,6 +38,12 @@ jobs:
       - name: Check the documentation
         run: python -I -X utf8 tools/check_docs.py
 
+      # Lua syntax of the spike probe (tools/probe); skipped with a notice when lupa is missing.
+      - name: Check the probe syntax
+        run: |
+          python -m pip install lupa==2.8
+          python -I -X utf8 tools/check_probe.py
+
       # What .pkgmeta would put in the release zip (from M1-1 on).
       - name: Check the package contents
         if: hashFiles('tools/check_package.py') != ''
