@@ -94,8 +94,8 @@ describe("append", function()
 
 	it("accepts guild-level types without a season", function()
 		local L = Lg().New()
-		notNil(Lg().Append(L, { author = "Aurel", ts = 1, type = "CONFIG_CHANGED", payload = { key = "metric", value = "credits" } }))
-		notNil(Lg().Append(L, { author = "Aurel", ts = 2, type = "PERMISSIONS_CHANGED", payload = { award = 2 } }))
+		notNil(Lg().Append(L, { author = "Aurel", ts = 1, type = "CONFIG_CHANGED", payload = { rules = FDCP.Rules.DefaultConfig() } }))
+		notNil(Lg().Append(L, { author = "Aurel", ts = 2, type = "PERMISSIONS_CHANGED", payload = { table = { ["night.run"] = 2 } } }))
 	end)
 
 	it("an award to the bank or the disenchanter moves no credits", function()

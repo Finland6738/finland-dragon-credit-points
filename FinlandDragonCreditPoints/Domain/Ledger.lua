@@ -23,6 +23,13 @@
 -- from 1 to it is present; Ledger.Since gives the events a peer with given heads lacks; Ledger.Gaps the seqs still
 -- missing. Snapshots cover exactly the events up to the heads at the time they were taken, so the events that arrive
 -- later (in any order, even older ones) are always in the tail: snapshot + tail = full ledger.
+--
+-- Trust (§3.9, §8.4, M2-5): Append and Merge take an optional gate, opts.accept(L, e) -> true | false, code. The
+-- gate of Domain/Permissions.lua (Permissions.Gate) accepts an event only when its author had the rank its type
+-- requires when it was written, and CONFIG_CHANGED / PERMISSIONS_CHANGED only from the Guild Master. A refused event
+-- is not stored (it leaves a hole in its author's sequence, so a later sync asks for it again); an event whose
+-- author's rank is not known yet (the guild roster loads asynchronously) comes back as "PENDING" for the caller to
+-- queue and merge again. Without a gate every valid event is stored, as before M2-5.
 local ADDON_NAME, ns = ...
 ns = ns or {}
 ns.modules = ns.modules or {}
@@ -141,6 +148,7 @@ end
 -- steps (M2-4 seasons, M3 nights, M3-3b progress, M6 legendaries) tighten them.
 
 local CHECKS = {}
+Ledger.CHECKS = CHECKS   -- later modules (Rules, Permissions) register the checks of their own types here
 
 -- The factions a member may declare (the client's UnitFactionGroup tokens).
 Ledger.FACTIONS = { Horde = true, Alliance = true }
@@ -322,11 +330,23 @@ function Ledger.Sorted(L, keep)
 	return list
 end
 
+-- The last readable event of type `typ` that comes before `at` in canonical order (`at` = an event, stored or not, or
+-- nil for "now": the last of all). Rules and permissions in force when an event was written come from here.
+function Ledger.LatestBefore(L, typ, at)
+	local best
+	for _, e in pairs(L.events) do
+		if e.type == typ and (at == nil or before(e, at)) and readable(e) and (not best or before(best, e)) then
+			best = e
+		end
+	end
+	return best
+end
+
 -- Writes a new event of `author`: draft = { author, type, ts, season, payload }. The sequence is the author's next
--- one. A void must reference an event of this ledger that is voidable and not voided yet. Returns the stored event,
--- or nil and a code ("READ_ONLY", a Ledger.Check code, "UNKNOWN_TYPE", "REF_MISSING", "REF_NOT_VOIDABLE",
--- "ALREADY_VOIDED").
-function Ledger.Append(L, draft)
+-- one. A void must reference an event of this ledger that is voidable and not voided yet. opts.accept is the trust
+-- gate (see the header). Returns the stored event, or nil and a code ("READ_ONLY", a Ledger.Check code,
+-- "UNKNOWN_TYPE", "REF_MISSING", "REF_NOT_VOIDABLE", "ALREADY_VOIDED", or the gate's code, "PENDING" included).
+function Ledger.Append(L, draft, opts)
 	if (L.schema or 0) > Ledger.SCHEMA then return nil, "READ_ONLY" end
 	if type(draft) ~= "table" then return nil, "event" end
 	local spec = Ledger.TYPES[draft.type]
@@ -345,21 +365,37 @@ function Ledger.Append(L, draft)
 		if not Ledger.VOIDABLE[ref.type] then return nil, "REF_NOT_VOIDABLE" end
 		if Ledger.IsVoided(L, ref.id) then return nil, "ALREADY_VOIDED" end
 	end
+	if opts and opts.accept then
+		local accepted, why = opts.accept(L, e)
+		if not accepted then return nil, why or "REFUSED" end
+	end
 	store(L, e)
 	return L.events[e.id]
 end
 
 -- Merges events from another ledger or a peer, in any order, any number of times. Invalid events are refused, an
--- event already present changes nothing. Returns a report { added, duplicate, conflict = {ids}, invalid = {codes} },
--- or nil and "READ_ONLY".
-function Ledger.Merge(L, events)
+-- event already present changes nothing. The new events are stored in canonical order, so with a gate (opts.accept,
+-- see the header) a PERMISSIONS_CHANGED of the batch is in force for the later events of the same batch. Returns a
+-- report { added, duplicate, conflict = {ids}, invalid = {codes}, refused = {{id, code}}, pending = {events} }, or
+-- nil and "READ_ONLY". `pending` are the events the gate could not decide yet (the caller queues them).
+function Ledger.Merge(L, events, opts)
 	if (L.schema or 0) > Ledger.SCHEMA then return nil, "READ_ONLY" end
-	local report = { added = 0, duplicate = 0, conflict = {}, invalid = {} }
+	local report = { added = 0, duplicate = 0, conflict = {}, invalid = {}, refused = {}, pending = {} }
+	local valid = {}
 	for _, e in pairs(events or {}) do
 		local ok, code = Ledger.Check(e)
 		if not ok then
 			report.invalid[#report.invalid + 1] = code
 		else
+			valid[#valid + 1] = e
+		end
+	end
+	sort(valid, before)
+	local accept = opts and opts.accept
+	for _, e in ipairs(valid) do
+		local accepted, why = true, nil
+		if accept and not L.events[e.id] then accepted, why = accept(L, e) end
+		if accepted then
 			local r = store(L, e)
 			if r == "ADDED" then
 				report.added = report.added + 1
@@ -368,6 +404,10 @@ function Ledger.Merge(L, events)
 			else
 				report.conflict[#report.conflict + 1] = e.id
 			end
+		elseif why == "PENDING" then
+			report.pending[#report.pending + 1] = e
+		else
+			report.refused[#report.refused + 1] = { id = e.id, code = why or "REFUSED" }
 		end
 	end
 	sort(report.conflict)

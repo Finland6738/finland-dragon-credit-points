@@ -90,8 +90,8 @@ end
 
 -- Opens a season. draft = { author, ts, season = id, label?, instances = {{id, size}}, startCredits? }; startCredits
 -- defaults to config.startCredits (Season.DefaultConfig when config is nil). Returns the event, or nil and a code:
--- "SEASON_EXISTS", "SEASON_ALREADY_OPEN" or a Ledger.Append code.
-function Season.Open(L, draft, config)
+-- "SEASON_EXISTS", "SEASON_ALREADY_OPEN" or a Ledger.Append code. `opts` goes to Ledger.Append (the trust gate).
+function Season.Open(L, draft, config, opts)
 	if type(draft) ~= "table" then return nil, "event" end
 	config = config or Season.DefaultConfig()
 	if Season.Get(L, draft.season) then return nil, "SEASON_EXISTS" end
@@ -101,18 +101,18 @@ function Season.Open(L, draft, config)
 	return Ledger().Append(L, {
 		author = draft.author, ts = draft.ts, season = draft.season, type = "SEASON_OPENED",
 		payload = { label = draft.label, instances = copyInstances(draft.instances), startCredits = start },
-	})
+	}, opts)
 end
 
 -- Closes an open season. draft = { author, ts, season }. Returns the event, or nil and "SEASON_UNKNOWN",
--- "SEASON_CLOSED" or a Ledger.Append code.
-function Season.Close(L, draft)
+-- "SEASON_CLOSED" or a Ledger.Append code. `opts` goes to Ledger.Append.
+function Season.Close(L, draft, opts)
 	if type(draft) ~= "table" then return nil, "event" end
 	local s = Season.Get(L, draft.season)
 	if not s then return nil, "SEASON_UNKNOWN" end
 	if s.closed then return nil, "SEASON_CLOSED" end
 	return Ledger().Append(L, { author = draft.author, ts = draft.ts, season = draft.season, type = "SEASON_CLOSED",
-		payload = {} })
+		payload = {} }, opts)
 end
 
 -- The size of an instance of the season's pack, or nil when the instance is not in the pack.

@@ -257,7 +257,9 @@ nel registro come evento `MEMBER_JOINED{initialCredits}`: resta stabile anche se
 
 ### 3.6 Council
 
-- **Chi è**: rango di gilda ≤ X **e** presente nel raid (preset), oppure lista esplicita di personaggi.
+- **Chi è**: rango di gilda ≤ X **e** presente nel raid (preset), oppure lista esplicita di personaggi. Il rango è il
+  permesso `council.member` di §3.9; la presenza e il voto sono `council.requirePresent` e `council.vote` delle regole
+  (M2-5).
 - **Cosa può fare**, sempre con una motivazione obbligatoria che finisce nel log:
   - correggere la categoria o il costo **prima** dell'apertura del roll (dopo è bloccato, come dice il regolamento);
   - *spreco palese*: assegnare a un altro candidato invece del primo in fila;
@@ -332,6 +334,48 @@ Come si rende sicuro:
   un rango e li rimette in coda.
 - Ogni modifica della configurazione finisce nell'audit con data e autore; a season aperta l'addon chiede al GM
   una conferma esplicita (§10).
+
+**Come è fatto (M2-5).** Tre moduli di Lua puro in `Domain/`:
+
+- `Rules.lua`: la configurazione di §3 in sezioni (`night`, `members`, `season`, `cost`, `priority`, `session`,
+  `council`, `legendary`, `bench`); le sezioni dei moduli precedenti restano loro (`Members`, `Season`, `Pricing`,
+  `Priority`) e `Rules.Validate` usa i loro controlli (codici `sezione.campo`, ordinati). I valori predefiniti sono il
+  preset "Patto". Le regole stanno nel registro: `CONFIG_CHANGED{rules, preset?, confirmed?}` porta **l'intera
+  configurazione** validata (non una differenza), così le regole in vigore quando un evento è stato scritto sono quelle
+  dell'ultimo `CONFIG_CHANGED` prima di lui (`Rules.Current`); `Rules.Diff` dà i percorsi cambiati per l'audit;
+  `Rules.WithDefaults` completa le regole scritte da una versione più vecchia (una sezione o una chiave mancante, mai
+  dentro una chiave presente).
+- `Presets.lua`: `PATTO` (= i valori predefiniti), `ROLL_ONLY` ("Solo roll": metrica roll, costi a 0, free roll come
+  fallback, nuovi arrivati a 0, leggendari a roll), `LOOT_COUNCIL` ("Loot council puro": `awardMode = council`, voto
+  attivo, costi a 0, leggendari a voto), `EPGP_SIMPLE` ("EPGP semplice": i crediti sono i GP e le serate giocate l'EP,
+  metrica crediti per serata, costi come Patto). Codici, mai nomi: i nomi li danno le traduzioni. `Presets.Match` dice
+  se le regole sono ancora quelle di un preset.
+- `Permissions.lua`: permesso → **indice** del rango più basso che lo ha (0 = GM); chi ha indice `r` ha il permesso
+  se `r <= tabella[permesso]`. `config.rules` e `config.permissions` sono fissi a 0 (una tabella che li cambia non è
+  valida). Preset: `season.manage` e `credits.adjust` al GM, il resto agli officer, cioè **indice 1** (scelta
+  predefinita, il GM la cambia). La tabella è l'evento `PERMISSIONS_CHANGED{table, confirmed?}`, salvato completo.
+  Ogni tipo di evento ha il suo permesso (`EVENT_PERMISSION`): season → `season.manage`; membri, alt, roster →
+  `roster.manage`; serate, uccisioni, drop, assegnazioni, progressi, leggendari → `night.run`; `AWARD_VOIDED` e
+  `CREDITS_ADJUSTED` → `credits.adjust` fuori dalla serata e `night.run` mentre una serata della season è aperta
+  (le correzioni del council le scrive il ML, §3.6); configurazione e permessi → solo GM. Un tipo sconosciuto (addon
+  più nuovo) chiede il permesso di scrittura più largo: chi può scrivere qualcosa può inoltrarlo, tanto non viene letto.
+
+La fiducia è un cancello passato a `Ledger.Append` e `Ledger.Merge` (`Permissions.Gate`): un evento entra solo se
+l'autore aveva il rango richiesto **quando l'ha scritto**, secondo la tabella in vigore **in quel momento**; gli eventi di
+un lotto si valutano in ordine canonico, quindi un `PERMISSIONS_CHANGED` del lotto vale per gli eventi successivi dello
+stesso lotto, in qualunque ordine arrivino. Il rango "al momento" viene da una **storia dei ranghi** (`RecordRank` /
+`RankAt`: i cambi di rango visti nel roster con la loro ora; prima del primo cambio visto vale il primo rango visto);
+l'adapter di M3-1 la tiene e la salva. Così il cambio di GM funziona da solo: il nuovo GM ha il potere dal momento in cui
+il roster lo mostra GM, le modifiche del GM precedente restano valide. Esiti del cancello: `RANK_TOO_LOW`, `NOT_GM`
+(configurazione da un non GM), `NOT_IN_GUILD`, `PENDING` (roster non ancora caricato: `Merge` restituisce l'evento in
+`pending`, il chiamante lo rimette in coda). Un evento rifiutato non si salva e lascia un buco nella sequenza del suo
+autore, quindi la sincronizzazione (M6) lo richiederà e verrà rivalutato. Un evento già presente è un doppione e non
+passa di nuovo dal cancello. Senza cancello il registro accetta ogni evento valido (i test di M2-3 e M2-4).
+`Permissions.RanksChanged` confronta i nomi dei ranghi prima e dopo: `RENAMED` (nulla da fare), `REORDERED`, `REMOVED`,
+`ADDED` (il GM ricontrolla la tabella); `Permissions.CheckRanks` elenca i permessi che puntano a un rango che non esiste
+più. La conferma esplicita a season aperta la chiedono gli scrittori (`Rules.Change`, `Permissions.Change`:
+`CONFIRM_REQUIRED`) e il segnale `confirmed` resta nell'evento per l'audit; il cancello non la ricontrolla (l'evento è
+comunque del GM).
 
 ---
 
@@ -603,7 +647,7 @@ FinlandDragonCreditPoints/
   Libs/ (Ace3: AceAddon, AceDB, AceDBOptions, AceEvent, AceTimer, AceComm, AceLocale, AceConfig; LibDBIcon, LibDataBroker, ChatThrottleLib)
   Locale/ itIT.lua enUS.lua
   Core/ Init Compat Bus Config Log
-  Domain/ Rules Pricing Classifier Priority UpgradeScore Ledger Season Roster Rotation SessionFSM Presets
+  Domain/ Rules Pricing Classifier Priority UpgradeScore Ledger Season Members Roster Rotation SessionFSM Presets Permissions
   Adapters/ LootSource MasterLoot RollListener Group Inventory ItemCache Calendar GuildRanks
   Net/ Codec Transport Protocol Sync
   UI/ Theme Widgets/* Windows/*
@@ -759,7 +803,8 @@ Il logo originale è in `assets/logo-source.webp`; per il gioco va convertito in
 
 Tutto ciò che è in §3 più:
 
-- profili (AceDB) con **preset** pronti: "Patto" (il vostro), "Solo roll", "Loot council puro", "EPGP semplice";
+- profili (AceDB) con **preset** pronti: "Patto" (il vostro), "Solo roll", "Loot council puro", "EPGP semplice"
+  (`Domain/Presets.lua`, M2-5: cosa cambia ciascuno è in §3.9, "Come è fatto (M2-5)");
 - importa/esporta un profilo come stringa da incollare su Discord;
 - soglia di qualità, istanze considerate "ufficiali", durata del timer di roll, parole chiave in chat;
 - rango del council e degli editor del registro, voto sì/no;

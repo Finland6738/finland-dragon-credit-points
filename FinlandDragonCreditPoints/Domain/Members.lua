@@ -199,8 +199,8 @@ end
 -- A main joins the season's pool. draft = { author, ts, season, member, faction?, nights?, late? }: `late` forces the
 -- late-joiner rule on or off (default: on once the season has an official night). Returns the MEMBER_JOINED event, or
 -- nil and a code: "SEASON_UNKNOWN", "SEASON_CLOSED", "member", "ALREADY_JOINED", "IS_ALT", "CONFIG:<field>" or a
--- Ledger.Append code.
-function Members.Join(L, draft, config)
+-- Ledger.Append code. `opts` goes to Ledger.Append (the trust gate).
+function Members.Join(L, draft, config, opts)
 	if type(draft) ~= "table" then return nil, "event" end
 	config = config or Members.DefaultConfig()
 	local okConfig, field = Members.Validate(config)
@@ -226,13 +226,13 @@ function Members.Join(L, draft, config)
 		author = draft.author, ts = draft.ts, season = draft.season, type = "MEMBER_JOINED",
 		payload = { member = draft.member, faction = draft.faction, initialCredits = initial, rule = rule,
 			basis = basis },
-	})
+	}, opts)
 end
 
 -- Links an alt to a main of the season. draft = { author, ts, season, alt, main, faction? }. Returns the
 -- MEMBER_LINKED_ALT event, or nil and a code: "SEASON_UNKNOWN", "SEASON_CLOSED", "alt", "main", "MAIN_UNKNOWN",
--- "ALT_IS_MAIN", "ALREADY_LINKED", "FACTION_MISMATCH" or a Ledger.Append code.
-function Members.LinkAlt(L, draft)
+-- "ALT_IS_MAIN", "ALREADY_LINKED", "FACTION_MISMATCH" or a Ledger.Append code. `opts` goes to Ledger.Append.
+function Members.LinkAlt(L, draft, opts)
 	if type(draft) ~= "table" then return nil, "event" end
 	local s = Season().Get(L, draft.season)
 	if not s then return nil, "SEASON_UNKNOWN" end
@@ -248,7 +248,7 @@ function Members.LinkAlt(L, draft)
 	return Ledger().Append(L, {
 		author = draft.author, ts = draft.ts, season = draft.season, type = "MEMBER_LINKED_ALT",
 		payload = { alt = draft.alt, main = draft.main, faction = draft.faction },
-	})
+	}, opts)
 end
 
 if ns.addon then ns.addon.Members = Members end   -- also reachable from tests

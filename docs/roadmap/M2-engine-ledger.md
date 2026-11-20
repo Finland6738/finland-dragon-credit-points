@@ -61,7 +61,7 @@ Everything in this milestone is pure Lua in `FinlandDragonCreditPoints/Domain/`,
 - Analysis: §3.1, §3.9, §10
 - Scope: `Domain/Rules.lua` (the configuration schema of §3 with validation and defaults), `Domain/Presets.lua` ("Patto", "Solo roll", "Loot council puro", "EPGP semplice"), `Domain/Permissions.lua` as pure functions: permission → minimum rank **index**; `config.rules` and `config.permissions` GM only; an event is accepted only if its author had the required rank when it was written; `CONFIG_CHANGED` / `PERMISSIONS_CHANGED` only from the GM; open-season changes need an explicit confirmation flag.
 - Done when:
-  - [ ] Events from an author without the rank are refused; a config event from a non-GM is refused; renamed ranks change nothing.
+  - [x] Events from an author without the rank are refused; a config event from a non-GM is refused; renamed ranks change nothing.
 - Tests: `Tests/test_rules.lua`, `Tests/test_permissions.lua`.
 - Docs: CHANGELOG.
 - Real client: nothing.
