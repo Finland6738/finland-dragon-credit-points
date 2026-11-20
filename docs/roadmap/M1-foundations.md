@@ -114,9 +114,10 @@ Until the spike results arrive, M1 follows plan A and keeps every unverified API
 - Branch: `step/m1-8-checklist`
 - Depends on: M1-7
 - Analysis: §12 (M1 exit)
+- Checklist: [`docs/checklists/M1.md`](../checklists/M1.md) (English, each item also in Italian).
 - Scope: `docs/checklists/M1.md`, the owner's in-game check of M1 (loading, `/fdcp`, `/fdcp debug`, the window, saved data, locales, two clients hearing each other); README status; the `v0.1.0` changelog section waits for the owner's confirmation.
 - Done when:
-  - [ ] The checklist exists and is linked from the README and the roadmap.
+  - [x] The checklist exists and is linked from the README and the roadmap.
   - [ ] The owner confirms M1 in game. *(in game)*
 - Docs: checklist, README (EN + IT), CHANGELOG.
 - Real client: the whole checklist.
