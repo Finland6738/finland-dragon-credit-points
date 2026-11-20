@@ -24,6 +24,8 @@ Core\Compat.lua
 Core\Config.lua
 Net\Codec.lua
 Net\Transport.lua
+Domain\Classifier.lua
+Domain\Pricing.lua
 UI\Assets.lua
 UI\Theme.lua
 UI\Widgets.lua

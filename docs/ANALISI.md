@@ -153,6 +153,15 @@ Classificazione automatica: `classID` / `subclassID` / `equipLoc` da `C_Item.Get
 oggetto che avvia una quest **oppure** un `itemID` nella lista "token" della season, perché il gioco non sempre
 marca come quest un pezzo che fa parte di una catena.
 
+**Come è fatto (M2-1).** `Domain/Classifier.lua` e `Domain/Pricing.lua`, Lua puro (l'adapter passa `classID`, `subclassID`, `equipLoc`, qualità e "avvia una quest"). Ordine delle regole di classificazione: oggetto di quest → tabella `classID:subclassID` (bacchette, scudi, armature cosmetiche, cavalcature, mascotte) → tabella `equipLoc` → tabella `classID` (ricette) → "altro". Scelte fatte dove il testo sopra non decideva (tutte modificabili):
+
+- la soglia di qualità viene **prima** di tutto: un override non fa entrare in sessione un oggetto sotto soglia;
+- i moltiplicatori (risposta, dimensione del raid, difficoltà) valgono anche per un costo fissato con override, quindi un off-spec costa sempre 0;
+- una cella mancante (il "-" della tabella, o il verde quando il gruppo abbassa la soglia) va al **council**, come l'arancione; un off-spec su un oggetto "council" costa comunque 0;
+- in una stessa voce di override, `cost` vince su `category`; una categoria sconosciuta si ignora;
+- reliquie (libram, idoli, totem) come mano secondaria; camicie e tabard come cosmetici;
+- i costi decimali si arrotondano a 2 cifre; `Pricing.Validate` rifiuta costi negativi (il sito della community li rifiuta) e categorie sconosciute.
+
 ### 3.3 Risposte (tier)
 
 Lista modificabile; ogni voce ha nome, colore, icona, tier, moltiplicatore di costo, se conta come "vuole il pezzo".

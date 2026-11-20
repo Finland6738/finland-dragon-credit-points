@@ -12,7 +12,7 @@ Everything in this milestone is pure Lua in `FinlandDragonCreditPoints/Domain/`,
 - Analysis: §3.1, §3.2
 - Scope: `Domain/Classifier.lua` (`classID` / `subclassID` / `equipLoc` → category through an editable table; quest item = Quest class **or** starts a quest **or** in the season's token list; quality threshold "not tracked"), `Domain/Pricing.lua` (per-item override → category × quality matrix → response multiplier; raid-size and difficulty multipliers; decimal costs).
 - Done when:
-  - [ ] Every cell of the §3.2 matrix and the override order are covered by tests.
+  - [x] Every cell of the §3.2 matrix and the override order are covered by tests.
 - Tests: `Tests/test_pricing.lua`.
 - Docs: CHANGELOG.
 - Real client: nothing.
