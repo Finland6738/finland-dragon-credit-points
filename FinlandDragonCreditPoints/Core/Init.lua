@@ -52,6 +52,7 @@ end
 
 function FDCP:OnInitialize()
 	self:RegisterChatCommand("fdcp", "OnSlashCommand")
+	if ns.Config then ns.Config:Setup() end   -- SavedVariables are loaded by now
 	if not self:IsForever() then
 		self:Print(L["WARN_NOT_FOREVER"])   -- OnInitialize runs once per session
 	end

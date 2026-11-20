@@ -585,7 +585,7 @@ tools/ check_docs.py, build/release
   `ENCOUNTER_KILLED`, `DROP_SEEN`, `ITEM_AWARDED{cost, response, reason?}`, `AWARD_VOIDED{ref, reason}`,
   `CREDITS_ADJUSTED{delta, reason}`, `LEGENDARY_PROJECT_*`, `CONFIG_CHANGED`.
   I crediti sono la somma degli eventi della season; uno snapshot periodico evita di ricalcolare tutto.
-- **Versioni dello schema**: migrazioni esplicite a ogni cambio (come ADR 0011 di Accord).
+- **Versioni dello schema**: migrazioni esplicite a ogni cambio (come ADR 0011 di Accord). I dati di ogni gilda stanno sotto la chiave `<reame>/<gilda>` (`db.global.guilds`), così gilde diverse non si mescolano mai; un database scritto da una versione più nuova dell'addon si apre in **sola lettura** (nessuna migrazione, nessuna scrittura).
 
 ### 8.4 Rete e fiducia
 

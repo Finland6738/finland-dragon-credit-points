@@ -17,4 +17,7 @@ embeds.xml
 Locale\enUS.lua
 Locale\itIT.lua
 Core\Init.lua
+Core\Log.lua
+Core\Bus.lua
 Core\Compat.lua
+Core\Config.lua

@@ -50,7 +50,8 @@ Until the spike results arrive, M1 follows plan A and keeps every unverified API
 - Analysis: §8.1 (Core), §8.3, §10
 - Scope: `Core/Config.lua` (AceDB, profiles, defaults, validation, schema version and step-by-step migrations, read-only on a newer schema), `Core/Log.lua` (ring buffer, levels, no names in debug output), `Core/Bus.lua`, a guild key `<realm>/<guild>` so data of different guilds never mixes.
 - Done when:
-  - [ ] Data is kept per guild; a newer schema opens read-only; migrations are tested.
+  - [x] Data is kept per guild; a newer schema opens read-only; migrations are tested.
+  - [ ] SavedVariables survive `/reload` and relog. *(in game)*
 - Tests: `Tests/test_config.lua`.
 - Docs: CHANGELOG.
 - Real client: SavedVariables survive `/reload` and relog.
