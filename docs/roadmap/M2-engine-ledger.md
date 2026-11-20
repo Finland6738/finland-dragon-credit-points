@@ -37,7 +37,7 @@ Everything in this milestone is pure Lua in `FinlandDragonCreditPoints/Domain/`,
 - Analysis: §0 point 2, §7, §8.3
 - Scope: `Domain/Ledger.lua`: immutable events `{id, ts, author, season, type, payload}` with ids unique per author (author + sequence), append and idempotent merge, the event types of §8.3, compensation instead of deletion (`AWARD_VOIDED`, `CREDITS_ADJUSTED`), credits computed as the sum of the season's events, periodic snapshots that give the same totals, schema version of the payloads.
 - Done when:
-  - [ ] Credits from snapshot + tail equal credits from the full ledger; merging the same events twice changes nothing; a void restores the previous credits.
+  - [x] Credits from snapshot + tail equal credits from the full ledger; merging the same events twice changes nothing; a void restores the previous credits.
 - Tests: `Tests/test_ledger.lua` (including random event sequences).
 - Docs: CHANGELOG.
 - Real client: nothing.

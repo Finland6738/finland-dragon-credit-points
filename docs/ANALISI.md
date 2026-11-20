@@ -619,6 +619,23 @@ tools/ check_docs.py, build/release
   `ENCOUNTER_KILLED`, `DROP_SEEN`, `ITEM_AWARDED{cost, response, reason?}`, `AWARD_VOIDED{ref, reason}`,
   `CREDITS_ADJUSTED{delta, reason}`, `LEGENDARY_PROJECT_*`, `CONFIG_CHANGED`.
   I crediti sono la somma degli eventi della season; uno snapshot periodico evita di ricalcolare tutto.
+- **Come è fatto (M2-3).** `Domain/Ledger.lua`, Lua puro. Ogni evento è `{id, author, seq, ts, season, type, v, payload}`:
+  `id` = `autore:seq`, con `seq` = 1, 2, 3… per autore, quindi due officer non collidono mai e unire due registri è
+  un'unione di insiemi (lo stesso evento due volte non cambia nulla; un evento diverso con lo stesso id è un
+  conflitto: resta quello già salvato e il conflitto viene segnalato). `v` è la versione dello schema del payload: un
+  payload vecchio si aggiorna in lettura (`Ledger.UPGRADES`, l'evento salvato non cambia mai), un tipo sconosciuto o
+  una versione più nuova si conservano e si inoltrano agli altri officer ma non entrano nei conti. Ordine canonico:
+  ora, autore, sequenza. Crediti di un membro nella season = `initialCredits` del **primo** `MEMBER_JOINED` (in ordine
+  canonico) + i costi degli `ITEM_AWARDED` a lui + i `CREDITS_ADJUSTED{member, delta, reason}`, tolti quelli annullati;
+  arrotondati a 2 decimali; banca e disenchant non muovono crediti. `AWARD_VOIDED{ref, reason}` annulla un
+  `ITEM_AWARDED` o un `CREDITS_ADJUSTED` (un annullamento non si annulla: si riscrive l'evento); due annullamenti dello
+  stesso evento contano una volta, e un annullamento arrivato prima del suo evento lo annulla comunque. Le motivazioni
+  sono codici (`WRONG_WINNER`), mai frasi. Gli **snapshot** coprono esattamente gli eventi fino ai "fin dove sono
+  arrivato" per autore (il più alto `seq` senza buchi), quindi gli eventi arrivati dopo, anche se più vecchi, stanno
+  sempre nella coda: snapshot + coda = registro completo. Per la sincronizzazione (M6) il registro dà gli stessi segni
+  (`Heads`), gli eventi che mancano a chi ha certi segni (`Since`) e i buchi (`Gaps`). `FirstKills` dà la prima
+  uccisione per boss da `ENCOUNTER_KILLED{encounterID, date}` e `PROGRESS_SET{encounterID, faction, date}` (date
+  `AAAA-MM-GG` scritte dall'adapter), per `progress.json`.
 - **Versioni dello schema**: migrazioni esplicite a ogni cambio (come ADR 0011 di Accord). I dati di ogni gilda stanno sotto la chiave `<reame>/<gilda>` (`db.global.guilds`), così gilde diverse non si mescolano mai; un database scritto da una versione più nuova dell'addon si apre in **sola lettura** (nessuna migrazione, nessuna scrittura).
 
 ### 8.4 Rete e fiducia

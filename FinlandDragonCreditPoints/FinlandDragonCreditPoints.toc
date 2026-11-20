@@ -27,6 +27,7 @@ Net\Transport.lua
 Domain\Classifier.lua
 Domain\Pricing.lua
 Domain\Priority.lua
+Domain\Ledger.lua
 UI\Assets.lua
 UI\Theme.lua
 UI\Widgets.lua
