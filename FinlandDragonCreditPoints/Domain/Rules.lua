@@ -6,7 +6,7 @@
 --   season    { startCredits }                                            §3.1 (Domain/Season.lua)
 --   cost      Domain/Pricing.lua (matrix, multipliers, overrides, tokens) §3.2
 --   priority  Domain/Priority.lua (metric, tie-breaks, responses, BoE and other fallbacks, addon required)  §3.3-§3.4, §3.8
---   session   { awardMode, autoAdvance, lockCategoryOnOpen, interventionSeconds }                          §3.4, §4
+--   session   { awardMode, autoAdvance, lockCategoryOnOpen, interventionSeconds, rollSeconds }                  §3.4, §4
 --   council   { requirePresent, vote }                                    §3.6 (the rank is the permission council.member)
 --   legendary { mode, chainPieceCost }                                    §3.7
 --   bench     { creditEffect }                                            §3.1
@@ -56,6 +56,7 @@ function Rules.DefaultConfig()
 			autoAdvance = true,          -- the addon opens the reroll, the next tier and the fallback by itself (§3.4)
 			lockCategoryOnOpen = true,   -- the category cannot change once the roll is open
 			interventionSeconds = 30,    -- the window before an "auto" award is written
+			rollSeconds = 30,            -- the timer of a roll round (Domain/SessionFSM.lua)
 		},
 		council = { requirePresent = true, vote = false },
 		legendary = { mode = "council", chainPieceCost = 2 },
@@ -125,6 +126,8 @@ function Rules.Validate(config)
 		bool(problems, "session.lockCategoryOnOpen", s.lockCategoryOnOpen)
 		local w = s.interventionSeconds
 		if type(w) ~= "number" or w ~= floor(w) or w < 0 or w > 600 then add(problems, "session.interventionSeconds") end
+		local r = s.rollSeconds
+		if type(r) ~= "number" or r ~= floor(r) or r < 5 or r > 600 then add(problems, "session.rollSeconds") end
 	end
 	if type(c.council) == "table" then
 		bool(problems, "council.requirePresent", c.council.requirePresent)

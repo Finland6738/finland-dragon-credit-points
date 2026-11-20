@@ -73,7 +73,7 @@ Everything in this milestone is pure Lua in `FinlandDragonCreditPoints/Domain/`,
 - Analysis: §4 (diagram and details)
 - Scope: `Domain/SessionFSM.lua`: states waiting → collecting → announcing → roll tier N → computing → (reroll | next tier | fallback) → proposal → (confirm | reject | modify with mandatory reason) → assigned → delivered; pause; `session.autoAdvance`; `session.awardMode` `confirm` | `auto` (intervention window) | `council`; serialisable state for `/reload`; produces ledger events (`ITEM_AWARDED` with reason codes, interventions flagged "out of order").
 - Done when:
-  - [ ] Every transition of the §4 diagram is tested, including reroll, empty tier, reject and modify; a serialised session resumes identically.
+  - [x] Every transition of the §4 diagram is tested, including reroll, empty tier, reject and modify; a serialised session resumes identically.
 - Tests: `Tests/test_session_fsm.lua`.
 - Docs: CHANGELOG.
 - Real client: nothing.

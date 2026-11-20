@@ -33,6 +33,7 @@ Domain\Members.lua
 Domain\Rules.lua
 Domain\Presets.lua
 Domain\Permissions.lua
+Domain\SessionFSM.lua
 UI\Assets.lua
 UI\Theme.lua
 UI\Widgets.lua

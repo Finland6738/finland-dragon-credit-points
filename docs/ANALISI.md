@@ -425,6 +425,54 @@ Dettagli importanti:
 - **Fasi automatiche**: apertura del roll, timer, chiusura, reroll e passaggio al tier off-spec possono partire da
   soli (`session.autoAdvance`, preset sì); il ML può sempre mettere in pausa la sessione.
 
+**Come è fatto (M2-6).** `Domain/SessionFSM.lua`, Lua puro. La sessione è una sola tabella di dati semplici, salvata
+così com'è nelle SavedVariables: dopo un `/reload` riprende identica (`SessionFSM.Restore`). Si cambia solo con
+`SessionFSM.Step(sessione, input, env)`: applica un input (`LOOT_OPENED`, `CORRECT_ITEM`, `START`, `OPEN_ROLL`,
+`RESPONSE`, `ROLL`, `CLOSE_ROUND`, `ADVANCE`, `CONFIRM`, `REJECT`, `MODIFY`, `VOTE`, `CLOSE_VOTE`, `PAUSE`, `RESUME`,
+`TICK`, `DELIVERED`, `END`, …), poi le fasi automatiche, e restituisce gli **effetti** da eseguire (annuncio, apertura
+del popup, `GiveMasterLoot`, avviso "senza addon"): la sessione non agisce mai da sola. Un input rifiutato non cambia
+nulla. Stati: `WAITING` → `COLLECTING` → `ANNOUNCING` → `ROLLING` → `COMPUTING` → `PROPOSAL` → `ENDED`; ogni pezzo ha
+`PENDING` → `ROLLING` → `COMPUTING` → `PROPOSAL` → `ASSIGNED` → `DELIVERED`. Il calcolo (reroll, tier successivo,
+fallback) è sempre `Priority.Evaluate`; `CONFIRM` scrive `ITEM_AWARDED` nel registro con i codici della proposta e
+passa dal cancello dei permessi (§3.9). Scelte fatte dove il testo sopra non decideva (tutte modificabili):
+
+- il dominio non legge l'orologio: ogni input porta l'ora e i timer sono scadenze assolute controllate da `TICK`;
+  durata del roll nuova regola `session.rollSeconds` (preset 30 secondi, 5-600);
+- **un pezzo alla volta**: il roll successivo si apre solo dopo l'assegnazione del precedente, così i suoi crediti
+  sono già addebitati; la consegna invece può restare in sospeso (`ASSIGNED`) e arrivare anche dopo `END`;
+- all'apertura del roll il pezzo congela **raid, addon e crediti** (i crediti della season dal registro): il risultato
+  è quello contro cui il raid ha rollato e una sessione ripresa calcola lo stesso; chi attiva l'addon rientra dal pezzo
+  dopo (§4.1);
+- il primo round del pezzo raccoglie anche le **risposte**; la risposta si può cambiare finché il giocatore non ha
+  rollato in quel round; se nessuno del tier 1 può rollare, i roll di quel round si scartano (`TIER_EMPTY`) e si apre il
+  round del tier che chiede `Priority`;
+- §4.1: la risposta di chi non ha l'addon (o non è nel raid) è rifiutata; il suo `/roll` resta nel round e `Priority`
+  lo scarta come `NO_ADDON`, così il ML lo vede; all'avvio della sessione l'effetto `NO_ADDON` elenca chi non può
+  rollare; senza `requireAddon` rollano tutti i presenti;
+- con `autoAdvance` il round si chiude al timer **o** quando tutti i presenti con l'addon hanno risposto e rollato,
+  il reroll e il tier successivo si aprono da soli e dopo un'assegnazione si apre il pezzo successivo; senza, il timer
+  scaduto è solo segnalato e il ML chiude e avanza a mano;
+- **pausa**: ferma tutte le fasi automatiche e conserva il tempo che restava (timer e finestra di `auto`); i comandi
+  del ML e i roll continuano a funzionare;
+- `awardMode = auto`: dopo `session.interventionSeconds` l'addon conferma da solo, ma solo una proposta "pronta"
+  (vincitore, costo, nessuna segnalazione tranne `DISCARDED_ROLLS`) e mai dopo un intervento del ML; se il registro
+  rifiuta l'evento torna al ML (`AUTO_FAILED`);
+- `awardMode = council`: `CONFIRM` è bloccato finché il ML non chiude il voto (`CLOSE_VOTE`); vince la maggioranza
+  stretta (parità o nessun voto: decide il ML con `MODIFY`); se il voto sceglie un altro, è un intervento con motivo
+  `COUNCIL_VOTE`; i voti finiscono nell'evento;
+- **Rifiuta** sceglie cosa succede al pezzo: `PENDING` (il ML lo riapre quando vuole; l'avanzamento automatico non lo
+  riapre), `REOPEN` (roll nuovo subito), `NEXT_TIER` (salta i tier fino a quello della proposta), `BANK`,
+  `DISENCHANT`; le proposte successive portano il segnale `AFTER_REJECT`;
+- **Modifica**: motivo obbligatorio da una lista di codici (`WRONG_CATEGORY`, `COUNCIL_COST`, `OBVIOUS_WASTE`,
+  `PASSED_TO_GAME`, `COUNCIL_VOTE`, `LEGENDARY`, `MISTAKE`, `OTHER`); un nuovo vincitore paga il costo della propria
+  risposta, il costo pieno se non ha risposto (§3.6); segnali `OUT_OF_ORDER` (vincitore diverso dalla regola),
+  `COST_CHANGED`, `ML_DECIDED` (la regola non aveva vincitore o costo); l'evento porta `intervention`, `mlReason`,
+  `ruleWinner`, `ruleCost`;
+- la correzione di categoria o costo (`CORRECT_ITEM`) vuole un motivo ed è bloccata dopo l'apertura del roll con
+  `session.lockCategoryOnOpen`;
+- la sessione scrive solo `ITEM_AWARDED` (destinatario `member`, `bank` o `disenchant`); `DROP_SEEN` e gli altri eventi
+  della serata arrivano con gli adapter (M3, M4). "Conferma tutto" non serve: c'è una sola proposta aperta alla volta.
+
 ### 4.1 L'addon è obbligatorio: chi non ce l'ha
 
 Tutti i raider devono avere l'addon attivo. L'addon lo verifica da solo e aiuta GM, officer e master looter a
