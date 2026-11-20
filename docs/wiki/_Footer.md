@@ -1,0 +1,1 @@
+Finland Dragon Credit Points · fan-made addon for World of Warcraft: Forever, not affiliated with Blizzard Entertainment / addon amatoriale, non affiliato a Blizzard Entertainment · [Repository](https://github.com/Finland6738/finland-dragon-credit-points) · GPL-3.0

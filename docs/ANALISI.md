@@ -726,6 +726,9 @@ più le preferenze personali: posizione dei popup, suoni, pesi delle statistiche
 
 M2 e M3 possono procedere in parallelo dopo M1; M4 dipende da M0, M2 e M3.
 
+I passi di sviluppo di ogni milestone (uno per sessione e per pull request) sono in [`docs/roadmap/`](roadmap/README.md);
+l'indice è [`ROADMAP.md`](../ROADMAP.md).
+
 ---
 
 ## 13. Domande aperte
@@ -751,8 +754,12 @@ M2 e M3 possono procedere in parallelo dopo M1; M4 dipende da M0, M2 e M3.
    Come in Accord: nessun dato personale nel repository (nomi reali, email, percorsi personali) e commit firmati con
    l'indirizzo noreply di GitHub, non con l'email personale.
 8. **Pesi delle statistiche**: vi basta l'item level + pesi predefiniti, o avete già pesi/BiS list per spec da
-   importare?
+   importare? **Aperta**, opzioni in [issue #2](https://github.com/Finland6738/finland-dragon-credit-points/issues/2).
+   Default reversibile finché non decide il GM: item level + pesi predefiniti modificabili, import stile Pawn
+   facoltativo e spento (step M5-1 e M5-3).
 9. **Lingua** **Risolta (19/11/2026)**: addon multilingua, all'inizio italiano e inglese, con altre lingue
    aggiungibili tramite un file (§8.5). Documentazione come Accord.
 10. **Sito della community**: va bene estendere `loot.json` con `start` (crediti iniziali) e `kind` (assegnazione /
-    correzione), o l'addon deve restare dentro il formato attuale (§7.1)?
+    correzione), o l'addon deve restare dentro il formato attuale (§7.1)? **Aperta**, opzioni in
+    [issue #3](https://github.com/Finland6738/finland-dragon-credit-points/issues/3). Default reversibile: solo il
+    formato attuale, con i campi estesi dietro un'opzione spenta (step M6-4).

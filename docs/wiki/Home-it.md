@@ -1,0 +1,19 @@
+# Finland Dragon Credit Points
+
+![Logo di Finland Dragon Credit Points](../../assets/logo-source.webp)
+
+**Il sistema di loot a crediti della gilda per World of Warcraft: Forever.** Finland Dragon Credit Points (FDCP, comando `/fdcp`) aiuta il master looter a gestire ogni roll: legge i drop, mostra a ogni raider un popup per rispondere main-spec o off-spec e rollare, sceglie il vincitore secondo le regole della gilda (meno crediti vince, poi il roll più alto, poi un reroll fra i pari) e tiene un registro di crediti, serate e assegnazioni consultabile da tutti.
+
+> **Stato: in sviluppo, nessun download ancora.** L'addon si progetta e si costruisce un passo alla volta; le pagine di questo manuale si riempiono man mano che arrivano le funzioni. [English](Home)
+
+## Da dove iniziare
+
+| Voglio… | Leggi |
+|---|---|
+| Installare l'addon | [[Installazione|Installation-it]] |
+
+Altre pagine (rollare per il loot, la tabella dei crediti, la guida del master looter, il council, le impostazioni) arrivano con le funzioni.
+
+## Per gli sviluppatori
+
+Piano, analisi e decisioni sono nel [repository](https://github.com/Finland6738/finland-dragon-credit-points): `ROADMAP.md`, `docs/ANALISI.md` e `docs/adr/`.

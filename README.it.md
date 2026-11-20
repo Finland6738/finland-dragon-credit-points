@@ -1,0 +1,39 @@
+# Finland Dragon Credit Points
+
+<img src="assets/logo-source.webp" alt="Logo di Finland Dragon Credit Points" width="160" align="right">
+
+**Un sistema di loot a crediti per le gilde di World of Warcraft: Forever.** Finland Dragon Credit Points (FDCP, comando `/fdcp`) gestisce le serate di loot della gilda direttamente nel gioco: il master looter apre un roll per ogni drop, ogni raider risponde main-spec o off-spec da un popup e rolla, e l'addon calcola il vincitore secondo le regole della gilda — meno crediti vince, poi il roll più alto, poi un reroll fra i pari — e scrive a chi va il pezzo, quanti crediti costa e perché. Il master looter conferma, rifiuta o modifica la proposta; il council può intervenire con una motivazione; tutto finisce in un registro di crediti, serate e assegnazioni consultabile da ogni membro.
+
+> **Stato: in sviluppo, nessun download ancora.** L'analisi è pronta ([docs/ANALISI.md](docs/ANALISI.md)) e il flusso di sviluppo è attivo; l'addon si costruisce un passo della roadmap alla volta, a partire da una sonda per le verifiche in gioco (M0) e dalle fondamenta (M1). Nulla è ancora stato provato in gioco.
+
+[English](README.md) · [Roadmap](ROADMAP.md) · [Analisi](docs/ANALISI.md) · [Decisioni](docs/adr/README.md) · [Manuale](docs/wiki/Home-it.md) · [Changelog](CHANGELOG.md)
+
+## Funzioni previste
+
+| Area | Cosa offre |
+|---|---|
+| **Sessioni di loot** | Drop letti dal corpo, categoria e costo annunciati prima del roll, un popup sul client di ogni raider, `/roll` dal server, tier (prima main-spec, off-spec solo se nessuno lo vuole), reroll automatici fra i pari |
+| **Motore delle regole** | Costi per categoria e qualità, eccezioni per oggetto, nuovi arrivati alla media del roster, progetti leggendari, BoE alla banca di gilda; il preset "Patto" della gilda più altri; tutto configurabile dal Guild Master |
+| **Registro** | I crediti si calcolano da un registro di eventi firmati: storico, log e audit gratis, e gli officer si sincronizzano senza sovrascriversi |
+| **Roster e serate** | Pool della season con main-spec e off-spec dichiarate, main e alt, lineup, rotazione equa della panchina, presenze per boss (solo officer) |
+| **Addon obbligatorio** | Chi nel raid non ha l'addon, e un avviso in `/raid` con i nomi in un clic |
+| **Indizi di upgrade** | Il client di ogni raider confronta il drop con il pezzo indossato; il council vede "upgrade grande, ha passato" o "possibile spreco" — un indizio, mai una decisione automatica |
+| **Council** | Interventi con motivazione obbligatoria, voto facoltativo, annullamenti come eventi di compensazione |
+| **Esportazione** | La tabella dei crediti per Discord, CSV, JSON e il `loot.json` del sito della community |
+| **Interfaccia** | Material Design 3 nei colori del logo; italiano e inglese, altre lingue aggiungendo un file |
+
+## Requisiti
+
+- Client di World of Warcraft: Forever (Interface 16001).
+- Ogni raider deve avere l'addon per rollare.
+
+## Sviluppo
+
+- Un passo della roadmap per sessione e per pull request, pubblicato da `tools/ship_step.py` quando i controlli sono verdi ([ADR 0001](docs/adr/0001-git-flow-and-automated-shipping.md)); vedi [CLAUDE.md](CLAUDE.md) e [ROADMAP.md](ROADMAP.md).
+- Controlli: `python -I -X utf8 tools/check_docs.py`.
+- Il manuale utente è in [docs/wiki/](docs/wiki/Home-it.md) in italiano e inglese e va sulla wiki di GitHub in automatico ([ADR 0002](docs/adr/0002-github-wiki-generated-from-docs-wiki.md)).
+- Le fondamenta si copiano e si adattano dal progetto gemello Azeroth Accord (stesso autore, GPL-3.0); in gioco i due addon restano indipendenti.
+
+## Licenza
+
+[GNU General Public License v3.0](LICENSE). Addon amatoriale, non affiliato a Blizzard Entertainment.
