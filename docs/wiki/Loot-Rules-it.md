@@ -344,6 +344,7 @@ L'addon legge i ranghi dal roster della gilda, per posizione e mai per nome. Dop
 | `MEMBER_LINKED_ALT` | Alt collegato a un main |
 | `NIGHT_OPENED` | Serata aperta |
 | `NIGHT_CLOSED` | Serata chiusa |
+| `LINEUP_CHANGED` | Formazione cambiata |
 | `ROSTER_CHANGED` | Roster cambiato |
 | `ENCOUNTER_KILLED` | Boss ucciso |
 | `PROGRESS_SET` | Progressi impostati a mano |

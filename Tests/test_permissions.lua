@@ -211,7 +211,7 @@ describe("the trust gate", function()
 		local L = Lg().New()
 		local gate = P().Gate(roster())
 		local r = Lg().Merge(L, {
-			event(OFFICER, 1, 10, "NIGHT_OPENED", { instanceID = 409, size = 40, difficulty = "normal" }, "S1"),
+			event(OFFICER, 1, 10, "NIGHT_OPENED", { date = "2026-11-12", instanceID = 409, size = 40, difficulty = "normal" }, "S1"),
 			award(OFFICER, 2, 11),
 			adjust(OFFICER, 3, 12),
 			event(OFFICER, 4, 13, "AWARD_VOIDED", { ref = OFFICER .. ":2", reason = "WRONG_WINNER" }, "S1"),

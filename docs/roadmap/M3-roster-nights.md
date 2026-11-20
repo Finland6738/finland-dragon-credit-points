@@ -34,7 +34,7 @@
 - Analysis: §2 (Night), §6 (during the night), §3.1 (official raids only)
 - Scope: `App/NightController.lua` (open/close an official night: date, instance, size, difficulty; `NIGHT_OPENED` / `NIGHT_CLOSED`), `Adapters/Group.lua` (`GetRaidRosterInfo`, `GROUP_ROSTER_UPDATE`), lineup in raid / bench / absent, every change logged with time and the boss of reference, `ENCOUNTER_END` → `ENCOUNTER_KILLED{encounterID, difficulty, time}`, attendance per boss.
 - Done when:
-  - [ ] A simulated night with joins, leaves and three bosses gives the expected attendance per boss.
+  - [x] A simulated night with joins, leaves and three bosses gives the expected attendance per boss.
 - Tests: `Tests/test_nights.lua`.
 - Docs: CHANGELOG.
 - Real client: group events in a real raid.

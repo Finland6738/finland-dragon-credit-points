@@ -1,0 +1,332 @@
+-- NightController: opens and closes an official raid night, keeps its lineup from the raid group and records the boss
+-- kills (docs/ANALISI.md §2, §6, §3.1, M3-3). Lua 5.1. The rules are in Domain/Nights.lua (pure); this module is the glue
+-- with the game: Adapters/Group.lua (the raid and ENCOUNTER_END), the permission service (night.run, view.attendance) and
+-- the guild's ledger.
+--
+-- * The night lives in the ledger (NIGHT_OPENED / NIGHT_CLOSED, LINEUP_CHANGED, ENCOUNTER_KILLED), never in a table of its
+--   own, so a /reload resumes it: the controller only remembers who was in the group at the last scan, in memory.
+-- * Who writes: the officer who opened the night (or the master looter named in it) records the lineup and the kills; any
+--   other officer's client leaves them alone (a kill two officers write twice is counted once anyway, Nights.Kills).
+-- * The lineup follows the raid group. At every group scan (and just before a kill is written, so the lineup is the one of
+--   the kill) a main who is in the group becomes RAID, one who left becomes ABSENT, and an alt in the raid counts for its
+--   main. A member the master looter benched stays BENCH while they are not in the group, and also while they are in it
+--   until they join again; Bench / Unbench / SetState write the lineup by hand. When the client hides a row (spike S7) the
+--   scan only adds, it never removes anybody.
+-- * A kill is written on ENCOUNTER_END with success, inside the night's instance; outside a night nothing is written here
+--   (M3-3b records those).
+-- * Attendance is for the officers: Attendance() answers only with `view.attendance` (§6, owner decision).
+--
+-- Bus events: "NIGHT_OPENED"(night), "NIGHT_CLOSED"(night), "NIGHT_LINEUP_CHANGED"(night, event),
+-- "NIGHT_ENCOUNTER_RECORDED"(night, event).
+-- Not verified in the real client (M0 spike S4/S7): the group events in a raid and the encounter ids of Forever.
+local ADDON_NAME, ns = ...
+ns = ns or {}
+ns.modules = ns.modules or {}
+local NightController = {}
+ns.NightController, ns.modules.NightController = NightController, NightController
+
+local type, pairs, ipairs, tostring = type, pairs, ipairs, tostring
+
+local function log(level, code, ...) if ns.Log then ns.Log[level]("Nights", code, ...) end end
+local function emit(event, ...) if ns.Bus then ns.Bus:Emit(event, ...) end end
+
+NightController.ledger = nil
+NightController.group = nil   -- { [night id] = { [main] = true } }: who was in the group at the last complete scan
+
+---------------------------------------------------------------------------------------------------------------------
+-- The ledger and the player
+
+-- Binds a ledger table (tests, or the store of a later step). Returns it.
+function NightController:Bind(ledger)
+	self.ledger = ledger
+	self.group = {}
+	if ns.PermissionService then ns.PermissionService:BindLedger(ledger) end
+	return ledger
+end
+
+-- The guild's ledger, opened from the saved data of the current guild on first use (nil without a guild). A ledger
+-- written by a newer addon is read-only: every write answers READ_ONLY.
+function NightController:Ledger()
+	if self.ledger then return self.ledger end
+	local data = ns.Config and ns.Config.GuildData and ns.Config:GuildData()
+	if not data or ns.Config:IsReadOnly() then return nil end   -- a read-only database is never written, not even empty
+	data.ledger = ns.Ledger.Open(data.ledger)
+	return self:Bind(data.ledger)
+end
+
+function NightController:Me()
+	return ns.GuildRanks and ns.GuildRanks.Me()
+end
+
+local function now() return ns.Compat.ServerTime() end
+
+-- The realm's day as "YYYY-MM-DD" (what the site shows).
+local function today() return ns.Nights.FormatDay(ns.Compat.ServerDay()) end
+
+-- The season a night belongs to: the open one.
+function NightController:Season()
+	local L = self:Ledger()
+	return L and ns.Season.Current(L) or nil
+end
+
+-- The open night of the open season, or nil.
+function NightController:Current()
+	local L, s = self:Ledger(), self:Season()
+	if not L or not s then return nil end
+	return ns.Nights.Current(L, s.id)
+end
+
+-- The trust gate for the writes (the permission service's, nil in a client without it).
+local function gate()
+	return ns.PermissionService and ns.PermissionService:Gate() or nil
+end
+
+-- May the player use permission `p` now? true, or false and a code ("PENDING" while the guild roster loads, "NOT_IN_GUILD",
+-- "RANK_TOO_LOW", "NOT_GM"). A client without the permission service answers true.
+function NightController:Can(p)
+	if not ns.PermissionService then return true end
+	return ns.PermissionService:Can(p, nil, self.ledger)
+end
+
+-- True when this client records the lineup and the kills of `night`: the officer who opened it or its master looter.
+function NightController:IsRunner(night)
+	local me = self:Me()
+	return night ~= nil and me ~= nil and (night.author == me or night.ml == me)
+end
+
+-- The common start of a write: the ledger, the open season, the right to run a night. Returns L, season id or nil, code.
+local function writer(self)
+	local L = self:Ledger()
+	if not L then return nil, "NOT_READY" end
+	local s = ns.Season.Current(L)
+	if not s then return nil, "NO_SEASON" end
+	local ok, why = self:Can("night.run")
+	if not ok then return nil, why end
+	if not self:Me() then return nil, "NOT_READY" end
+	return L, s.id
+end
+
+---------------------------------------------------------------------------------------------------------------------
+-- Opening and closing
+
+-- The main of a character in the season's pool (an alt counts for its main), or nil.
+local function mainOf(rs, name)
+	local full = ns.GuildRanks and ns.GuildRanks.FullName(name) or name   -- "Fox" is "Fox-<this realm>" in the ledger
+	if rs.members[full] then return full end
+	return rs.alts[full]
+end
+
+-- Opens an official night. args = { instanceID?, difficulty?, bench? = {names}, ml? }: the instance and the difficulty
+-- default to the instance the player stands in (when it is a raid of the season's pack); `bench` is the planned bench, a
+-- list of pool mains (they stay BENCH while they are not in the raid). The lineup is read from the raid group at once.
+-- Returns the night record, or nil and a code: "NOT_READY", "NO_SEASON", "PENDING", "NOT_IN_GUILD", "RANK_TOO_LOW",
+-- "NOT_IN_PACK" (only the official raids of the season count), "DIFFICULTY" (the client does not say which: pass it),
+-- "NIGHT_ALREADY_OPEN", "NOT_MEMBER" (a benched name is not in the pool), "READ_ONLY" or a Ledger code.
+function NightController:Open(args)
+	args = args or {}
+	local L, season = writer(self)
+	if not L then return nil, season end
+	local instanceID, difficulty = args.instanceID, args.difficulty
+	if instanceID == nil or difficulty == nil then
+		local inst = ns.Compat.Encounter.Instance()
+		if inst and inst.type == "raid" then
+			instanceID = instanceID or inst.instanceID
+			if difficulty == nil then difficulty = ns.Nights.DifficultyCode(inst.difficultyID, inst.difficultyName) end
+		end
+	end
+	if instanceID == nil then return nil, "NOT_IN_PACK" end
+	local bench = {}
+	if args.bench then
+		local rs = ns.Roster.State(L, season)
+		for _, name in ipairs(args.bench) do
+			local main = mainOf(rs, name)
+			if not main then return nil, "NOT_MEMBER" end
+			bench[#bench + 1] = main
+		end
+	end
+	local ts = now()
+	local event, why = ns.Nights.Open(L, { author = self:Me(), ts = ts, season = season, date = today(),
+		instanceID = instanceID, difficulty = difficulty, faction = ns.Compat.Player.Faction(), ml = args.ml }, gate())
+	if not event then return nil, why end
+	local night = ns.Nights.Get(L, event.id)
+	log("info", "NIGHT_OPENED", ns.Log and ns.Log.Plain(night.difficulty), night.size)
+	self.group[night.id] = nil
+	if #bench > 0 then
+		local _, code = ns.Nights.SetLineup(L, { author = self:Me(), ts = ts, season = season, bench = bench }, gate())
+		if code and code ~= "NO_CHANGE" then log("warn", "BENCH_REFUSED", ns.Log and ns.Log.Plain(code)) end
+	end
+	emit("NIGHT_OPENED", night)
+	self:Sync()
+	return night
+end
+
+-- Closes the open night after a last read of the group. Returns the night record (closed), or nil and a code:
+-- "NOT_READY", "NO_SEASON", a permission code, "NO_NIGHT_OPEN", "READ_ONLY" or a Ledger code.
+function NightController:Close()
+	local L, season = writer(self)
+	if not L then return nil, season end
+	local night = ns.Nights.Current(L, season)
+	if not night then return nil, "NO_NIGHT_OPEN" end
+	if self:IsRunner(night) then self:Sync() end
+	local event, why = ns.Nights.Close(L, { author = self:Me(), ts = now(), season = season }, gate())
+	if not event then return nil, why end
+	self.group[night.id] = nil
+	local closed = ns.Nights.Get(L, night.id)
+	log("info", "NIGHT_CLOSED")
+	emit("NIGHT_CLOSED", closed)
+	return closed
+end
+
+---------------------------------------------------------------------------------------------------------------------
+-- The lineup
+
+-- Changes one member's state by hand (RAID, BENCH or ABSENT). `name` is a pool main, or an alt (the main is used).
+-- Returns the LINEUP_CHANGED event, or nil and a code ("NO_NIGHT_OPEN", "NOT_MEMBER", "NO_CHANGE", "BAD_STATE", ...).
+function NightController:SetState(name, state)
+	if not ns.Nights.STATES[state] then return nil, "BAD_STATE" end
+	local L, season = writer(self)
+	if not L then return nil, season end
+	local night = ns.Nights.Current(L, season)
+	if not night then return nil, "NO_NIGHT_OPEN" end
+	local main = mainOf(ns.Roster.State(L, season), name)
+	if not main then return nil, "NOT_MEMBER" end
+	local event, why = ns.Nights.SetLineup(L, { author = self:Me(), ts = now(), season = season,
+		[state:lower()] = { main } }, gate())
+	if not event then return nil, why end
+	emit("NIGHT_LINEUP_CHANGED", night, event)
+	return event
+end
+
+function NightController:Bench(name) return self:SetState(name, "BENCH") end
+
+-- Takes a member off the bench: back in the raid when they are in the group, absent otherwise.
+function NightController:Unbench(name)
+	local inGroup = ns.Group and ns.Group.Snapshot().members[ns.GuildRanks.FullName(name) or name]
+	return self:SetState(name, inGroup and "RAID" or "ABSENT")
+end
+
+-- Reads the raid group (`snapshot` from Adapters/Group.lua, read now when nil) and writes the lineup changes into the open
+-- night. Returns the LINEUP_CHANGED event, or nil and a code: "NO_NIGHT_OPEN", "NOT_RUNNER", "NOT_IN_RAID",
+-- "NO_CHANGE", or a permission / ledger code.
+function NightController:Sync(snapshot)
+	local L, season = writer(self)
+	if not L then return nil, season end
+	local night = ns.Nights.Current(L, season)
+	if not night then return nil, "NO_NIGHT_OPEN" end
+	if not self:IsRunner(night) then return nil, "NOT_RUNNER" end
+	snapshot = snapshot or ns.Group.Snapshot()
+	if not snapshot.inRaid then return nil, "NOT_IN_RAID" end
+
+	local rs = ns.Roster.State(L, season)
+	local present, unknown = {}, 0
+	for name in pairs(snapshot.members) do
+		local main = mainOf(rs, name)
+		if main then present[main] = true else unknown = unknown + 1 end
+	end
+	local before = self.group[night.id]
+	local states = ns.Nights.Lineup(L, night.id)
+	local draft = { author = self:Me(), ts = now(), season = season, raid = {}, absent = {} }
+	for main in pairs(present) do
+		local s = states[main]
+		if s ~= "RAID" then
+			-- a benched member who is in the group stays benched until they join again (before == nil: after a /reload or
+			-- the first read, nobody has "just joined")
+			if not (s == "BENCH" and (before == nil or before[main])) then draft.raid[#draft.raid + 1] = main end
+		end
+	end
+	if snapshot.complete then
+		for main, s in pairs(states) do
+			if s == "RAID" and not present[main] then draft.absent[#draft.absent + 1] = main end
+		end
+		self.group[night.id] = present
+	end
+	local event, why = ns.Nights.SetLineup(L, draft, gate())
+	if not event then return nil, why end
+	log("debug", "LINEUP", #(event.payload.raid or {}), #(event.payload.bench or {}), #(event.payload.absent or {}), unknown)
+	emit("NIGHT_LINEUP_CHANGED", night, event)
+	return event
+end
+
+-- "GROUP_SCANNED": the lineup follows the group while a night is open and this client runs it.
+function NightController:OnGroup(snapshot)
+	local night = self:Current()
+	if night and self:IsRunner(night) then self:Sync(snapshot) end
+end
+
+---------------------------------------------------------------------------------------------------------------------
+-- Boss kills
+
+-- "ENCOUNTER_ENDED": a kill (success) inside the night's instance is recorded, with the lineup read just before it.
+-- Returns the ENCOUNTER_KILLED event, or nil and a code ("NOT_A_KILL", "NO_NIGHT_OPEN", "NOT_RUNNER",
+-- "OTHER_INSTANCE", "ALREADY_KILLED", a permission or ledger code).
+function NightController:OnEncounterEnd(info)
+	if type(info) ~= "table" or not info.success then return nil, "NOT_A_KILL" end
+	local L, season = writer(self)
+	if not L then return nil, season end
+	local night = ns.Nights.Current(L, season)
+	if not night then return nil, "NO_NIGHT_OPEN" end
+	if not self:IsRunner(night) then return nil, "NOT_RUNNER" end
+	local inst = ns.Compat.Encounter.Instance()
+	local instanceID = night.instanceID
+	if inst and inst.instanceID then
+		if inst.instanceID ~= night.instanceID then
+			log("info", "OTHER_INSTANCE")
+			return nil, "OTHER_INSTANCE"
+		end
+		instanceID = inst.instanceID
+	end
+	self:Sync()   -- the lineup of the kill: the group as it is now, before the kill is written
+	local ts = now()
+	local event, why = ns.Nights.Kill(L, { author = self:Me(), ts = ts, season = season, encounterID = info.encounterID,
+		difficulty = info.difficultyID, size = info.groupSize, time = ts, date = today(), instanceID = instanceID }, gate())
+	if not event then
+		if why ~= "ALREADY_KILLED" then log("warn", "KILL_REFUSED", ns.Log and ns.Log.Plain(why)) end
+		return nil, why
+	end
+	log("info", "KILL", info.encounterID)
+	emit("NIGHT_ENCOUNTER_RECORDED", night, event)
+	return event
+end
+
+---------------------------------------------------------------------------------------------------------------------
+-- What the windows read
+
+-- The open night's lineup lists { raid, bench, absent }, or nil without an open night.
+function NightController:Lineup()
+	local L, s = self:Ledger(), self:Season()
+	local night = L and s and ns.Nights.Current(L, s.id)
+	if not night then return nil end
+	return ns.Nights.Lists(ns.Nights.Lineup(L, night.id)), night
+end
+
+-- The attendance per boss of the open season (or of one night, opts.night): only for who holds `view.attendance`
+-- (officers by default, §6). Returns the Nights.Attendance table, or nil and a code ("NO_SEASON", "PENDING",
+-- "RANK_TOO_LOW", ...).
+function NightController:Attendance(opts)
+	local L, s = self:Ledger(), self:Season()
+	if not L then return nil, "NOT_READY" end
+	if not s then return nil, "NO_SEASON" end
+	local ok, why = self:Can("view.attendance")
+	if not ok then return nil, why end
+	return ns.Nights.Attendance(L, s.id, opts)
+end
+
+---------------------------------------------------------------------------------------------------------------------
+-- Wiring
+
+if ns.Bus then
+	ns.Bus:On("GROUP_SCANNED", function(_, snapshot) NightController:OnGroup(snapshot) end, NightController)
+	ns.Bus:On("ENCOUNTER_ENDED", function(_, info) NightController:OnEncounterEnd(info) end, NightController)
+	ns.Bus:On("GUILD_KEY_CHANGED", function() NightController.ledger, NightController.group = nil, {} end, NightController)
+end
+NightController.group = {}
+
+if ns.addon then
+	ns.addon.NightController = NightController   -- also reachable from tests
+	if ns.addon.AddDebugSection then
+		ns.addon:AddDebugSection("Nights", function()
+			local night = NightController:Current()
+			return { ("Nights: %s"):format(night and ("open, " .. tostring(night.size) .. " players") or "none open") }   -- nolocale (debug output)
+		end)
+	end
+end

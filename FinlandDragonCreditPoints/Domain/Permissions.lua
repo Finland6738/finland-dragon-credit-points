@@ -70,6 +70,7 @@ Permissions.EVENT_PERMISSION = {
 	ROSTER_CHANGED = "roster.manage",
 	NIGHT_OPENED = "night.run",
 	NIGHT_CLOSED = "night.run",
+	LINEUP_CHANGED = "night.run",
 	ENCOUNTER_KILLED = "night.run",
 	PROGRESS_SET = "night.run",
 	DROP_SEEN = "night.run",

@@ -51,6 +51,7 @@ Ledger.TYPES = {
 	MEMBER_LINKED_ALT = { v = 1 },
 	NIGHT_OPENED = { v = 1 },
 	NIGHT_CLOSED = { v = 1 },
+	LINEUP_CHANGED = { v = 1 },
 	ROSTER_CHANGED = { v = 1 },
 	ENCOUNTER_KILLED = { v = 1 },
 	PROGRESS_SET = { v = 1 },

@@ -344,6 +344,7 @@ The addon reads ranks from the guild roster, by their position, never by their n
 | `MEMBER_LINKED_ALT` | Alt linked to a main |
 | `NIGHT_OPENED` | Night opened |
 | `NIGHT_CLOSED` | Night closed |
+| `LINEUP_CHANGED` | Lineup changed |
 | `ROSTER_CHANGED` | Roster changed |
 | `ENCOUNTER_KILLED` | Boss killed |
 | `PROGRESS_SET` | Progress set by hand |

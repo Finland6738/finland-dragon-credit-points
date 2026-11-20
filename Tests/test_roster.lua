@@ -80,7 +80,7 @@ end
 
 local function night(L, ts)
 	return assert(Lg().Append(L, { author = OFFICER, ts = ts, season = "S1", type = "NIGHT_OPENED",
-		payload = { instanceID = 409, size = 40, difficulty = "normal" } }))
+		payload = { date = "2026-11-12", instanceID = 409, size = 40, difficulty = "normal" } }))
 end
 
 local function shuffled(list, seed)
