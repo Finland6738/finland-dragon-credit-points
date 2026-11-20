@@ -24,3 +24,8 @@ Core\Compat.lua
 Core\Config.lua
 Net\Codec.lua
 Net\Transport.lua
+UI\Assets.lua
+UI\Theme.lua
+UI\Widgets.lua
+UI\MainWindow.lua
+UI\Minimap.lua

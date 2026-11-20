@@ -28,8 +28,40 @@ end
 -- The commands in help order; later steps add theirs here.
 FDCP.commands = {
 	{ name = "help", helpKey = "HELP_HELP", handler = function(self) self:PrintHelp() end },
+	{ name = "toggle", helpKey = "HELP_TOGGLE", handler = function(self) self:ToggleWindow() end },
+	{ name = "theme", helpKey = "HELP_THEME", handler = function(self, input) self:ThemeCommand(input) end },
 	{ name = "language", helpKey = "HELP_LANGUAGE", handler = function(self, input) self:LanguageCommand(input) end },
 }
+
+-- Opens or closes the main window (UI/MainWindow.lua); a client without the UI files prints the help instead.
+function FDCP:ToggleWindow()
+	if ns.MainWindow then ns.MainWindow:Toggle() else self:PrintHelp() end
+end
+
+-- /fdcp theme [name]: shows or sets the theme (applied at once, no /reload).
+function FDCP:ThemeCommand(input)
+	local Theme = ns.Theme
+	if not Theme then return end
+	local list = table.concat(Theme.List(), ", ")
+	local _, arg = self:GetArgs(input or "", 2)
+	if not arg or arg == "" then
+		self:Print(L["THEME_CURRENT"]:format(Theme.Name(Theme.Current()), list))
+		return
+	end
+	arg = arg:lower()
+	if not Theme.Has(arg) then
+		self:Print(L["THEME_UNKNOWN"]:format(arg, list))
+		return
+	end
+	local ok, err = Theme.Set(arg)
+	if ok then
+		self:Print(L["THEME_SET"]:format(Theme.Name(arg)))
+	elseif err == "READ_ONLY" then
+		self:Print(L["LANGUAGE_READ_ONLY"])
+	else
+		self:Print(L["THEME_UNKNOWN"]:format(arg, list))
+	end
+end
 
 -- Modules add their lines to /fdcp debug: AddDebugSection("Transport", function() return { "line", ... } end).
 FDCP.debugSections = {}
@@ -80,8 +112,11 @@ end
 
 function FDCP:OnSlashCommand(input)
 	local cmd = (self:GetArgs(input or "", 1) or ""):lower()
-	if cmd == "" or cmd == "help" then
-		return self:PrintHelp()   -- until the window exists (M1-8) a bare /fdcp shows the help
+	if cmd == "" then
+		return self:ToggleWindow()
+	end
+	if cmd == "help" then
+		return self:PrintHelp()
 	end
 	for _, c in ipairs(self.commands) do
 		if c.name == cmd then
@@ -95,14 +130,15 @@ end
 function FDCP:OnInitialize()
 	self:RegisterChatCommand("fdcp", "OnSlashCommand")
 	if ns.Config then ns.Config:Setup() end   -- SavedVariables are loaded by now
+	if ns.Minimap then ns.Minimap:Setup() end
 	if not self:IsForever() then
 		self:Print(L["WARN_NOT_FOREVER"])   -- OnInitialize runs once per session
 	end
 end
 
--- AddOn Compartment entry points (globals named in the TOC). The window arrives in M1-8: until then they show help.
+-- AddOn Compartment entry points (globals named in the TOC): a click toggles the main window.
 function FinlandDragonCreditPoints_OnAddonCompartmentClick()
-	FDCP:PrintHelp()
+	FDCP:ToggleWindow()
 end
 
 function FinlandDragonCreditPoints_OnAddonCompartmentEnter(_, menuButtonFrame)

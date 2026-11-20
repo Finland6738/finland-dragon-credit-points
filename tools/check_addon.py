@@ -100,7 +100,37 @@ def check_toc(name, problems):
     return meta, files
 
 
+def check_assets(problems):
+    """UI/Assets.lua is the one table of texture and font files: every path in it exists in Media/ and every file of
+    Media/ (except the licence texts of Media/Fonts) is listed (M1-7)."""
+    table = os.path.join(ADDON, "UI", "Assets.lua")
+    media = os.path.join(ADDON, "Media")
+    if not os.path.isfile(table):
+        return   # the design phase has no UI yet
+    with open(table, encoding="utf-8") as f:
+        text = f.read()
+    listed = {}
+    for line in text.splitlines():
+        m = re.search(r'(MEDIA|FONTS)\s*\.\.\s*"([^"]+\.(?:tga|ttf))"', line)
+        if m:
+            listed[("Fonts/" if m.group(1) == "FONTS" else "") + m.group(2)] = True
+    for rel in listed:
+        if not os.path.isfile(os.path.join(media, *rel.split("/"))):
+            problems.append(f"UI/Assets.lua lists a missing file: Media/{rel}")
+    for folder, _, names in os.walk(media):
+        for name in names:
+            rel = os.path.relpath(os.path.join(folder, name), media).replace(os.sep, "/")
+            if rel.endswith("-OFL.txt") and rel.startswith("Fonts/"):
+                continue
+            if rel not in listed:
+                problems.append(f"Media/{rel} is not listed in UI/Assets.lua")
+    for family in ("Outfit", "JetBrainsMono", "Orbitron"):
+        if not os.path.isfile(os.path.join(media, "Fonts", family + "-OFL.txt")):
+            problems.append(f"Media/Fonts/{family}-OFL.txt (the licence) is missing")
+
+
 def check(problems):
+    check_assets(problems)
     results = [check_toc(name, problems) for name in TOCS]
     if all(results):
         (meta_a, files_a), (meta_b, files_b) = results

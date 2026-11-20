@@ -2,6 +2,10 @@
 
 > **Anteprime di progetto, non screenshot.** La finestra non è ancora costruita. Queste immagini mostrano come è progettata, nello stile della pagina WoW Forever del sito della community. Sono disegnate dalla specifica con nomi inventati e nulla è stato provato in gioco. [English](Interface-Tour)
 
+## Cosa esiste ora
+
+La finestra è costruita: la aprono `/fdcp`, il pulsante della minimappa (il logo della gilda) o la voce nell'AddOn Compartment. Ha la barra del titolo, le sei schede qui sotto, i **temi** (Nebula, Aurora, Drago: `/fdcp theme`) e ogni scheda è per ora una **pagina vuota** che le versioni successive riempiono. Si trascina dalla barra del titolo, si ridimensiona dall'angolo in basso a destra (non sotto 900 × 560) e ricorda dove stava per ogni personaggio; **Esc** la chiude. I font sono Outfit, JetBrains Mono e Orbitron, inclusi nell'addon (font liberi, SIL Open Font License); se uno non si carica si usa il font del gioco. Le immagini qui sotto sono ancora anteprime di progetto: la finestra vera non è stata ancora vista in gioco.
+
 ## Una finestra, sei schede
 
 `/fdcp` (o il pulsante della minimappa) apre una sola finestra. La barra del titolo mostra il logo della gilda, la season, la tua fazione e se c'è una serata aperta. Sotto ci sono le schede, come sul sito della community. Vedi solo le schede che il tuo rango di gilda può usare.

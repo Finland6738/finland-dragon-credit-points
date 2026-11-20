@@ -2,6 +2,10 @@
 
 > **Design previews, not screenshots.** The window is not built yet: these images show how it is planned, in the style of the guild community site's WoW Forever page. They are drawn from the design specification with invented names, and nothing has run in the game. The previews are in Italian, the guild's language. [Italiano](Interface-Tour-it)
 
+## What exists now
+
+The window itself is built: `/fdcp`, the minimap button (the guild logo) or the AddOn Compartment entry opens it. It has the title bar, the six tabs below, **themes** (Nebula, Aurora, Drago: `/fdcp theme`), and every tab is still an **empty page** that later versions fill in. You can drag it by the title bar, resize it from the corner grip (not below 900 × 560), and it remembers where it was for each character; **Esc** closes it. The fonts are Outfit, JetBrains Mono and Orbitron, shipped with the addon (free fonts, SIL Open Font License); if one cannot load, the game's own font is used. The images below are still design previews: the real window has not been seen in the game yet.
+
 ## One window, six tabs
 
 `/fdcp` (or the minimap button) opens one window. Its title bar shows the guild logo, the season and your faction, and whether a raid night is open. Below it are tabs like the ones on the community site. You only see the tabs your guild rank can use.

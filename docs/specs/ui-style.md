@@ -96,6 +96,9 @@ colori e nessun file è legato a un tema. Ogni regione tinta si registra in `The
 cambio di tema la ricolora senza `/reload`. Le API citate sono state controllate nel dump di Forever
 (`../WoW-Addons/docs/api.json`); quelle di Blizzard scritte in Lua/XML (ScrollBox, template) non sono nel dump e si
 provano in gioco con un ripiego.
+Dal passo M1-7 esistono `UI/Assets.lua` (la tabella unica di texture e font), `UI/Theme.lua` (token, registro, font,
+`Px()`, forme 9-slice), `UI/Widgets.lua` (Button, Card, Badge, Tabs, Segmented, TitleBar, Dialog) e `UI/MainWindow.lua`;
+le texture le genera `tools/make_media.py`.
 
 | Componente (sito) | Anatomia sul sito | In gioco |
 |---|---|---|
@@ -134,6 +137,13 @@ provano in gioco con un ripiego.
   - prima di creare il sottoinsieme si legge il `Reserved Font Name` di ogni `OFL.txt`: se c'è, si spedisce il file
     intero e non modificato;
   - `FinlandDragonCreditPoints/Media/Fonts/` con un `OFL.txt` per famiglia e la riga di credito nel README.
+- **Verifica fatta in M1-7**: Outfit e JetBrains Mono non dichiarano un Reserved Font Name; Orbitron sì
+  (`Reserved Font Name: "Orbitron"`), quindi spedisce **intero e non modificato**, nella versione Bold dell'autore
+  originale (`theleagueof/orbitron`, 52 KB), con il suo `OFL.txt`. Copre le lettere accentate italiane (àèéìòùÀÈÉÌÒÙ)
+  ma non il punto mediano `·` né le frecce: in Orbitron si scrive solo il titolo in maiuscolo. I tre file di Outfit
+  (Regular, Medium, SemiBold) e i due di JetBrains Mono (Regular, Medium) sono istanze statiche tagliate dai font
+  variabili di Google Fonts con `tools/make_fonts.py` e ridotte al sottoinsieme latino (40-58 KB ciascuno); coprono
+  tutti gli accenti. Cartella: `FinlandDragonCreditPoints/Media/Fonts/`, un `*-OFL.txt` per famiglia.
 - I file arrivano in **M1-7**, con la verifica di licenza e glifi. Un font nuovo viene letto solo al riavvio del
   client, non dopo `/reload`: lo dice il manuale.
 - **Ripiego** sempre attivo: `SetFont` restituisce un esito; se fallisce si usa il font del gioco

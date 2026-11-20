@@ -36,6 +36,11 @@ Config.defaults = {
 		guildLanguage = "enUS",   -- language of the texts sent to everyone (M1-5)
 		rollSeconds = 30,
 		debug = false,
+		theme = "nebula",       -- "nebula" | "aurora" | "drago" (UI/Theme.lua)
+		fontSource = "addon",   -- "addon" (Media/Fonts) | "game" (the game's fonts)
+		effects = true,         -- glows and shadows
+		animations = true,      -- transitions of 120-320 ms
+		minimap = { hide = false },   -- LibDBIcon keeps its position here
 	},
 }
 
@@ -44,6 +49,10 @@ Config.validators = {
 	guildLanguage = { type = "string", check = function(v) return ns.Locale == nil or ns.Locale.Has(v) end },
 	rollSeconds = { type = "number", min = 5, max = 300 },
 	debug = { type = "boolean" },
+	theme = { type = "string", check = function(v) return ns.Theme == nil or ns.Theme.Has(v) end },
+	fontSource = { type = "string", values = { addon = true, game = true } },
+	effects = { type = "boolean" },
+	animations = { type = "boolean" },
 }
 
 -- Runs the steps from `from` to `to` on `global`. A failing step stops there and leaves the version at the last good

@@ -55,8 +55,11 @@ describe("slash commands", function()
 		for _, c in ipairs(FDCP.commands) do contains(text, "/fdcp " .. c.name) end
 	end)
 
-	it("a bare /fdcp shows the help until the window exists", function()
+	it("a bare /fdcp toggles the main window; /fdcp help shows the help", function()
 		truthy(Mock.Slash("/fdcp"))
+		truthy(FDCP.MainWindow:IsShown())
+		eq(#Mock.PlainOutput(), 0, "the window opens without printing")
+		truthy(Mock.Slash("/fdcp help"))
 		contains(table.concat(Mock.PlainOutput(), "\n"), "Commands:")
 	end)
 
