@@ -1,7 +1,0 @@
-## What
-M0-4: probe checks for addon messages in raid (S4): `Comms.lua` with `/fdcpp ping|pingbig|burst`, sender results per context (`Enum.SendAddonMessageResult`, lockdown APIs), receiver stats per run (count, range, losses, order, delays), `S4a`-`S4e` incl. the CBOR + Deflate + Base64 round trip. Procedure EN+IT, results template rows, CHANGELOG, offline stub test in `check_probe.py`.
-
-## Not verified in the real client
-Everything: delivery between two clients in each context, lockdown timings, throttling, delays, codec round trip. The "in game" checkbox of S4 stays unticked.
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
