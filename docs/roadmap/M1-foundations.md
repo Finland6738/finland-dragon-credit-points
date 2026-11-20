@@ -76,7 +76,8 @@ Until the spike results arrive, M1 follows plan A and keeps every unverified API
 - Analysis: §8.4, §11 risk 3
 - Scope: `Net/Codec.lua` (`<version>|<TYPE>|<payload>`, CBOR with optional Deflate in Base64 through `C_EncodingUtil`, unknown types and newer versions ignored), `Net/Transport.lua` adapted from Accord for `RAID`, `GUILD`, `OFFICER`, `WHISPER` with the prefix `FDCP1` (priorities, throttling, the queue that waits out lockdown and restrictions and `IsEncounterInProgress`, retries, the queue saved at logout and restored at login, own echoes ignored).
 - Done when:
-  - [ ] Messages survive lockdown, encounters and `/reload` in the mock; unknown versions are ignored.
+  - [x] Messages survive lockdown, encounters and `/reload` in the mock; unknown versions are ignored.
+  - [ ] A message sent in a real raid reaches the other members, and the queue waits out an encounter. *(in game)*
 - Tests: `Tests/test_codec.lua`, `Tests/test_transport.lua`.
 - Docs: a protocol note in `docs/ANALISI.md` §8.4 if anything changes; CHANGELOG.
 - Real client: delivery in raid (spike S4).

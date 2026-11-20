@@ -1381,6 +1381,7 @@ if FDCP then
 		handler = function(self)
 			Compat:Probe()
 			for _, line in ipairs(Compat:DebugLines()) do self:Print(line) end
+			for _, line in ipairs(self:DebugSectionLines()) do self:Print(line) end   -- the lines of the other modules
 		end,
 	}
 

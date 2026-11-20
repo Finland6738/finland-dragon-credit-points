@@ -31,6 +31,24 @@ FDCP.commands = {
 	{ name = "language", helpKey = "HELP_LANGUAGE", handler = function(self, input) self:LanguageCommand(input) end },
 }
 
+-- Modules add their lines to /fdcp debug: AddDebugSection("Transport", function() return { "line", ... } end).
+FDCP.debugSections = {}
+function FDCP:AddDebugSection(name, fn)
+	self.debugSections[#self.debugSections + 1] = { name = name, fn = fn }
+end
+
+-- The lines of every section, in the order the modules registered them; a failing section is skipped.
+function FDCP:DebugSectionLines()
+	local lines = {}
+	for _, section in ipairs(self.debugSections) do
+		local ok, result = pcall(section.fn)
+		if ok and type(result) == "table" then
+			for _, line in ipairs(result) do lines[#lines + 1] = line end
+		end
+	end
+	return lines
+end
+
 function FDCP:PrintHelp()
 	self:Print(L["HELP_HEADER"])
 	for _, c in ipairs(self.commands) do

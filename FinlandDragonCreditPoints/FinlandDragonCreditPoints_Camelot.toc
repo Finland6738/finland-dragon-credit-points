@@ -22,3 +22,5 @@ Core\Log.lua
 Core\Bus.lua
 Core\Compat.lua
 Core\Config.lua
+Net\Codec.lua
+Net\Transport.lua
