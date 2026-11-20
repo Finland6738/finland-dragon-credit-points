@@ -49,7 +49,7 @@ Everything in this milestone is pure Lua in `FinlandDragonCreditPoints/Domain/`,
 - Analysis: §2, §3.1, §3.5, §6 (pool, two mains per faction)
 - Scope: `Domain/Season.lua` (open/close, the pack of instances 10/20/40 with one credit table for Normal and Veteran, `startCredits`), `Domain/Members.lua` (main only, alts linked to a main, one main per faction), late joiners (`average` | `median` | `min` | `zero` | `fixed`, rounding, base "members with at least N nights") written as `MEMBER_JOINED{initialCredits}` so the value stays stable.
 - Done when:
-  - [ ] A late joiner gets the floor of the roster average and keeps it when the average changes later.
+  - [x] A late joiner gets the floor of the roster average and keeps it when the average changes later.
 - Tests: `Tests/test_season.lua`.
 - Docs: CHANGELOG.
 - Real client: nothing.

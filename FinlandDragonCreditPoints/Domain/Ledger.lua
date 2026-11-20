@@ -142,9 +142,39 @@ end
 
 local CHECKS = {}
 
+-- The factions a member may declare (the client's UnitFactionGroup tokens).
+Ledger.FACTIONS = { Horde = true, Alliance = true }
+-- The raid sizes of a season's pack (§2, §6).
+Ledger.RAID_SIZES = { [10] = true, [20] = true, [40] = true }
+
 CHECKS.MEMBER_JOINED = function(p)
 	if not isName(p.member) then return "member" end
 	if p.initialCredits ~= nil and not isNum(p.initialCredits) then return "initialCredits" end
+	if p.faction ~= nil and not Ledger.FACTIONS[p.faction] then return "faction" end
+	if p.rule ~= nil and not isCode(p.rule) then return "rule" end
+	if p.basis ~= nil and (not isInt(p.basis) or p.basis < 0) then return "basis" end
+end
+
+CHECKS.MEMBER_LINKED_ALT = function(p)
+	if not isName(p.alt) then return "alt" end
+	if not isName(p.main) then return "main" end
+	if p.alt == p.main then return "alt" end
+	if p.faction ~= nil and not Ledger.FACTIONS[p.faction] then return "faction" end
+end
+
+-- SEASON_OPENED{label?, instances = {{id, size}, ...}, startCredits}: the pack of raids of the season (one credit
+-- table for every instance, size and difficulty). `label` is the name the GM gives the season (data, not text).
+CHECKS.SEASON_OPENED = function(p)
+	if p.label ~= nil and (type(p.label) ~= "string" or p.label == "") then return "label" end
+	if type(p.instances) ~= "table" or #p.instances == 0 then return "instances" end
+	local seen = {}
+	for i, inst in pairs(p.instances) do
+		if not isInt(i) or i < 1 or i > #p.instances then return "instances" end
+		if type(inst) ~= "table" or not isInt(inst.id) or inst.id <= 0 or seen[inst.id] then return "instances" end
+		if not Ledger.RAID_SIZES[inst.size] then return "instances" end
+		seen[inst.id] = true
+	end
+	if not isNum(p.startCredits) or p.startCredits < 0 then return "startCredits" end
 end
 
 CHECKS.ITEM_AWARDED = function(p)

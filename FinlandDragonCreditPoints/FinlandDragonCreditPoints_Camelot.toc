@@ -28,6 +28,8 @@ Domain\Classifier.lua
 Domain\Pricing.lua
 Domain\Priority.lua
 Domain\Ledger.lua
+Domain\Season.lua
+Domain\Members.lua
 UI\Assets.lua
 UI\Theme.lua
 UI\Widgets.lua

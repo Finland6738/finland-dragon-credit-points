@@ -253,6 +253,8 @@ con 76), spallina (crediti 0, 2, 3; roll 34, 90, 99: vince Aurel con 34), mantel
 base di calcolo = "membri con almeno N serate nella season" (preset N = 1). Il valore iniziale viene scritto
 nel registro come evento `MEMBER_JOINED{initialCredits}`: resta stabile anche se la media cambia dopo.
 
+**Come è fatto (M2-4).** `Domain/Members.lua`: `MEMBER_JOINED{member, faction?, initialCredits, rule, basis?}`, dove `rule` è il codice del calcolo (`START`, `AVERAGE`, `MEDIAN`, `MIN`, `ZERO`, `FIXED`, `EMPTY_BASIS`) e `basis` quanti membri ha usato; arrotondamento a 0-2 decimali (preset 0). Default scelti dove l'analisi taceva: si è "nuovo arrivato" quando la season ha già almeno una serata ufficiale (`NIGHT_OPENED`), prima si parte da `season.startCredits`; le serate per membro le dà la lineup (M3), senza quel dato la base è tutto il pool; se il nuovo arrivato dichiara una fazione la base sono i membri di quella fazione (o senza fazione); base vuota = `startCredits`. `Domain/Season.lua`: `SEASON_OPENED{label?, instances = {{id, size}}, startCredits}` e `SEASON_CLOSED`; una sola season aperta alla volta, un id non si riusa; `startCredits` resta scritto nell'evento.
+
 ### 3.6 Council
 
 - **Chi è**: rango di gilda ≤ X **e** presente nel raid (preset), oppure lista esplicita di personaggi.
@@ -507,6 +509,7 @@ crediti.
 
   Le segnalazioni del council (§5.2) guardano **solo la MS1**: "Upgrade ignorato" scatta quando qualcuno passa
   su un upgrade grande per la sua main-spec, non per la MS2.
+- **Come è fatto (M2-4).** Alt collegati con `MEMBER_LINKED_ALT{alt, main, faction?}`, validi per la season come la dichiarazione; un main non è mai un alt, main e alt hanno la stessa fazione (`FACTION_MISMATCH`), quindi chi gioca su due fazioni ha due main con crediti separati. Dopo una fusione di registri contano il primo `MEMBER_JOINED` e il primo collegamento (ordine canonico) e un membro vince su un collegamento. Fazione = il token del client (`Horde` / `Alliance`); il nome della fazione sul sito (`Nebulah` / `Nebulaa`) lo mette l'esportazione (M6-4).
 - **Pianificazione della serata**: dall'evento di calendario (se esiste) o creata a mano. L'addon propone chi
   mettere in panchina con criteri configurabili: meno panchine nella season, vincoli di ruolo (minimo tank e
   healer), preferenze dichiarate. Il ML decide.
