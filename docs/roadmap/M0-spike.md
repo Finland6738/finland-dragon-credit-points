@@ -68,7 +68,7 @@ The probe addon `FDCP_Probe` lives in `tools/probe/`, is **never distributed**, 
 - Scope: `C_ChatInfo.RegisterAddonMessagePrefix("FDCPP")`; `/fdcpp ping raid|guild|officer|whisper` sends numbered messages and records send results (`Enum.SendAddonMessageResult`), `InChatMessagingLockdown()`, `AreOutgoingAddonChatMessagesRestricted()` and delivery on a second client (sequence numbers, delays, losses) outside instances, between bosses, during an encounter and after `ENCOUNTER_END`; a 255-byte payload and a burst of 30 messages for throttling; `C_EncodingUtil` CBOR + Deflate + Base64 round trip.
 - Done when:
   - [ ] S4: `RAID` messages pass between bosses and after `ENCOUNTER_END`; lockdown timings known. *(in game)*
-  - [ ] Offline: checks and procedure section exist; `check_docs.py` passes.
+  - [x] Offline: checks and procedure section exist; `check_docs.py` passes.
 - Docs: `docs/spike/README.md` S4, CHANGELOG.
 - Real client: everything, with two clients (plan B: queue that waits, sessions only after encounters).
 - Suggested model/effort: `sonnet` / medium

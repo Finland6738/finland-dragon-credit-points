@@ -21,5 +21,10 @@ Status / Stato: **probe ready, results pending owner run**.
 | `S3c` | S3 | | | Others' rolls readable, not secret, after `ENCOUNTER_END` and between bosses (plan B: M4-3) |
 | `S3d` | S3 | | | Restriction state and encounter timeline |
 | `S3e` | S3 | | | `CHAT_MSG_LOOT` matched by the `LOOT_ITEM` patterns |
+| `S4a` | S4 | | | Prefix `FDCPP` registers; lockdown APIs exist |
+| `S4b` | S4 | | | Last send (`/fdcpp ping`, `pingbig`, `burst`) |
+| `S4c` | S4 | | | `RAID` sends succeed between bosses and after `ENCOUNTER_END`; lockdown timings (plan B: wait queue, M2-3) |
+| `S4d` | S4 | | | Second client: delivery, losses, order, delays |
+| `S4e` | S4 | | | CBOR + Deflate + Base64 round trip, fits 255 bytes |
 
 Rows for S1 … S8 are added with the checks (M0-2 … M0-6). / Le righe per S1 … S8 si aggiungono con i check.

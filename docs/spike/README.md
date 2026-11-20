@@ -4,7 +4,7 @@ The probe addon `FDCP_Probe` answers, in the real WoW Forever client, the questi
 
 La sonda `FDCP_Probe` risponde, nel client reale di WoW Forever, alle domande a cui l'analisi non sa rispondere offline. **Non viene mai distribuita**, protegge ogni chiamata con `pcall`, non confronta mai un valore secret, usa il prefisso di test `FDCPP` (mai `FDCP1`) e non stampa né salva mai nomi di giocatori o di gilda (solo conteggi e forme).
 
-> Status / Stato: **probe ready, results pending owner run** / **sonda pronta, risultati in attesa dell'esecuzione del proprietario**. The skeleton (M0-1) has the baseline checks `B1`–`B4`; the checks of the spike areas S1–S8 arrive with M0-2 … M0-6 (S1–S3 are in), and M0-6 finalises this procedure.
+> Status / Stato: **probe ready, results pending owner run** / **sonda pronta, risultati in attesa dell'esecuzione del proprietario**. The skeleton (M0-1) has the baseline checks `B1`–`B4`; the checks of the spike areas S1–S8 arrive with M0-2 … M0-6 (S1–S4 are in), and M0-6 finalises this procedure.
 
 ## 1. Install / Installazione
 
@@ -28,6 +28,9 @@ La sonda `FDCP_Probe` risponde, nel client reale di WoW Forever, alle domande a 
 | `/fdcpp setml` | S1: tries to set the loot method to master loot with you as master looter (changes the group; raid leader only). / S1: prova a impostare il bottino su master loot con te come master looter (modifica il gruppo; solo capo raid). |
 | `/fdcpp give <slot> <candidate#>` | S2: calls `GiveMasterLoot` on a **test drop** and records the events. / S2: chiama `GiveMasterLoot` su un drop **di prova** e registra gli eventi. |
 | `/fdcpp roll` | S3: rolls 1-100 with `RandomRoll` and records whether the system messages come back readable. / S3: tira 1-100 con `RandomRoll` e registra se i messaggi di sistema tornano leggibili. |
+| `/fdcpp ping raid\|guild\|officer\|party [n]` / `ping whisper <name> [n]` | S4: sends `n` numbered messages (default 5) with prefix `FDCPP` and records the `Enum.SendAddonMessageResult` of each. / S4: invia `n` messaggi numerati (default 5) con prefisso `FDCPP` e registra l'`Enum.SendAddonMessageResult` di ciascuno. |
+| `/fdcpp pingbig <channel>` | S4: one message with a 255-byte payload. / S4: un messaggio con payload da 255 byte. |
+| `/fdcpp burst <channel>` | S4: a burst of 30 messages in one frame (throttling). / S4: una raffica di 30 messaggi in un frame (throttling). |
 | `/fdcpp export` | Opens a frame with every result (and the recorded events) as selected text: copy it with Ctrl+C. / Apre una finestra con tutti i risultati (e gli eventi registrati) come testo selezionato: copialo con Ctrl+C. |
 | `/fdcpp reset` | Clears results and events. / Cancella risultati ed eventi. |
 
@@ -89,6 +92,32 @@ Checks: `S3a` (the roll and loot patterns are built from the game globals `RANDO
 5. Dopo un'uccisione, raccogli un oggetto così arriva un `CHAT_MSG_LOOT`, poi `/fdcpp run S3e` e `/fdcpp run S3d`, poi `/fdcpp export` e riporta il testo.
 
 Plan B if negative: rolls read once the lockdown ends (M4-3). / Piano B se negativo: tiri letti a fine lockdown (M4-3).
+
+### S4 — Addon messages in raid (M0-4)
+
+Checks: `S4a` (prefix `FDCPP` registers; `C_ChatInfo.InChatMessagingLockdown` and `AreOutgoingAddonChatMessagesRestricted` exist), `S4b` (the last `/fdcpp ping`, `pingbig` or `burst`), `S4c` (the answer on the sender: send results per context and channel, lockdown states seen, messages received), `S4d` (the answer on the second client: per received run, how many arrived, the sequence range, losses, out-of-order count and delays in seconds), `S4e` (`C_EncodingUtil` CBOR + Deflate + Base64 round trip and whether the result fits in 255 bytes). Contexts are the same as S3: `outside`, `instance` (between bosses), `encounter`, `after` (10 seconds after `ENCOUNTER_END`). Payloads are `<run>|<seq>|<server time>|<padding>`; sender names and texts are never stored.
+
+**Procedure (English)**
+
+Needs two clients (A sends, B receives; both with the probe installed, both in the same raid group, B also a guild member for the guild test).
+
+1. Both: `/fdcpp run S4a` (should be `info` with `registered=true`).
+2. **Outside an instance**: A `/fdcpp ping raid`, then `/fdcpp ping guild`, `/fdcpp ping officer` (if allowed), `/fdcpp ping whisper <B>`. B: `/fdcpp run S4d`.
+3. **Inside the raid between bosses**: repeat `/fdcpp ping raid`, then `/fdcpp pingbig raid` (255 bytes) and `/fdcpp burst raid` (30 messages). B: `/fdcpp run S4d` (are all of them there, in order, how late?). A: `/fdcpp run S4c` (any `AddonMessageThrottle` or other result besides `Success`?).
+4. **During a boss fight** A `/fdcpp ping raid` once or twice (note the result) and B `/fdcpp run S4d` right after the kill. **Right after `ENCOUNTER_END`** (within 10 seconds) and again 30 seconds later, A `/fdcpp ping raid`; B `/fdcpp run S4d`. **S4 answers**: do `RAID` messages pass between bosses and after `ENCOUNTER_END`, and for how long is the lockdown on (compare the `lockdown=` / `restricted=` counters in `S4c` and the restriction timeline in `S4c`/`S3d`)?
+5. Swap the roles (B sends, A receives) once. Both: `/fdcpp run S4e`, then `/fdcpp export` and report the text.
+
+**Procedura (italiano)**
+
+Servono due client (A invia, B riceve; entrambi con la sonda installata, nello stesso gruppo raid, B anche nella gilda per la prova di gilda).
+
+1. Entrambi: `/fdcpp run S4a` (deve essere `info` con `registered=true`).
+2. **Fuori da un'istanza**: A `/fdcpp ping raid`, poi `/fdcpp ping guild`, `/fdcpp ping officer` (se consentito), `/fdcpp ping whisper <B>`. B: `/fdcpp run S4d`.
+3. **Dentro il raid tra un boss e l'altro**: ripeti `/fdcpp ping raid`, poi `/fdcpp pingbig raid` (255 byte) e `/fdcpp burst raid` (30 messaggi). B: `/fdcpp run S4d` (ci sono tutti, in ordine, con quale ritardo?). A: `/fdcpp run S4c` (compare `AddonMessageThrottle` o altro risultato oltre a `Success`?).
+4. **Durante un combattimento con un boss** A `/fdcpp ping raid` una o due volte (annota il risultato) e B `/fdcpp run S4d` subito dopo l'uccisione. **Subito dopo `ENCOUNTER_END`** (entro 10 secondi) e di nuovo dopo 30 secondi, A `/fdcpp ping raid`; B `/fdcpp run S4d`. **S4 risponde**: i messaggi `RAID` passano tra un boss e l'altro e dopo `ENCOUNTER_END`, e per quanto resta attivo il lockdown (confronta i contatori `lockdown=` / `restricted=` in `S4c` e la cronologia delle restrizioni in `S4c`/`S3d`)?
+5. Scambia i ruoli (B invia, A riceve) una volta. Entrambi: `/fdcpp run S4e`, poi `/fdcpp export` e riporta il testo.
+
+Plan B if negative: a send queue that waits out the lockdown, sessions opened only after encounters (M2-3, M4-3). / Piano B se negativo: coda di invio che attende la fine del lockdown, sessioni aperte solo dopo gli incontri (M2-3, M4-3).
 
 ### All areas / Tutte le aree
 

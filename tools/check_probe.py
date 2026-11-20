@@ -19,6 +19,52 @@ assert(not P.MatchFormat("%s rolls %d (%d-%d)", "not a roll"), "non-roll")
 """
 
 
+COMMS_TEST = """
+local P = { IsSecret = function() return false end, PREFIX = "FDCPP", AFTER_WINDOW = 10 }
+local db = {}
+P.DB = function() return db end
+P.Has = function() return true end
+P.Register = function(id) P[id] = true end
+P.Record = function(id, r, d) return { id = id, result = r, details = d } end
+local handler
+CreateFrame = function() return { SetScript = function(_, _, f) handler = f end, RegisterEvent = function() end } end
+Enum = { SendAddonMessageResult = { Success = 0, AddonMessageThrottle = 3 } }
+local sent = {}
+C_ChatInfo = { SendAddonMessage = function(pre, text, ch) sent[#sent + 1] = text; assert(#text <= 255); return 0 end,
+    InChatMessagingLockdown = function() return false end, AreOutgoingAddonChatMessagesRestricted = function() return false end }
+GetTime = function() return 1 end
+GetServerTime = function() return 100 end
+IsInInstance = function() return true end
+loadfile(...)("FDCP_Probe", P)
+local r = P.Ping("raid", 5)
+assert(r.result == "ok" and #sent == 5, "ping raid")
+P.PingBig("raid")
+assert(#sent[#sent] == 255, "big payload is 255 bytes")
+P.PingBurst("raid")
+assert(#sent == 36, "burst of 30")
+assert(db.comms.sent["instance.RAID.Success"] == 36, "send tally")
+handler(nil, "CHAT_MSG_ADDON", "FDCPP", "abcd|1|98|", "RAID")
+handler(nil, "CHAT_MSG_ADDON", "FDCPP", "abcd|3|98|", "RAID")
+handler(nil, "CHAT_MSG_ADDON", "OTHER", "abcd|3|98|", "RAID")
+local e = db.comms.runs.abcd
+assert(e.count == 2 and e.min == 1 and e.max == 3 and e.maxDelay == 2, "received run")
+"""
+
+
+def comms_test(lua):
+    """Offline test of the S4 sender and receiver (Comms.lua), run with a stub client."""
+    try:
+        fn = lua.eval("function(src, path) local l = loadstring or load; local ok, e = pcall(l(src), path);"
+                      " if ok then return '' end; return tostring(e) end")
+        err = fn(COMMS_TEST, str(DIR / "Comms.lua"))
+    except Exception as exc:  # noqa: BLE001
+        err = str(exc)
+    if err:
+        print(f"FAIL comms: {err}")
+        return 1
+    return 0
+
+
 def pattern_test(lua):
     """Offline test of the S3 pattern builder (Rolls.lua), run with a stub client."""
     try:
@@ -60,6 +106,7 @@ def main():
                 bad += 1
                 print(f"FAIL {t.name}: {line} not found")
     bad += pattern_test(lua)
+    bad += comms_test(lua)
     print(f"check_probe: {len(files)} Lua files, {len(tocs)} TOC files, {bad} problem(s)")
     return 1 if bad else 0
 
