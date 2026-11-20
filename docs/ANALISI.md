@@ -247,6 +247,8 @@ I tre esempi sono in `Tests/test_priority.lua`: anello (Aurel, Bryn, Corin a 0 c
 con 76), spallina (crediti 0, 2, 3; roll 34, 90, 99: vince Aurel con 34), mantello (tutti a 1 credito; Bryn e Corin
 88, Aurel 40: reroll solo fra Bryn e Corin, il roll di Aurel nel reroll è scartato, vince Corin).
 
+**Come è fatto (M2-7).** Il manuale (`docs/wiki/Loot-Rules.md` e `Loot-Rules-it.md`) riscrive §3 e i tre esempi per i giocatori, con i numeri di `Tests/test_priority.lua`. `Domain/Reasons.lua` associa a ogni codice neutro che il dominio emette (motivi, segnalazioni, roll scartati, origine del costo, regola del nuovo arrivato, motivi del ML, rifiuti, risposte, tipi di proposta, stati, tipi di evento, preset) la chiave `RC_<GRUPPO>_<CODICE>` di una frase nelle traduzioni; un codice vale solo nel suo gruppo (`NOT_PRESENT` è un roll scartato in uno e un'azione rifiutata in un altro). `Reasons.Text(gruppo, codice)` dà la frase nella lingua attiva, o il codice stesso se l'addon non lo conosce. La tabella della pagina del manuale è generata dalle stesse frasi.
+
 ### 3.5 Nuovi arrivati a season iniziata
 
 `members.lateJoin` = `average` | `median` | `min` | `zero` | `fixed`; arrotondamento `floor` | `round` | `ceil`;

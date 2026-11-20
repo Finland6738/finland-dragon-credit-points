@@ -12,10 +12,11 @@
 |---|---|
 | Install the addon | [[Installation|Installation]] |
 | Know the commands | [[Commands|Commands]] |
+| Know how credits, costs, rolls and ties work | [[Loot Rules|Loot-Rules]] |
 | See what the window will look like | [[Interface Tour|Interface-Tour]] |
 | Update the community site from the addon | [[Site Export|Site-Export]] |
 
-More pages (rolling for loot, the credits table, the master looter's guide, the council, settings) are added as the features are built.
+More pages (the credits table, the master looter's guide, the council, settings) are added as the features are built.
 
 ## For developers
 

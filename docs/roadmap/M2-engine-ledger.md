@@ -85,7 +85,7 @@ Everything in this milestone is pure Lua in `FinlandDragonCreditPoints/Domain/`,
 - Analysis: §3
 - Scope: wiki pages **Loot Rules** / **Regole del loot** (`Loot-Rules.md`, `Loot-Rules-it.md`): credits, costs per category, main-spec and off-spec, ties and rerolls, late joiners, legendaries and BoE, what the master looter and the council may change; with the three regulation examples, written from the engine's tests; a reason-code → sentence table in the locales so the same words appear in game.
 - Done when:
-  - [ ] Both wiki pages exist and are in the sidebar; every reason code has an English and Italian sentence.
+  - [x] Both wiki pages exist and are in the sidebar; every reason code has an English and Italian sentence.
 - Tests: locale check covers the reason codes.
 - Docs: wiki (EN + IT), README features, CHANGELOG.
 - Real client: nothing.

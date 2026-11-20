@@ -26,6 +26,7 @@ Net\Codec.lua
 Net\Transport.lua
 Domain\Classifier.lua
 Domain\Pricing.lua
+Domain\Reasons.lua
 Domain\Priority.lua
 Domain\Ledger.lua
 Domain\Season.lua
