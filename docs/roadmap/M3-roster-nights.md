@@ -10,7 +10,7 @@
 - Analysis: §3.9
 - Scope: `Adapters/GuildRanks.lua` (self is GM, rank index of a member, rank names and count, officer per the game), the asynchronous roster load (events needing a rank wait in a queue until the roster is known), rank reorder / deletion detected and reported to the GM, GM change; `App/PermissionService.lua` wiring `Domain/Permissions.lua` to live ranks.
 - Done when:
-  - [ ] Events wait while the roster loads and are accepted or refused once it arrives; a GM change transfers the config power.
+  - [x] Events wait while the roster loads and are accepted or refused once it arrives; a GM change transfers the config power.
 - Tests: `Tests/test_guild_ranks.lua` (mock roster).
 - Docs: CHANGELOG.
 - Real client: rank reading for GM, officer, member.

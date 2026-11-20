@@ -7,7 +7,7 @@ Rules:
   2. Every L["KEY"] used in the code has an English string (a missing one would show the key itself and hide the typo).
   3. Every English key is used somewhere in the code (its quoted name appears in a Lua file outside Locale/); a key that
      only a computed name reaches is declared with a comment `-- locale-key: NAME` next to the code.
-  4. No visible text is written in UI/ or Domain/: a string literal that is an argument of a text call (SetText, Print,
+  4. No visible text is written in UI/, App/ or Domain/: a string literal that is an argument of a text call (SetText, Print,
      Printf, AddLine, SendChatMessage...), a value of text/title/label/tooltip/desc, or that reads like a sentence (two
      words) fails. A line with `-- nolocale` is exempt (for example a debug-only token).
   The check also runs fixed cases of rule 4 on itself, so a broken checker is reported.
@@ -22,8 +22,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 NAME = "FinlandDragonCreditPoints"
 ADDON = os.path.join(ROOT, NAME)
 LOCALE_DIR = os.path.join(ADDON, "Locale")
-CODE_DIRS = ("Core", "Domain", "Adapters", "Net", "UI")
-TEXT_DIRS = ("Domain", "UI")
+CODE_DIRS = ("Core", "Domain", "Adapters", "App", "Net", "UI")
+TEXT_DIRS = ("Domain", "App", "UI")
 BASE = "enUS"
 TOCS = (NAME + ".toc", NAME + "_Camelot.toc")
 

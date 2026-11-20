@@ -30,4 +30,6 @@ The last lines of `/fdcp debug` describe the addon's messages to other players: 
 
 The `/fdcp debug` output also has two **UI lines**: the active theme, how many text styles use the addon's own fonts and how many fell back to the game's fonts, how many textures the client refused, and what the client answered to a few interface probes (ScrollBox lists, data providers, rounded 9-slice shapes, additive glow, the icon sheet, the size of one screen pixel and the UI scale). They help the author check the look in the game.
 
+A **Permissions** line says whether the guild roster has been read this session (`loaded` or `loading`), your guild rank by position (0 is the Guild Master) and how many events from other players wait for the roster.
+
 `/fdcp debug` never prints player names, guild names or item names, so you can paste its output in a bug report. It checks the client again each time you run it.

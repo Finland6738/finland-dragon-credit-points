@@ -180,6 +180,8 @@ Il motore non scrive mai frasi: registra codici brevi, e l'addon li trasforma ne
 
 ### Cambi dei ranghi di gilda
 
+L'addon legge i ranghi dal roster della gilda, per posizione e mai per nome. Dopo l'accesso aspetta il roster: finché non arriva, gli eventi degli altri giocatori che richiedono un rango aspettano e vengono controllati appena arriva, e i pulsanti che scrivono nel registro restano spenti. Quando il Guild Master riordina, elimina o aggiunge ranghi, riceve un messaggio in chat (di nuovo a ogni accesso finché la tabella dei permessi non è stata ricontrollata), con i permessi che puntano a un rango che non esiste più. Quando la gilda ha un nuovo Guild Master, il potere di cambiare le regole passa a lui appena il gioco lo mostra; le modifiche del Guild Master precedente restano valide. Entrambi i giocatori lo leggono in chat.
+
 | Code | Frase |
 |---|---|
 | `RENAMED` | Un rango di gilda è stato rinominato: nulla da fare. |

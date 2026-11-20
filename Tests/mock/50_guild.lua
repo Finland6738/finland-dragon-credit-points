@@ -2,7 +2,7 @@
 -- Mock client, part 6: the guild and its roster.
 --
 -- Imitates: IsInGuild, GetGuildInfo, GetNumGuildMembers, GetGuildRosterInfo, GetGuildRosterLastOnline, IsGuildLeader,
--- CanGuildInvite, C_GuildInfo.{IsGuildOfficer, GuildRoster, Invite, GuildControlGetRankFlags, GetGuildTabardInfo,
+-- CanGuildInvite, C_GuildInfo.{IsGuildOfficer, CanEditOfficerNote, GuildRoster, Invite, GuildControlGetRankFlags, GetGuildTabardInfo,
 -- GetMOTD, GetInfoText, MemberExistsByName, CanSpeakInGuildChat}.
 -- Dump files: ../WoW-Addons/docs/api/Guild-Social-Chat/C_GuildInfo.md; GetGuildInfo, GetNumGuildMembers,
 -- GetGuildRosterInfo, IsGuildLeader and IsInGuild are in api.json "globals"; GetGuildRosterLastOnline is not
@@ -16,6 +16,13 @@
 --                   members={ {name=, level=, class=, rank=<index>, online=, zone=, note=, lastOnline={y,m,d,h}} } }
 --   Mock.guild.Leave()          the character has no guild
 --   Mock.guild.SetMyRank(i)     changes the rank and fires PLAYER_GUILD_UPDATE and GUILD_ROSTER_UPDATE
+--   (M3-1) Mock.guild.Set{ ..., loading = true }: the roster is not there yet (GetNumGuildMembers 0, no rows, requests
+--   unanswered) until Mock.guild.Deliver(), as at login before the server sends it.
+--   Mock.guild.SetRank(name, i)  a member (or the player, by the player's name) moves to rank i (GUILD_ROSTER_UPDATE)
+--   Mock.guild.SetRankNames(names, remap)  the GM renames, reorders or deletes ranks: names = { [0] = ..., ... },
+--                                remap = { [old index] = new index } moves members (GUILD_RANKS_UPDATE, GUILD_ROSTER_UPDATE)
+--   Mock.guild.SetLeader(name)   the GM hands the guild to `name`; the old GM becomes rank 1
+--   Mock.guild.Remove(name)      a member leaves the guild
 --   Mock.guild.invites          names of the invites that went out (C_GuildInfo.Invite)
 --   Mock.guild.inviteReply      what the game answers to an invite: "ok" | "silent" | "offline" | "denied" | "inguild" | "blocked"
 -- The roster arrives asynchronously after C_GuildInfo.GuildRoster(), as in the client (GUILD_ROSTER_UPDATE on a later frame).
@@ -65,6 +72,7 @@ function Mock.guild.Set(config)
 	guild.officerRanks = config.officerRanks or 1
 	guild.motd, guild.info, guild.tabard = config.motd or "", config.info or "", config.tabard
 	guild.myProfessions, guild.myDiscord = config.myProfessions, config.myDiscord
+	guild.loading = config.loading or nil
 	for i, m in ipairs(config.members or {}) do
 		guild.members[#guild.members + 1] = {
 			name = m.name, level = m.level or 60, class = m.class or "WARRIOR", rank = m.rank or #guild.ranks,
@@ -87,6 +95,54 @@ function Mock.guild.SetMyRank(index)
 	guild.myRank = index
 	Mock.Fire("PLAYER_GUILD_UPDATE", "player")
 	Mock.Fire("GUILD_ROSTER_UPDATE")
+end
+
+function Mock.guild.Deliver()
+	guild.loading = nil
+	Mock.Fire("GUILD_ROSTER_UPDATE", false)
+end
+
+-- The roster entry of `name`: the member table (nil for the player), whether it is the player, its position.
+local function entry(name)
+	if name == W.player.name then return nil, true end
+	for i, m in ipairs(guild.members) do
+		if m.name == name then return m, false, i end
+	end
+	return nil, false
+end
+
+function Mock.guild.SetRank(name, index)
+	local m, isMe = entry(name)
+	if isMe then guild.myRank = index elseif m then m.rank = index end
+	if isMe then Mock.Fire("PLAYER_GUILD_UPDATE", "player") end
+	Mock.Fire("GUILD_ROSTER_UPDATE", false)
+end
+
+function Mock.guild.SetRankNames(names, remap)
+	guild.ranks = names
+	if remap then
+		guild.myRank = remap[guild.myRank] or guild.myRank
+		for _, m in ipairs(guild.members) do m.rank = remap[m.rank] or m.rank end
+	end
+	Mock.Fire("GUILD_RANKS_UPDATE")
+	Mock.Fire("GUILD_ROSTER_UPDATE", false)
+end
+
+function Mock.guild.SetLeader(name)
+	if guild.myRank == 0 then guild.myRank = 1 end
+	for _, m in ipairs(guild.members) do
+		if m.rank == 0 then m.rank = 1 end
+	end
+	local m, isMe = entry(name)
+	if isMe then guild.myRank = 0 elseif m then m.rank = 0 end
+	Mock.Fire("PLAYER_GUILD_UPDATE", "player")
+	Mock.Fire("GUILD_ROSTER_UPDATE", false)
+end
+
+function Mock.guild.Remove(name)
+	local _, _, i = entry(name)
+	if i then table.remove(guild.members, i) end
+	Mock.Fire("GUILD_ROSTER_UPDATE", false)
 end
 
 function IsInGuild() return guild.name ~= nil end
@@ -117,7 +173,7 @@ local function rosterAt(index)
 end
 
 function GetNumGuildMembers()
-	if not guild.name then return 0, 0, 0 end
+	if not guild.name or guild.loading then return 0, 0, 0 end
 	local online = me().online and 1 or 0
 	for _, m in ipairs(guild.members) do if m.online then online = online + 1 end end
 	return #guild.members + 1, online, online
@@ -126,7 +182,7 @@ end
 -- name, rankName, rankIndex, level, classDisplayName, zone, note, officerNote, isOnline, status, classFileName,
 -- achievementPoints, achievementRank, isMobile, canSoR, repStanding, guid
 function GetGuildRosterInfo(index)
-	local m = guild.name and rosterAt(index)
+	local m = guild.name and not guild.loading and rosterAt(index)
 	if not m then return nil end
 	return m.name, guild.ranks[m.rank], m.rank, m.level, CLASS_NAMES[m.class] or m.class, m.zone, m.note, m.officerNote,
 		m.online, 0, m.class, 0, 0, false, false, 4, m.guid
@@ -142,6 +198,7 @@ end
 
 C_GuildInfo = {}
 function C_GuildInfo.IsGuildOfficer() return guild.name ~= nil and guild.myRank <= guild.officerRanks end
+function C_GuildInfo.CanEditOfficerNote() return CanEditOfficerNote() end
 function C_GuildInfo.CanSpeakInGuildChat() return guild.name ~= nil end
 function C_GuildInfo.GetMOTD() return guild.motd or "" end
 function C_GuildInfo.GetInfoText() return guild.info or "" end
@@ -154,6 +211,7 @@ function C_GuildInfo.MemberExistsByName(name)
 end
 
 function C_GuildInfo.GuildRoster()
+	if guild.loading then return end   -- the server has not answered yet: Mock.guild.Deliver()
 	C_Timer.After(0, function() Mock.Fire("GUILD_ROSTER_UPDATE") end)
 end
 

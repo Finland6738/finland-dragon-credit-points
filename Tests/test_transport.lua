@@ -380,6 +380,7 @@ describe("the guild stamp", function()
 	it("a message waits while the guild is not known yet", function()
 		local W = fakeWire()
 		Mock.guild.Set{ name = "Alpha", myRank = 3 }
+		Mock.Advance(2)   -- the roster request of Adapters/GuildRanks.lua is answered (it would restore the key below)
 		Mock.chat.lockdown = true
 		Tr():Send("GUILD", rec())
 		local key = FDCP.Config.guildKey

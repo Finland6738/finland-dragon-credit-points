@@ -19,7 +19,7 @@ INTERFACE = "16001"
 REQUIRED_TOC_KEYS = ("Title", "Author", "Version", "SavedVariables", "SavedVariablesPerCharacter",
                      "AddonCompartmentFunc")
 SAVED = {"SavedVariables": NAME + "DB", "SavedVariablesPerCharacter": NAME + "CharDB"}
-LUA_DIRS = ("Core", "Domain", "Adapters", "Net", "UI")
+LUA_DIRS = ("Core", "Domain", "Adapters", "App", "Net", "UI")
 # The libraries embeds.xml must load (M1-1): Ace3 modules, LibDataBroker, LibDBIcon (ChatThrottleLib comes with AceComm).
 REQUIRED_EMBEDS = ("AceAddon-3.0", "AceDB-3.0", "AceDBOptions-3.0", "AceEvent-3.0", "AceTimer-3.0", "AceComm-3.0",
                    "AceLocale-3.0", "AceConfig-3.0", "LibDataBroker-1.1", "LibDBIcon-1.0")

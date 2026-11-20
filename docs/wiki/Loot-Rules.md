@@ -180,6 +180,8 @@ The engine never writes sentences: it records short codes, and the addon turns t
 
 ### Guild rank changes
 
+The addon reads ranks from the guild roster, by their position, never by their name. After you log in it waits for the roster: until it arrives, events from other players that need a rank wait and are checked as soon as it does, and the buttons that write to the ledger stay off. When the Guild Master reorders, deletes or adds ranks, the Guild Master gets a chat message (again at every login until the permissions table has been checked), with the permissions that point to a rank that no longer exists. When the guild gets a new Guild Master, the power to change the rules passes to them as soon as the game shows it; the changes made by the previous Guild Master stay valid. Both players are told in chat.
+
 | Code | Sentence |
 |---|---|
 | `RENAMED` | A guild rank was renamed: nothing to do. |

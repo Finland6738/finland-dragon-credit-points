@@ -264,6 +264,14 @@ function Guild.IsOfficer()
 	return state == AVAILABLE and v and true or false
 end
 
+-- The client's "may edit officer notes" right (C_GuildInfo.CanEditOfficerNote; the old global when the namespace lacks
+-- it [verify]): one of the game's signs of an officer. false when the client does not say.
+function Guild.CanEditOfficerNote()
+	local v, state = first("C_GuildInfo.CanEditOfficerNote")
+	if state ~= AVAILABLE then v, state = first("CanEditOfficerNote") end
+	return state == AVAILABLE and v and true or false
+end
+
 -- Asks the server for a fresh roster (GUILD_ROSTER_UPDATE follows). Returns the call state.
 function Guild.RequestRoster()
 	local _, state = first("C_GuildInfo.GuildRoster")
@@ -1108,6 +1116,7 @@ local CAPS = {
 	{ "guild.GetGuildInfo", "guild", "GetGuildInfo", call = true, args = { "player" } },
 	{ "guild.IsGuildLeader", "guild", "IsGuildLeader", call = true },
 	{ "guild.IsGuildOfficer", "guild", "C_GuildInfo.IsGuildOfficer", call = true },
+	{ "guild.CanEditOfficerNote", "guild", "C_GuildInfo.CanEditOfficerNote", call = true },
 	{ "guild.GetNumGuildMembers", "guild", "GetNumGuildMembers", call = true },
 	{ "guild.GetGuildRosterInfo", "guild", "GetGuildRosterInfo" },
 	{ "guild.GuildRoster", "guild", "C_GuildInfo.GuildRoster" },

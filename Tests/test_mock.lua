@@ -229,6 +229,7 @@ describe("guild", function()
 		f:RegisterEvent("GUILD_ROSTER_UPDATE")
 		f:SetScript("OnEvent", function() updates = updates + 1 end)
 		Mock.guild.Set({ name = "G" })
+		Mock.Advance(2)   -- the addon asks for the roster when the guild changes (Adapters/GuildRanks.lua)
 		updates = 0
 		C_GuildInfo.GuildRoster()
 		eq(updates, 0)

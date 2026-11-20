@@ -379,6 +379,31 @@ più. La conferma esplicita a season aperta la chiedono gli scrittori (`Rules.Ch
 `CONFIRM_REQUIRED`) e il segnale `confirmed` resta nell'evento per l'audit; il cancello non la ricontrolla (l'evento è
 comunque del GM).
 
+**Come è fatto (M3-1).** I ranghi veri arrivano da `Adapters/GuildRanks.lua` (tutto attraverso `Core/Compat.lua`; nomi
+controllati nel dump: `IsGuildLeader`, `GetGuildInfo`, `GetNumGuildMembers`, `GetGuildRosterInfo`,
+`GuildControlGetNumRanks`, `GuildControlGetRankName`, `C_GuildInfo.GuildRoster` / `IsGuildOfficer` /
+`CanEditOfficerNote`, eventi `GUILD_ROSTER_UPDATE`, `GUILD_RANKS_UPDATE`, `PLAYER_GUILD_UPDATE`): sono io il GM (indice
+0), l'indice di un membro, nomi e numero dei ranghi, officer secondo il gioco (solo informativo: i permessi usano
+sempre l'indice). L'adapter chiede il roster all'ingresso nel mondo e di nuovo ogni 15 s finché non ne ha letto uno che
+contiene il giocatore; ogni raffica di eventi del roster produce una sola lettura 1 s dopo. I nomi sono sempre
+`Nome-Reame` con il reame normalizzato (senza spazi, trattini, apostrofi), come gli autori del registro.
+`App/PermissionService.lua` tiene la storia dei ranghi e la salva per gilda (`guilds[chiave].ranks`): ogni cambio di
+rango con l'ora del server in cui è stato visto, `false` per chi non è più in un roster completo (uscito dalla gilda).
+La storia salvata **non vale come "caricata"** alla sessione dopo: finché questa sessione non ha letto un roster il
+cancello risponde `PENDING`. Gli eventi ricevuti (`PermissionService:Merge`) che restano `PENDING` aspettano in una coda
+(senza doppioni, al massimo 2000: oltre si scartano, tanto la sincronizzazione li richiede) e sono rivalutati appena
+arriva il roster: accettati o rifiutati (`PERMISSIONS_QUEUE_DRAINED` sul bus). **Scelta:** le scritture locali non vanno
+in coda: ricevono `PENDING` e le finestre tengono spenti i pulsanti finché `PermissionService:IsReady()` è falso (un
+pulsante premuto e "eseguito più tardi" sarebbe una sorpresa). Il potere di configurazione è di chi ha **indice 0 nel
+roster** (`CanConfigure`, decisione del proprietario); quando il roster mostra un altro GM la storia lo registra (il
+nuovo GM scrive dal momento in cui il gioco lo mostra, le modifiche del vecchio restano valide), `GUILD_LEADER_CHANGED`
+va sul bus e i due giocatori lo leggono in chat. I nomi dei ranghi sono confrontati con quelli salvati l'ultima volta:
+un riordino, un'eliminazione o un'aggiunta (non una semplice rinomina) diventa una **revisione in sospeso** per il GM
+(`GUILD_RANKS_CHANGED`, con i permessi che puntano a un rango che non esiste più), detta in chat al GM subito e a ogni
+accesso finché il GM non la conferma (`AcknowledgeRanks`, dalla finestra dei permessi di M7-2). Limite noto: un autore
+mai visto in un roster di questo client (uscito prima che l'addon girasse) risulta `NOT_IN_GUILD`; la storia dei ranghi
+non si scambia fra client (eventualmente M6).
+
 ---
 
 ## 4. Flusso di una sessione di loot

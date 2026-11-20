@@ -35,6 +35,8 @@ Domain\Rules.lua
 Domain\Presets.lua
 Domain\Permissions.lua
 Domain\SessionFSM.lua
+Adapters\GuildRanks.lua
+App\PermissionService.lua
 UI\Assets.lua
 UI\Theme.lua
 UI\Widgets.lua
