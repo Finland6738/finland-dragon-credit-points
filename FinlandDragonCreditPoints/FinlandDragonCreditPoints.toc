@@ -1,0 +1,19 @@
+## Interface: 16001
+## Title: Finland Dragon Credit Points
+## Notes: A guild's credit-based loot system for WoW Forever: loot sessions, credits computed from a ledger, auditable results.
+## Notes-itIT: Il sistema di loot a crediti della gilda per WoW Forever: sessioni di loot, crediti calcolati da un registro, risultati verificabili.
+## Author: Finland6738
+## Version: @project-version@
+## SavedVariables: FinlandDragonCreditPointsDB
+## SavedVariablesPerCharacter: FinlandDragonCreditPointsCharDB
+## AddonCompartmentFunc: FinlandDragonCreditPoints_OnAddonCompartmentClick
+## AddonCompartmentFuncOnEnter: FinlandDragonCreditPoints_OnAddonCompartmentEnter
+## AddonCompartmentFuncOnLeave: FinlandDragonCreditPoints_OnAddonCompartmentLeave
+## IconTexture: Interface\Icons\INV_Misc_Coin_01
+## X-Website: https://github.com/Finland6738/finland-dragon-credit-points
+## X-License: GPL-3.0
+
+embeds.xml
+Locale\enUS.lua
+Locale\itIT.lua
+Core\Init.lua

@@ -12,7 +12,7 @@ Until the spike results arrive, M1 follows plan A and keeps every unverified API
 - Analysis: §1, §8.2, §8.3
 - Scope: `FinlandDragonCreditPoints/` with `FinlandDragonCreditPoints.toc` and `FinlandDragonCreditPoints_Camelot.toc` (Interface 16001, SavedVariables `FinlandDragonCreditPointsDB`, SavedVariablesPerCharacter `FinlandDragonCreditPointsCharDB`, AddOn Compartment), `embeds.xml` (Ace3: AceAddon, AceDB, AceDBOptions, AceEvent, AceTimer, AceComm, AceLocale, AceConfig; LibDataBroker, LibDBIcon, ChatThrottleLib), `Core/Init.lua` with the Forever check and `/fdcp help`; `.pkgmeta`, `.luarc.json` (types from `../WoW-Addons`), `tools/fetch_libs.py`, `tools/install_addon.py` (`<WoW folder>` from a git-ignored local file), `tools/check_addon.py` (TOC fields, file list), `tools/check_package.py`; all adapted from Azeroth Accord.
 - Done when:
-  - [ ] `check_docs.py` runs the TOC and package checks; the addon folder installs with the script.
+  - [x] `check_docs.py` runs the TOC and package checks; the addon folder installs with the script.
   - [ ] The addon loads without errors and `/fdcp help` answers. *(in game)*
 - Tests: TOC and embeds checks.
 - Docs: README status, wiki Installation (EN + IT) with the install script for testers, CHANGELOG.

@@ -1,0 +1,41 @@
+{
+  "$schema": "https://raw.githubusercontent.com/LuaLS/vscode-lua/master/setting/schema.json",
+  "runtime.version": "Lua 5.1",
+  "workspace.library": [
+    "../WoW-Addons/types"
+  ],
+  "workspace.ignoreDir": [
+    "FinlandDragonCreditPoints/Libs",
+    "docs",
+    ".idea",
+    "tools/probe"
+  ],
+  "diagnostics.globals": [
+    "FDCP",
+    "FinlandDragonCreditPointsDB",
+    "FinlandDragonCreditPointsCharDB",
+    "FinlandDragonCreditPoints_OnAddonCompartmentClick",
+    "FinlandDragonCreditPoints_OnAddonCompartmentEnter",
+    "FinlandDragonCreditPoints_OnAddonCompartmentLeave",
+    "LibStub",
+    "SlashCmdList",
+    "WOW_PROJECT_CAMELOT",
+    "Mock",
+    "T",
+    "describe",
+    "it",
+    "before_boot",
+    "eq",
+    "ne",
+    "truthy",
+    "falsy",
+    "isNil",
+    "notNil",
+    "deepEq",
+    "near",
+    "contains",
+    "matches",
+    "raises",
+    "fail"
+  ]
+}

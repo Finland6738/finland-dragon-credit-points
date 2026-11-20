@@ -17,3 +17,6 @@ prompt.txt
 *.local.json
 *.local.ini
 tools/local.ini
+
+# Libraries are fetched from .pkgmeta by tools/fetch_libs.py
+FinlandDragonCreditPoints/Libs/
