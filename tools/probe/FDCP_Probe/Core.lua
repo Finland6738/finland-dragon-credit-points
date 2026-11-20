@@ -74,5 +74,6 @@ end
 
 function P.Reset()
     local db = P.DB()
-    db.results, db.events = {}, {}
+    db.results, db.events, db.loot, db.blocked = {}, {}, {}, {}
+    if P.loot then P.loot.snapshot, P.loot.give = nil, nil end
 end

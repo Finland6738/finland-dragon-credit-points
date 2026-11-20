@@ -44,7 +44,7 @@ The probe addon `FDCP_Probe` lives in `tools/probe/`, is **never distributed**, 
 - Done when:
   - [ ] S1: can the loot method be set to master loot in a Forever raid (10/20/40, Normal/Veteran)? *(in game)*
   - [ ] S2: are slots, sources and candidates readable, and does `GiveMasterLoot` deliver from an addon click? *(in game)*
-  - [ ] Offline: checks and the procedure section exist; `check_docs.py` passes.
+  - [x] Offline: checks and the procedure section exist; `check_docs.py` passes.
 - Docs: `docs/spike/README.md` S1–S2 procedure (both languages), CHANGELOG.
 - Real client: everything (plan B if negative: delivery by trade, M4-7).
 - Suggested model/effort: `sonnet` / medium

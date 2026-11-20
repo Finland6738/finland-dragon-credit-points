@@ -25,6 +25,8 @@ La sonda `FDCP_Probe` risponde, nel client reale di WoW Forever, alle domande a 
 | `/fdcpp list` | Lists the checks and their last result. / Elenca i check e l'ultimo risultato. |
 | `/fdcpp run <id>` | Runs one check (for example `/fdcpp run B2`) and records the result. / Esegue un check e ne registra il risultato. |
 | `/fdcpp runall` | Runs every check that needs no manual setup. / Esegue ogni check che non richiede preparazione. |
+| `/fdcpp setml` | S1: tries to set the loot method to master loot with you as master looter (changes the group; raid leader only). / S1: prova a impostare il bottino su master loot con te come master looter (modifica il gruppo; solo capo raid). |
+| `/fdcpp give <slot> <candidate#>` | S2: calls `GiveMasterLoot` on a **test drop** and records the events. / S2: chiama `GiveMasterLoot` su un drop **di prova** e registra gli eventi. |
 | `/fdcpp export` | Opens a frame with every result (and the recorded events) as selected text: copy it with Ctrl+C. / Apre una finestra con tutti i risultati (e gli eventi registrati) come testo selezionato: copialo con Ctrl+C. |
 | `/fdcpp reset` | Clears results and events. / Cancella risultati ed eventi. |
 
@@ -42,6 +44,30 @@ I risultati sono salvati in `FDCP_ProbeDB` come `{id, result, details, build, ti
 | `B4` | The test prefix `FDCPP` registers. / Il prefisso di test `FDCPP` si registra. |
 
 ## 4. Spike areas / Aree dello spike
+
+### S1, S2 — Master loot and the loot window (M0-2)
+
+Checks: `S1a` (APIs, loot method, master looter state), `S1b` (`/fdcpp setml`), `S2a` (loot window slots, links, sources), `S2b` (master loot candidates), `S2c` (`/fdcpp give`), `S2d` (`ADDON_ACTION_BLOCKED` / `FORBIDDEN` log). The loot window is captured automatically on `LOOT_OPENED` as shapes only: item link and name are recorded as `string(n)`, the source GUID as type, segment count and the npc id of a creature (which maps a source to a boss), never the GUID, item names or player names.
+
+**Procedure (English)**
+
+1. Form a raid (as raid leader, with at least a second character or player) in a Forever raid instance. Repeat in the sizes and difficulties you can reach: 10, 20 and 40 players, Normal and Veteran.
+2. `/fdcpp run S1a` before and `/fdcpp setml` to try to set master loot with you as master looter; wait a second and `/fdcpp run S1a` again. **S1 answers**: is master loot selectable, and is the method kept in every size and difficulty?
+3. Kill a boss (or any creature that drops loot) and open its loot window. Then `/fdcpp run S2a` and `/fdcpp run S2b`. **S2 answers**: are slots, sources (boss mapping) and candidates readable?
+4. On a **test drop** (an item you do not mind giving to a second character), `/fdcpp give <slot> <candidate#>` (slot as shown by `S2a`, candidate between 1 and the `candidates` count). After two seconds the result shows the events seen (`LOOT_SLOT_CLEARED`, `CHAT_MSG_LOOT`). **S2 answers**: does `GiveMasterLoot` deliver when called from an addon command?
+5. `/fdcpp run S2d` for any blocked or forbidden action, then `/fdcpp export` and report the text.
+
+**Procedura (italiano)**
+
+1. Forma un raid (come capo raid, con almeno un secondo personaggio o giocatore) in un'istanza raid di Forever. Ripeti nelle dimensioni e difficoltà che riesci a raggiungere: 10, 20 e 40 giocatori, Normale e Veterano.
+2. `/fdcpp run S1a` prima, poi `/fdcpp setml` per provare a impostare il master loot con te come master looter; aspetta un secondo e rilancia `/fdcpp run S1a`. **S1 risponde**: il master loot è selezionabile e il metodo resta in ogni dimensione e difficoltà?
+3. Uccidi un boss (o una creatura che lascia bottino) e apri la finestra del bottino. Poi `/fdcpp run S2a` e `/fdcpp run S2b`. **S2 risponde**: slot, fonti (collegamento al boss) e candidati sono leggibili?
+4. Su un **drop di prova** (un oggetto che puoi dare a un secondo personaggio), `/fdcpp give <slot> <candidato#>` (slot come mostrato da `S2a`, candidato tra 1 e il numero `candidates`). Dopo due secondi il risultato mostra gli eventi visti (`LOOT_SLOT_CLEARED`, `CHAT_MSG_LOOT`). **S2 risponde**: `GiveMasterLoot` consegna se chiamato da un comando dell'addon?
+5. `/fdcpp run S2d` per eventuali azioni bloccate o vietate, poi `/fdcpp export` e riporta il testo.
+
+Plan B if negative: delivery by trade (M4-7). / Piano B se negativo: consegna con scambio (M4-7).
+
+### All areas / Tutte le aree
 
 Added by the next steps, each with its in-game procedure in both languages: / Aggiunte dai passi successivi, ognuna con la procedura in gioco nelle due lingue:
 

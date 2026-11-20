@@ -1,4 +1,4 @@
--- /fdcpp list | run <id> | runall | export | reset
+-- /fdcpp list | run <id> | runall | setml | give <slot> <candidate#> | export | reset
 local ADDON, P = ...
 
 local function Cmd(msg)
@@ -16,13 +16,18 @@ local function Cmd(msg)
         if not r then P.Print(err) else P.Print(r.id .. ": " .. r.result .. " " .. r.details) end
     elseif cmd == "runall" then
         P.Print("ran " .. P.RunAll() .. " checks")
+    elseif cmd == "setml" then
+        local r = P.SetMasterLoot(); P.Print(r.id .. ": " .. r.result .. " " .. r.details)
+    elseif cmd == "give" then
+        local slot, cand = string.match(arg, "^(%d+)%s+(%d+)$")
+        P.Give(slot, cand)
     elseif cmd == "export" then
         P.ShowExport()
     elseif cmd == "reset" then
         P.Reset()
         P.Print("results and events cleared")
     else
-        P.Print("/fdcpp list | run <id> | runall | export | reset")
+        P.Print("/fdcpp list | run <id> | runall | setml | give <slot> <candidate#> | export | reset")
     end
 end
 
