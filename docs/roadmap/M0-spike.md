@@ -81,7 +81,7 @@ The probe addon `FDCP_Probe` lives in `tools/probe/`, is **never distributed**, 
 - Done when:
   - [ ] S5: stats and item levels of raid items match what the game applies in raid. *(in game)*
   - [ ] S6: specializations exist and are readable in Forever. *(in game)*
-  - [ ] Offline: checks and procedure section exist; `check_docs.py` passes.
+  - [x] Offline: checks and procedure section exist; `check_docs.py` passes.
 - Docs: `docs/spike/README.md` S5–S6, CHANGELOG.
 - Real client: everything (plan B: item-level-only verdict, declared spec only).
 - Suggested model/effort: `sonnet` / medium

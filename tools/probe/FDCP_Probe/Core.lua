@@ -74,6 +74,7 @@ end
 
 function P.Reset()
     local db = P.DB()
-    db.results, db.events, db.loot, db.blocked, db.rolls, db.comms = {}, {}, {}, {}, {}, nil
+    db.results, db.events, db.loot, db.blocked, db.rolls, db.comms, db.items = {}, {}, {}, {}, {}, nil, nil
     if P.loot then P.loot.snapshot, P.loot.give = nil, nil end
+    if P.items then P.items.last = nil end
 end

@@ -51,6 +51,56 @@ assert(e.count == 2 and e.min == 1 and e.max == 3 and e.maxDelay == 2, "received
 """
 
 
+ITEMS_TEST = """
+local P = { IsSecret = function() return false end, Has = function() return true end }
+local db = {}
+P.DB = function() return db end
+P.Register = function(id, _, _, fn) P[id] = fn end
+CreateFrame = function() return { SetScript = function() end, RegisterEvent = function() end } end
+IsInInstance = function() return true, "raid" end
+C_Item = {
+    GetItemInfoInstant = function() return 1, "Armor", "INVTYPE_HEAD", 4, 3 end,
+    GetItemInfo = function() return "x", "l", 3, 600, 70, "t", "s", 1, "INVTYPE_HEAD", 0, 0, 4, 3, 1 end,
+    GetDetailedItemLevelInfo = function() return 610, false, 600 end,
+    GetItemStats = function() return { ITEM_MOD_STRENGTH_SHORT = 150, ITEM_MOD_CRIT_RATING_SHORT = 90 } end,
+    GetItemStatDelta = function() return { ITEM_MOD_STRENGTH_SHORT = 10 } end,
+    IsEquippableItem = function() return true end,
+    DoesItemContainSpec = function() return true end,
+    GetItemSpecInfo = function() return { 71, 72 } end,
+}
+GetInventoryItemLink = function() return "equipped" end
+C_TooltipInfo = { GetHyperlink = function() return { lines = { { leftText = "+150 Strength" }, { leftText = "+90 Critical Strike" } } } end }
+GetNumSpecializations = function() return 3 end
+GetSpecialization = function() return 1 end
+GetSpecializationInfo = function(i) return 70 + i, "n", "d", 0, "DAMAGER" end
+UnitClass = function() return "Warrior", "WARRIOR", 1 end
+loadfile(...)("FDCP_Probe", P)
+local r = P.ProbeItem("item:1")
+assert(r.equipLoc == "INVTYPE_HEAD" and r.classID == 4, "instant info")
+assert(r.tooltipMismatch == 0, "tooltip matches stats")
+assert(r.delta:find("ITEM_MOD_STRENGTH_SHORT=10"), "delta")
+assert(r.containSpec == "true,true,true", "spec flags")
+assert(#db.items == 1, "recorded")
+local res = P.S5c()
+assert(res == "ok", "S5c ok")
+assert(P.S6a() == "ok", "S6a")
+"""
+
+
+def items_test(lua):
+    """Offline test of the S5/S6 item probe (Items.lua), run with a stub client."""
+    try:
+        fn = lua.eval("function(src, path) local l = loadstring or load; local ok, e = pcall(l(src), path);"
+                      " if ok then return '' end; return tostring(e) end")
+        err = fn(ITEMS_TEST, str(DIR / "Items.lua"))
+    except Exception as exc:  # noqa: BLE001
+        err = str(exc)
+    if err:
+        print(f"FAIL items: {err}")
+        return 1
+    return 0
+
+
 def comms_test(lua):
     """Offline test of the S4 sender and receiver (Comms.lua), run with a stub client."""
     try:
@@ -107,6 +157,7 @@ def main():
                 print(f"FAIL {t.name}: {line} not found")
     bad += pattern_test(lua)
     bad += comms_test(lua)
+    bad += items_test(lua)
     print(f"check_probe: {len(files)} Lua files, {len(tocs)} TOC files, {bad} problem(s)")
     return 1 if bad else 0
 

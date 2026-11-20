@@ -119,6 +119,28 @@ Servono due client (A invia, B riceve; entrambi con la sonda installata, nello s
 
 Plan B if negative: a send queue that waits out the lockdown, sessions opened only after encounters (M2-3, M4-3). / Piano B se negativo: coda di invio che attende la fine del lockdown, sessioni aperte solo dopo gli incontri (M2-3, M4-3).
 
+### S5, S6 — Items, stats and specializations (M0-5)
+
+Checks: `S5a` (the item APIs exist: `GetItemInfoInstant`, `GetItemInfo`, `GetDetailedItemLevelInfo`, `GetItemStats`, `GetItemStatDelta`, `IsEquippableItem`, `DoesItemContainSpec`, `GetItemSpecInfo`, `C_TooltipInfo.GetHyperlink`, `ITEM_DATA_LOAD_RESULT`), `S5b` (the last `/fdcpp item <link>`: class, subclass, equip location, cache hit or miss, item levels, `ITEM_DATA_LOAD_RESULT` count), `S5c` (stats, the delta against the equipped piece in the same slot, the spec flags, and the comparison with the tooltip: how many stat values of `GetItemStats` appear in the `C_TooltipInfo` lines; `ok` means all of them), `S6a` (`GetSpecialization`, `GetSpecializationInfo` and the player's specializations with their roles), `S6b` (which other specialization APIs exist). Every `/fdcpp item` is also kept (last 40) with its context (`outside` or `instance:raid`). Item links and names are never stored: only ids, item levels, stat keys and numbers.
+
+**Procedure (English)**
+
+1. `/fdcpp run S5a`, `/fdcpp run S6a`, `/fdcpp run S6b` (anywhere).
+2. **Outside the raid**: shift-click a raid piece you own (bag, bank or the Adventure Guide) into the chat box after `/fdcpp item `. It prints `S5b` and `S5c`. Try a piece that is **not** yet in your cache (a link someone sent you), a piece you can equip, one you cannot, a piece of another armor type, a quest item and an item that starts a quest.
+3. **Inside the raid instance**: repeat for the same pieces. **S5 answers**: do the item levels, stats and the tooltip numbers differ inside and outside the raid (contextual bonuses), and does the tooltip match `GetItemStats` (`statsNotInTooltip=0`)? Is `GetItemStatDelta` against the equipped piece sensible?
+4. Change specialization (or use a second character with another one), `/fdcpp run S6a`. **S6 answers**: are the specializations readable, and is the current one correct?
+5. `/fdcpp export` and report the text.
+
+**Procedura (italiano)**
+
+1. `/fdcpp run S5a`, `/fdcpp run S6a`, `/fdcpp run S6b` (ovunque).
+2. **Fuori dal raid**: shift-click su un pezzo da raid che possiedi (borsa, banca o Adventure Guide) nella casella della chat dopo `/fdcpp item `. Stampa `S5b` e `S5c`. Prova un pezzo **non** ancora nella cache (un link che ti ha mandato qualcuno), uno equipaggiabile, uno no, uno di un altro tipo di armatura, un oggetto di missione e uno che avvia una missione.
+3. **Dentro l'istanza raid**: ripeti con gli stessi pezzi. **S5 risponde**: livello oggetto, statistiche e numeri del tooltip cambiano dentro e fuori dal raid (bonus contestuali), e il tooltip coincide con `GetItemStats` (`statsNotInTooltip=0`)? `GetItemStatDelta` rispetto al pezzo equipaggiato è sensato?
+4. Cambia specializzazione (o usa un secondo personaggio con un'altra), `/fdcpp run S6a`. **S6 risponde**: le specializzazioni sono leggibili e quella corrente è giusta?
+5. `/fdcpp export` e riporta il testo.
+
+Plan B if negative: item-level-only verdict, declared spec only. / Piano B se negativo: verdetto solo sul livello oggetto, solo specializzazione dichiarata.
+
 ### All areas / Tutte le aree
 
 Added by the next steps, each with its in-game procedure in both languages: / Aggiunte dai passi successivi, ognuna con la procedura in gioco nelle due lingue:

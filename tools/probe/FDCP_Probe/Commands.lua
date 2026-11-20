@@ -1,4 +1,4 @@
--- /fdcpp list | run <id> | runall | setml | give <slot> <candidate#> | roll | ping|pingbig|burst <raid|guild|officer|party|whisper name> | export | reset
+-- /fdcpp list | run <id> | runall | setml | give <slot> <candidate#> | roll | item <link> | ping|pingbig|burst <raid|guild|officer|party|whisper name> | export | reset
 local ADDON, P = ...
 
 local function Cmd(msg)
@@ -23,6 +23,10 @@ local function Cmd(msg)
         P.Give(slot, cand)
     elseif cmd == "roll" then
         local r = P.Roll(); P.Print(r.id .. ": " .. r.result .. " " .. r.details)
+    elseif cmd == "item" then
+        if arg == "" then P.Print("usage: /fdcpp item <shift-click an item link>"); return end
+        P.ProbeItem(arg)
+        for _, id in ipairs({ "S5b", "S5c" }) do local r = P.Run(id); P.Print(r.id .. ": " .. r.result .. " " .. r.details) end
     elseif cmd == "ping" or cmd == "pingbig" or cmd == "burst" then
         local fn = cmd == "ping" and P.Ping or (cmd == "pingbig" and P.PingBig or P.PingBurst)
         local r = fn(arg, 5); P.Print(r.id .. ": " .. r.result .. " " .. r.details)
@@ -32,7 +36,7 @@ local function Cmd(msg)
         P.Reset()
         P.Print("results and events cleared")
     else
-        P.Print("/fdcpp list | run <id> | runall | setml | give <slot> <candidate#> | roll | ping|pingbig|burst <raid|guild|officer|party|whisper name> | export | reset")
+        P.Print("/fdcpp list | run <id> | runall | setml | give <slot> <candidate#> | roll | item <link> | ping|pingbig|burst <raid|guild|officer|party|whisper name> | export | reset")
     end
 end
 

@@ -26,5 +26,10 @@ Status / Stato: **probe ready, results pending owner run**.
 | `S4c` | S4 | | | `RAID` sends succeed between bosses and after `ENCOUNTER_END`; lockdown timings (plan B: wait queue, M2-3) |
 | `S4d` | S4 | | | Second client: delivery, losses, order, delays |
 | `S4e` | S4 | | | CBOR + Deflate + Base64 round trip, fits 255 bytes |
+| `S5a` | S5 | | | Item APIs and `C_TooltipInfo` exist |
+| `S5b` | S5 | | | Instant info, cache miss, item levels (outside and inside the raid) |
+| `S5c` | S5 | | | Stats, delta vs equipped, spec flags, tooltip comparison (plan B: item-level-only verdict) |
+| `S6a` | S6 | | | Specializations readable (plan B: declared spec only) |
+| `S6b` | S6 | | | Other specialization APIs |
 
 Rows for S1 … S8 are added with the checks (M0-2 … M0-6). / Le righe per S1 … S8 si aggiungono con i check.

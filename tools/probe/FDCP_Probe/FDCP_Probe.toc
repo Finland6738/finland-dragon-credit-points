@@ -11,6 +11,7 @@ Checks.lua
 Loot.lua
 Rolls.lua
 Comms.lua
+Items.lua
 Events.lua
 Export.lua
 Commands.lua
