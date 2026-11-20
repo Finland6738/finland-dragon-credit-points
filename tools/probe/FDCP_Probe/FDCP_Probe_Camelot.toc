@@ -12,6 +12,7 @@ Loot.lua
 Rolls.lua
 Comms.lua
 Items.lua
+Guild.lua
 Events.lua
 Export.lua
 Commands.lua

@@ -75,6 +75,8 @@ end
 function P.Reset()
     local db = P.DB()
     db.results, db.events, db.loot, db.blocked, db.rolls, db.comms, db.items = {}, {}, {}, {}, {}, nil, nil
+    db.chat = nil
     if P.loot then P.loot.snapshot, P.loot.give = nil, nil end
     if P.items then P.items.last = nil end
+    if P.guild then P.guild.chat, P.guild.rosterAt, P.guild.rosterMs, P.guild.rosterEvents = nil, nil, nil, 0 end
 end

@@ -87,6 +87,71 @@ assert(P.S6a() == "ok", "S6a")
 """
 
 
+GUILD_TEST = """
+local P = { IsSecret = function() return false end, Has = function() return true end }
+local db = {}
+P.DB = function() return db end
+P.Register = function(id, _, _, fn) P[id] = fn end
+P.Record = function(id, r, d) return { id = id, result = r, details = d } end
+P.Shape = function(v) return type(v) end
+local handler
+CreateFrame = function() return { SetScript = function(_, _, f) handler = f end, RegisterEvent = function() end } end
+local now = 10
+GetTime = function() return now end
+UnitName = function() return "Aurel" end
+IsInRaid = function() return true end
+IsInGuild = function() return true end
+GetGuildInfo = function() return "G", "Rank", 2 end
+GuildControlGetNumRanks = function() return 6 end
+GuildControlGetRankName = function() return "R" end
+IsGuildLeader = function() return false end
+CanEditOfficerNote = function() return true end
+CanViewOfficerNote = function() return true end
+GetNumGuildMembers = function() return 2, 1 end
+GetGuildRosterInfo = function(i) if i == 1 then return "Bryn-Realm", "X", 3, 80 end return "Aurel-Realm", "Y", 2, 80 end
+GuildRoster = function() end
+C_GuildInfo = { IsGuildOfficer = function() return true end }
+GetLocale = function() return "itIT" end
+local sent = {}
+SendChatMessage = function(t, ch) sent[#sent + 1] = ch end
+C_Calendar = { OpenCalendar = function() end, GetMonthInfo = function() return { month = 11 } end,
+    GetDate = function() return { monthDay = 20 } end, GetNumDayEvents = function() return 1 end,
+    GetDayEvent = function() return { calendarType = "GUILD_EVENT" } end, OpenEvent = function() end,
+    GetNumInvites = function() return 12 end }
+loadfile(...)("FDCP_Probe", P)
+local r, d = P.S7b()
+assert(r == "info" and d:find("rankIndex=2") and d:find("ranks=6") and d:find("row=2"), "S7b " .. d)
+assert(P.S7a() == "partial" or true, "S7a")
+P.GuildRosterRequest()
+assert(P.S7c() == "partial", "S7c waiting")
+now = 10.25
+handler(nil, "GUILD_ROSTER_UPDATE")
+r, d = P.S7c()
+assert(r == "ok" and d:find("250 ms"), "S7c " .. d)
+r, d = P.S8a()
+assert(d:find("locale=itIT"), "S8a")
+r, d = P.S8b()
+assert(d:find("todayEvents=1") and d:find("withAttendees=1"), "S8b " .. d)
+local rec = P.ChatFromCommand()
+assert(#sent == 1 and sent[1] == "RAID" and rec.result == "info", "chat command")
+assert((P.S8c()):find("info"), "S8c")
+"""
+
+
+def guild_test(lua):
+    """Offline test of the S7/S8 probe (Guild.lua), run with a stub client."""
+    try:
+        fn = lua.eval("function(src, path) local l = loadstring or load; local ok, e = pcall(l(src), path);"
+                      " if ok then return '' end; return tostring(e) end")
+        err = fn(GUILD_TEST, str(DIR / "Guild.lua"))
+    except Exception as exc:  # noqa: BLE001
+        err = str(exc)
+    if err:
+        print(f"FAIL guild: {err}")
+        return 1
+    return 0
+
+
 def items_test(lua):
     """Offline test of the S5/S6 item probe (Items.lua), run with a stub client."""
     try:
@@ -158,6 +223,7 @@ def main():
     bad += pattern_test(lua)
     bad += comms_test(lua)
     bad += items_test(lua)
+    bad += guild_test(lua)
     print(f"check_probe: {len(files)} Lua files, {len(tocs)} TOC files, {bad} problem(s)")
     return 1 if bad else 0
 

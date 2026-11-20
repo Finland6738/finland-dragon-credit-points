@@ -94,7 +94,7 @@ The probe addon `FDCP_Probe` lives in `tools/probe/`, is **never distributed**, 
 - Done when:
   - [ ] S7: rank checks work for GM, officer and member. *(in game)*
   - [ ] S8: calendar events and chat sending from a click. *(in game)*
-  - [ ] Offline: the complete procedure and results template exist in both languages; `check_docs.py` passes; result "probe ready, results pending owner run".
+  - [x] Offline: the complete procedure and results template exist in both languages; `check_docs.py` passes; result "probe ready, results pending owner run".
 - Docs: `docs/spike/README.md`, `docs/spike/M0-results.md`, wiki untouched, CHANGELOG.
 - Real client: everything.
 - Suggested model/effort: `sonnet` / medium

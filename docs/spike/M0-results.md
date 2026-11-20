@@ -4,7 +4,7 @@ Empty template: the owner's results are folded in by step M0-7. Plan A is what [
 
 Status / Stato: **probe ready, results pending owner run**.
 
-| Check id | Area | Plan A result | Plan B needed? | Notes |
+| Check id | Area | Plan A result | Plan B needed? | Notes (plan A / plan B, steps affected) |
 |---|---|---|---|---|
 | `B1` | base | | | |
 | `B2` | base | | | |
@@ -31,5 +31,11 @@ Status / Stato: **probe ready, results pending owner run**.
 | `S5c` | S5 | | | Stats, delta vs equipped, spec flags, tooltip comparison (plan B: item-level-only verdict) |
 | `S6a` | S6 | | | Specializations readable (plan B: declared spec only) |
 | `S6b` | S6 | | | Other specialization APIs |
+| `S7a` | S7 | | | Guild APIs exist. Plan B: manual rank list. Steps: M1 roster, M3 permissions |
+| `S7b` | S7 | | | Rank index, rank count, officer flags for GM / officer / member (one row per role). Steps: M1-x roles |
+| `S7c` | S7 | | | Roster load timing after `GuildRoster()` |
+| `S8a` | S8 | | | `GetLocale` and localized globals (itIT / enUS). Steps: M1 localization |
+| `S8b` | S8 | | | Official raid event and attendees readable. Plan B: manual attendance. Steps: M3 attendance |
+| `S8c` | S8 | | | `RAID` chat from a command vs from a click. Plan B: announce button. Steps: M4 `/raid` notice |
 
-Rows for S1 … S8 are added with the checks (M0-2 … M0-6). / Le righe per S1 … S8 si aggiungono con i check.
+All checks S1 … S8 are in. / Tutti i check S1 … S8 sono presenti.

@@ -4,7 +4,7 @@ The probe addon `FDCP_Probe` answers, in the real WoW Forever client, the questi
 
 La sonda `FDCP_Probe` risponde, nel client reale di WoW Forever, alle domande a cui l'analisi non sa rispondere offline. **Non viene mai distribuita**, protegge ogni chiamata con `pcall`, non confronta mai un valore secret, usa il prefisso di test `FDCPP` (mai `FDCP1`) e non stampa né salva mai nomi di giocatori o di gilda (solo conteggi e forme).
 
-> Status / Stato: **probe ready, results pending owner run** / **sonda pronta, risultati in attesa dell'esecuzione del proprietario**. The skeleton (M0-1) has the baseline checks `B1`–`B4`; the checks of the spike areas S1–S8 arrive with M0-2 … M0-6 (S1–S4 are in), and M0-6 finalises this procedure.
+> Status / Stato: **probe ready, results pending owner run** / **sonda pronta, risultati in attesa dell'esecuzione del proprietario**. The skeleton (M0-1) has the baseline checks `B1`–`B4`; the checks of the spike areas S1–S8 are all in (M0-2 … M0-6) and this procedure is final.
 
 ## 1. Install / Installazione
 
@@ -31,6 +31,9 @@ La sonda `FDCP_Probe` risponde, nel client reale di WoW Forever, alle domande a 
 | `/fdcpp ping raid\|guild\|officer\|party [n]` / `ping whisper <name> [n]` | S4: sends `n` numbered messages (default 5) with prefix `FDCPP` and records the `Enum.SendAddonMessageResult` of each. / S4: invia `n` messaggi numerati (default 5) con prefisso `FDCPP` e registra l'`Enum.SendAddonMessageResult` di ciascuno. |
 | `/fdcpp pingbig <channel>` | S4: one message with a 255-byte payload. / S4: un messaggio con payload da 255 byte. |
 | `/fdcpp burst <channel>` | S4: a burst of 30 messages in one frame (throttling). / S4: una raffica di 30 messaggi in un frame (throttling). |
+| `/fdcpp roster` | S7: requests the guild roster and times `GUILD_ROSTER_UPDATE` (then `/fdcpp run S7c`). / S7: richiede il roster di gilda e misura il tempo di `GUILD_ROSTER_UPDATE` (poi `/fdcpp run S7c`). |
+| `/fdcpp chat` | S8: `SendChatMessage` to `RAID` from the command (no click). / S8: `SendChatMessage` su `RAID` dal comando (senza click). |
+| `/fdcpp chatbtn` | S8: shows a button; clicking it sends to `RAID` from a hardware event. / S8: mostra un pulsante; il click invia su `RAID` da un evento hardware. |
 | `/fdcpp export` | Opens a frame with every result (and the recorded events) as selected text: copy it with Ctrl+C. / Apre una finestra con tutti i risultati (e gli eventi registrati) come testo selezionato: copialo con Ctrl+C. |
 | `/fdcpp reset` | Clears results and events. / Cancella risultati ed eventi. |
 
@@ -141,18 +144,42 @@ Checks: `S5a` (the item APIs exist: `GetItemInfoInstant`, `GetItemInfo`, `GetDet
 
 Plan B if negative: item-level-only verdict, declared spec only. / Piano B se negativo: verdetto solo sul livello oggetto, solo specializzazione dichiarata.
 
+### S7, S8 — Guild ranks, calendar, locale and chat from a click (M0-6)
+
+Checks: `S7a` (the guild APIs exist: `IsGuildLeader`, `GetGuildInfo`, `GetNumGuildMembers`, `GetGuildRosterInfo`, `GuildControlGetNumRanks`, `GuildControlGetRankName`, `C_GuildInfo.IsGuildOfficer`, `CanEditOfficerNote`, …), `S7b` (own rank index, rank count, officer flags, roster size and the own roster row; run it **once per role**), `S7c` (`/fdcpp roster`: milliseconds from `GuildRoster()` to `GUILD_ROSTER_UPDATE`), `S8a` (`GetLocale` and the localized globals), `S8b` (`C_Calendar`: is today's calendar readable, how many events, how many with attendees; counts only, never titles), `S8c` (`SendChatMessage` to `RAID` from a slash command and from a click on the probe's button). Rank, guild, player and event names and note texts are never stored.
+
+**Procedure (English)**
+
+1. `/fdcpp run S7a`, `/fdcpp run S8a` (anywhere).
+2. As **guild master**, then as an **officer**, then as a **member** (three characters or accounts, or ask someone to run it): `/fdcpp roster`, wait a few seconds, `/fdcpp run S7c`, `/fdcpp run S7b`. Write down which role each run was. **S7 answers**: do `IsGuildLeader`, `C_GuildInfo.IsGuildOfficer`, `CanEditOfficerNote` and the rank index tell the three roles apart, and how long does the roster take to load?
+3. Open the in-game calendar once, create (or have) a raid event today with a few invited players, then `/fdcpp run S8b`. **S8 answers**: is an official raid event readable with its attendees?
+4. In a raid group: `/fdcpp chat` (from the command), then `/fdcpp chatbtn` and **click** the button. `/fdcpp run S8c`. **S8 answers**: does `RAID` chat need a hardware event? Try both between bosses and after `ENCOUNTER_END`.
+5. `/fdcpp export` and report the text.
+
+**Procedura (italiano)**
+
+1. `/fdcpp run S7a`, `/fdcpp run S8a` (ovunque).
+2. Come **capogilda**, poi **ufficiale**, poi **membro** (tre personaggi o account, o chiedi a qualcuno): `/fdcpp roster`, attendi qualche secondo, `/fdcpp run S7c`, `/fdcpp run S7b`. Annota il ruolo di ogni esecuzione. **S7 risponde**: `IsGuildLeader`, `C_GuildInfo.IsGuildOfficer`, `CanEditOfficerNote` e l'indice del grado distinguono i tre ruoli, e quanto impiega il roster a caricarsi?
+3. Apri il calendario di gioco, crea (o fai creare) oggi un evento raid con qualche giocatore invitato, poi `/fdcpp run S8b`. **S8 risponde**: un evento raid ufficiale è leggibile con i partecipanti?
+4. In un gruppo raid: `/fdcpp chat` (dal comando), poi `/fdcpp chatbtn` e **clicca** il pulsante. `/fdcpp run S8c`. **S8 risponde**: la chat `RAID` richiede un evento hardware? Prova tra un boss e l'altro e dopo `ENCOUNTER_END`.
+5. `/fdcpp export` e riporta il testo.
+
+Plan B if negative: manual rank list in the settings, manual attendance, a click-to-announce button. / Piano B se negativo: elenco gradi manuale nelle impostazioni, presenze manuali, pulsante "annuncia" da cliccare.
+
 ### All areas / Tutte le aree
 
-Added by the next steps, each with its in-game procedure in both languages: / Aggiunte dai passi successivi, ognuna con la procedura in gioco nelle due lingue:
+| Area | Step | Question / Domanda | Plan B |
+|---|---|---|---|
+| S1, S2 | M0-2 | Master loot and the loot window. | Trade (M4-7). |
+| S3 | M0-3 | Rolls, system messages and encounters. | Read after lockdown (M4-3). |
+| S4 | M0-4 | Addon messages in raid (second client). | Wait queue, sessions after encounters (M2-3, M4-3). |
+| S5, S6 | M0-5 | Items, stats and specializations. | Item-level only, declared spec. |
+| S7, S8 | M0-6 | Guild ranks, calendar, locale, chat from a click. | Manual ranks and attendance, announce button. |
 
-| Area | Step | Question / Domanda |
-|---|---|---|
-| S1, S2 | M0-2 | Master loot and the loot window. |
-| S3 | M0-3 | Rolls, system messages and encounters. |
-| S4 | M0-4 | Addon messages in raid (needs a second client). |
-| S5, S6 | M0-5 | Items, stats and specializations. |
-| S7, S8 | M0-6 | Guild ranks, calendar, chat from a click. |
+## 5. Preparation, order and reporting / Preparazione, ordine e consegna
 
-## 5. Reporting / Come riportare i risultati
+**Preparation / Preparazione**: a Forever raid group with at least one second client (also guild member), the probe installed on both, a few test drops, and characters or friends for the guild roles (master, officer, member). Test items must be ones you do not mind giving away. / Un gruppo raid Forever con almeno un secondo client (anche nella gilda), la sonda installata su entrambi, qualche drop di prova e personaggi o amici per i ruoli di gilda.
 
-Run `/fdcpp export`, copy the text and paste it into `docs/spike/M0-results.md` (or send it to whoever folds it in, step M0-7). / Esegui `/fdcpp export`, copia il testo e incollalo in `docs/spike/M0-results.md` (o consegnalo a chi esegue il passo M0-7).
+**Order of the runs / Ordine**: (1) outside: `/fdcpp runall`, S5, S6, S7, S8a, S8b; (2) in the raid between bosses: S1, S2, S3, S4, S8c; (3) during and after a boss fight: S3, S4 (lockdown); (4) swap roles for S4 and repeat S7b per role. `/fdcpp export` at the end of each session. / (1) fuori: `runall`, S5, S6, S7, S8a, S8b; (2) nel raid tra un boss e l'altro: S1, S2, S3, S4, S8c; (3) durante e dopo un boss: S3, S4 (lockdown); (4) scambia i ruoli per S4 e ripeti S7b per ruolo. `/fdcpp export` a fine sessione.
+
+**Export and send / Esportare e consegnare**: run `/fdcpp export`, copy the text with Ctrl+C and paste it into the results table of [`M0-results.md`](M0-results.md) (one row per check: result, whether plan B is needed, notes), or send it to whoever runs M0-7. The table lists, per check, plan A, plan B and the steps the answer affects. / Esegui `/fdcpp export`, copia il testo con Ctrl+C e incollalo nella tabella di [`M0-results.md`](M0-results.md) (una riga per check), oppure consegnalo a chi esegue M0-7. La tabella elenca, per check, piano A, piano B e i passi che la risposta influenza.
