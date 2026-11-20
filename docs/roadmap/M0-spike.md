@@ -56,7 +56,7 @@ The probe addon `FDCP_Probe` lives in `tools/probe/`, is **never distributed**, 
 - Scope: `/fdcpp roll` calls `RandomRoll(1, 100)`; `CHAT_MSG_SYSTEM` parsed with a pattern built from the global `RANDOM_ROLL_RESULT` (never written by hand); records whether the message text is a secret value (`issecretvalue`) outside instances, inside an instance between bosses, during an encounter (`IsEncounterInProgress`, `ENCOUNTER_START/END`) and right after `ENCOUNTER_END`; `C_RestrictedActions` / `ADDON_RESTRICTION_STATE_CHANGED` timeline; `CHAT_MSG_LOOT` pattern from `LOOT_ITEM` globals.
 - Done when:
   - [ ] S3: rolls of other raiders are readable (and not secret) after `ENCOUNTER_END` and between bosses. *(in game)*
-  - [ ] Offline: checks, pattern builder and procedure section exist; `check_docs.py` passes.
+  - [x] Offline: checks, pattern builder and procedure section exist; `check_docs.py` passes.
 - Docs: `docs/spike/README.md` S3, CHANGELOG.
 - Real client: everything (plan B: rolls read once the lockdown ends, M4-3).
 - Suggested model/effort: `sonnet` / medium

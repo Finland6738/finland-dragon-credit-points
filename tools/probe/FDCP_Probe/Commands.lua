@@ -1,4 +1,4 @@
--- /fdcpp list | run <id> | runall | setml | give <slot> <candidate#> | export | reset
+-- /fdcpp list | run <id> | runall | setml | give <slot> <candidate#> | roll | export | reset
 local ADDON, P = ...
 
 local function Cmd(msg)
@@ -21,13 +21,15 @@ local function Cmd(msg)
     elseif cmd == "give" then
         local slot, cand = string.match(arg, "^(%d+)%s+(%d+)$")
         P.Give(slot, cand)
+    elseif cmd == "roll" then
+        local r = P.Roll(); P.Print(r.id .. ": " .. r.result .. " " .. r.details)
     elseif cmd == "export" then
         P.ShowExport()
     elseif cmd == "reset" then
         P.Reset()
         P.Print("results and events cleared")
     else
-        P.Print("/fdcpp list | run <id> | runall | setml | give <slot> <candidate#> | export | reset")
+        P.Print("/fdcpp list | run <id> | runall | setml | give <slot> <candidate#> | roll | export | reset")
     end
 end
 

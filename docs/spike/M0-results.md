@@ -16,5 +16,10 @@ Status / Stato: **probe ready, results pending owner run**.
 | `S2b` | S2 | | | Master loot candidates |
 | `S2c` | S2 | | | `GiveMasterLoot` from an addon command (plan B: trade, M4-7) |
 | `S2d` | S2 | | | Blocked / forbidden actions |
+| `S3a` | S3 | | | Roll and loot patterns built from the globals (self-test) |
+| `S3b` | S3 | | | Own roll with `RandomRoll(1, 100)` |
+| `S3c` | S3 | | | Others' rolls readable, not secret, after `ENCOUNTER_END` and between bosses (plan B: M4-3) |
+| `S3d` | S3 | | | Restriction state and encounter timeline |
+| `S3e` | S3 | | | `CHAT_MSG_LOOT` matched by the `LOOT_ITEM` patterns |
 
 Rows for S1 … S8 are added with the checks (M0-2 … M0-6). / Le righe per S1 … S8 si aggiungono con i check.

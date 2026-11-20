@@ -9,6 +9,7 @@
 Core.lua
 Checks.lua
 Loot.lua
+Rolls.lua
 Events.lua
 Export.lua
 Commands.lua

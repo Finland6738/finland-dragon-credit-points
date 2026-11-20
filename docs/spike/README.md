@@ -4,7 +4,7 @@ The probe addon `FDCP_Probe` answers, in the real WoW Forever client, the questi
 
 La sonda `FDCP_Probe` risponde, nel client reale di WoW Forever, alle domande a cui l'analisi non sa rispondere offline. **Non viene mai distribuita**, protegge ogni chiamata con `pcall`, non confronta mai un valore secret, usa il prefisso di test `FDCPP` (mai `FDCP1`) e non stampa né salva mai nomi di giocatori o di gilda (solo conteggi e forme).
 
-> Status / Stato: **probe ready, results pending owner run** / **sonda pronta, risultati in attesa dell'esecuzione del proprietario**. The skeleton (M0-1) has the baseline checks `B1`–`B4`; the checks of the spike areas S1–S8 arrive with M0-2 … M0-6, and M0-6 finalises this procedure.
+> Status / Stato: **probe ready, results pending owner run** / **sonda pronta, risultati in attesa dell'esecuzione del proprietario**. The skeleton (M0-1) has the baseline checks `B1`–`B4`; the checks of the spike areas S1–S8 arrive with M0-2 … M0-6 (S1–S3 are in), and M0-6 finalises this procedure.
 
 ## 1. Install / Installazione
 
@@ -27,6 +27,7 @@ La sonda `FDCP_Probe` risponde, nel client reale di WoW Forever, alle domande a 
 | `/fdcpp runall` | Runs every check that needs no manual setup. / Esegue ogni check che non richiede preparazione. |
 | `/fdcpp setml` | S1: tries to set the loot method to master loot with you as master looter (changes the group; raid leader only). / S1: prova a impostare il bottino su master loot con te come master looter (modifica il gruppo; solo capo raid). |
 | `/fdcpp give <slot> <candidate#>` | S2: calls `GiveMasterLoot` on a **test drop** and records the events. / S2: chiama `GiveMasterLoot` su un drop **di prova** e registra gli eventi. |
+| `/fdcpp roll` | S3: rolls 1-100 with `RandomRoll` and records whether the system messages come back readable. / S3: tira 1-100 con `RandomRoll` e registra se i messaggi di sistema tornano leggibili. |
 | `/fdcpp export` | Opens a frame with every result (and the recorded events) as selected text: copy it with Ctrl+C. / Apre una finestra con tutti i risultati (e gli eventi registrati) come testo selezionato: copialo con Ctrl+C. |
 | `/fdcpp reset` | Clears results and events. / Cancella risultati ed eventi. |
 
@@ -45,7 +46,7 @@ I risultati sono salvati in `FDCP_ProbeDB` come `{id, result, details, build, ti
 
 ## 4. Spike areas / Aree dello spike
 
-### S1, S2 � Master loot and the loot window (M0-2)
+### S1, S2 — Master loot and the loot window (M0-2)
 
 Checks: `S1a` (APIs, loot method, master looter state), `S1b` (`/fdcpp setml`), `S2a` (loot window slots, links, sources), `S2b` (master loot candidates), `S2c` (`/fdcpp give`), `S2d` (`ADDON_ACTION_BLOCKED` / `FORBIDDEN` log). The loot window is captured automatically on `LOOT_OPENED` as shapes only: item link and name are recorded as `string(n)`, the source GUID as type, segment count and the npc id of a creature (which maps a source to a boss), never the GUID, item names or player names.
 
@@ -59,13 +60,35 @@ Checks: `S1a` (APIs, loot method, master looter state), `S1b` (`/fdcpp setml`), 
 
 **Procedura (italiano)**
 
-1. Forma un raid (come capo raid, con almeno un secondo personaggio o giocatore) in un'istanza raid di Forever. Ripeti nelle dimensioni e difficolt� che riesci a raggiungere: 10, 20 e 40 giocatori, Normale e Veterano.
-2. `/fdcpp run S1a` prima, poi `/fdcpp setml` per provare a impostare il master loot con te come master looter; aspetta un secondo e rilancia `/fdcpp run S1a`. **S1 risponde**: il master loot � selezionabile e il metodo resta in ogni dimensione e difficolt�?
+1. Forma un raid (come capo raid, con almeno un secondo personaggio o giocatore) in un'istanza raid di Forever. Ripeti nelle dimensioni e difficoltà che riesci a raggiungere: 10, 20 e 40 giocatori, Normale e Veterano.
+2. `/fdcpp run S1a` prima, poi `/fdcpp setml` per provare a impostare il master loot con te come master looter; aspetta un secondo e rilancia `/fdcpp run S1a`. **S1 risponde**: il master loot è selezionabile e il metodo resta in ogni dimensione e difficoltà?
 3. Uccidi un boss (o una creatura che lascia bottino) e apri la finestra del bottino. Poi `/fdcpp run S2a` e `/fdcpp run S2b`. **S2 risponde**: slot, fonti (collegamento al boss) e candidati sono leggibili?
 4. Su un **drop di prova** (un oggetto che puoi dare a un secondo personaggio), `/fdcpp give <slot> <candidato#>` (slot come mostrato da `S2a`, candidato tra 1 e il numero `candidates`). Dopo due secondi il risultato mostra gli eventi visti (`LOOT_SLOT_CLEARED`, `CHAT_MSG_LOOT`). **S2 risponde**: `GiveMasterLoot` consegna se chiamato da un comando dell'addon?
 5. `/fdcpp run S2d` per eventuali azioni bloccate o vietate, poi `/fdcpp export` e riporta il testo.
 
 Plan B if negative: delivery by trade (M4-7). / Piano B se negativo: consegna con scambio (M4-7).
+
+### S3 — Rolls, system messages and encounters (M0-3)
+
+Checks: `S3a` (the roll and loot patterns are built from the game globals `RANDOM_ROLL_RESULT` and `LOOT_ITEM*`, never written by hand, with a self-test), `S3b` (`/fdcpp roll`), `S3c` (the answer: per context, how many `CHAT_MSG_SYSTEM` messages arrived, how many were secret values and how many were readable rolls), `S3d` (restriction state and `ENCOUNTER_START/END` timeline), `S3e` (`CHAT_MSG_LOOT` messages matched by the `LOOT_ITEM` patterns). The probe counts messages per context: `outside` an instance, `instance` between bosses, `encounter` (`IsEncounterInProgress`) and `after` (the 10 seconds following `ENCOUNTER_END`). A secret message is only counted, never compared or matched; names, roll texts and item links are never stored.
+
+**Procedure (English)**
+
+1. `/fdcpp run S3a` (self-test of the patterns; it should be `ok`).
+2. Outside an instance, in a party or raid with at least one other player, both of you `/roll` (or you `/fdcpp roll` and the other player `/roll`). `/fdcpp run S3c`: look at the `outside` counters.
+3. Inside the raid instance **between bosses** repeat the rolls (the other player rolls too), then `/fdcpp run S3c` (`instance` counters).
+4. **During a boss fight** you and the other player `/roll` once; after the kill (within 10 seconds of `ENCOUNTER_END`) roll again. `/fdcpp run S3c` (`encounter` and `after` counters). **S3 answers**: are the rolls of other raiders readable (`rolls` > 0 with `secret=0`) after `ENCOUNTER_END` and between bosses, and are they secret during the fight?
+5. After a kill, loot something so a `CHAT_MSG_LOOT` arrives, then `/fdcpp run S3e` and `/fdcpp run S3d`, then `/fdcpp export` and report the text.
+
+**Procedura (italiano)**
+
+1. `/fdcpp run S3a` (auto-test dei pattern; deve essere `ok`).
+2. Fuori da un'istanza, in gruppo o raid con almeno un altro giocatore, fate entrambi `/roll` (oppure tu `/fdcpp roll` e l'altro `/roll`). `/fdcpp run S3c`: guarda i contatori `outside`.
+3. Dentro l'istanza raid **tra un boss e l'altro** ripeti i tiri (tira anche l'altro giocatore), poi `/fdcpp run S3c` (contatori `instance`).
+4. **Durante il combattimento con un boss** tu e l'altro giocatore fate `/roll` una volta; dopo l'uccisione (entro 10 secondi da `ENCOUNTER_END`) tirate ancora. `/fdcpp run S3c` (contatori `encounter` e `after`). **S3 risponde**: i tiri degli altri raider sono leggibili (`rolls` > 0 con `secret=0`) dopo `ENCOUNTER_END` e tra un boss e l'altro, e sono secret durante il combattimento?
+5. Dopo un'uccisione, raccogli un oggetto così arriva un `CHAT_MSG_LOOT`, poi `/fdcpp run S3e` e `/fdcpp run S3d`, poi `/fdcpp export` e riporta il testo.
+
+Plan B if negative: rolls read once the lockdown ends (M4-3). / Piano B se negativo: tiri letti a fine lockdown (M4-3).
 
 ### All areas / Tutte le aree
 
