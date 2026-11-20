@@ -4,7 +4,7 @@ name: CI
 # pull request and fast-forwards main only when all of them are green.
 #   - "Tests": the documentation checks (tools/check_docs.py) and, once it exists (M1-1), the package check.
 #   - "Lua tests": the offline addon tests (Tests/run_tests.py: Lua 5.1 through lupa on a mock client, adapted from
-#     Azeroth Accord in M1-2). Until Tests/run_tests.py exists the job passes with a notice instead of failing.
+#     Azeroth Accord in M1-2). The job runs them on every pull request (the conditions below are only a safety net).
 on:
   pull_request:
   push:

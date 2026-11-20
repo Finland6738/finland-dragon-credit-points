@@ -25,7 +25,7 @@ Until the spike results arrive, M1 follows plan A and keeps every unverified API
 - Analysis: §8.1 (Domain testable offline), §8.2 (`Tests/`)
 - Scope: `Tests/run_tests.py` (lupa, Lua 5.1), `Tests/lib/` (assertions, harness with `/reload` simulation), `Tests/mock/` (the mock client copied from Azeroth Accord and renamed: frames and events, timers, addon messages with lockdown, guild roster, `C_EncodingUtil`), `Tests/test_addon.lua` (boot, Forever check, slash command, `/reload` round trip); the CI job "Lua tests" now runs them.
 - Done when:
-  - [ ] Boot, slash command and `/reload` round trip are tested and green in CI.
+  - [x] Boot, slash command and `/reload` round trip are tested and green in CI.
 - Tests: the harness itself.
 - Docs: CLAUDE.md test command, CHANGELOG.
 - Real client: nothing.
