@@ -63,7 +63,8 @@ Until the spike results arrive, M1 follows plan A and keeps every unverified API
 - Analysis: §8.5
 - Scope: `Locale/enUS.lua` (base, every key) and `Locale/itIT.lua` with AceLocale; English fallback for missing keys; personal language override (needs `/reload`); the **guild language** setting for texts sent to everyone; number and date formatting per language; `tools/check_locale.py` (missing and unused keys, hard-coded visible text in `UI/` and `Domain/`) run by `check_docs.py`; the test suite runs in both languages.
 - Done when:
-  - [ ] Adding a language is one file plus one TOC line; the checks fail on a hard-coded string and on a missing key.
+  - [x] Adding a language is one file plus one TOC line; the checks fail on a hard-coded string and on a missing key.
+  - [ ] Italian and English clients show their language. *(in game)*
 - Tests: `Tests/test_locale.lua`, the check's own cases.
 - Docs: a short "Adding a language" section in README (EN + IT), CHANGELOG.
 - Real client: Italian and English clients show their language.

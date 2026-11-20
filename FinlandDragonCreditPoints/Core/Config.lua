@@ -31,7 +31,7 @@ Config.migrations = {
 }
 
 Config.defaults = {
-	global = { schema = 0, guilds = {} },
+	global = { schema = 0, guilds = {}, language = "auto" },   -- language: personal, "auto" = the client's (needs /reload)
 	profile = {
 		guildLanguage = "enUS",   -- language of the texts sent to everyone (M1-5)
 		rollSeconds = 30,
@@ -41,7 +41,7 @@ Config.defaults = {
 
 -- Validators of profile settings: type plus optional min / max / values.
 Config.validators = {
-	guildLanguage = { type = "string", values = { enUS = true, itIT = true } },
+	guildLanguage = { type = "string", check = function(v) return ns.Locale == nil or ns.Locale.Has(v) end },
 	rollSeconds = { type = "number", min = 5, max = 300 },
 	debug = { type = "boolean" },
 }
@@ -91,6 +91,7 @@ function Config:Setup()
 		global.schema = ok and Config.SCHEMA or global.schema
 		if not ok then self.readOnly = true end   -- a half-migrated database is not written to either
 	end
+	if ns.Locale then ns.Locale.SetActive(self:GetLanguage() ~= "auto" and self:GetLanguage() or nil) end
 	FinlandDragonCreditPointsCharDB = FinlandDragonCreditPointsCharDB or {}
 	self.char = FinlandDragonCreditPointsCharDB
 	self:UpdateGuildKey()
@@ -98,6 +99,30 @@ function Config:Setup()
 	self.db.RegisterCallback(self, "OnProfileCopied", function() ns.Bus:Emit("CONFIG_PROFILE_CHANGED") end)
 	self.db.RegisterCallback(self, "OnProfileReset", function() ns.Bus:Emit("CONFIG_PROFILE_CHANGED") end)
 	return self.db
+end
+
+-- The personal language: "auto" or a registered code. It is applied once per session, at Setup (so a change needs /reload).
+function Config:GetLanguage()
+	local code = self.db and self.db.global.language
+	if code ~= "auto" and not (ns.Locale and ns.Locale.Has(code)) then return "auto" end
+	return code
+end
+
+function Config:SetLanguage(code)
+	if not self.db then return false, "NOT_READY" end
+	if self.readOnly then return false, "READ_ONLY" end
+	if type(code) ~= "string" then return false, "BAD_TYPE" end
+	if code:lower() == "auto" then code = "auto"
+	else
+		local found
+		for _, lang in ipairs(ns.Locale and ns.Locale.Languages() or {}) do
+			if lang.code:lower() == code:lower() then found = lang.code end   -- "itit" is accepted
+		end
+		if not found then return false, "BAD_VALUE" end
+		code = found
+	end
+	self.db.global.language = code
+	return true
 end
 
 function Config:IsReadOnly() return self.readOnly == true end
@@ -138,6 +163,7 @@ function Config.Validate(name, value)
 		if (v.min and value < v.min) or (v.max and value > v.max) then return false, "OUT_OF_RANGE" end
 	end
 	if v.values and not v.values[value] then return false, "BAD_VALUE" end
+	if v.check and not v.check(value) then return false, "BAD_VALUE" end
 	return true
 end
 

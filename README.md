@@ -34,6 +34,16 @@
 - The user manual lives in [docs/wiki/](docs/wiki/Home.md) in English and Italian and is published to the GitHub wiki automatically ([ADR 0002](docs/adr/0002-github-wiki-generated-from-docs-wiki.md)).
 - Foundations are copied and adapted from the sister project Azeroth Accord (same owner, GPL-3.0); the two addons stay independent in game.
 
+## Adding a language
+
+A language is **one file plus one line in each TOC file**; no code changes:
+
+1. Copy `FinlandDragonCreditPoints/Locale/enUS.lua` to `FinlandDragonCreditPoints/Locale/<code>.lua` (for example `deDE.lua`; the code is the game's locale code), change the first line to `local L = select(2, ...).NewLocale("deDE", "Deutsch")` and translate every string. Keep the `%s` / `%d` placeholders in the same order. The last keys (`NUMBER_DECIMAL`, `NUMBER_GROUP`, `DATE_SHORT`, `DATE_LONG`, `DATETIME`) set the decimal and thousands separators and the date patterns of the language.
+2. Add `Locale\<code>.lua` after `Locale\itIT.lua` in both `FinlandDragonCreditPoints.toc` and `FinlandDragonCreditPoints_Camelot.toc`.
+3. Run `python -I -X utf8 tools/check_locale.py`: it lists missing keys, keys that do not exist in English, different placeholders and a file missing from the TOC. A missing string never breaks the addon (it falls back to English), but the check wants every key translated.
+
+Players can pick their own language with `/fdcp language` (it needs a `/reload`); the guild leader picks the language of the texts sent to everyone.
+
 ## Licence
 
 [GNU General Public License v3.0](LICENSE). Fan-made addon, not affiliated with Blizzard Entertainment.

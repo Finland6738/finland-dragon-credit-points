@@ -630,6 +630,10 @@ deve voler dire solo aggiungere un file, senza toccare il codice.
 - **Numeri e date**: separatore decimale e formato della data seguono la lingua (es. "1,5 crediti" e "19/11" in
   italiano, "1.5 credits" e "11/19" in inglese).
 - **Test**: la suite offline gira in entrambe le lingue e verifica che nessuna chiave manchi.
+- **Come è fatto (M1-5).** `Locale/Boot.lua` tiene in memoria **tutte** le lingue (AceLocale ne tiene solo una, quella
+  del client): servono sia la lingua personale sia la lingua della gilda. La lingua personale si legge in `Config:Setup`
+  (il client carica le SavedVariables dopo i file dell'addon) e vale al `/reload` successivo; `Locale.Guild(chiave, ...)`
+  compone i testi per tutti. `tools/check_locale.py` esegue i controlli di CI di questo paragrafo.
 
 Documentazione: come in Accord, codice, commenti, commit e ADR in inglese; specifiche e analisi in italiano;
 README e manuale utente in entrambe le lingue.

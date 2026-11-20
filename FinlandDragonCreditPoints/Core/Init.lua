@@ -5,8 +5,9 @@ local ADDON_NAME, ns = ...
 ns = ns or {}
 
 local FDCP = LibStub("AceAddon-3.0"):NewAddon(ADDON_NAME, "AceConsole-3.0", "AceEvent-3.0")
-local L = LibStub("AceLocale-3.0"):GetLocale(ADDON_NAME)
-ns.addon, ns.L = FDCP, L
+local L = ns.L   -- Locale/Boot.lua: follows the active language
+ns.addon = FDCP
+FDCP.L, FDCP.Locale = L, ns.Locale   -- also reachable from tests
 _G.FDCP = FDCP
 
 local FOREVER_MIN_INTERFACE, FOREVER_MAX_INTERFACE = 16001, 19999
@@ -26,13 +27,36 @@ end
 
 -- The commands in help order; later steps add theirs here.
 FDCP.commands = {
-	{ name = "help", help = L["HELP_HELP"], handler = function(self) self:PrintHelp() end },
+	{ name = "help", helpKey = "HELP_HELP", handler = function(self) self:PrintHelp() end },
+	{ name = "language", helpKey = "HELP_LANGUAGE", handler = function(self, input) self:LanguageCommand(input) end },
 }
 
 function FDCP:PrintHelp()
 	self:Print(L["HELP_HEADER"])
 	for _, c in ipairs(self.commands) do
-		self:Print("/fdcp " .. c.name .. " - " .. c.help)
+		self:Print("/fdcp " .. c.name .. " - " .. (c.helpKey and L[c.helpKey] or c.help))   -- looked up now: the language may have changed
+	end
+end
+
+-- /fdcp language [auto|<code>]: shows or sets the personal language (applied at the next /reload).
+function FDCP:LanguageCommand(input)
+	local Locale, Config = ns.Locale, ns.Config
+	local codes = {}
+	for _, lang in ipairs(Locale.Languages()) do codes[#codes + 1] = lang.code end
+	local list = table.concat(codes, ", ")
+	local _, arg = self:GetArgs(input or "", 2)
+	if not arg or arg == "" then
+		local setting = Config and Config:GetLanguage() or "auto"
+		self:Print(L["LANGUAGE_CURRENT"]:format(Locale.Active(), setting == "auto" and L["LANGUAGE_AUTO"] or setting, list))
+		return
+	end
+	local ok, err = Config:SetLanguage(arg)
+	if ok then
+		self:Print(L["LANGUAGE_SET"]:format(arg == "auto" and L["LANGUAGE_AUTO"] or arg))
+	elseif err == "READ_ONLY" then
+		self:Print(L["LANGUAGE_READ_ONLY"])
+	else
+		self:Print(L["LANGUAGE_UNKNOWN"]:format(arg, list))
 	end
 end
 

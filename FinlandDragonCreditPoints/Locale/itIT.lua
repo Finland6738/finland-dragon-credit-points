@@ -1,6 +1,5 @@
 -- Stringhe italiane. Le chiavi sono le stesse di enUS.lua (tools/check_addon.py).
-local L = LibStub("AceLocale-3.0"):NewLocale("FinlandDragonCreditPoints", "itIT")
-if not L then return end
+local L = select(2, ...).NewLocale("itIT", "Italiano")
 
 L["ADDON_TITLE"] = "Finland Dragon Credit Points"
 L["HELP_HEADER"] = "Comandi:"
@@ -12,3 +11,14 @@ L["DEBUG_CLIENT"] = "Client: %s (build %s), interface %d, id progetto %s%s"
 L["DEBUG_FOREVER"] = " (Forever)"
 L["DEBUG_FEATURES"] = "Funzioni:"
 L["DEBUG_APIS"] = "API: %d disponibili, %d mancanti, %d limitate, %d in errore"
+L["HELP_LANGUAGE"] = "mostra o cambia la lingua dell'addon"
+L["LANGUAGE_CURRENT"] = "Lingua: %s (impostazione: %s). Disponibili: %s."
+L["LANGUAGE_AUTO"] = "automatica"
+L["LANGUAGE_SET"] = "Lingua impostata su %s. Scrivi /reload per applicarla."
+L["LANGUAGE_UNKNOWN"] = "Lingua sconosciuta: %s. Usa auto oppure una tra: %s."
+L["LANGUAGE_READ_ONLY"] = "I dati salvati vengono da una versione più recente dell'addon: le impostazioni non si possono cambiare."
+L["NUMBER_DECIMAL"] = ","
+L["NUMBER_GROUP"] = "."
+L["DATE_SHORT"] = "%d/%m"
+L["DATE_LONG"] = "%d/%m/%Y"
+L["DATETIME"] = "%d/%m/%Y %H:%M"

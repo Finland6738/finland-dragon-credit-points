@@ -1377,7 +1377,7 @@ if FDCP then
 	-- /fdcp debug: re-probes the client (it may have changed since login) and prints the capability table.
 	local commands = FDCP.commands
 	commands[#commands + 1] = {
-		name = "debug", help = ns.L["HELP_DEBUG"],
+		name = "debug", helpKey = "HELP_DEBUG",
 		handler = function(self)
 			Compat:Probe()
 			for _, line in ipairs(Compat:DebugLines()) do self:Print(line) end

@@ -1,6 +1,5 @@
 -- English strings (the base language). Every visible text goes through a key (CLAUDE.md, ADR 0003).
-local L = LibStub("AceLocale-3.0"):NewLocale("FinlandDragonCreditPoints", "enUS", true)
-if not L then return end
+local L = select(2, ...).NewLocale("enUS", "English")
 
 L["ADDON_TITLE"] = "Finland Dragon Credit Points"
 L["HELP_HEADER"] = "Commands:"
@@ -12,3 +11,15 @@ L["DEBUG_CLIENT"] = "Client: %s (build %s), interface %d, project id %s%s"
 L["DEBUG_FOREVER"] = " (Forever)"
 L["DEBUG_FEATURES"] = "Features:"
 L["DEBUG_APIS"] = "APIs: %d available, %d missing, %d restricted, %d error"
+L["HELP_LANGUAGE"] = "show or change the language of the addon"
+L["LANGUAGE_CURRENT"] = "Language: %s (setting: %s). Available: %s."
+L["LANGUAGE_AUTO"] = "automatic"
+L["LANGUAGE_SET"] = "Language set to %s. Type /reload to apply it."
+L["LANGUAGE_UNKNOWN"] = "Unknown language: %s. Use auto or one of: %s."
+L["LANGUAGE_READ_ONLY"] = "The saved data comes from a newer version of the addon: settings cannot be changed."
+-- Formats: separators and date patterns of this language (strftime patterns).
+L["NUMBER_DECIMAL"] = "."
+L["NUMBER_GROUP"] = ","
+L["DATE_SHORT"] = "%m/%d"
+L["DATE_LONG"] = "%m/%d/%Y"
+L["DATETIME"] = "%m/%d/%Y %H:%M"

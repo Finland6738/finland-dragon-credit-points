@@ -34,6 +34,16 @@
 - Il manuale utente è in [docs/wiki/](docs/wiki/Home-it.md) in italiano e inglese e va sulla wiki di GitHub in automatico ([ADR 0002](docs/adr/0002-github-wiki-generated-from-docs-wiki.md)).
 - Le fondamenta si copiano e si adattano dal progetto gemello Azeroth Accord (stesso autore, GPL-3.0); in gioco i due addon restano indipendenti.
 
+## Aggiungere una lingua
+
+Una lingua è **un file più una riga in ciascun file TOC**; nessuna modifica al codice:
+
+1. Copia `FinlandDragonCreditPoints/Locale/enUS.lua` in `FinlandDragonCreditPoints/Locale/<codice>.lua` (per esempio `deDE.lua`; il codice è quello della lingua del gioco), cambia la prima riga in `local L = select(2, ...).NewLocale("deDE", "Deutsch")` e traduci ogni stringa. Tieni i segnaposto `%s` / `%d` nello stesso ordine. Le ultime chiavi (`NUMBER_DECIMAL`, `NUMBER_GROUP`, `DATE_SHORT`, `DATE_LONG`, `DATETIME`) stabiliscono i separatori dei decimali e delle migliaia e i formati della data della lingua.
+2. Aggiungi `Locale\<codice>.lua` dopo `Locale\itIT.lua` in `FinlandDragonCreditPoints.toc` e in `FinlandDragonCreditPoints_Camelot.toc`.
+3. Esegui `python -I -X utf8 tools/check_locale.py`: segnala le chiavi mancanti, quelle che non esistono in inglese, i segnaposto diversi e un file assente dal TOC. Una stringa mancante non rompe l'addon (ricade sull'inglese), ma il controllo vuole ogni chiave tradotta.
+
+Ogni giocatore sceglie la propria lingua con `/fdcp language` (serve un `/reload`); il capogilda sceglie la lingua dei testi mandati a tutti.
+
 ## Licenza
 
 [GNU General Public License v3.0](LICENSE). Addon amatoriale, non affiliato a Blizzard Entertainment.

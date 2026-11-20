@@ -8,6 +8,7 @@ Tutto parte da `/fdcp`. Finché la finestra principale non esiste, `/fdcp` da so
 |---|---|
 | `/fdcp help` | Elenca i comandi. |
 | `/fdcp debug` | Mostra cosa offre il client di gioco all'addon: versione e build del client, poi le **funzioni** che servono all'addon (master loot, finestra del loot, messaggi dei roll, statistiche degli oggetti, specializzazioni, ranghi di gilda, calendario, roster del gruppo, messaggi addon) e ogni **API** che usa, ciascuna con il suo stato. |
+| `/fdcp language [auto\|<codice>]` | Mostra la lingua dell'addon, oppure imposta quella personale (`auto` segue il client di gioco). La modifica vale dopo `/reload`. Per ora esistono inglese (`enUS`) e italiano (`itIT`). |
 
 ## Come leggere `/fdcp debug`
 

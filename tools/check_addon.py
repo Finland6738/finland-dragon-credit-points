@@ -1,10 +1,9 @@
 """Offline checks of the addon folder: both TOC files (interface and fields), listed files, embeds.xml (Libs only when
-fetched) and the locale tables.
+fetched).
 
 Adapted from Azeroth Accord (tools/check_addon.py), same owner, GPL-3.0.
 
-Locale rules: every L["KEY"] used in the code has an English string in Locale/enUS.lua (AceLocale answers with the key
-itself for a missing one, which would hide the mistake), and Locale/itIT.lua has exactly the English keys.
+The locale tables are checked by tools/check_locale.py (M1-5).
 
 Usage: python -I -X utf8 tools/check_addon.py (also called by tools/check_docs.py)
 """
@@ -63,35 +62,6 @@ def lua_files():
                     yield os.path.join(folder, name)
 
 
-def locale_keys(name):
-    path = os.path.join(ADDON, "Locale", name)
-    if not os.path.isfile(path):
-        return None
-    with open(path, encoding="utf-8") as f:
-        return set(re.findall(r'^L\["([^"]+)"\]\s*=', f.read(), re.M))
-
-
-def check_locale(problems):
-    have = locale_keys("enUS.lua")
-    if have is None:
-        problems.append(f"{NAME}/Locale/enUS.lua is missing")
-        return
-    for path in lua_files():
-        with open(path, encoding="utf-8") as f:
-            text = f.read()
-        used = set(re.findall(r'L\["([A-Za-z0-9_]+)"\]', text))
-        for key in sorted(used - have):
-            problems.append(f"{os.path.relpath(path, ROOT)}: L[\"{key}\"] has no string in Locale/enUS.lua")
-    italian = locale_keys("itIT.lua")
-    if italian is None:
-        problems.append(f"{NAME}/Locale/itIT.lua is missing")
-        return
-    for key in sorted(italian - have):
-        problems.append(f"Locale/itIT.lua: L[\"{key}\"] is not an English key (typo?)")
-    for key in sorted(have - italian):
-        problems.append(f"Locale/itIT.lua: L[\"{key}\"] has no Italian string (the addon is in English and Italian)")
-
-
 def read_toc(toc):
     with open(toc, encoding="utf-8") as f:
         lines = f.read().splitlines()
@@ -143,7 +113,6 @@ def check(problems):
             rel = os.path.relpath(path, ADDON).replace(os.sep, "/")
             if rel not in listed:
                 problems.append(f"{NAME}/{rel} is not listed in the TOC")
-    check_locale(problems)
 
 
 def main():

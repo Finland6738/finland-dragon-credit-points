@@ -14,6 +14,7 @@
 ## X-License: GPL-3.0
 
 embeds.xml
+Locale\Boot.lua
 Locale\enUS.lua
 Locale\itIT.lua
 Core\Init.lua
