@@ -5,13 +5,13 @@ One file per milestone; each file lists the **development steps** of that milest
 | Milestone | File | Goal | Steps | Needs the real client |
 |---|---|---|---|---|
 | **M0** | [M0-spike.md](M0-spike.md) | Workflow, then a probe addon that answers the open technical questions in game | 8 | the probe run (owner) |
-| **M1** | [M1-foundations.md](M1-foundations.md) | Addon skeleton, tests, Compat, config, locales, transport, theme, empty window | 8 | final check |
+| **M1** | [M1-foundations.md](M1-foundations.md) | Addon skeleton, tests, Compat, config, locales, transport, site study, theme, empty window | 9 | final check |
 | **M2** | [M2-engine-ledger.md](M2-engine-ledger.md) | Pure rules engine and event ledger, "Patto" preset, the three regulation examples as tests | 7 | no |
-| **M3** | [M3-roster-nights.md](M3-roster-nights.md) | Pool, mains and alts, nights, lineup, bench, attendance, addon check and `/raid` notice, credits table | 9 | final check |
+| **M3** | [M3-roster-nights.md](M3-roster-nights.md) | Pool, mains and alts, nights, lineup, bench, attendance, first kills, addon check and `/raid` notice, Roster, Credits and Progress tabs | 11 | final check |
 | **M4** | [M4-loot-session.md](M4-loot-session.md) | A whole boss run by the addon: collection, popup, rolls, proposal, delivery | 9 | final check |
 | **M5** | [M5-upgrades-council.md](M5-upgrades-council.md) | Upgrade hints, council flags and interventions, vote, legendaries, BoE and bank | 8 | final check |
 | **M6** | [M6-history-export.md](M6-history-export.md) | History views, log and audit, exports, officer sync, read-only credits for members | 8 | final check |
-| **M7** | [M7-release.md](M7-release.md) | Material Design polish, settings, profiles, diagnostics, packaging, manual, v1.0.0 | 8 | beta and release checklist |
+| **M7** | [M7-release.md](M7-release.md) | Site-style polish, settings, profiles, diagnostics, packaging, manual, v1.0.0 | 8 | beta and release checklist |
 
 ## Order and dependencies
 

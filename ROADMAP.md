@@ -7,15 +7,17 @@ This page is the index and the rules every step follows. **The development steps
 | Milestone | Steps | Content | Exit criterion |
 |---|---|---|---|
 | **[M0 – Workflow and spike](docs/roadmap/M0-spike.md)** | M0-0 … M0-7 | The development workflow; a probe addon (not distributed) for master loot, the loot window, rolls in instances, `RAID` addon messages, item stats, specializations, guild ranks, calendar | probe and `docs/spike/README.md` ready; results pending the owner's run |
-| **[M1 – Foundations](docs/roadmap/M1-foundations.md)** | M1-1 … M1-8 | TOC, Ace3, offline tests, Compat, Config, Log, Locale (itIT + enUS), codec and guarded transport, theme, empty window | the addon loads; `/fdcp` opens an empty themed window |
+| **[M1 – Foundations](docs/roadmap/M1-foundations.md)** | M1-1 … M1-8 (+ M1-6b) | TOC, Ace3, offline tests, Compat, Config, Log, Locale (itIT + enUS), codec and guarded transport, the study of the community site (UI style and site exports), theme, empty window with the six tabs | the addon loads; `/fdcp` opens an empty themed window |
 | **[M2 – Engine and ledger](docs/roadmap/M2-engine-ledger.md)** | M2-1 … M2-7 | Classifier, pricing, priority, ledger, seasons and late joiners, rules, presets and permissions, session state machine | every rule works offline; the three regulation examples pass |
-| **[M3 – Roster and nights](docs/roadmap/M3-roster-nights.md)** | M3-1 … M3-9 | Guild ranks, pool, mains and alts, nights, lineup, bench, attendance per boss, addon check and `/raid` notice, credits table | the ML opens and closes a night and knows who lacks the addon |
+| **[M3 – Roster and nights](docs/roadmap/M3-roster-nights.md)** | M3-1 … M3-9 (+ M3-3b, M3-8b) | Guild ranks, pool, mains and alts, nights, lineup, bench, attendance per boss, first kills per boss and faction, addon check and `/raid` notice, Roster, Credits and Progress tabs | the ML opens and closes a night and knows who lacks the addon |
 | **[M4 – Loot session](docs/roadmap/M4-loot-session.md)** | M4-1 … M4-9 | Session protocol, loot source, roll listener, session controller, ML window, player popup, delivery, announcements | a whole boss handled by the addon |
 | **[M5 – Upgrades and council](docs/roadmap/M5-upgrades-council.md)** | M5-1 … M5-8 | Upgrade score and verdicts, weights and wishlist, council flags, interventions and vote, legendaries, BoE and bank | the council works from the addon |
-| **[M6 – History and export](docs/roadmap/M6-history-export.md)** | M6-1 … M6-8 | History views, log and audit, Discord / CSV / JSON and site export, officer sync, credits for members, backup | the Discord table comes out of the addon |
-| **[M7 – Polish and release](docs/roadmap/M7-release.md)** | M7-1 … M7-8 | Material Design polish, settings and permissions, profiles, diagnostics, performance, packaging, manual | first release for the guild, `v1.0.0` |
+| **[M6 – History and export](docs/roadmap/M6-history-export.md)** | M6-1 … M6-8 | History views, log and audit, Discord / CSV / JSON, the three community-site files (`roster.json`, `loot.json`, `progress.json`), officer sync, credits for members, backup | the Discord table comes out of the addon |
+| **[M7 – Polish and release](docs/roadmap/M7-release.md)** | M7-1 … M7-8 | Site-style polish, settings and permissions, profiles, diagnostics, performance, packaging, manual | first release for the guild, `v1.0.0` |
 
-M2 and M3 may run in either order after M1; M4 depends on M0, M2 and M3. **Next step: M0-1.**
+M2 and M3 may run in either order after M1; M4 depends on M0, M2 and M3. **Next step: M1-7** (M0-7 waits for the owner's spike results).
+
+The look of every window follows [`docs/specs/ui-style.md`](docs/specs/ui-style.md) and the community-site exports follow [`docs/specs/site-export.md`](docs/specs/site-export.md) (step M1-6b). A step inserted between two existing ones takes a letter (`M1-6b`), so the ids already in use never change.
 
 ## The spike and plan B
 

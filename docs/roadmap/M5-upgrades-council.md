@@ -93,8 +93,8 @@ Open question 8 ([#2](https://github.com/Finland6738/finland-dragon-credit-point
 ### M5-8 — Council window and the M5 checklist
 - Branch: `step/m5-8-council-ui`
 - Depends on: M5-5, M5-6, M5-7
-- Analysis: §9.3 (Council page), §12 (M5 exit)
-- Scope: `UI/Windows/Council.lua` (flags, intervention dialogs with reason, votes, legendary projects); `docs/checklists/M5.md` for the owner.
+- Analysis: §9.3 (Council page), §12 (M5 exit); [`docs/specs/ui-style.md`](../specs/ui-style.md) §6
+- Scope: `UI/Windows/Council.lua` as the **Loot › Council** sub-tab, look per `ui-style.md` (flags, intervention dialogs with reason, votes, legendary projects); `docs/checklists/M5.md` for the owner.
 - Done when:
   - [ ] The council can do every action of M5-5 and M5-6 from the window in the mock.
   - [ ] The owner confirms the council flow in game. *(in game)*

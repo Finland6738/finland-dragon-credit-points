@@ -4,7 +4,7 @@
 
 **A credit-based loot system for World of Warcraft: Forever guilds.** Finland Dragon Credit Points (FDCP, command `/fdcp`) runs the guild's loot nights from inside the game: the master looter opens a roll for each drop, every raider answers main-spec or off-spec from a popup and rolls, and the addon computes the winner by the guild's rules — fewest credits wins, then the highest roll, then a reroll among the tied — and writes who gets the item, how many credits it costs and why. The master looter confirms, rejects or changes the proposal; the council can step in with a reason; everything lands in a ledger of credits, nights and awards that every member can read.
 
-> **Status: in development, no download yet.** The analysis is done ([docs/ANALISI.md](docs/ANALISI.md), Italian) and the development workflow is in place; the addon is built one roadmap step at a time, starting with a probe for the in-game checks (M0) and the foundations (M1). The addon skeleton and its packaging exist (M1-1): it can be installed for testing with `tools/install_addon.py` (see the [Installation](docs/wiki/Installation.md) page) and `/fdcp help` is the only command so far. `Core/Compat.lua` (M1-3) is the single guarded door to the game API and `/fdcp debug` prints what the client offers (see the [Commands](docs/wiki/Commands.md) page). Settings, per-guild data and schema migrations live in `Core/Config.lua` (M1-4). Messages between players go through a versioned codec and a guarded send queue that waits out the chat lockdown and boss encounters (`Net/`, M1-6). Nothing has been run in the game yet.
+> **Status: in development, no download yet.** The analysis is done ([docs/ANALISI.md](docs/ANALISI.md), Italian) and the development workflow is in place; the addon is built one roadmap step at a time, starting with a probe for the in-game checks (M0) and the foundations (M1). The addon skeleton and its packaging exist (M1-1): it can be installed for testing with `tools/install_addon.py` (see the [Installation](docs/wiki/Installation.md) page) and `/fdcp help` is the only command so far. `Core/Compat.lua` (M1-3) is the single guarded door to the game API and `/fdcp debug` prints what the client offers (see the [Commands](docs/wiki/Commands.md) page). Settings, per-guild data and schema migrations live in `Core/Config.lua` (M1-4). Messages between players go through a versioned codec and a guarded send queue that waits out the chat lockdown and boss encounters (`Net/`, M1-6). The look of the interface (the community site's style) and the files exported for the site are specified in [docs/specs/](docs/specs/ui-style.md) with previews of the tabs (M1-6b). Nothing has been run in the game yet.
 
 [Italiano](README.it.md) · [Roadmap](ROADMAP.md) · [Analysis (Italian)](docs/ANALISI.md) · [Decisions](docs/adr/README.md) · [User manual](docs/wiki/Home.md) · [Changelog](CHANGELOG.md)
 
@@ -19,8 +19,9 @@
 | **Mandatory addon** | Who in the raid lacks the addon, and a one-click notice in `/raid` with their names |
 | **Upgrade hints** | Each raider's client compares the drop with the equipped item; the council sees "big upgrade, passed" or "possible waste" — a hint, never an automatic decision |
 | **Council** | Interventions with a mandatory reason, an optional vote, voided awards as compensating events |
-| **Export** | The credits table for Discord, CSV, JSON and the community site's `loot.json` |
-| **Interface** | Material Design 3 in the colours of the logo; English and Italian, more languages by adding one file |
+| **Progress** | First kill of every boss per guild faction, as on the community site's Progress tab |
+| **Export** | The credits table for Discord, CSV, JSON, and the community site's `roster.json`, `loot.json` and `progress.json` ready to drop in ([spec](docs/specs/site-export.md)) |
+| **Interface** | The look of the guild community site (dark "Nebula" theme, plus a light theme and the logo's colours), tabs Roster · Credits · Progress · Loot · History · Settings ([style and previews](docs/specs/ui-style.md)); English and Italian, more languages by adding one file |
 
 ## Requirements
 

@@ -502,34 +502,32 @@ gilde) e backup completo del registro.
 
 ### 7.1 Esportazione per il sito della community
 
-La pagina loot del sito ([nebula-community.github.io/giochi/wow-forever/#loot](https://nebula-community.github.io/giochi/wow-forever/#loot))
-legge `content/games/wow-forever/loot.json` oppure due fogli Google pubblicati come CSV (`roster`, `awards`), e
-**calcola da sola i totali**: gli officer scrivono solo i pezzi assegnati. È la stessa idea del registro
-dell'addon, quindi l'addon esporta direttamente in quel formato e nessuno ricopia a mano.
+La pagina WoW Forever del sito ([nebula-community.github.io/giochi/wow-forever/#loot](https://nebula-community.github.io/giochi/wow-forever/#loot))
+legge tre file di `content/games/wow-forever/`: `roster.json` (scheda Roster), `loot.json` (scheda Loot: il sito
+**calcola da solo i totali** dalle assegnazioni) e `progress.json` (scheda Progress: la prima uccisione di ogni boss per
+ciascuna delle due gilde, Nebulah in Orda e Nebulaa in Alleanza). L'addon li produce **pronti da mettere nel sito
+senza ritocchi**, nel formato attuale; la specifica completa (file esatti, campi, fazioni, che cosa registrare) è
+[`docs/specs/site-export.md`](specs/site-export.md) (passo M1-6b).
 
-| Sito | Dall'addon |
+In breve:
+
+| File | Dall'addon |
 |---|---|
-| `seasons[]`, la più recente in cima | una voce per season (pacchetto di raid); `closed: true` quando la season si chiude |
-| `season`, `updated` | nome della season, data dell'ultima serata |
-| `roster[]`: `name`, `class`, `spec`, `faction` | main del pool; `class` in minuscolo inglese (`warrior`, `priest`…), `spec` = MS1 |
-| `raids[]`: `id`, `instance`, `date`, `bosses` | una voce per serata; `bosses` = "uccisi/totali" dell'istanza |
-| `raids[].awards[]`: `player`, `item`, `cost` | ogni `ITEM_AWARDED` della serata; `item` = nome dell'oggetto (off-spec con suffisso "(off-spec)") |
-| CSV `awards`: `raid_id,instance,date,bosses,player,item,cost` | stessa cosa, una riga per assegnazione |
+| `roster.json` | i main del pool della propria fazione: nome senza reame, classe in minuscolo inglese, spec MS1 in inglese, ruolo, fazione, `Raider` / `Trial` |
+| `loot.json` | una season per voce, la più recente in cima; una `raids[]` per serata ufficiale (`GG/MM`, istanza in inglese, `uccisi/totale`); le assegnazioni valide con `cost` 0, 1 o 2 |
+| `progress.json` | per ogni boss della tabella fissa delle istanze, la data `AAAA-MM-GG` della prima uccisione della propria fazione (dagli eventi `ENCOUNTER_KILLED` e `PROGRESS_SET`, M3-3b), mai una data più recente di quella già presente |
 
-Tre cose del registro che il formato del sito oggi **non sa rappresentare**:
+Lo studio del sito ha corretto un punto di questa analisi: il controllo del sito (`npm run validate`) accetta solo
+costi 0, 1 e 2, quindi **niente righe a costo negativo**. L'esportazione è lo stato attuale del registro: le
+assegnazioni annullate spariscono, quelle corrette hanno il costo corretto, e i totali del sito coincidono con quelli
+dell'addon. I crediti iniziali dei nuovi arrivati diventano righe sintetiche "Crediti iniziali" (costo 2 e 1) finché il
+sito non ha un campo `start`; gli oggetti alla banca di gilda non si esportano. Le estensioni `start` / `kind` restano
+dietro un'opzione spenta ([issue #3](https://github.com/Finland6738/finland-dragon-credit-points/issues/3)).
 
-1. **Crediti iniziali dei nuovi arrivati** (media del roster): servirebbe un campo `start` nella riga del roster.
-2. **Correzioni e annullamenti** del council: si possono esportare come assegnazioni con `cost` negativo e
-   `item` descrittivo ("Correzione: …"), ma è più pulito un campo `kind` (`award` / `adjust`).
-3. **Oggetti alla banca di gilda**: non hanno un giocatore; o si omettono, o si aggiunge una riga "Banco dell'Oste"
-   fuori dalla classifica.
-
-Finché il sito non cambia, l'addon usa solo i campi esistenti (cost negativo per le correzioni, `start`
-ignorato). Le estensioni al sito sono un lavoro separato, nel repository della community.
-
-L'esportazione è un testo da copiare (finestra con il JSON o il CSV già selezionato): un addon non può scrivere
-file né collegarsi a internet. Un passo in più, facoltativo, è uno script che legge le SavedVariables dopo la
-serata e aggiorna `loot.json` da solo.
+Due modi di esportare: la **finestra di copia** (Storico › Esporta: file completo o frammento, già selezionato,
+perché un addon non scrive file né usa la rete) e, consigliato, lo script **`tools/site_export.py`** che legge le
+SavedVariables dopo la serata e **unisce** i tre oggetti ai file del sito, conservando l'altra fazione, le season
+precedenti all'addon, le copertine e le istanze "in arrivo".
 
 ---
 
@@ -641,48 +639,60 @@ README e manuale utente in entrambe le lingue.
 
 ---
 
-## 9. Interfaccia: Material Design 3 in tinta con il logo
+## 9. Interfaccia: lo stile del sito della community
 
-### 9.1 Palette (dal logo)
+Lo stile dell'interfaccia segue la pagina WoW Forever del sito della community, dopo lo studio di un gruppo di
+esperti (designer web, ingegnere UI di addon per il motore 12.0, ingegnere dati) su che cosa si può riprodurre nel
+client, che non ha CSS: solo texture, 9-slice, maschere, font inclusi nell'addon e `AnimationGroup`. **La specifica è
+[`docs/specs/ui-style.md`](specs/ui-style.md)** (passo M1-6b): token, componenti e come si costruiscono, verdetto
+"identico / approssimato / non fattibile" per ogni elemento, font e licenze, finestra e schede, anteprime generate da
+`tools/make_mockups.py`. Questa sezione ne riassume le decisioni; in caso di differenza vale la specifica.
 
-| Token | Colore | Uso |
+### 9.1 Palette e temi
+
+Gli stessi token (`bg`, `surface-1…3`, `raised`, tre livelli di `border`, `text-1…3`, `accent`, `accent-text`,
+`accent-2`, `neon`, `ok` / `warn` / `err`, `grad`) hanno tre valori:
+
+| Tema | Origine | Colori principali |
 |---|---|---|
-| `background` | `#071715` | fondo finestre (verde-nero del cielo del logo) |
-| `surface` | `#0E2422` | card, tabelle |
-| `surfaceVariant` | `#16332F` | righe alternate, campi |
-| `outline` | `#3A5550` | bordi, divisori |
-| `primary` | `#E9B949` | oro del drago e del forziere: pulsanti principali, selezione |
-| `onPrimary` | `#2A1E00` | testo sui pulsanti oro |
-| `primaryContainer` | `#5A4310` | chip selezionati, badge |
-| `secondary` | `#3E9E5F` | verde delle squame: stato positivo, upgrade |
-| `tertiary` | `#B8E86A` | verde luminoso del bagliore: focus, timer, evidenze |
-| `error` | `#FF6B5E` | segnalazioni, annullamenti |
-| `onSurface` | `#E6EFE9` | testo principale |
-| `onSurfaceMuted` | `#9FB5AE` | testo secondario |
+| **Nebula** (predefinito) | tema scuro del sito | fondo `#0B0612`, superfici viola-nere, accento ambra `#FC7E46`, gradiente ambra → corallo → magenta, neon `#C45BC4` |
+| **Aurora** | tema chiaro del sito | fondo `#F5F8FA`, accento blu `#0054B6`, gradiente blu → verde acqua |
+| **Drago** | logo della gilda (la palette di prima di M1-6b) | fondo `#071715`, superfici verdi, oro `#E9B949`, verde `#3E9E5F`, bagliore `#B8E86A` |
 
-I colori di qualità degli oggetti restano quelli del gioco (verde, blu, viola, arancione): sono un linguaggio che i
-giocatori già leggono.
+Il tema si cambia nelle Impostazioni senza `/reload`. I colori di classe e di qualità degli oggetti restano quelli
+del gioco; le fazioni non hanno colore (nome e lettera O / A, come sul sito). Il logo della gilda resta nella barra
+della finestra e nel pulsante della minimappa in ogni tema.
 
-### 9.2 Elementi MD3 da costruire
+### 9.2 Elementi da costruire
 
-- **Forme**: angoli 12/16 px con texture 9-slice e mask texture (il motore 12.0 le supporta).
-- **Elevazione**: ombre morbide sotto card e dialog (texture), non bordi pesanti.
-- **Stati**: hover 8%, pressed 12% di sovrapposizione; ripple con `AnimationGroup` (scala + trasparenza).
-- **Movimento**: 150 ms per le transizioni piccole, 250 ms per i pannelli.
-- **Tipografia**: una sans moderna con licenza libera (Inter o Roboto, OFL/Apache) per il testo; per i titoli si
-  può tenere Friz Quadrata del gioco, per non perdere il tono fantasy del logo.
-- **Icone**: sottoinsieme di Material Symbols (Apache-2.0) in un atlas TGA.
-- **Componenti**: navigation rail, top app bar, card, chip di filtro, tabella ordinabile con ScrollBox,
-  segmented button (MS / OS / Passo), FAB "Avvia serata", snackbar, dialog, switch, slider, barra di progresso.
+- **Forme**: raggi 8 / 12 / 18 con texture bianche 9-slice tinte dal token; bordi a 1 px netti.
+- **Profondità**: una riga di luce in cima alle card e un'ombra morbida; sullo scuro la profondità viene dalla luce.
+- **Bagliori**: texture pre-sfocate in fusione additiva, al massimo un elemento neon per vista.
+- **Stati**: hover 8%, pressed 12% e pressione in scala 0,97; transizioni 120 / 200 / 320 ms con curva `OUT`.
+- **Tipografia**: Outfit (testo) e JetBrains Mono (numeri e date), gli stessi del sito, OFL 1.1; Orbitron (OFL 1.1)
+  al posto di Atomed, il carattere del logo del sito, che non ha una licenza che ne permetta la distribuzione; i
+  font del gioco come ripiego.
+- **Icone**: foglio di icone bianche in TGA (Lucide ISC o Material Symbols Apache-2.0).
+- **Componenti**: schede a sottolineatura, selettore a pillole, card, fisarmonica della season, tabella ordinabile
+  con colonne fisse (ScrollBox), nome di classe con quadratino, badge e chip, pulsanti (principale a gradiente,
+  secondario, ghost, neon), barre sottili a gradiente, card d'istanza con copertina, dialog, toast, switch.
+- **Non fattibili**, con l'alternativa nella specifica: sfocatura dello sfondo, spaziatura fra le lettere, curve a
+  molla, inclinazione 3D delle card.
 
 ### 9.3 Finestre
 
-1. **App principale** (rail a sinistra): Sessione · Crediti · Roster · Serate · Log · Council · Impostazioni.
+1. **App principale** con barra del titolo (logo, nome, season e fazione, stato della serata) e **schede orizzontali
+   come sul sito**: **Roster** (Pool · Serata · Addon) · **Crediti** · **Progress** (prima uccisione per boss e per
+   fazione) · **Loot** (Sessione · Council) · **Storico** (Serate · Log · Audit · Esporta) · **Impostazioni**
+   (Personali · Regole · Permessi · Sito). Le schede che un rango non può usare non compaiono.
 2. **Popup del pezzo (giocatore)**: una card per pezzo, impilabili; vedi §5.1.
-3. **Sessione (ML)**: a sinistra i pezzi della sessione con stato; a destra i candidati con crediti, risposta,
-   roll, delta, segnalazioni; in basso "Apri roll", "Chiudi", "Assegna", "Intervento del council".
-4. **Tabella crediti**: ordinabile, filtri per classe e ruolo, posizione in fila, esportazione Discord.
-5. **Pulsante minimappa** e voce nel compartment degli addon con il logo.
+3. **Sessione (ML)**, nella scheda Loot: a sinistra i pezzi della sessione con stato; a destra i candidati con
+   crediti, risposta, roll, segnalazioni; sotto la proposta con "Conferma e assegna", "Modifica", "Intervento del
+   council".
+4. **Tabella crediti**: come sul sito (season a fisarmonica, una colonna per serata, totale, precedenza), filtri per
+   ruolo e classe, la propria riga evidenziata, esportazione.
+5. **Progress**: una card per istanza con copertina, barra per fazione e boss con teschio e data.
+6. **Pulsante minimappa** e voce nel compartment degli addon con il logo.
 
 Il logo originale è in `assets/logo-source.webp`; per il gioco va convertito in TGA quadrato a potenza di due
 (256 per la finestra, 64 per la minimappa).
@@ -728,13 +738,13 @@ più le preferenze personali: posizione dei popup, suoni, pesi delle statistiche
 | Milestone | Contenuto | Uscita |
 |---|---|---|
 | **M0 Spike** | Addon sonda: master loot in raid Forever, lettura `LOOT_OPENED`, `GiveMasterLoot`, roll da `CHAT_MSG_SYSTEM` dentro/fuori boss, messaggi `RAID` dopo `ENCOUNTER_END`, `GetItemStatDelta` su pezzi raid, specializzazioni | Rapporto: cosa funziona, cosa serve il piano B |
-| **M1 Fondamenta** | TOC, Ace3, Compat (da Accord), Config, Log, Locale (itIT + enUS, controllo chiavi mancanti e testo nel codice), test offline, CI, Theme di base | Addon che si carica, `/fdcp` apre una finestra vuota a tema |
+| **M1 Fondamenta** | TOC, Ace3, Compat (da Accord), Config, Log, Locale (itIT + enUS, controllo chiavi mancanti e testo nel codice), test offline, CI, studio del sito della community (stile e file esportati, M1-6b), tema e finestra con le sei schede | Addon che si carica, `/fdcp` apre una finestra vuota a tema |
 | **M2 Motore e registro** | Rules, Pricing, Classifier, Priority, Ledger, Season, preset "Patto", test con i tre esempi | Tutte le regole funzionano offline |
-| **M3 Roster e serate** | Pool, main/alt, lineup, panchina, cambi, presenze per boss, calendario, controllo "addon nel raid" e avviso in `/raid` | Il ML apre e chiude una serata e sa chi non ha l'addon |
+| **M3 Roster e serate** | Pool, main/alt, lineup, panchina, cambi, presenze per boss, calendario, prime uccisioni per boss e per fazione, controllo "addon nel raid" e avviso in `/raid`, schede Roster, Crediti e Progress | Il ML apre e chiude una serata e sa chi non ha l'addon |
 | **M4 Sessione di loot** | SessionFSM, raccolta dal corpo, popup del giocatore, roll, reroll, conferma, consegna, protocollo RAID | Un boss intero gestito dall'addon |
 | **M5 Upgrade e council** | UpgradeScore, pesi, verdetti, segnalazioni, interventi del council, voto, leggendari, BoE e banca | Il council lavora dall'addon |
-| **M6 Storico ed export** | Viste serate/membro/oggetto, log, audit, export Discord/CSV/JSON, sync fra officer | La tabella su Discord esce dall'addon |
-| **M7 Rifinitura e rilascio** | MD3 completo (ripple, ombre, icone), impostazioni, profili, manuale, versione 1.0 | Prima release per la gilda |
+| **M6 Storico ed export** | Viste serate/membro/oggetto, log, audit, export Discord/CSV/JSON e i tre file del sito (`roster`, `loot`, `progress`), sync fra officer | La tabella su Discord esce dall'addon |
+| **M7 Rifinitura e rilascio** | Stile del sito completo (bagliori, ombre, icone, temi), impostazioni, profili, manuale, versione 1.0 | Prima release per la gilda |
 
 M2 e M3 possono procedere in parallelo dopo M1; M4 dipende da M0, M2 e M3.
 
@@ -774,4 +784,6 @@ l'indice è [`ROADMAP.md`](../ROADMAP.md).
 10. **Sito della community**: va bene estendere `loot.json` con `start` (crediti iniziali) e `kind` (assegnazione /
     correzione), o l'addon deve restare dentro il formato attuale (§7.1)? **Aperta**, opzioni in
     [issue #3](https://github.com/Finland6738/finland-dragon-credit-points/issues/3). Default reversibile: solo il
-    formato attuale, con i campi estesi dietro un'opzione spenta (step M6-4).
+    formato attuale, con i campi estesi dietro un'opzione spenta (step M6-4). Dopo lo studio del sito (M1-6b,
+    [site-export.md](specs/site-export.md) §8): niente costi negativi (il controllo del sito li rifiuta), crediti
+    iniziali come righe sintetiche finché `start` non esiste.

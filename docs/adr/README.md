@@ -11,3 +11,4 @@ They record *why* the project is built a certain way. A decision that changes is
 | [0001](0001-git-flow-and-automated-shipping.md) | Git flow, CI and automated shipping of roadmap steps | accepted |
 | [0002](0002-github-wiki-generated-from-docs-wiki.md) | The GitHub wiki: a bilingual user manual generated from `docs/wiki/` | accepted |
 | [0003](0003-documentation-languages.md) | Documentation languages: English, Italian, or both | accepted |
+| [0004](0004-interface-style-of-the-community-site.md) | The interface follows the community site's style | accepted |

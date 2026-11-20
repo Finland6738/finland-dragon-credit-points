@@ -9,8 +9,8 @@ Open question 10 ([#3](https://github.com/Finland6738/finland-dragon-credit-poin
 ### M6-1 — History views: nights, member, item
 - Branch: `step/m6-1-history-views`
 - Depends on: M3-8, M4-4
-- Analysis: §7 (views)
-- Scope: query functions over the ledger and `UI/Windows/Nights.lua` history tab, `UI/Windows/Member.lua`, `UI/Windows/Item.lua`: nights by week (instance, bosses, lineup, bench, drops, credits spent), a member's items, credit curve, attendance and council actions about them (attendance visible only to officers), an item's drops and owners.
+- Analysis: §7 (views); [`docs/specs/ui-style.md`](../specs/ui-style.md) §6
+- Scope: the **History** tab (sub-tabs Nights · Log · Audit · Export, look per `ui-style.md`): query functions over the ledger and the Nights sub-tab, `UI/Windows/Member.lua`, `UI/Windows/Item.lua`: nights by week (instance, bosses, lineup, bench, drops, credits spent), a member's items, credit curve, attendance and council actions about them (attendance visible only to officers), an item's drops and owners.
 - Done when:
   - [ ] Views match the ledger in tests; members never see attendance.
 - Tests: `Tests/test_history.lua`.
@@ -21,8 +21,8 @@ Open question 10 ([#3](https://github.com/Finland6738/finland-dragon-credit-poin
 ### M6-2 — Loot log and audit
 - Branch: `step/m6-2-log-audit`
 - Depends on: M6-1, M5-5
-- Analysis: §7 (log, audit)
-- Scope: `UI/Windows/Log.lua` (everything that dropped, assigned or not, from which boss, to whom, for which response, at what cost) and the audit view (council interventions with reasons, manual corrections, voids, configuration changes with date and author); filters and search.
+- Analysis: §7 (log, audit); [`docs/specs/ui-style.md`](../specs/ui-style.md) §6
+- Scope: the **History › Log** and **History › Audit** sub-tabs: `UI/Windows/Log.lua` (everything that dropped, assigned or not, from which boss, to whom, for which response, at what cost) and the audit view (council interventions with reasons, manual corrections, voids, configuration changes with date and author); filters and search.
 - Done when:
   - [ ] Every intervention of the M5 tests appears in the audit with its reason.
 - Tests: `Tests/test_log_audit.lua`.
@@ -34,7 +34,7 @@ Open question 10 ([#3](https://github.com/Finland6738/finland-dragon-credit-poin
 - Branch: `step/m6-3-export`
 - Depends on: M6-1
 - Analysis: §7 (export), §8.5 (numbers, dates, guild language)
-- Scope: `Domain/Export.lua` (credits table as Markdown ready for Discord, CSV, JSON; attendance never in public exports), a copy window with the text already selected; numbers and dates in the guild language; `export.public` permission.
+- Scope: `Domain/Export.lua` (credits table as Markdown ready for Discord, CSV, JSON; attendance never in public exports), a copy window with the text already selected; numbers and dates in the guild language; `export.public` permission; the copy window is the **History › Export** sub-tab, look per `ui-style.md` (preview `fdcp-site-export.webp`).
 - Done when:
   - [ ] Exports are deterministic and match golden files in tests.
 - Tests: `Tests/test_export.lua`.
@@ -45,12 +45,14 @@ Open question 10 ([#3](https://github.com/Finland6738/finland-dragon-credit-poin
 ### M6-4 — Community-site export
 - Branch: `step/m6-4-site-export`
 - Depends on: M6-3
-- Analysis: §7.1, §13 question 10
-- Scope: the `loot.json` structure (`seasons[]` newest first, `season`, `updated`, `roster[]`, `raids[]` with `awards[]`) and the `awards` CSV; corrections as negative `cost` rows; bank items left out; the `start` / `kind` extension written only behind an option that is off and hidden (reversible default of issue #3).
+- Analysis: §7.1, §13 question 10; [`docs/specs/site-export.md`](../specs/site-export.md) (the whole spec)
+- Scope: `Domain/SiteExport.lua` (pure) building the **three site files** exactly as in `site-export.md` §3: `roster.json` (own faction's mains), `loot.json` (`seasons[]` newest first, nights as `raids[]`, valid awards with `cost` 0–2, voids and corrections folded in, late joiners' start credits as synthetic rows, bank items left out) and `progress.json` (first kills of M3-3b, own faction key only, never a later date); the copy window with "full file" and "fragment" forms and the warning of §6.1; the three objects saved in `FinlandDragonCreditPointsDB…siteExport` at every night close and on request; `tools/site_export.py` reading the SavedVariables and **merging** into `content/games/wow-forever/` of a site checkout (keeps the other faction, older seasons, covers, locked instances, unknown keys; the site's own validation rules; `--dry-run`); the `awards` CSV of the site's sheet path; the `start` / `kind` extension written only behind an option that is off and hidden (reversible default of issue #3).
 - Done when:
-  - [ ] The export validates against a fixture of the site's current format.
+  - [ ] The three exports match golden files and pass the rules of the site's `scripts/validate.mjs` (classes, roles, players in the season roster, `cost` 0–2) in tests.
+  - [ ] `tools/site_export.py` merges into a fixture of the site's current files without losing data of the other faction or older seasons (Python tests).
+  - [ ] The site builds and shows the three files exported from a real night. *(in game)*
 - Tests: `Tests/test_site_export.lua`.
-- Docs: Export (EN + IT), CHANGELOG; comment on issue #3 with what was built.
+- Docs: Export and Site Export (EN + IT), CHANGELOG; comment on issue #3 with what was built.
 - Real client: nothing beyond M6-3.
 - Suggested model/effort: `sonnet` / medium
 
@@ -94,7 +96,7 @@ Open question 10 ([#3](https://github.com/Finland6738/finland-dragon-credit-poin
 - Branch: `step/m6-8-checklist`
 - Depends on: M6-4, M6-6, M6-7
 - Analysis: §12 (M6 exit)
-- Scope: `docs/checklists/M6.md` (history views, Discord and site export, two officers syncing, members reading credits, backup).
+- Scope: `docs/checklists/M6.md` (history views, Discord export, the three site files merged by `tools/site_export.py` and shown by the site, two officers syncing, members reading credits, backup).
 - Done when:
   - [ ] The checklist exists and is linked from the README.
   - [ ] The owner confirms M6 in game. *(in game)*

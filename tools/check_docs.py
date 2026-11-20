@@ -12,7 +12,8 @@
   8. Wiki languages: every English page of docs/wiki/ has its Italian twin <Page>-it.md and the other way round
      (ADR 0003).
   9. From M1 on: the addon TOC (tools/check_addon.py), the release package (tools/check_package.py) and the locales
-     (tools/check_locale.py). Each check runs only once its tool exists, so the design-phase repository passes
+     (tools/check_locale.py), and the design previews of docs/specs/ (tools/make_mockups.py: every scene builds and has
+     its image). Each check runs only once its tool exists, so the design-phase repository passes
      without them.
 
 Usage: python -I -X utf8 tools/check_docs.py      (exit code 0 = all good, 1 = problems, listed one per line)
@@ -129,7 +130,7 @@ def check_rules(problems):
             problems.append(f"tools/check_pr_docs.py: {files} {labels} gave {ok}, expected {expected}")
 
 
-STEP_HEAD = re.compile(r"^### (M\d+-\d+) [—-] .+$", re.M)
+STEP_HEAD = re.compile(r"^### (M\d+-\d+[a-z]?) [—-] .+$", re.M)   # a step inserted later keeps its neighbours' ids: M1-6b
 
 
 def check_roadmap(problems):
@@ -196,6 +197,7 @@ def main():
     check_optional("check_addon", problems)
     check_optional("check_package", problems)
     check_optional("check_locale", problems)
+    check_optional("make_mockups", problems)
     for p in problems:
         print(p)
     print(f"{len(files)} files checked, {len(problems)} problem(s).")

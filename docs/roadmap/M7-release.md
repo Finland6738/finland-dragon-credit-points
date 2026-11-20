@@ -1,16 +1,16 @@
 # M7 — Polish and release
 
-**Goal:** the complete Material Design 3 look, the settings and profiles, diagnostics, packaging and the full manual in both languages; version 1.0 for the guild ([`docs/ANALISI.md` §9, §10, §12](../ANALISI.md#9-interfaccia-material-design-3-in-tinta-con-il-logo)).
+**Goal:** the complete look of the community site ([`docs/specs/ui-style.md`](../specs/ui-style.md)), the settings and profiles, diagnostics, packaging and the full manual in both languages; version 1.0 for the guild ([`docs/ANALISI.md` §9, §10, §12](../ANALISI.md#9-interfaccia-material-design-3-in-tinta-con-il-logo)).
 
 **Exit criterion:** complete in code with green tests; `v1.0.0` is tagged only after the owner's release checklist passes in game.
 
-### M7-1 — Material Design polish
+### M7-1 — Site-style polish
 - Branch: `step/m7-1-material-polish`
 - Depends on: M1-7
-- Analysis: §9.2
-- Scope: rounded 9-slice shapes and mask textures (12/16 px), soft elevation shadows, hover 8% / pressed 12% state layers, ripple with `AnimationGroup`, motion 150 / 250 ms, an OFL/Apache sans font for text (Friz Quadrata kept for titles), a Material Symbols (Apache-2.0) icon atlas in TGA; remaining components (chips, segmented button, FAB "Start night", snackbar, switch, slider, progress); licences recorded in the repository.
+- Analysis: §9.2; [`docs/specs/ui-style.md`](../specs/ui-style.md) (the whole spec, §5 verdicts)
+- Scope: every window checked against `ui-style.md` and its previews: the "approximated" elements finished (glows in `ADD`, the one neon element per view, two-stop gradients, generated or Encounter Journal covers, the text glow of the title), shadows and the light highlight, hover 8% / pressed 12% layers and the 0.97 press, motion 120 / 200 / 320 ms with `OUT`, the "Animations: off" and "Neon effects" preferences, the three themes reviewed for contrast; remaining components (chips, snackbar, switch, slider, select without `UIDropDownMenu`, skeletons); the icon sheet complete; font and icon licences recorded in the repository.
 - Done when:
-  - [ ] Every window uses the theme tokens and components; no hard-coded colours outside `UI/Theme.lua`.
+  - [ ] Every window uses the theme tokens and components; no hard-coded colours outside `UI/Theme.lua`; every element marked "identical" or "approximated" in `ui-style.md` §5 is built.
 - Tests: `Tests/test_theme.lua`.
 - Docs: Interface Tour (EN + IT), CHANGELOG.
 - Real client: look and performance in game.
@@ -20,7 +20,7 @@
 - Branch: `step/m7-2-settings`
 - Depends on: M5-8, M2-5
 - Analysis: §3.9, §10
-- Scope: `UI/Windows/Settings.lua`: rules read-only for everyone but the GM ("editable by the GM"), the GM's editor for costs, categories, responses, award mode, legendaries, late joiners, with explicit confirmation and an audit entry when the season is open; the permissions table by rank (GM only); personal preferences (popup position, sounds, personal weights, wishlist, language); also in the game's settings window.
+- Scope: `UI/Windows/Settings.lua`, the **Settings** tab with the sub-tabs Personal · Rules · Permissions · Site of [`docs/specs/ui-style.md`](../specs/ui-style.md) §6: theme (Nebula, Aurora, Drago), neon effects, animations, fonts (addon or game); rules read-only for everyone but the GM ("editable by the GM"), the GM's editor for costs, categories, responses, award mode, legendaries, late joiners, with explicit confirmation and an audit entry when the season is open; the permissions table by rank (GM only); personal preferences (popup position, sounds, personal weights, wishlist, language); also in the game's settings window.
 - Done when:
   - [ ] A non-GM cannot change rules from the UI and a forged change is refused by the domain; open-season changes ask for confirmation.
 - Tests: `Tests/test_ui_settings.lua`.
