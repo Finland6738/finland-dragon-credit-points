@@ -72,6 +72,20 @@ Aurel, Bryn and Corin all answer main-spec on a blue ring, a shoulder and a cloa
 
 **The cloak: a tie, so a reroll among the tied.** All three have 1 credit. Aurel rolls 40, Bryn and Corin both 88. Only **Bryn and Corin** roll again. Aurel rolls again too, but he is not part of the tie, so that roll is discarded (*Not part of this round*). Bryn rolls 20, Corin 61: **Corin** wins. The proposal says: *Main-spec: it is asked first, and the cost is paid. Tied on credits and roll, won the reroll among the tied.* with the flag *Some rolls were discarded: check the list.*
 
+## The pool, declarations and alts
+
+Each season the guild has **one rotating roster**: the pool of mains. Every main is declared once for the whole season:
+
+- **MS1**: the main spec (required). It is the spec of the **Main-spec** button and the one the council's "ignored upgrade" flag looks at.
+- **MS2**: the second spec. It is the **Off-spec** button: it costs 0 credits and opens only if nobody answered main-spec.
+- **OS** (the spec you would like to play), **role**, **class**, **faction** and the **days** you can raid, with a short note, are roster information: the third spec gives no right to roll.
+
+The declaration is **locked for the season**. If something is wrong, an officer corrects it, and the correction is written in the ledger with who did it and when. A member can be **active**, **in trial** (shown as Trial on the site) or **inactive** (keeps the credits, is not counted and is not exported).
+
+**Alts.** An alt is linked to a main and **never has credits of its own**: what it wins is charged to its main. You ask for the link from the addon and an officer approves it, so nobody can attach a character to someone else. The same goes for joining the pool: you send your declaration and an officer approves it. **Two factions:** a player who plays both has **two mains, one per faction**, linked as the same player, each with their own credits.
+
+An officer can fill in a declaration from the **guild note** (for example "Fury / Arms"): the addon only suggests the specs it recognises and the officer confirms.
+
 ## Words in the game
 
 The engine never writes sentences: it records short codes, and the addon turns them into the sentences below in your language, so the proposal, the log and this manual say the same thing. The code is shown in the audit next to the sentence.
@@ -252,6 +266,30 @@ The addon reads ranks from the guild roster, by their position, never by their n
 | `ALT_IS_MAIN` | This character is a main: it cannot be an alt. |
 | `ALREADY_LINKED` | Already linked to a main. |
 | `FACTION_MISMATCH` | Main and alt are in different factions. |
+| `MS1_REQUIRED` | The main spec (MS1) is required. |
+| `CLASS_REQUIRED` | The class is required. |
+| `ROLE_REQUIRED` | The role is required. |
+| `DUPLICATE_SPEC` | The same spec is declared twice. |
+| `SPEC_UNKNOWN` | Unknown specialization. |
+| `SPEC_CLASS` | A declared spec does not belong to the class. |
+| `ROLE_MISMATCH` | The role is not the role of the main spec. |
+| `TWIN_SELF` | A main cannot be its own twin. |
+| `TWIN_UNKNOWN` | The other-faction main is not in the pool. |
+| `FACTION_REQUIRED` | Both mains need a faction to be linked as one player. |
+| `TWIN_FACTION` | A player has one main per faction: the other main is in the same faction. |
+| `TWIN_TAKEN` | That main already belongs to another player's pair. |
+| `REQUEST_UNKNOWN` | That request does not exist. |
+| `REQUEST_CLOSED` | That request has already been decided. |
+| `REQUEST_PENDING` | Another request for this character is waiting for an officer. |
+| `REQUEST_LIMIT` | Too many requests are waiting for an officer. |
+
+### Status of a member of the pool
+
+| Code | Sentence |
+|---|---|
+| `ACTIVE` | Active |
+| `TRIAL` | Trial |
+| `INACTIVE` | Inactive |
 
 ### Responses
 

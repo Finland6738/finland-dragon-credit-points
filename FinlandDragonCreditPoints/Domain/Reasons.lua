@@ -4,7 +4,7 @@
 -- A code is only meaningful inside its group: NOT_PRESENT is a discarded roll in one and a refused action in another.
 -- Groups: REASON (why a player won), FLAG (what to check), DISCARD (a roll set aside), SOURCE (where a cost or a
 -- category comes from), JOIN (a new member's credits), CORRECTION (the master looter's reasons), AUTO (automatic
--- phases), RANKS (guild rank changes), REFUSAL (an action refused),
+-- phases), RANKS (guild rank changes), REFUSAL (an action refused), STATUS (a member of the pool),
 -- RESPONSE, KIND (what a proposal does), REJECT, STATE, EVENT (ledger event types) and PRESET (preset names).
 local ADDON_NAME, ns = ...
 ns = ns or {}
@@ -12,7 +12,7 @@ ns.modules = ns.modules or {}
 local Reasons = {}
 ns.Reasons, ns.modules.Reasons = Reasons, Reasons
 
-Reasons.GROUPS = { "REASON", "FLAG", "DISCARD", "SOURCE", "JOIN", "CORRECTION", "AUTO", "RANKS", "REFUSAL", "RESPONSE", "KIND", "REJECT", "STATE", "EVENT", "PRESET" }
+Reasons.GROUPS = { "REASON", "FLAG", "DISCARD", "SOURCE", "JOIN", "CORRECTION", "AUTO", "RANKS", "REFUSAL", "STATUS", "RESPONSE", "KIND", "REJECT", "STATE", "EVENT", "PRESET" }
 
 -- KEYS[group][code] = locale key.
 Reasons.KEYS = {
@@ -163,6 +163,27 @@ Reasons.KEYS = {
 		ALT_IS_MAIN = "RC_REFUSAL_ALT_IS_MAIN",
 		ALREADY_LINKED = "RC_REFUSAL_ALREADY_LINKED",
 		FACTION_MISMATCH = "RC_REFUSAL_FACTION_MISMATCH",
+		MS1_REQUIRED = "RC_REFUSAL_MS1_REQUIRED",
+		CLASS_REQUIRED = "RC_REFUSAL_CLASS_REQUIRED",
+		ROLE_REQUIRED = "RC_REFUSAL_ROLE_REQUIRED",
+		DUPLICATE_SPEC = "RC_REFUSAL_DUPLICATE_SPEC",
+		SPEC_UNKNOWN = "RC_REFUSAL_SPEC_UNKNOWN",
+		SPEC_CLASS = "RC_REFUSAL_SPEC_CLASS",
+		ROLE_MISMATCH = "RC_REFUSAL_ROLE_MISMATCH",
+		TWIN_SELF = "RC_REFUSAL_TWIN_SELF",
+		TWIN_UNKNOWN = "RC_REFUSAL_TWIN_UNKNOWN",
+		FACTION_REQUIRED = "RC_REFUSAL_FACTION_REQUIRED",
+		TWIN_FACTION = "RC_REFUSAL_TWIN_FACTION",
+		TWIN_TAKEN = "RC_REFUSAL_TWIN_TAKEN",
+		REQUEST_UNKNOWN = "RC_REFUSAL_REQUEST_UNKNOWN",
+		REQUEST_CLOSED = "RC_REFUSAL_REQUEST_CLOSED",
+		REQUEST_PENDING = "RC_REFUSAL_REQUEST_PENDING",
+		REQUEST_LIMIT = "RC_REFUSAL_REQUEST_LIMIT",
+	},
+	STATUS = {
+		ACTIVE = "RC_STATUS_ACTIVE",
+		TRIAL = "RC_STATUS_TRIAL",
+		INACTIVE = "RC_STATUS_INACTIVE",
 	},
 	RESPONSE = {
 		MS = "RC_RESPONSE_MS",

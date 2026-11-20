@@ -22,7 +22,7 @@
 - Analysis: §6 (pool), §3.1 (MS1 = MS, MS2 = OS)
 - Scope: `Domain/Roster.lua`: the season pool with MS1 (required), MS2, OS, role, class, faction, availability notes; declarations locked for the season except an officer correction (`roster.manage`); one main per faction; alt link declared by the player and approved by an officer; states active / trial / inactive; optional import from the guild note; ledger events `MEMBER_JOINED`, `MEMBER_LINKED_ALT`, `ROSTER_CHANGED`.
 - Done when:
-  - [ ] A declaration cannot change mid-season without an officer event; an alt never gets credits.
+  - [x] A declaration cannot change mid-season without an officer event; an alt never gets credits.
 - Tests: `Tests/test_roster.lua`.
 - Docs: CHANGELOG.
 - Real client: nothing beyond M3-1.

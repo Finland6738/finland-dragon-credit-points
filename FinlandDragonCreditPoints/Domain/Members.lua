@@ -196,7 +196,8 @@ end
 ---------------------------------------------------------------------------------------------------------------------
 -- Writing
 
--- A main joins the season's pool. draft = { author, ts, season, member, faction?, nights?, late? }: `late` forces the
+-- A main joins the season's pool. draft = { author, ts, season, member, faction?, nights?, late?, decl? }: `decl` is the
+-- declaration fields Roster.Join already checked (copied into the event as they are); `late` forces the
 -- late-joiner rule on or off (default: on once the season has an official night). Returns the MEMBER_JOINED event, or
 -- nil and a code: "SEASON_UNKNOWN", "SEASON_CLOSED", "member", "ALREADY_JOINED", "IS_ALT", "CONFIG:<field>" or a
 -- Ledger.Append code. `opts` goes to Ledger.Append (the trust gate).
@@ -222,10 +223,14 @@ function Members.Join(L, draft, config, opts)
 	else
 		initial, rule = s.startCredits, Members.RULES.START
 	end
+	local payload = { member = draft.member, faction = draft.faction, initialCredits = initial, rule = rule,
+		basis = basis }
+	-- the player's declaration (Domain/Roster.lua) rides along in the same event; it never overrides the fields above
+	for k, v in pairs(draft.decl or {}) do
+		if payload[k] == nil then payload[k] = v end
+	end
 	return Ledger().Append(L, {
-		author = draft.author, ts = draft.ts, season = draft.season, type = "MEMBER_JOINED",
-		payload = { member = draft.member, faction = draft.faction, initialCredits = initial, rule = rule,
-			basis = basis },
+		author = draft.author, ts = draft.ts, season = draft.season, type = "MEMBER_JOINED", payload = payload,
 	}, opts)
 end
 

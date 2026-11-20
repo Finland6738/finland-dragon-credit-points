@@ -72,6 +72,20 @@ Aurel, Bryn e Corin rispondono tutti main-spec per un anello blu, una spallina e
 
 **Il mantello: parità, quindi reroll fra i pari.** Tutti e tre hanno 1 credito. Aurel rolla 40, Bryn e Corin entrambi 88. Rollano di nuovo solo **Bryn e Corin**. Anche Aurel rolla di nuovo, ma non fa parte della parità, quindi quel roll viene scartato (*Non fa parte di questo round*). Bryn fa 20, Corin 61: vince **Corin**. La proposta dice: *Main-spec: si chiede per primo e il costo si paga. Pari per crediti e roll, ha vinto il reroll fra i pari.* con la segnalazione *Alcuni roll sono stati scartati: controlla l'elenco.*
 
+## Il pool, le dichiarazioni e gli alt
+
+Ogni season la gilda ha **un solo roster a rotazione**: il pool dei main. Ogni main si dichiara una volta per tutta la season:
+
+- **MS1**: la spec principale (obbligatoria). È la spec del pulsante **Main-spec** e quella che guarda la segnalazione del council "upgrade ignorato".
+- **MS2**: la seconda spec. È il pulsante **Off-spec**: costa 0 crediti e si apre solo se nessuno ha risposto main-spec.
+- **OS** (la spec che ti piacerebbe giocare), **ruolo**, **classe**, **fazione** e i **giorni** in cui puoi raidare, con una breve nota, sono informazioni del roster: la terza spec non dà diritto al roll.
+
+La dichiarazione è **bloccata per tutta la season**. Se qualcosa è sbagliato, la corregge un officer, e la correzione resta nel registro con chi l'ha fatta e quando. Un membro può essere **attivo**, **in prova** (sul sito compare come Trial) o **inattivo** (tiene i crediti, non viene contato e non viene esportato).
+
+**Alt.** Un alt è collegato a un main e **non ha mai crediti suoi**: ciò che vince è addebitato al suo main. Il collegamento lo chiedi dall'addon e lo approva un officer, così nessuno può attaccare un personaggio a un altro giocatore. Vale lo stesso per entrare nel pool: mandi la tua dichiarazione e la approva un officer. **Due fazioni:** chi gioca su entrambe ha **due main, uno per fazione**, collegati come lo stesso giocatore, ciascuno con i propri crediti.
+
+Un officer può compilare una dichiarazione partendo dalla **nota di gilda** (per esempio "Fury / Arms"): l'addon si limita a suggerire le spec che riconosce e l'officer conferma.
+
 ## Le parole nel gioco
 
 Il motore non scrive mai frasi: registra codici brevi, e l'addon li trasforma nelle frasi qui sotto nella tua lingua, così la proposta, il log e questo manuale dicono la stessa cosa. Il codice si vede nell'audit accanto alla frase.
@@ -252,6 +266,30 @@ L'addon legge i ranghi dal roster della gilda, per posizione e mai per nome. Dop
 | `ALT_IS_MAIN` | Questo personaggio è un main: non può essere un alt. |
 | `ALREADY_LINKED` | Già collegato a un main. |
 | `FACTION_MISMATCH` | Main e alt sono di fazioni diverse. |
+| `MS1_REQUIRED` | La spec principale (MS1) è obbligatoria. |
+| `CLASS_REQUIRED` | La classe è obbligatoria. |
+| `ROLE_REQUIRED` | Il ruolo è obbligatorio. |
+| `DUPLICATE_SPEC` | La stessa spec è dichiarata due volte. |
+| `SPEC_UNKNOWN` | Specializzazione sconosciuta. |
+| `SPEC_CLASS` | Una spec dichiarata non appartiene alla classe. |
+| `ROLE_MISMATCH` | Il ruolo non è quello della spec principale. |
+| `TWIN_SELF` | Un main non può essere il proprio gemello. |
+| `TWIN_UNKNOWN` | Il main dell'altra fazione non è nel pool. |
+| `FACTION_REQUIRED` | Servono la fazione di entrambi i main per collegarli come un solo giocatore. |
+| `TWIN_FACTION` | Un giocatore ha un main per fazione: l'altro main è della stessa fazione. |
+| `TWIN_TAKEN` | Quel main fa già parte della coppia di un altro giocatore. |
+| `REQUEST_UNKNOWN` | Quella richiesta non esiste. |
+| `REQUEST_CLOSED` | Quella richiesta è già stata decisa. |
+| `REQUEST_PENDING` | C'è già un'altra richiesta per questo personaggio in attesa di un officer. |
+| `REQUEST_LIMIT` | Troppe richieste in attesa di un officer. |
+
+### Stato di un membro del pool
+
+| Code | Frase |
+|---|---|
+| `ACTIVE` | Attivo |
+| `TRIAL` | In prova |
+| `INACTIVE` | Inattivo |
 
 ### Risposte
 

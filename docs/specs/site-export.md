@@ -150,7 +150,7 @@ Esempi completi con nomi inventati. Le date sono quelle di una season di prova.
 | Dato del sito | Evento del registro (codici e numeri, mai frasi) | Passo |
 |---|---|---|
 | Etichetta e chiusura della season | `SEASON_OPENED{label}`, `SEASON_CLOSED` | M2-4 |
-| Pool: main, classe, spec, stato | `MEMBER_JOINED{name, classFile, specID MS1, …}`, `ROSTER_CHANGED` (stato `active` / `trial` / `inactive`) | M3-2 |
+| Pool: main, classe, spec, stato | `MEMBER_JOINED{member, faction, class (classFile), role, ms1 (specID), ms2, os, status, avail, note, twin, …}`, `ROSTER_CHANGED{member, set, clear}` (stato `ACTIVE` / `TRIAL` / `INACTIVE`, correzioni dell'officer) | M3-2 |
 | Serate | `NIGHT_OPENED{date, instanceID, size, difficulty}`, `NIGHT_CLOSED` | M3-3 |
 | Boss uccisi nella serata | `ENCOUNTER_KILLED{encounterID, difficulty, time}` da `ENCOUNTER_END` con successo | M3-3 |
 | **Prima uccisione per boss e per fazione** | `ENCOUNTER_KILLED` scritto anche **fuori da una serata ufficiale** quando il client di un editor del registro è in un raid della gilda (`InGuildParty`) dentro un'istanza della tabella; `PROGRESS_SET{encounterID, faction, date}` per inserire a mano una prima uccisione precedente all'addon o correggerla (permesso `progress.edit`, finisce nell'audit) | M3-3b |
