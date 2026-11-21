@@ -45,6 +45,7 @@ local type, pairs, ipairs, tostring, next = type, pairs, ipairs, tostring, next
 local floor, sort, huge = math.floor, table.sort, math.huge
 
 FSM.SCHEMA = 1
+FSM.MAX_NOTE = 80   -- bytes of a response's note (the protocol's limit too)
 
 FSM.STATES = { "WAITING", "COLLECTING", "ANNOUNCING", "ROLLING", "COMPUTING", "PROPOSAL", "ENDED" }
 FSM.ITEM_STATES = { "PENDING", "ROLLING", "COMPUTING", "PROPOSAL", "ASSIGNED", "DELIVERED" }
@@ -253,6 +254,7 @@ local function openItem(s, index, now, env, effects)
 	item.credits = copy(type(credits) == "table" and credits or {})
 	item.nights = copy(type(env.nights) == "table" and env.nights or nil)
 	item.responses, item.rounds, item.proposal, item.rule = {}, {}, nil, nil
+	item.labels, item.notes = nil, nil
 	item.discarded, item.history, item.dropped, item.votes, item.voteClosed = nil, nil, nil, nil, nil
 	item.intervention, item.autoAt, item.autoRemaining = nil, nil, nil
 	s.active = index
@@ -661,8 +663,11 @@ function H.OPEN_ROLL(s, input, env, effects)
 	return true
 end
 
--- RESPONSE{player, response}: a raider's answer (MS, OS, ..., PASS), during the first round of the item only. It
--- cannot change after the player rolled in that round.
+-- RESPONSE{player, response, label?, note?}: a raider's answer (MS, OS, ..., PASS), during the first round of the item
+-- only, with the optional label (a code: BIS, BIG_UPGRADE ...; informative, never read by the rules, §3.3) and note
+-- (at most FSM.MAX_NOTE bytes). The latest answer replaces the earlier one, label and note included; it cannot change
+-- after the player rolled in that round. A label or a note that is not valid is dropped, the response still counts; a
+-- pass carries neither.
 function H.RESPONSE(s, input)
 	local item = current(s)
 	if s.state ~= "ROLLING" or not item.round.collect then return nil, "RESPONSES_CLOSED" end
@@ -677,6 +682,11 @@ function H.RESPONSE(s, input)
 		end
 	end
 	item.responses[input.player] = response
+	local label, note = input.label, input.note
+	if response == "PASS" or type(label) ~= "string" or #label > 32 or not label:find("^[A-Z][A-Z0-9_]*$") then label = nil end
+	if response == "PASS" or type(note) ~= "string" or note == "" or #note > FSM.MAX_NOTE then note = nil end
+	item.labels, item.notes = item.labels or {}, item.notes or {}
+	item.labels[input.player], item.notes[input.player] = label, note
 	return true
 end
 
@@ -732,6 +742,7 @@ function H.REJECT(s, input, env, effects)
 	if thenWhat == "PENDING" or thenWhat == "REOPEN" then
 		item.state, item.proposal, item.rule, item.round, item.next = "PENDING", nil, nil, nil, nil
 		item.responses, item.rounds = {}, {}
+		item.labels, item.notes = nil, nil
 		item.skipTiers = nil
 		item.hold = true
 		s.active, s.state = nil, "ANNOUNCING"

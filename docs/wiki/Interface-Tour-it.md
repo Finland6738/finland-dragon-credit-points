@@ -19,7 +19,7 @@ La finestra è costruita: la aprono `/fdcp`, il pulsante della minimappa (il log
 | **Storico** | Le serate passate, il log del loot, l'audit delle correzioni e le esportazioni (Discord, CSV, JSON e i file del sito della community). |
 | **Impostazioni** | Le tue preferenze (tema, effetti, font, lingua), le regole della gilda (in sola lettura se non sei il GM) e le impostazioni del sito. |
 
-Quando c'è un pezzo a cui rispondere compare un **popup** a parte, con una card per ogni pezzo.
+Quando c'è un pezzo a cui rispondere compare un **popup** a parte, con una card per ogni pezzo: vedi [[Rollare per il loot|Rolling-for-Loot-it]].
 
 ## La scheda Progress
 

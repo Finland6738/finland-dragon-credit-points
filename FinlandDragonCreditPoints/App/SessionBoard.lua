@@ -13,7 +13,8 @@
 --   active (index of the item in progress), selected (index the window shows: `selected`, else the active one, else the
 --   first item waiting, else the first),
 --   round = { kind, stage, tier, among, collect, remaining, total, expired, rolls } | nil   (the selected item's open round),
---   candidates = { { player, name, class, credits, response, tier, roll, flag = { group, code }, proposed, inRound } }
+--   candidates = { { player, name, class, credits, response, label, note, tier, roll, flag = { group, code }, proposed,
+--                    inRound } }   (label = the declared label code, note = the player's note, safe to draw: M4-6)
 --                 (host only: the view carries no list of candidates),
 --   proposal = { kind, target, winner, cost, response, tier, roll, credits, reasons, flags, modified, mlReason,
 --                ruleWinner, ruleCost, autoIn } | nil   (the selected item's proposal, or its award once assigned),
@@ -209,6 +210,12 @@ local function hasRolled(item, player)
 	return seen(item.round)
 end
 
+-- A player's note as text that is safe to draw: no escape sequences ("|" is doubled), no control characters.
+function SB.SafeNote(text)
+	if type(text) ~= "string" or text == "" then return nil end
+	return (text:gsub("%c", " "):gsub("|", "||"))
+end
+
 local function hostCandidates(s, item, proposal, env)
 	if type(item.credits) ~= "table" then return {} end   -- the roll has not opened: nothing frozen yet
 	local priority = s.rules and s.rules.priority or {}
@@ -239,6 +246,7 @@ local function hostCandidates(s, item, proposal, env)
 		local response = item.responses and item.responses[p] or nil
 		local row = { player = p, name = short(p), class = env.classOf and env.classOf(p) or nil,
 			credits = item.credits[p] or 0, response = response, tier = response and tiers[response] or nil,
+			label = item.labels and item.labels[p] or nil, note = SB.SafeNote(item.notes and item.notes[p]),
 			roll = rollOf(item, p, rollMin, rollMax), proposed = proposal ~= nil and proposal.winner == p,
 			inRound = among == nil or among[p] == true }
 		local rolled = hasRolled(item, p)

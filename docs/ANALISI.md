@@ -584,11 +584,58 @@ traduzione; i codici passano da `Domain/Reasons.lua`. Scelte fatte dove il testo
   senza effetti), non solo per quelli con effetti: la finestra si aggiorna a ogni roll. Il timer si ridisegna ogni secondo
   solo mentre la scheda è visibile.
 - **Non fatto qui:** la consegna del pezzo (`GiveMasterLoot`, scambio: M4-7), l'annuncio in `/raid` (M4-8), il voto del
-  council (M5-8), il popup del giocatore (M4-6).
+  council (M5-8); il popup del giocatore è M4-6, qui sotto.
 - **Test.** `Tests/test_ui_ml_session.lua`: un boss di cinque pezzi giocato solo dai pulsanti della finestra, Modifica senza e
   con motivo, la differenza dalla regola, Rifiuta, Correggi, Pausa, i roll senza addon, l'avviso, la vista in sola lettura.
 - **Da verificare nel gioco (M4-9).** La finestra in un raid vero (disposizione, leggibilità a 40 giocatori), i nomi degli
   oggetti mentre la cache li carica.
+
+**Come è fatto (M4-6).** Il popup del giocatore (`UI/Windows/MemberLootPopup.lua`, anteprima `fdcp-roll-popup.webp`) è una
+finestra a sé, non una scheda: si apre quando un round chiede qualcosa a questo giocatore e si chiude quando il round si
+chiude (`SCLOSE`), la fine della sessione o l'uscita dal raid. Come la finestra del ML non decide nulla: disegna la bacheca di
+`App/PopupBoard.lua` (dati semplici, letti dalla **vista** di `Net/Protocol.lua`, la stessa sul client del ML e su quello di
+ogni raider) e manda la risposta con `Protocol.Session:Respond`, che spedisce solo la risposta **del mittente** (§8.4).
+Scelte fatte dove il testo non decideva (tutte modificabili):
+
+- **Una card per round aperto, impilabili.** La sessione tiene un pezzo alla volta (M2-6), quindi di norma c'è una card sola;
+  la finestra impila fino a `PopupBoard.MAX_CARDS` card se la bacheca ne dà di più. Nel primo round (`cl`: raccoglie le
+  risposte) la card c'è sempre; nei round successivi solo per chi rolla: il tier successivo per chi ha risposto quel tier, il
+  reroll per i pari (`am`), il roll libero per tutti. Gli altri non vedono nulla: il popup "si chiude" per loro.
+- **La risposta parte subito**, intera (risposta, etichetta, nota), a ogni cambiamento: la coda tiene l'ultima in attesa
+  (`key = "SRESP"`), il ML ne tiene una per giocatore. L'etichetta (BiS, upgrade grande, upgrade piccolo, situazionale: §3.3)
+  vale per la risposta del tier migliore (main-spec) e la sceglie da sola se manca; con off-spec o passo si toglie. La nota
+  (80 byte, tagliata senza spezzare un carattere UTF-8) parte quando la casella perde la tastiera, con Invio o con **Tira**.
+- **Tira = `RandomRoll(1, 100)`** (`Compat.Roll.Send`; nel dump di Forever è `RandomRoll(min, max)`, nessun valore di
+  ritorno), una volta per round: poi il pulsante dice *Tirato* e la risposta si blocca (la macchina a stati rifiuta del resto
+  `RESPONSE_LOCKED` dopo un roll). L'addon non scrive mai un valore: il roll lo legge dalla chat il ML (M4-3). Se il gioco
+  rifiuta la chiamata, la riga di aiuto dice di scrivere `/roll 1-100`.
+- **Etichetta e nota arrivano al ML fino in fondo.** M4-5 aveva lasciato il punto aperto: il protocollo le portava
+  (`lb`, `n`) ma la macchina a stati le scartava. Ora `RESPONSE` le tiene per giocatore (`item.labels`, `item.notes`; la
+  risposta più recente sostituisce tutto, un'etichetta o una nota non valida si scarta e la risposta conta lo stesso, un
+  passo non le ha; si azzerano alla riapertura del roll) e la bacheca dei candidati le dà alla finestra del ML, che mostra
+  l'etichetta accanto alla risposta (*Main-spec · BiS*) e la nota nella colonna Note, con le sequenze di escape raddoppiate.
+  Il codice dell'etichetta passa da `Reasons` (nuovo gruppo `LABEL`). Il `my` di `SSTATE` porta anche etichetta e nota, così
+  un `/reload` ridà la card com'era.
+- **Messaggi: `rt`.** `SOPEN` e `SSTATE` portano `rt = { MS = 1, OS = 2 }`, le risposte offerte (quelle abilitate della
+  configurazione) con il loro tier: serve al popup per sapere cosa mostrare e chi rolla in un round di tier, perché i costi
+  per risposta (`cs`) contengono anche risposte disattivate (TMOG). Un ML più vecchio che non lo manda funziona lo stesso
+  (ordine MS, OS, TMOG dai costi). Il protocollo resta alla versione 2 (non è ancora uscito).
+- **Crediti e posto in fila: solo se il client li conosce.** `PopupBoard.Standing` legge il registro locale
+  (`CreditTable.Build`): i crediti del giocatore (o del suo main) e `1 + i membri del raid con meno crediti` (una parità la
+  scioglie il roll, da qui il "~"). Finché i membri non ricevono la tabella (M6-6) la riga resta vuota sui client senza
+  registro: nessun numero inventato. Nessun verdetto di upgrade (M5-2).
+- **Aspetto.** Card raggio 18, segmento Main-spec / Off-spec / Passo, chip di etichetta (`Widgets.Chip`, nuovo), barra sottile
+  del timer, pulsante principale; l'**unico elemento neon** è il bagliore e l'anello della card in cima. Il tooltip è quello
+  del gioco (`GameTooltip:SetItemByID` o `SetHyperlink`), con il confronto chiesto con `GameTooltip_ShowCompareItem` in
+  `pcall`. Posizione e larghezza per personaggio (`CharDB.popup`), larghezza da una maniglia sul bordo destro.
+- **Test.** `Tests/test_ui_popup.lua`: la bacheca (offerte, chi rolla, suggerimenti, nota tagliata, posto in fila), la card
+  su un client (testi in inglese e in italiano, risposta, etichetta, nota, Tira, round successivi, reroll, roll libero,
+  chiusura, timer, pausa, posizione), e sul simulatore di rete il ML che riceve risposte, etichette e note di quattro client,
+  una risposta falsificata rifiutata, il `/reload` di un raider e un nuovo arrivato; più i casi nuovi in
+  `test_protocol_session.lua`, `test_session_fsm.lua` e `test_ui_ml_session.lua`.
+- **Da verificare nel gioco (M4-9).** Il popup in un raid (disposizione, leggibilità), il tooltip con il confronto,
+  `RandomRoll` da un clic (anche in istanza, dove potrebbe essere limitato), i nomi degli oggetti mentre la cache li carica,
+  il trascinamento e il ridimensionamento.
 
 ### 4.1 L'addon è obbligatorio: chi non ce l'ha
 
@@ -680,7 +727,8 @@ Per ogni pezzo in palio, il client del giocatore calcola da solo, con i propri d
 
 Il popup mostra: icona e nome nel colore della qualità, slot, tooltip con confronto, chip "Arma · 2 crediti",
 chip del verdetto ("Upgrade +7,4% · ilvl +6" in verde), i propri crediti e la posizione in fila stimata,
-i pulsanti di risposta, un campo nota e la barra del timer.
+i pulsanti di risposta, un campo nota e la barra del timer. Il popup senza il verdetto esiste dal passo M4-6 (§4, "Come è
+fatto (M4-6)"); il chip del verdetto arriva con M5-2.
 
 ### 5.2 Lato master looter / council
 
@@ -951,16 +999,16 @@ tools/ check_docs.py, build/release
 
   | Tipo | Canale | Campi | Significato |
   |---|---|---|---|
-  | `SOPEN` | `RAID` | `q`, `ml`, `e?`, `it` = `{ {id, ca, cs, co?}, … }` | sessione aperta: oggetti con categoria e costi per risposta (`cs`); rimandato dopo una correzione |
+  | `SOPEN` | `RAID` | `q`, `ml`, `e?`, `rt?`, `it` = `{ {id, ca, cs, co?}, … }` | sessione aperta: oggetti con categoria e costi per risposta (`cs`); `rt` = le risposte offerte con il loro tier (`{ MS = 1, OS = 2 }`, M4-6); rimandato dopo una correzione |
   | `SROLL` | `RAID` | `q`, `i`, `r`, `k`, `g?`, `tr?`, `am?`, `cl?`, `de?`, `rm?` | round `r` del pezzo `i` aperto: tipo, fase, tier, fra chi (reroll), `cl` = raccoglie le risposte, `de` = scadenza in ora del server (`rm` = secondi rimasti, in pausa) |
-  | `SRESP` | `RAID` | `i`, `r`, `rs`, `lb?`, `n?` | la risposta di un membro `{risposta, etichetta, nota}` (nota al massimo 80 byte): sempre la propria |
+  | `SRESP` | `RAID` | `i`, `r`, `rs`, `lb?`, `n?` | la risposta di un membro `{risposta, etichetta, nota}` (nota al massimo 80 byte): sempre la propria; il popup (M4-6) la rimanda intera a ogni cambiamento |
   | `SCLOSE` | `RAID` | `q`, `i`, `r` | round chiuso |
   | `SPROP` | `RAID` | `q`, `i`, `k`, `tg`, `w?`, `c?`, `rs?`, `tr?`, `rc?`, `f?`, `m?` | la proposta: a chi, quanto, perché (codici di motivo e segnalazioni); `m` = modificata dal ML |
   | `SRESULT` | `RAID` | `q`, `i`, `o`, `w?`, `c?`, `tg?`, `x?` | `AWARDED` (vincitore, costo, destinatario), `REJECTED` (`x` = cosa succede dopo) o `DELIVERED` |
   | `SPAUSE` | `RAID` | `q`, `p`, `de?`, `rm?` | pausa (`p` vero) o ripresa |
   | `SEND` | `RAID` | `q` | sessione chiusa |
   | `SSYNCQ` | `WHISPER` (o `RAID`) | `s?` | "mandami la sessione": dopo un buco nella sequenza, al ML |
-  | `SSTATE` | `WHISPER` | `q`, `ml`, `e?`, `it` (+ `st`, `w`, `pc`, `tg`), `a?`, `rd?`, `pr?`, `pz?`, `en?`, `my?` | tutta la vista per un membro: il pezzo attivo, il suo round e la proposta, pausa, fine, la sua risposta (`my`) |
+  | `SSTATE` | `WHISPER` | `q`, `ml`, `e?`, `rt?`, `it` (+ `st`, `w`, `pc`, `tg`), `a?`, `rd?`, `pr?`, `pz?`, `en?`, `my?` | tutta la vista per un membro: il pezzo attivo, il suo round e la proposta, pausa, fine, la sua risposta (`my` = `{ rs, lb?, n? }`) |
 
   Regole: **ogni risposta è del mittente** (il ML prende il giocatore dal mittente che dà il client, mai da un campo; una
   risposta che nomina un altro giocatore, `p`, è rifiutata come falsificata e contata); **nessun messaggio porta un

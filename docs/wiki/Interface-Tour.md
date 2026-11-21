@@ -19,7 +19,7 @@ The window itself is built: `/fdcp`, the minimap button (the guild logo) or the 
 | **History** | Past nights, the loot log, the audit of corrections and the exports (Discord, CSV, JSON and the community site files). |
 | **Settings** | Your preferences (theme, effects, fonts, language), the guild rules (read-only unless you are the Guild Master) and the site settings. |
 
-When a raider has a drop to answer, a separate **popup** appears, with one card per item.
+When a raider has a drop to answer, a separate **popup** appears, with one card per item: see [[Rolling for Loot|Rolling-for-Loot]].
 
 ## The Progress tab
 

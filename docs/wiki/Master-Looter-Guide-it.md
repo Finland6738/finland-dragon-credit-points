@@ -16,7 +16,7 @@ Questa pagina è per il **master looter**: chi apre il corpo del boss e guida il
 2. **Apri il corpo.** Quando apri la finestra del bottino la finestra principale si apre su **Loot › Sessione**. I pezzi pari o sopra la soglia sono elencati a sinistra, ciascuno con categoria e costo (per esempio *Gioiello · 1 credito*), proposti dall'addon dalla tabella della gilda. Se i drop sono stati letti durante un lockdown, la finestra dice che sono in attesa e li legge appena finisce.
 3. **Controlla la lista.** Seleziona un pezzo per vederlo a destra. Se una categoria o un costo è sbagliato, premi **Correggi** (vedi sotto). **Togli** toglie dalla lista un pezzo che non vuoi in sessione.
 4. **Premi Avvia la sessione.** Categorie e costi vanno al raid. Con le impostazioni solite della gilda (avanzamento automatico) il primo roll si apre da solo; altrimenti premi **Apri il roll** sul pezzo che vuoi.
-5. **Il roll.** Ogni raider con l'addon riceve un popup, risponde *Main-spec*, *Off-spec* o *Passo* e rolla. La parte destra della tua finestra si riempie man mano che arrivano risposte e roll: per ogni candidato i crediti, la risposta, il roll e una nota. Una barra sottile e un orologio contano il tempo del round. Il round si chiude da solo al timer o quando tutti hanno risposto e rollato; puoi chiuderlo prima con **Chiudi il round**. Se nessuno ha chiesto il pezzo in main-spec, il round off-spec si apre da solo; se due giocatori sono pari per crediti e roll, si apre un reroll fra loro.
+5. **Il roll.** Ogni raider con l'addon riceve un popup, risponde *Main-spec*, *Off-spec* o *Passo* (con un'etichetta e una nota facoltative) e rolla: vedi [[Rollare per il loot|Rolling-for-Loot-it]]. La parte destra della tua finestra si riempie man mano che arrivano risposte e roll: per ogni candidato i crediti, la risposta, il roll e una nota. Una barra sottile e un orologio contano il tempo del round. Il round si chiude da solo al timer o quando tutti hanno risposto e rollato; puoi chiuderlo prima con **Chiudi il round**. Se nessuno ha chiesto il pezzo in main-spec, il round off-spec si apre da solo; se due giocatori sono pari per crediti e roll, si apre un reroll fra loro.
 6. **La proposta.** Quando il round si chiude l'addon scrive **a chi, quanto e perché**, per esempio *Proposta: Bryn, 1 credito. Stessi crediti degli altri, roll più alto.* Il giocatore proposto è segnato nella lista. Sotto la frase, in ambra, ciò che va guardato (roll scartati, un costo che deve fissare il council, una parità che le regole non sciolgono, una proposta dopo un rifiuto).
 7. **Decidi tu:**
    - **Conferma e assegna** scrive l'assegnazione nel registro con il motivo dell'addon e addebita i crediti. Non c'è altro da scrivere.
@@ -35,9 +35,9 @@ Se la finestra è chiusa, `/fdcp` la apre sulla scheda Loot mentre una sessione 
 |---|---|
 | **Candidato** | Il nome, nel colore della classe. |
 | **Crediti** | I crediti del giocatore all'apertura del roll di questo pezzo (congelati per il pezzo, così il risultato è quello contro cui il raid ha rollato). |
-| **Risposta** | Main-spec, Off-spec o Passo; un punto se non ha ancora risposto. |
+| **Risposta** | Main-spec, Off-spec o Passo, con l'etichetta dichiarata dal giocatore (*BiS*, *Upgrade grande*, *Upgrade piccolo*, *Situazionale*) se l'ha data; un punto se non ha ancora risposto. L'etichetta informa te e il council; non cambia mai la proposta. |
 | **Roll** | Il primo roll 1-100 del round in corso (un reroll lo sostituisce per i pari). |
-| **Note** | *Proposto* per il vincitore; *Non ha ancora risposto* a round aperto; il motivo per cui un roll è stato scartato (un secondo roll, non 1-100, troppo presto, **l'addon non è attivo**). |
+| **Note** | *Proposto* per il vincitore; *Non ha ancora risposto* a round aperto; la nota che il giocatore ha scritto nel suo popup (dopo gli altri testi); il motivo per cui un roll è stato scartato (un secondo roll, non 1-100, troppo presto, **l'addon non è attivo**). |
 
 Ordina cliccando su un'intestazione. La lista è in ordine: prima main-spec, poi meno crediti, poi il roll più alto. In un reroll i giocatori non pari sono attenuati.
 

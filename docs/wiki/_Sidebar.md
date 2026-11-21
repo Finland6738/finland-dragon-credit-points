@@ -9,6 +9,7 @@
 - [[Roster and Nights|Roster-and-Nights]]
 - [[Credits Table|Credits]]
 - [[Master Looter Guide|Master-Looter-Guide]]
+- [[Rolling for Loot|Rolling-for-Loot]]
 
 **Italiano**
 - [[Home|Home-it]]
@@ -21,3 +22,4 @@
 - [[Roster e Serate|Roster-and-Nights-it]]
 - [[Tabella crediti|Credits-it]]
 - [[Guida del master looter|Master-Looter-Guide-it]]
+- [[Rollare per il loot|Rolling-for-Loot-it]]

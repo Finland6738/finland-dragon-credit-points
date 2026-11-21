@@ -5,14 +5,15 @@
 -- Groups: REASON (why a player won), FLAG (what to check), DISCARD (a roll set aside), SOURCE (where a cost or a
 -- category comes from), JOIN (a new member's credits), CORRECTION (the master looter's reasons), AUTO (automatic
 -- phases), RANKS (guild rank changes), REFUSAL (an action refused), STATUS (a member of the pool),
--- RESPONSE, KIND (what a proposal does), REJECT, STATE, EVENT (ledger event types) and PRESET (preset names).
+-- RESPONSE, LABEL (the optional label of a main-spec response), KIND (what a proposal does), REJECT, STATE, EVENT (ledger
+-- event types) and PRESET (preset names).
 local ADDON_NAME, ns = ...
 ns = ns or {}
 ns.modules = ns.modules or {}
 local Reasons = {}
 ns.Reasons, ns.modules.Reasons = Reasons, Reasons
 
-Reasons.GROUPS = { "REASON", "FLAG", "DISCARD", "SOURCE", "JOIN", "CORRECTION", "AUTO", "RANKS", "REFUSAL", "STATUS", "RESPONSE", "KIND", "REJECT", "STATE", "EVENT", "PRESET" }
+Reasons.GROUPS = { "REASON", "FLAG", "DISCARD", "SOURCE", "JOIN", "CORRECTION", "AUTO", "RANKS", "REFUSAL", "STATUS", "RESPONSE", "LABEL", "KIND", "REJECT", "STATE", "EVENT", "PRESET" }
 
 -- KEYS[group][code] = locale key.
 Reasons.KEYS = {
@@ -191,6 +192,12 @@ Reasons.KEYS = {
 		OS = "RC_RESPONSE_OS",
 		TMOG = "RC_RESPONSE_TMOG",
 		PASS = "RC_RESPONSE_PASS",
+	},
+	LABEL = {
+		BIS = "RC_LABEL_BIS",
+		BIG_UPGRADE = "RC_LABEL_BIG_UPGRADE",
+		SMALL_UPGRADE = "RC_LABEL_SMALL_UPGRADE",
+		SITUATIONAL = "RC_LABEL_SITUATIONAL",
 	},
 	KIND = {
 		AWARD = "RC_KIND_AWARD",

@@ -192,13 +192,17 @@ end
 -- (bus event SESSION_INPUT, stepped by the controller of M4-4).
 --
 --   type     dist      fields (besides s = session id)              meaning
---   SOPEN    RAID      q, ml, e?, it = { {id, ca, cs, co?}, ... }   session opened: the items with category and costs
---                                                                 per response (`cs`); sent again after a correction
+--   SOPEN    RAID      q, ml, e?, rt?, it = { {id, ca, cs, co?} }  session opened: the items with category and costs
+--                                                                 per response (`cs`); `rt` = the responses on offer
+--                                                                 with their tier ({ MS = 1, OS = 2 }, M4-6: what the
+--                                                                 popup shows and who rolls in a tiered round); sent
+--                                                                 again after a correction
 --   SROLL    RAID      q, i, r, k, g?, tr?, am?, cl?, de?, rm?      round r of item i opened: kind, stage, tier, among (a
 --                                                                 reroll), cl = it collects the responses, de = the
 --                                                                 deadline in server time (rm = seconds left, paused)
 --   SRESP    RAID      i, r, rs, lb?, n?                          a member's response {response, label, note} to the
---                                                                 round r of item i: always the sender's own
+--                                                                 round r of item i: always the sender's own (the popup
+--                                                                 of M4-6 sends the whole answer again at every change)
 --   SCLOSE   RAID      q, i, r                                    round closed
 --   SPROP    RAID      q, i, k, tg, w?, c?, rs?, tr?, rc?, f?, m?  the proposal: who, how much, why (reason and flag
 --                                                                 codes); m = modified by the ML
@@ -208,9 +212,9 @@ end
 --   SEND     RAID      q                                          session closed
 --   SSYNCQ   RAID or   s?                                         "send me the session": after a /reload, on joining
 --            WHISPER                                              the raid late (RAID), after a gap (WHISPER to the ML)
---   SSTATE   WHISPER   q, ml, e?, it (+ st, w, pc, tg), a?, rd?,  the whole view, for one member: the active item,
---                      pr?, pz?, en?, my?                         its round and proposal, paused, ended, the asker's
---                                                                 own response (`my`)
+--   SSTATE   WHISPER   q, ml, e?, rt?, it (+ st, w, pc, tg), a?,  the whole view, for one member: the active item,
+--                      rd?, pr?, pz?, en?, my?                    its round and proposal, paused, ended, the asker's
+--                                                                 own response (`my` = { rs, lb?, n? })
 --
 -- Trust (§8.4): a response is always the sender's own: the ML takes the player from the sender the client gives, never
 -- from a field; a response that names another player (`p`) is refused as forged and counted. Rolls never travel by
@@ -349,6 +353,19 @@ local function readItems(list, withState)
 	return items
 end
 
+-- The responses on offer of a SOPEN or a SSTATE: { [code] = tier }, or false when damaged; nil (an older client) stays nil.
+local function readTiers(t)
+	if t == nil then return nil end
+	if type(t) ~= "table" then return false end
+	local out, n = {}, 0
+	for code, tier in pairs(t) do
+		n = n + 1
+		if n > 8 or not isCode(code) or not isInt(tier, 1) then return false end
+		out[code] = tier
+	end
+	return out
+end
+
 -- The round of a SROLL (or the `rd` of a SSTATE), with its local deadline; nil when damaged.
 local function readRound(m, items)
 	if type(m) ~= "table" or not isInt(m.i, 1) or not items[m.i] or not isInt(m.r, 1) or not isCode(m.k) then return nil end
@@ -412,6 +429,16 @@ local function targetOf(p)
 	return "member"
 end
 
+-- The responses on offer with their tier: the enabled ones of the priority rules ({ MS = 1, OS = 2 }).
+local function wireTiers(s)
+	local out = {}
+	local responses = s.rules and s.rules.priority and s.rules.priority.responses
+	for code, r in pairs(type(responses) == "table" and responses or {}) do
+		if type(r) == "table" and type(r.tier) == "number" and r.enabled ~= false then out[code] = r.tier end
+	end
+	return out
+end
+
 local function wireItem(item, withState)
 	local w = { id = item.itemID, ca = item.category, cs = copy(item.costs), co = item.council or nil }
 	if withState then
@@ -451,7 +478,7 @@ function Session.MessageFor(s, e)
 	local n = net(s)
 	if t == "ANNOUNCE_ITEMS" or (t == "ITEM_CORRECTED" and n.open) then
 		n.open = true
-		return { t = "SOPEN", ml = s.ml, e = s.encounter, it = wireItems(s, false) }
+		return { t = "SOPEN", ml = s.ml, e = s.encounter, rt = wireTiers(s), it = wireItems(s, false) }
 	elseif t == "OPEN_ROUND" then
 		n.rounds[e.item] = (n.rounds[e.item] or 0) + 1
 		local item = s.items[e.item]
@@ -515,14 +542,15 @@ end
 -- The SSTATE of session `s` for `asker` ("Name-Realm"): the whole view, with the asker's own response to the open item.
 function Session.StateFor(s, asker)
 	local t, st = now(), serverNow()
-	local msg = { t = "SSTATE", s = s.id, q = net(s).seq, ml = s.ml, e = s.encounter, it = wireItems(s, true),
+	local msg = { t = "SSTATE", s = s.id, q = net(s).seq, ml = s.ml, e = s.encounter, rt = wireTiers(s), it = wireItems(s, true),
 		a = s.active, pz = s.paused or nil, en = s.state == "ENDED" or nil }
 	local item = s.active and s.items[s.active]
 	if item then
 		msg.rd = wireRound(s, s.active, t, st)
 		if s.state == "PROPOSAL" then msg.pr = wireProposal(s, s.active) end
 		if asker and type(item.responses) == "table" and item.responses[asker] ~= nil then
-			msg.my = { rs = item.responses[asker] }
+			msg.my = { rs = item.responses[asker], lb = item.labels and item.labels[asker] or nil,
+				n = item.notes and item.notes[asker] or nil }
 		end
 	end
 	return msg
@@ -621,8 +649,9 @@ function Session:RequestSync(target, tries)
 	return item, why
 end
 
-local function newView(msg, ml, items)
-	return { s = msg.s, q = msg.q, ml = ml, e = isInt(msg.e) and msg.e or nil, items = items, mine = {}, responses = {} }
+local function newView(msg, ml, items, tiers)
+	return { s = msg.s, q = msg.q, ml = ml, e = isInt(msg.e) and msg.e or nil, items = items, tiers = tiers, mine = {},
+		responses = {} }
 end
 
 -- Applies a SSTATE (from the ML, or built locally by Session:Host). Returns true, or false and a code.
@@ -640,7 +669,9 @@ function Session:ApplyState(msg, from, own)
 	end
 	local items = readItems(msg.it, true)
 	if not items then return refuse("BAD", from) end
-	local nv = newView(msg, ml, items)
+	local tiers = readTiers(msg.rt)
+	if tiers == false then return refuse("BAD", from) end
+	local nv = newView(msg, ml, items, tiers)
 	if msg.a ~= nil then
 		if not isInt(msg.a, 1) or not items[msg.a] then return refuse("BAD", from) end
 		nv.a = msg.a
@@ -654,8 +685,10 @@ function Session:ApplyState(msg, from, own)
 		if not nv.proposal then return refuse("BAD", from) end
 	end
 	if nv.a and type(msg.my) == "table" and isCode(msg.my.rs) then
-		nv.mine[nv.a] = msg.my.rs
-		nv.responses[nv.a] = { [me() or "?"] = { rs = msg.my.rs } }
+		local my = msg.my
+		nv.mine[nv.a] = my.rs
+		nv.responses[nv.a] = { [me() or "?"] = { rs = my.rs, lb = isCode(my.lb) and my.lb or nil,
+			n = type(my.n) == "string" and #my.n <= Session.MAX_NOTE and my.n ~= "" and my.n or nil } }
 	end
 	if v and v.s == msg.s and nv.a and v.responses[nv.a] and nv.round and v.round and v.round.r == nv.round.r then
 		nv.responses[nv.a] = v.responses[nv.a]   -- what this client heard of the same round stays
@@ -678,6 +711,8 @@ function Session:OnControl(msg, from, own)
 		if not ml or ml ~= from then return refuse("NOT_ML", from) end
 		local items = readItems(msg.it, false)
 		if not items then return refuse("BAD", from) end
+		local tiers = readTiers(msg.rt)
+		if tiers == false then return refuse("BAD", from) end
 		if v and v.s == msg.s then
 			if v.ml ~= from then return refuse("NOT_ML", from) end
 			if msg.q <= v.q then self.stats.dups = self.stats.dups + 1 return false, "DUP" end
@@ -691,6 +726,7 @@ function Session:OnControl(msg, from, own)
 				if old then item.st, item.w, item.pc, item.tg = old.st, old.w, old.pc, old.tg end
 			end
 			v.items, v.q = items, msg.q
+			if tiers then v.tiers = tiers end
 			changed(v, "ITEMS")
 			return true
 		end
@@ -698,7 +734,7 @@ function Session:OnControl(msg, from, own)
 			local ok, code = self:CanOpen(from)
 			if not ok then return refuse(code, from) end
 		end
-		self.view = newView(msg, ml, items)
+		self.view = newView(msg, ml, items, tiers)
 		self.syncAt, self.syncToken = nil, nil
 		if msg.q > 1 and not own then self:RequestSync(ml) end   -- earlier messages were missed
 		changed(self.view, "OPENED")
@@ -792,6 +828,15 @@ function Session:OpenRound()
 	if r.deadline and not v.paused then remaining = math.max(0, r.deadline - now()) end
 	return { item = r.i, round = r.r, kind = r.k, tier = r.tr, among = r.am, collect = r.cl == true,
 		remaining = remaining, mine = v.mine[r.i], info = v.items[r.i] }
+end
+
+-- This player's own answer to item `index` as this client knows it: { rs, lb, n } (a copy), or nil. The popup of M4-6 draws it.
+function Session:MyAnswer(index)
+	local v = self.view
+	local mine = me()
+	local a = v and mine and v.responses[index] and v.responses[index][mine]
+	if not a then return nil end
+	return { rs = a.rs, lb = a.lb, n = a.n }
 end
 
 -- This player's response {response, label, note} to the open round of the view. Returns the transport item (or true

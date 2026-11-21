@@ -19,8 +19,9 @@
 | Manage the pool and run a raid night | [[Roster and Nights|Roster-and-Nights]] |
 | Read the credits table and your place in the queue | [[Credits Table|Credits]] |
 | Run a loot session as the master looter | [[Master Looter Guide|Master-Looter-Guide]] |
+| Answer and roll for an item as a raider | [[Rolling for Loot|Rolling-for-Loot]] |
 
-More pages (the player's popup, the council, settings) are added as the features are built.
+More pages (the council, settings) are added as the features are built.
 
 ## For developers
 

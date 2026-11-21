@@ -113,6 +113,72 @@ describe("session messages on one client", function()
 		end
 	end)
 
+	it("announces the responses on offer with their tier, and the view keeps them (M4-6)", function()
+		local rules = FDCP.Rules.DefaultConfig()
+		local s = { id = "S1-1", ml = full("Aurel"), encounter = 601, state = "ANNOUNCING", rules = rules, items = {
+			{ itemID = 19003, category = "armor", costs = { MS = 1, OS = 0.5, TMOG = 0 }, state = "PENDING" },
+		} }
+		local msg = S().MessageFor(s, { type = "ANNOUNCE_ITEMS" })
+		deepEq(msg.rt, { MS = 1, OS = 2 }, "only the enabled responses, with their tier")
+		rules.priority.responses.TMOG.enabled = true
+		deepEq(S().MessageFor(s, { type = "ANNOUNCE_ITEMS" }).rt, { MS = 1, OS = 2, TMOG = 3 })
+		raid({ "Bryn" })
+		Mock.Advance(3)
+		open(full("Bryn"), 1, { rt = { MS = 1, OS = 2 } })
+		deepEq(S().view.tiers, { MS = 1, OS = 2 })
+		open(full("Bryn"), 2, { rt = { MS = 1, OS = 2, TMOG = 3 } })   -- a correction sends them again
+		deepEq(S().view.tiers, { MS = 1, OS = 2, TMOG = 3 })
+		open(full("Bryn"), 3)
+		deepEq(S().view.tiers, { MS = 1, OS = 2, TMOG = 3 }, "a message without them keeps what was said")
+	end)
+
+	it("an older master looter that sends no tiers still opens the view, and damaged tiers are refused", function()
+		raid({ "Bryn" })
+		Mock.Advance(3)
+		open(full("Bryn"), 1)
+		isNil(S().view.tiers)
+		S():Reset()
+		raid({ "Bryn" })
+		open(full("Bryn"), 1, { rt = { ms = 1 } })
+		isNil(S().view); eq(S().lastRefused, "BAD")
+		open(full("Bryn"), 1, { rt = { MS = 0 } })
+		isNil(S().view)
+		open(full("Bryn"), 1, { rt = "MS" })
+		isNil(S().view)
+	end)
+
+	it("the whispered state gives back the player's own answer with its label and note", function()
+		raid({ "Bryn" })
+		Mock.Advance(3)
+		receive("SSTATE", { s = "S1-1", q = 3, ml = full("Bryn"), rt = { MS = 1, OS = 2 }, a = 1,
+			it = { { id = 19003, st = "ROLLING" } }, rd = { i = 1, r = 1, k = "ROLL", g = "TIER", tr = 1, cl = true },
+			my = { rs = "MS", lb = "BIS", n = "set ring" } }, full("Bryn"), "WHISPER")
+		local a = S():MyAnswer(1)
+		deepEq(a, { rs = "MS", lb = "BIS", n = "set ring" })
+		eq(S().view.mine[1], "MS")
+		deepEq(S().view.tiers, { MS = 1, OS = 2 })
+		isNil(S():MyAnswer(2))
+		S():Reset()
+		raid({ "Bryn" })
+		receive("SSTATE", { s = "S1-1", q = 3, ml = full("Bryn"), a = 1, it = { { id = 19003 } },
+			rd = { i = 1, r = 1, k = "ROLL", cl = true }, my = { rs = "OS", lb = "nonsense", n = string.rep("x", 200) } },
+			full("Bryn"), "WHISPER")
+		deepEq(S():MyAnswer(1), { rs = "OS" }, "a damaged label or a long note is dropped, the answer stays")
+	end)
+
+	it("the master looter's state carries each player's own label and note", function()
+		local s = { id = "S1-1", ml = full("Aurel"), encounter = 601, state = "ROLLING", active = 1, rules = FDCP.Rules.DefaultConfig(),
+			net = { seq = 4, rounds = { 2 }, open = true }, items = { { itemID = 19003, category = "armor", costs = { MS = 1 },
+				state = "ROLLING", round = { kind = "ROLL", stage = "TIER", tier = 1, collect = true, rolls = {} },
+				responses = { [full("Bryn")] = "MS", [full("Corin")] = "OS" }, labels = { [full("Bryn")] = "BIS" },
+				notes = { [full("Bryn")] = "mine" } } } }
+		local msg = S().StateFor(s, full("Bryn"))
+		deepEq(msg.my, { rs = "MS", lb = "BIS", n = "mine" })
+		deepEq(msg.rt, { MS = 1, OS = 2 })
+		deepEq(S().StateFor(s, full("Corin")).my, { rs = "OS" })
+		isNil(S().StateFor(s, full("Dara")).my)
+	end)
+
 	it("a response is always the sender's own: one naming another player is forged", function()
 		local r = S().ReadResponse({ s = "S1-1", i = 1, r = 1, rs = "MS", lb = "BIS", n = "big one" }, full("Bryn"))
 		deepEq(r, { s = "S1-1", i = 1, r = 1, rs = "MS", lb = "BIS", n = "big one" })

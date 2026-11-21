@@ -1,0 +1,649 @@
+-- MemberLootPopup: the player's item popup (docs/ANALISI.md §5.1, §6, docs/specs/ui-style.md §3, §6, preview
+-- fdcp-roll-popup.webp, M4-6). One card per open round, stackable: icon and name in the quality colour, the slot, the
+-- game's own tooltip (with the comparison) on hover, the chip "Weapon · 2 credits", the player's credits and estimated
+-- place in the queue, the segmented control Main-spec / Off-spec / Pass, the optional label (BiS, big upgrade, small
+-- upgrade, situational), a note, the timer bar and the Roll button, which calls the game's RandomRoll(1, 100). The
+-- popup is a window of its own (not a tab): it opens when a round asks this player something and closes when the round
+-- closes. Position and width are remembered per character. No upgrade verdict yet (M5-2).
+--
+-- It draws what App/PopupBoard.lua gives (the session as this client sees it: Net/Protocol.lua's view) and sends the
+-- player's answer back through Protocol.Session:Respond, which only ever sends the player's own response (the master
+-- looter takes the name from the sender, §8.4). The roll is the game's: the addon never writes a roll value; the master
+-- looter's client reads it from the chat (Adapters/RollListener.lua). Lua 5.1; unprotected frames.
+-- Not verified in the real client: how it looks in a raid, the tooltip comparison, RandomRoll from a click.
+local ADDON_NAME, ns = ...
+ns = ns or {}
+local Popup = {}
+ns.MemberLootPopup = Popup
+if ns.addon then ns.addon.MemberLootPopup = Popup end   -- also reachable from tests
+
+local Theme, Widgets = ns.Theme, ns.Widgets
+local L = ns.L
+local PB = ns.PopupBoard
+
+Popup.FRAME_NAME = "FDCPLootPopup"
+Popup.DEFAULT_W, Popup.MIN_W, Popup.MAX_W = 400, 380, 520
+Popup.CARD_GAP = 8
+Popup.TICK = 0.25   -- seconds between two redraws of the timer while the popup is on screen
+Popup.WARN_SECONDS = 5
+
+-- locale-key: POPUP_HINT_CHOOSE POPUP_HINT_PASSED POPUP_HINT_LATER POPUP_HINT_ROLL POPUP_HINT_ROLLED POPUP_HINT_REROLL POPUP_HINT_FREE POPUP_HINT_TURN
+Popup.HINTS = {
+	CHOOSE = "POPUP_HINT_CHOOSE", PASSED = "POPUP_HINT_PASSED", LATER = "POPUP_HINT_LATER", ROLL = "POPUP_HINT_ROLL",
+	ROLLED = "POPUP_HINT_ROLLED", REROLL = "POPUP_HINT_REROLL", FREE = "POPUP_HINT_FREE", TURN = "POPUP_HINT_TURN",
+}
+
+local function PS() return ns.Protocol and ns.Protocol.Session end
+local function me() return ns.GuildRanks and ns.GuildRanks.Me() or nil end
+local function now() return ns.Compat.Now() end
+
+local function clock(seconds)
+	seconds = math.max(0, math.ceil(tonumber(seconds) or 0))
+	return ("%d:%02d"):format(math.floor(seconds / 60), seconds % 60)
+end
+Popup.Clock = clock
+
+-- "2" / "1.5": the credits as a plain number (the ledger rounds to two decimals).
+local function number(n) return ("%g"):format(tonumber(n) or 0) end
+
+---------------------------------------------------------------------------------------------------------------------
+-- Placement (per character, like the main window)
+
+local function charData() return ns.Config and ns.Config.char end
+
+-- The saved placement: { point, x, y, w } or nil.
+function Popup.LoadPlacement()
+	local c = charData()
+	local p = c and c.popup
+	if type(p) ~= "table" or type(p.point) ~= "string" or type(p.x) ~= "number" or type(p.y) ~= "number" then return nil end
+	return { point = p.point, x = p.x, y = p.y, w = math.min(Popup.MAX_W, math.max(Popup.MIN_W, tonumber(p.w) or Popup.DEFAULT_W)) }
+end
+
+function Popup:SavePlacement()
+	local f, c = self.frame, charData()
+	if not f or not c then return end
+	if ns.Config and ns.Config:IsReadOnly() then return end
+	local point, _, _, x, y = f:GetPoint(1)
+	if not point then return end
+	c.popup = { point = point, x = x, y = y, w = f:GetWidth() }
+end
+
+---------------------------------------------------------------------------------------------------------------------
+-- Item data
+
+-- What the client knows of an item; a name that is not loaded yet is asked once and the popup redraws when it arrives.
+function Popup:ItemInfo(itemID)
+	local cache = ns.ItemCache
+	if not cache then return {} end
+	local entry = cache.Lookup(itemID)
+	if (not entry or not entry.loaded) and not (self.asked and self.asked[itemID]) then
+		self.asked = self.asked or {}
+		self.asked[itemID] = true
+		cache.Get(itemID, function() Popup:Refresh() end)
+		entry = cache.Lookup(itemID) or entry
+	end
+	return entry or {}
+end
+
+-- "Waist · Cloth · Item level 66": the slot and the kind are the game's own words.
+function Popup.ItemLine(info)
+	local parts = {}
+	local slot = info.equipLoc and _G[info.equipLoc]
+	if type(slot) == "string" and slot ~= "" then parts[#parts + 1] = slot end
+	local armor = info.classID == 4 and (info.subclassID or 0) > 0 and info.subclassID ~= 5
+	if info.subType and info.subType ~= "" and (info.classID == 2 or armor) then parts[#parts + 1] = info.subType end
+	if info.level and info.level > 0 then parts[#parts + 1] = L["ML_ITEM_LEVEL"]:format(info.level) end
+	return table.concat(parts, " · ")
+end
+
+-- "Weapon · 2 credits" (the chip), or "council" when the council prices the item.
+function Popup.CostChip(card)
+	local cost
+	if card.council then cost = L["ML_COST_COUNCIL"] else cost = ns.SessionBoard.CreditsText(card.cost) end
+	if card.category and ns.MLSession then return ns.MLSession.CategoryName(card.category) .. " · " .. cost end
+	return cost
+end
+
+---------------------------------------------------------------------------------------------------------------------
+-- Build
+
+local ROW_ITEM, ROW_BADGE, ROW_SEG, ROW_LABELS, ROW_NOTE, ROW_BAR = 40, 24, 32, 26, 28, 4
+local PAD = 16
+
+local function buildCard(self, parent)
+	local c = CreateFrame("Frame", nil, parent)
+	c:SetSize(self.width, 300)
+	c.parts = Theme.Panel(c, { radius = 18, fill = "surface-1", border = "border", shadow = true })
+	-- the one neon element of the view: a glow behind the top card (docs/specs/ui-style.md §3)
+	c.glow = Theme.Slice(c, "glow_l", "neon", "BACKGROUND", 0.3)
+	c.glow:SetPoint("TOPLEFT", c, "TOPLEFT", -40, 40)
+	c.glow:SetPoint("BOTTOMRIGHT", c, "BOTTOMRIGHT", 40, -40)
+	if c.glow.SetBlendMode and Theme.IsDark() then c.glow:SetBlendMode("ADD") end
+	c:EnableMouse(true)
+	c:RegisterForDrag("LeftButton")
+	c:SetScript("OnDragStart", function() parent:StartMoving() end)
+	c:SetScript("OnDragStop", function() parent:StopMovingOrSizing(); Popup:SavePlacement() end)
+
+	c.eyebrow = Theme.NewText(c, "Eyebrow", "accent-text")
+	c.timer = Theme.NewText(c, "Mono", "text-2")
+	c.close = CreateFrame("Button", nil, c)
+	c.close:SetSize(22, 22)
+	c.close.icon = c.close:CreateTexture(nil, "OVERLAY")
+	c.close.icon:SetTexture(ns.Assets.textures.icons.path)
+	c.close.icon:SetTexCoord(ns.Assets.IconCoords("cross"))
+	c.close.icon:SetSize(14, 14)
+	c.close.icon:SetPoint("CENTER")
+	Theme.Tint(c.close.icon, "text-3")
+	c.close:SetScript("OnEnter", function(b)
+		Theme.Tint(b.icon, "text-1")
+		if GameTooltip then
+			GameTooltip:SetOwner(b, "ANCHOR_TOP")
+			GameTooltip:SetText(L["POPUP_DISMISS"])
+			GameTooltip:Show()
+		end
+	end)
+	c.close:SetScript("OnLeave", function(b)
+		Theme.Tint(b.icon, "text-3")
+		if GameTooltip then GameTooltip:Hide() end
+	end)
+	c.close:SetScript("OnClick", function() Popup:Dismiss() end)
+
+	-- icon and name; the whole area shows the game's tooltip
+	c.hit = CreateFrame("Button", nil, c)
+	c.hit:SetSize(220, ROW_ITEM)
+	c.icon = c.hit:CreateTexture(nil, "ARTWORK")
+	c.icon:SetSize(ROW_ITEM, ROW_ITEM)
+	c.icon:SetPoint("LEFT", c.hit, "LEFT", 0, 0)
+	c.iconRing = Theme.Slice(c.hit, "rr_ring_8", nil, "OVERLAY")
+	c.iconRing:SetAllPoints(c.icon)
+	c.name = Theme.NewText(c.hit, "BodyMedium", "text-1")
+	c.name:SetJustifyH("LEFT")
+	c.name:SetWordWrap(false)
+	c.line = Theme.NewText(c.hit, "Small", "text-3")
+	c.line:SetJustifyH("LEFT")
+	c.line:SetWordWrap(false)
+	c.hit:SetScript("OnEnter", function(b) Popup:ShowTooltip(b, c.itemID) end)
+	c.hit:SetScript("OnLeave", function() if GameTooltip then GameTooltip:Hide() end end)
+
+	c.badge = Widgets.Badge(c, "", "accent")
+	c.credits = Theme.NewText(c, "Small", "text-2")
+	c.credits:SetJustifyH("RIGHT")
+
+	c.segs = {}
+	c.chips = {}
+	for _, code in ipairs(PB.LABELS) do
+		local chip = Widgets.Chip(c, { text = ns.Reasons.Text("LABEL", code), font = "Small", pad = 20, height = ROW_LABELS,
+			onClick = function() Popup:SetLabel(code) end })
+		chip.code = code
+		c.chips[code] = chip
+	end
+	c.noteCaption = Theme.NewText(c, "Small", "text-3")
+	c.noteCaption:SetText(L["POPUP_NOTE"])
+	c.note = Widgets.EditBox(c, { width = 200, height = ROW_NOTE, maxLetters = PB.MAX_NOTE,
+		onChange = function(text, user) if user then Popup:OnNoteTyped(text) end end })
+	c.note.edit:HookScript("OnEditFocusLost", function() Popup:CommitNote() end)
+
+	c.bar = Widgets.ThinBar(c, { height = ROW_BAR })
+	c.hint = Theme.NewText(c, "Small", "text-3")
+	c.hint:SetJustifyH("LEFT")
+	c.hint:SetWordWrap(true)
+	c.rollButton = Widgets.Button(c, { text = L["POPUP_ROLL"], style = "primary", width = 104, height = 32,
+		onClick = function() Popup:Roll() end })
+	return c
+end
+
+-- The segmented control of a card for these responses (built once per set of responses, Pass last).
+local function segmentFor(self, card, offered)
+	local codes = {}
+	for _, o in ipairs(offered) do codes[#codes + 1] = o.code end
+	codes[#codes + 1] = "PASS"
+	local sig = table.concat(codes, ",")
+	local seg = card.segs[sig]
+	if not seg then
+		local items = {}
+		for _, code in ipairs(codes) do items[#items + 1] = { id = code, text = ns.Reasons.Text("RESPONSE", code) } end
+		seg = Widgets.Segmented(card, items, function(code)
+			if not card.syncing then Popup:Choose(code) end
+		end)
+		seg:Hide()
+		card.segs[sig] = seg
+	end
+	return seg
+end
+
+-- Builds the popup frame once (hidden).
+function Popup:Build()
+	if self.frame then return self.frame end
+	if not self.themed then   -- a raider may never have opened the main window
+		Theme.SetupFonts()
+		Theme.Load()
+		self.themed = true
+	end
+	local placement = Popup.LoadPlacement()
+	self.width = placement and placement.w or Popup.DEFAULT_W
+	local f = CreateFrame("Frame", Popup.FRAME_NAME, UIParent)
+	self.frame = f
+	f:SetFrameStrata("DIALOG")
+	f:SetToplevel(true)
+	f:SetClampedToScreen(true)
+	f:SetMovable(true)
+	f:SetResizable(true)
+	f:SetResizeBounds(Popup.MIN_W, 100, Popup.MAX_W, 1200)
+	f:SetSize(self.width, 300)
+	if placement then
+		f:SetPoint(placement.point, UIParent, placement.point, placement.x, placement.y)
+	else
+		f:SetPoint("CENTER", UIParent, "CENTER", 0, 120)
+	end
+	-- a thin handle on the right edge: drag it to change the width (remembered)
+	f.grip = CreateFrame("Button", nil, f)
+	f.grip:SetSize(10, 40)
+	f.grip:SetPoint("RIGHT", f, "RIGHT", 6, 0)
+	f.grip.mark = f.grip:CreateTexture(nil, "OVERLAY")
+	Theme.Fill(f.grip.mark, "border-strong")
+	f.grip.mark:SetSize(3, 24)
+	f.grip.mark:SetPoint("CENTER")
+	f.grip:SetFrameLevel(f:GetFrameLevel() + 20)
+	f.grip:SetScript("OnMouseDown", function() f:StartSizing("RIGHT") end)
+	f.grip:SetScript("OnMouseUp", function() f:StopMovingOrSizing(); Popup:SavePlacement() end)
+	f:SetScript("OnSizeChanged", function(_, w)
+		if w and w > 0 and math.abs(w - (Popup.width or 0)) > 0.5 then
+			Popup.width = math.min(Popup.MAX_W, math.max(Popup.MIN_W, w))
+			Popup:Layout()
+		end
+	end)
+	f:SetScript("OnShow", function() Popup:Arm() end)
+	f:SetScript("OnHide", function() Popup:Disarm() end)
+	f:Hide()
+	return f
+end
+
+---------------------------------------------------------------------------------------------------------------------
+-- Drawing
+
+function Popup:ShowTooltip(owner, itemID)
+	local tip = GameTooltip
+	if not tip or not itemID then return end
+	tip:SetOwner(owner, "ANCHOR_RIGHT")
+	if tip.SetItemByID then tip:SetItemByID(itemID) elseif tip.SetHyperlink then tip:SetHyperlink("item:" .. itemID) end
+	tip:Show()
+	-- the comparison with what the player wears: the game's own tooltips next to this one [verify in game]
+	if _G.GameTooltip_ShowCompareItem then pcall(_G.GameTooltip_ShowCompareItem, tip) end
+end
+
+-- Puts one card's rows in place (a row that does not apply is hidden and takes no room). Returns the card's height.
+local function layoutCard(self, c, d, top)
+	local y = 14
+	c:SetWidth(self.width)
+	c.eyebrow:ClearAllPoints()
+	c.eyebrow:SetPoint("TOPLEFT", c, "TOPLEFT", PAD, -y)
+	c.close:ClearAllPoints()
+	c.close:SetPoint("TOPRIGHT", c, "TOPRIGHT", -10, -y + 4)
+	c.timer:ClearAllPoints()
+	c.timer:SetPoint("TOPRIGHT", c, "TOPRIGHT", -38, -y)
+	y = y + 26
+	c.hit:ClearAllPoints()
+	c.hit:SetPoint("TOPLEFT", c, "TOPLEFT", PAD, -y)
+	c.hit:SetWidth(self.width - 2 * PAD - 40)
+	c.name:ClearAllPoints()
+	c.name:SetPoint("TOPLEFT", c.hit, "TOPLEFT", ROW_ITEM + 12, -4)
+	c.name:SetPoint("TOPRIGHT", c.hit, "TOPRIGHT", 0, -4)
+	c.line:ClearAllPoints()
+	c.line:SetPoint("TOPLEFT", c.name, "BOTTOMLEFT", 0, -4)
+	c.line:SetPoint("TOPRIGHT", c.name, "BOTTOMRIGHT", 0, -4)
+	y = y + ROW_ITEM + 10
+	c.badge:ClearAllPoints()
+	c.badge:SetPoint("TOPLEFT", c, "TOPLEFT", PAD, -y)
+	c.credits:ClearAllPoints()
+	c.credits:SetPoint("TOPRIGHT", c, "TOPRIGHT", -PAD, -y - 5)
+	c.credits:SetWidth(self.width - 2 * PAD - c.badge:GetWidth() - 8)
+	y = y + ROW_BADGE + 12
+
+	local seg = d.seg
+	for _, other in pairs(c.segs) do if other ~= seg then other:Hide() end end
+	if seg then
+		seg:ClearAllPoints()
+		seg:SetPoint("TOPLEFT", c, "TOPLEFT", PAD, -y)
+		seg:Show()
+		y = y + ROW_SEG + 8
+	end
+
+	local x = PAD
+	for _, code in ipairs(PB.LABELS) do
+		local chip = c.chips[code]
+		if d.labels then
+			chip:ClearAllPoints()
+			chip:SetPoint("TOPLEFT", c, "TOPLEFT", x, -y)
+			chip:Show()
+			x = x + chip:GetWidth() + 6
+		else
+			chip:Hide()
+		end
+	end
+	if d.labels then y = y + ROW_LABELS + 8 end
+
+	if d.collect then
+		c.noteCaption:ClearAllPoints()
+		c.noteCaption:SetPoint("TOPLEFT", c, "TOPLEFT", PAD, -y - 7)
+		c.note:ClearAllPoints()
+		c.note:SetPoint("TOPLEFT", c, "TOPLEFT", PAD + 44, -y)
+		c.note:SetWidth(self.width - 2 * PAD - 44)
+		c.noteCaption:Show()
+		c.note:Show()
+		y = y + ROW_NOTE + 10
+	else
+		c.noteCaption:Hide()
+		c.note:Hide()
+	end
+
+	c.bar:ClearAllPoints()
+	c.bar:SetPoint("TOPLEFT", c, "TOPLEFT", PAD, -y)
+	c.bar:SetPoint("TOPRIGHT", c, "TOPRIGHT", -PAD, -y)
+	c.bar:SetWidth(self.width - 2 * PAD)
+	y = y + ROW_BAR + 12
+
+	c.rollButton:ClearAllPoints()
+	c.rollButton:SetPoint("TOPRIGHT", c, "TOPRIGHT", -PAD, -y)
+	c.hint:ClearAllPoints()
+	c.hint:SetPoint("TOPLEFT", c, "TOPLEFT", PAD, -y + 1)
+	c.hint:SetWidth(self.width - 2 * PAD - 104 - 12)
+	y = y + 32 + 14
+	c:SetHeight(y)
+	return y
+end
+
+-- The text of a card's hint line.
+local function hintText(d)
+	local key = Popup.HINTS[d.hint]
+	if not key then return "" end
+	if d.hint == "ROLL" then return L[key]:format(d.rollMin, d.rollMax) end
+	return L[key]
+end
+
+-- The eyebrow: "ROLL OPEN · LUCIFRON".
+local function eyebrowText(d)
+	local text
+	if d.kind == "REROLL" then text = L["POPUP_EYEBROW_REROLL"]
+	elseif d.stage == "FREE_ROLL" then text = L["POPUP_EYEBROW_FREE"]
+	else text = L["POPUP_EYEBROW_ROLL"] end
+	text = text:upper()
+	if d.boss then text = text .. " · " .. d.boss:upper() end
+	return text
+end
+
+local function applyTimer(self, c, d)
+	if d.paused then
+		c.timer:SetText(L["POPUP_PAUSED"])
+		Theme.Text(c.timer, "text-3")
+	elseif d.remaining then
+		c.timer:SetText(clock(d.remaining))
+		Theme.Text(c.timer, d.remaining <= Popup.WARN_SECONDS and "warn" or "text-2")
+	else
+		c.timer:SetText("")
+	end
+	local total = self.totals[d.key]
+	if d.remaining and (not total or d.remaining > total) then total = d.remaining; self.totals[d.key] = total end
+	c.bar:SetFraction(d.remaining and total and total > 0 and d.remaining / total or 0)
+end
+
+local function applyCard(self, c, d, top)
+	c.data, c.key, c.itemID = d, d.key, d.itemID
+	local info = self:ItemInfo(d.itemID)
+	local r, g, b = 1, 1, 1
+	if ns.MLSession then r, g, b = ns.MLSession.QualityColor(info.quality or 4) end
+	c.name:SetText(info.name or L["ML_ITEM_UNKNOWN"]:format(d.itemID))
+	c.name:SetTextColor(r, g, b)
+	c.line:SetText(Popup.ItemLine(info))
+	if info.icon then c.icon:SetTexture(info.icon) end
+	c.iconRing:SetVertexColor(r, g, b, 1)
+	c.eyebrow:SetText(eyebrowText(d))
+	c.badge:SetBadge(Popup.CostChip(d):upper(), "accent")
+	local standing = ""
+	if d.credits ~= nil then
+		standing = L["POPUP_CREDITS"]:format(number(d.credits))
+		if d.position then standing = standing .. " · " .. L["POPUP_QUEUE"]:format(d.position) end
+	end
+	c.credits:SetText(standing)
+
+	-- the response selector: shown while the round collects responses, or locked when the player answered
+	d.seg = nil
+	if d.collect or d.response ~= nil then
+		local seg = segmentFor(self, c, d.offered)
+		d.seg = seg
+		c.syncing = true
+		if d.response and seg.buttons[d.response] then seg:Select(d.response) else seg:Clear() end
+		c.syncing = false
+		seg:SetEnabled(d.canAnswer)
+	end
+	for code, chip in pairs(c.chips) do
+		chip:SetSelected(d.label == code)
+		chip:SetEnabled(d.labelsOn == true)
+	end
+	if d.collect and not c.note.edit:HasFocus() and c.note:GetText() ~= (d.note or "") then c.note:SetText(d.note or "") end
+	c.note.edit:SetEnabled(d.canAnswer)
+
+	c.hint:SetText(self.err == d.key and L["POPUP_ERR_SEND"] or self.rollErr == d.key
+		and L["POPUP_ERR_ROLL"]:format(d.rollMin, d.rollMax) or hintText(d))
+	c.rollButton:SetLabel(d.rolled and L["POPUP_ROLLED"] or L["POPUP_ROLL"])
+	c.rollButton:SetEnabled(d.canRoll)
+	c.rollButton:SetAlpha(d.canRoll and 1 or 0.45)
+
+	-- the neon element: the top card only
+	c.glow:SetShown(top)
+	Theme.Tint(c.parts.ring, top and "neon" or "border")
+	applyTimer(self, c, d)
+	return layoutCard(self, c, d, top)
+end
+
+-- Lays the cards out one under the other.
+function Popup:Layout()
+	local f = self.frame
+	if not f then return end
+	local y = 0
+	for i, c in ipairs(self.cards) do
+		if c:IsShown() and c.data then
+			c:ClearAllPoints()
+			c:SetPoint("TOPLEFT", f, "TOPLEFT", 0, -y)
+			local h = layoutCard(self, c, c.data, i == 1)
+			y = y + h + Popup.CARD_GAP
+		end
+	end
+	f:SetHeight(math.max(y - Popup.CARD_GAP, 1))
+end
+
+---------------------------------------------------------------------------------------------------------------------
+-- Board and state
+
+Popup.draft = nil        -- { key, rs, lb, n }: the player's answer to the round `key`, ahead of what the session knows
+Popup.rolled = {}        -- [key] = true: the player rolled in this round
+Popup.dismissed = {}     -- [key] = true: the player hid this round's card
+Popup.totals = {}        -- [key] = the longest time left seen (the timer bar's full length)
+Popup.board = nil
+Popup.cards = {}         -- the card frames (built as needed, reused)
+
+local function boardEnv(self)
+	return {
+		me = me(), now = now(), draft = self.draft,
+		rolled = function(key) return self.rolled[key] == true end,
+		dismissed = function(key) return self.dismissed[key] == true end,
+		standing = function()
+			return PB.Standing(me(), PS() and PS().raid)
+		end,
+		boss = PB.BossName,
+	}
+end
+
+-- The board as it is now.
+function Popup:Board()
+	local view = PS() and PS().view
+	if view and view.s ~= self.sid then   -- another session: the old marks mean nothing
+		self.sid = view.s
+		self.draft, self.rolled, self.dismissed, self.totals, self.err, self.rollErr = nil, {}, {}, {}, nil, nil
+	end
+	return PB.Build(view, boardEnv(self))
+end
+
+-- The first card (the one the actions act on).
+function Popup:Current()
+	return self.board and self.board.cards[1] or nil
+end
+
+-- Redraws the popup from the session: shows it when a round asks something of this player, hides it otherwise.
+function Popup:Refresh()
+	local board = self:Board()
+	self.board = board
+	local cards = board.cards
+	if #cards == 0 then
+		if self.frame then
+			for _, c in ipairs(self.cards) do c:Hide(); c.data = nil end
+			self.frame:Hide()
+		end
+		return
+	end
+	self:Build()
+	for i = 1, math.min(#cards, PB.MAX_CARDS) do
+		local c = self.cards[i]
+		if not c then
+			c = buildCard(self, self.frame)
+			self.cards[i] = c
+		end
+		c:Show()
+		applyCard(self, c, cards[i], i == 1)
+	end
+	for i = #cards + 1, #self.cards do self.cards[i]:Hide(); self.cards[i].data = nil end
+	self:Layout()
+	self.frame:Show()
+	self.frame:Raise()
+end
+
+function Popup:IsShown() return self.frame ~= nil and self.frame:IsShown() end
+
+-- A cheaper redraw for the ticker: only the timer, unless the round changed.
+function Popup:RefreshTimer()
+	local board = self:Board()
+	local first = board.cards[1]
+	local shown = self.cards[1]
+	if not first or not shown or shown.key ~= first.key or #board.cards ~= 1 or not shown.data then return self:Refresh() end
+	self.board = board
+	shown.data.remaining, shown.data.paused = first.remaining, first.paused
+	applyTimer(self, shown, shown.data)
+end
+
+function Popup:Arm()
+	if self.ticker then return end
+	self.ticker = ns.Compat.NewTicker(Popup.TICK, function() Popup:RefreshTimer() end)
+end
+
+function Popup:Disarm()
+	if self.ticker then self.ticker:Cancel() end
+	self.ticker = nil
+end
+
+---------------------------------------------------------------------------------------------------------------------
+-- The player's actions
+
+-- The answer being built for the card: a draft of this round, started from what the session knows.
+local function draftOf(self, card)
+	if not self.draft or self.draft.key ~= card.key then
+		self.draft = { key = card.key, rs = card.response, lb = card.label, n = card.note }
+	end
+	return self.draft
+end
+
+-- Sends the draft (the whole answer, again: the master looter keeps the latest). Returns true, or false and a code.
+function Popup:Send(card)
+	local d = self.draft
+	if not d or d.key ~= card.key or not d.rs then return false, "NO_RESPONSE" end
+	local ps = PS()
+	if not ps then return false, "NO_SESSION" end
+	local ok, code = ps:Respond(d.rs, d.lb, PB.ClipNote(d.n))
+	if not ok then
+		self.err = card.key
+		self:Refresh()
+		return false, code
+	end
+	self.err = nil
+	self:Refresh()
+	return true
+end
+
+-- Main-spec, Off-spec, Pass (or any response on offer): sent at once. Pass and a lesser tier drop the label.
+function Popup:Choose(code)
+	local card = self:Current()
+	if not card or not card.canAnswer then return false, "LOCKED" end
+	local ok = code == "PASS"
+	for _, o in ipairs(card.offered) do if o.code == code then ok = true end end
+	if not ok then return false, "BAD_RESPONSE" end
+	local d = draftOf(self, card)
+	d.rs = code
+	if code ~= card.main then d.lb = nil end
+	return self:Send(card)
+end
+
+-- A label chip: it toggles; with no response yet it also answers with the best tier (the label belongs to it).
+function Popup:SetLabel(code)
+	local card = self:Current()
+	if not card or not card.canAnswer or not card.labelsOn then return false, "LOCKED" end
+	local d = draftOf(self, card)
+	d.lb = d.lb ~= code and code or nil
+	if d.rs == nil then d.rs = card.main end
+	return self:Send(card)
+end
+
+-- The note box was typed in: kept until the box loses the keyboard (or Enter, or Roll).
+function Popup:OnNoteTyped(text)
+	local card = self:Current()
+	if not card or not card.canAnswer then return end
+	draftOf(self, card).n = text
+end
+
+-- The note is sent with the answer; with no response yet it waits for one.
+function Popup:CommitNote()
+	local card = self:Current()
+	if not card or not card.canAnswer then return false, "LOCKED" end
+	local box = self.cards[1] and self.cards[1].note
+	local d = draftOf(self, card)
+	if box then d.n = box:GetText() end
+	if not d.rs then return false, "NO_RESPONSE" end
+	if PB.ClipNote(d.n) == card.note then return false, "NOTHING" end
+	return self:Send(card)
+end
+
+-- Roll: the game's own RandomRoll(1, 100), once per round. The note typed so far goes with the answer first.
+function Popup:Roll()
+	local card = self:Current()
+	if not card or not card.canRoll then return false, "LOCKED" end
+	if card.canAnswer then self:CommitNote() end
+	card = self:Current()
+	local state = ns.Compat.Roll.Send(card.rollMin, card.rollMax)
+	if state ~= ns.Compat.AVAILABLE then
+		self.rollErr = card.key
+		self:Refresh()
+		return false, state
+	end
+	self.rollErr = nil
+	self.rolled[card.key] = true
+	self:Refresh()
+	return true
+end
+
+-- Hides this round's card (nothing is sent: no answer is a pass to the rules, §3.4).
+function Popup:Dismiss()
+	local card = self:Current()
+	if not card then return false end
+	self.dismissed[card.key] = true
+	self:Refresh()
+	return true
+end
+
+---------------------------------------------------------------------------------------------------------------------
+-- Events
+
+if ns.Bus then
+	ns.Bus:On("SESSION_VIEW", function(_, _, what, _, who)
+		if what == "RESPONSE" and who ~= me() then return end   -- other players' answers do not change this popup
+		Popup:Refresh()
+	end, Popup)
+	ns.Bus:On("THEME_CHANGED", function() if Popup.frame then Popup:Refresh() end end, Popup)
+	ns.Bus:On("GUILD_KEY_CHANGED", function() if Popup.frame then Popup:Refresh() end end, Popup)
+end

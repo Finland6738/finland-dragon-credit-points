@@ -19,8 +19,9 @@
 | Gestire il pool e condurre una serata di raid | [[Roster e Serate|Roster-and-Nights-it]] |
 | Leggere la tabella dei crediti e il tuo posto in fila | [[Tabella crediti|Credits-it]] |
 | Condurre una sessione di loot da master looter | [[Guida del master looter|Master-Looter-Guide-it]] |
+| Rispondere e rollare per un pezzo da raider | [[Rollare per il loot|Rolling-for-Loot-it]] |
 
-Altre pagine (il popup del giocatore, il council, le impostazioni) arrivano con le funzioni.
+Altre pagine (il council, le impostazioni) arrivano con le funzioni.
 
 ## Per gli sviluppatori
 

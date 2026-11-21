@@ -121,10 +121,12 @@ local COLUMN_TOKENS = { MS = "accent-text", OS = "text-2", TMOG = "text-2", PASS
 -- locale-key: ML_COL_CANDIDATE ML_COL_CREDITS ML_COL_RESPONSE ML_COL_ROLL ML_COL_NOTES ML_NOTE_PROPOSED ML_NOTE_WAITING
 local function candidateColumns()
 	local function noteText(d)
-		if d.proposed then return L["ML_NOTE_PROPOSED"] end
-		if d.flag then return ns.Reasons.Text(d.flag.group, d.flag.code) end
-		if d.response == nil then return L["ML_NOTE_WAITING"] end
-		return ""
+		local text = ""
+		if d.proposed then text = L["ML_NOTE_PROPOSED"]
+		elseif d.flag then text = ns.Reasons.Text(d.flag.group, d.flag.code)
+		elseif d.response == nil then text = L["ML_NOTE_WAITING"] end
+		if d.note then text = text ~= "" and (text .. " · " .. d.note) or d.note end   -- the player's own note (M4-6)
+		return text
 	end
 	return {
 		{ id = "name", title = L["ML_COL_CANDIDATE"], flex = 1, text = function(d) return d.name end,
@@ -135,8 +137,13 @@ local function candidateColumns()
 			end },
 		{ id = "credits", title = L["ML_COL_CREDITS"], width = 76, align = "CENTER", mono = true,
 			text = function(d) return d.credits end, value = function(d) return d.credits end },
-		{ id = "response", title = L["ML_COL_RESPONSE"], width = 112,
-			text = function(d) return d.response and ns.Reasons.Text("RESPONSE", d.response) or "·" end,
+		{ id = "response", title = L["ML_COL_RESPONSE"], width = 176,
+			text = function(d)
+				if not d.response then return "·" end
+				local text = ns.Reasons.Text("RESPONSE", d.response)
+				if d.label then text = text .. " · " .. ns.Reasons.Text("LABEL", d.label) end   -- the declared label (M4-6)
+				return text
+			end,
 			token = function(d) return COLUMN_TOKENS[d.response] or "text-3" end,
 			value = function(d) return d.tier or 99 end },
 		{ id = "roll", title = L["ML_COL_ROLL"], width = 60, align = "RIGHT", mono = true,

@@ -73,8 +73,9 @@ M4 depends on M0, M2 and M3. Until the spike results arrive, every step builds p
 - Analysis: §5.1 (popup), §6 (MS1 / MS2 buttons); [`docs/specs/ui-style.md`](../specs/ui-style.md) §3 (card, segmented, chips, timer bar, the one neon element)
 - Scope: `UI/Windows/MemberLootPopup.lua` (look per `ui-style.md`, preview `fdcp-roll-popup.webp`): stackable cards per item (icon and name in quality colour, slot, comparison tooltip, chip "Weapon · 2 credits"), segmented **Main-spec / Off-spec / Pass** with the optional label (BiS, big upgrade, small upgrade, situational), the **Roll** button calling `RandomRoll(1, 100)`, own credits and estimated queue position, a note field, the timer bar; position and size remembered. No upgrade verdict yet (M5-2).
 - Done when:
-  - [ ] Responses reach the ML in the simulator; the popup closes when the round closes.
+  - [x] Responses reach the ML in the simulator; the popup closes when the round closes.
 - Tests: `Tests/test_ui_popup.lua`.
+- Note: the label and the note travel end to end (protocol → state machine → the ML window's candidates table); the popup also needs the responses on offer with their tier, so the session announcement carries `rt` ([`docs/ANALISI.md`](../ANALISI.md) §4, "Come è fatto (M4-6)"). The popup shows the player's credits and queue place only when the client knows the guild's table (members get it with M6-6); the upgrade verdict is M5-2.
 - Docs: wiki **Rolling for Loot** (EN + IT), CHANGELOG.
 - Real client: the popup in a raid; `RandomRoll` from a click.
 - Suggested model/effort: `sonnet` / high

@@ -224,6 +224,18 @@ function Widgets.Segmented(parent, items, onSelect)
 		return true
 	end
 	function seg:Active() return self.active end
+	-- No segment selected (the thumb goes away).
+	function seg:Clear()
+		self.active = nil
+		self.thumb:Hide()
+		for _, ob in pairs(self.buttons) do Theme.Text(ob.label, "text-3") end
+	end
+	-- Locked: the segments stop answering clicks and dim; the selection stays visible.
+	function seg:SetEnabled(enabled)
+		self.enabled = enabled ~= false
+		self:SetAlpha(self.enabled and 1 or 0.55)
+		for _, ob in pairs(self.buttons) do ob:SetEnabled(self.enabled) end
+	end
 
 	local x = 4
 	for _, item in ipairs(items) do
@@ -240,6 +252,51 @@ function Widgets.Segmented(parent, items, onSelect)
 	end
 	seg:SetWidth(x + 2)
 	return seg
+end
+
+-- --- Chip (label) ------------------------------------------------------------------------------------------------------
+
+-- A pill with a border (28 high), filled with the accent when selected (docs/ANALISI.md §9.2, the site's filter chip).
+-- opts: text, onClick(chip), height, font (a Theme font id, default BodyMedium), pad (text padding, default 28).
+-- :SetSelected(bool), :IsSelected(), :SetLabel(text), :SetEnabled(bool).
+function Widgets.Chip(parent, opts)
+	opts = opts or {}
+	local c = CreateFrame("Button", nil, parent)
+	c:SetHeight(opts.height or 28)
+	c.fill = Theme.Slice(c, "rr_fill_12", "surface-2", "BACKGROUND", 0)
+	c.fill:SetAllPoints(c)
+	c.ring = Theme.Slice(c, "rr_ring_12", "border", "BORDER")
+	c.ring:SetAllPoints(c)
+	c.label = Theme.NewText(c, opts.font or "BodyMedium", "text-2")
+	c.label:SetPoint("CENTER", c, "CENTER", 0, 0)
+	function c:Paint()
+		if self.selected then
+			Theme.Tint(self.fill, "accent", 1)
+			Theme.Tint(self.ring, "accent")
+			Theme.Text(self.label, "on-accent")
+		else
+			Theme.Tint(self.fill, "surface-2", self.hot and 1 or 0)
+			Theme.Tint(self.ring, self.hot and "border-strong" or "border")
+			Theme.Text(self.label, "text-2")
+		end
+	end
+	function c:SetLabel(text)
+		self.label:SetText(text or "")
+		self:SetWidth(math.max(32, self.label:GetStringWidth() + (opts.pad or 28)))
+	end
+	function c:SetSelected(selected) self.selected = selected and true or false; self:Paint() end
+	function c:IsSelected() return self.selected == true end
+	local setEnabled = c.SetEnabled
+	function c:SetEnabled(enabled)
+		setEnabled(self, enabled and true or false)
+		self:SetAlpha(enabled and 1 or 0.45)
+	end
+	c:SetScript("OnEnter", function(self) if self:IsEnabled() then self.hot = true; self:Paint() end end)
+	c:SetScript("OnLeave", function(self) self.hot = false; self:Paint() end)
+	if opts.onClick then c:SetScript("OnClick", function(self) if self:IsEnabled() then opts.onClick(self) end end) end
+	c:SetLabel(opts.text)
+	c:Paint()
+	return c
 end
 
 -- --- TitleBar ---------------------------------------------------------------------------------------------------------

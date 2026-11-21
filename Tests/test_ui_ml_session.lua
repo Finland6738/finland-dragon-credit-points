@@ -241,6 +241,39 @@ describe("running a whole session from the window", function()
 	end)
 end)
 
+describe("labels and notes (M4-6)", function()
+	before_boot(setup)
+
+	it("shows the label next to the response and the note in the Notes column, for the master looter only", function()
+		local b = bench(1)
+		b.collect()
+		click(ui().main)
+		local s = b.s()
+		local function answer(name, fields)
+			fields.s, fields.i, fields.r = s.id, s.active, s.net.rounds[s.active]
+			Mock.chat.Receive("FDCP1", Codec():Encode("SRESP", fields), "RAID", name)
+		end
+		answer("Aurel", { rs = "MS", lb = "BIG_UPGRADE", n = "two-hander" })
+		answer("Bryn", { rs = "MS", lb = "BIS", n = "|cffff0000red|r" .. string.char(10) .. "line" })
+		answer("Corin", { rs = "OS" })
+		eq(b.item().labels[full("Aurel")], "BIG_UPGRADE")
+		eq(b.item().notes[full("Aurel")], "two-hander")
+		local by = {}
+		for _, r in ipairs(ui().card.table:GetData()) do by[r.name] = r end
+		eq(by.Aurel.label, "BIG_UPGRADE"); eq(by.Aurel.note, "two-hander")
+		eq(by.Bryn.note, "||cffff0000red||r line", "escape sequences are doubled and control characters become spaces")
+		isNil(by.Corin.label)
+		local rows = {}
+		for _, row in ipairs(ui().card.table.rows) do
+			if row:IsShown() and row.cells[1]:GetText() ~= "" then rows[row.cells[1]:GetText()] = row end
+		end
+		eq(rows.Aurel.cells[3]:GetText(), "Main-spec · Big upgrade")
+		eq(rows.Corin.cells[3]:GetText(), "Off-spec")
+		eq(rows.Aurel.cells[5]:GetText(), "two-hander")
+		eq(rows.Bryn.cells[3]:GetText(), "Main-spec · BiS")
+	end)
+end)
+
 describe("Modify", function()
 	before_boot(setup)
 

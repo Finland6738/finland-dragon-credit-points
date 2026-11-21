@@ -16,7 +16,7 @@ This page is for the **master looter**: the player who opens the boss's body and
 2. **Open the body.** When you open the loot window the main window opens on **Loot › Session**. The items at or above the loot threshold are listed on the left, each with its category and cost (for example *Jewelry · 1 credit*), proposed by the addon from the guild's table. If the drops were read during a lockdown, the window says they are held and reads them as soon as it ends.
 3. **Check the list.** Select an item to see it on the right. If a category or a cost is wrong, press **Correct** (see below). **Remove** takes an item you do not want in the session off the list.
 4. **Press Start the session.** The categories and costs go to the raid. With the guild's usual settings (automatic advance) the first roll opens by itself; if not, press **Open the roll** on the item you want.
-5. **The roll.** Every raider with the addon gets a popup, answers *Main-spec*, *Off-spec* or *Pass* and rolls. The right side of your window fills as the answers and the rolls arrive: for each candidate the credits, the answer, the roll and a note. A thin bar and a clock count down the round. The round closes by itself on its timer or when everybody has answered and rolled; you can close it earlier with **Close the round**. If nobody asked for the item in main-spec, the off-spec round opens by itself; if two players are tied on credits and roll, a reroll opens among them.
+5. **The roll.** Every raider with the addon gets a popup, answers *Main-spec*, *Off-spec* or *Pass* (with an optional label and note) and rolls: see [[Rolling for Loot|Rolling-for-Loot]]. The right side of your window fills as the answers and the rolls arrive: for each candidate the credits, the answer, the roll and a note. A thin bar and a clock count down the round. The round closes by itself on its timer or when everybody has answered and rolled; you can close it earlier with **Close the round**. If nobody asked for the item in main-spec, the off-spec round opens by itself; if two players are tied on credits and roll, a reroll opens among them.
 6. **The proposal.** When the round closes the addon writes **who, how much and why**, for example *Proposal: Bryn, 1 credit. Same credits as the others, highest roll.* The proposed player is marked in the list. Under the sentence, in amber, are the things to look at (rolls set aside, a cost the council has to fix, a tie the rules cannot break, a proposal after a rejection).
 7. **You decide:**
    - **Confirm and assign** writes the award in the ledger with the addon's reason and charges the credits. Nothing else to type.
@@ -35,9 +35,9 @@ If the window is closed, `/fdcp` opens it on the Loot tab while a session runs.
 |---|---|
 | **Candidate** | The name, in the class colour. |
 | **Credits** | The player's credits when this item's roll opened (frozen for the item, so the result is the one the raid rolled against). |
-| **Response** | Main-spec, Off-spec or Pass; a dot when nothing yet. |
+| **Response** | Main-spec, Off-spec or Pass, with the label the player declared (*BiS*, *Big upgrade*, *Small upgrade*, *Situational*) when they gave one; a dot when nothing yet. The label informs you and the council; it never changes the proposal. |
 | **Roll** | The first 1-100 roll of the current round (a reroll replaces it for the tied players). |
-| **Notes** | *Proposed* for the winner; *No answer yet* while the round is open; the reason a roll was set aside (a second roll, not 1-100, rolled too early, **the addon is not active**). |
+| **Notes** | *Proposed* for the winner; *No answer yet* while the round is open; the note the player wrote in their popup (shown after the other texts); the reason a roll was set aside (a second roll, not 1-100, rolled too early, **the addon is not active**). |
 
 Sort by clicking a header. The list is ordered main-spec first, then fewest credits, then the highest roll. In a reroll the players who are not tied are dimmed.
 

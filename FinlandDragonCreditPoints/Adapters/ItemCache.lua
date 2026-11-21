@@ -4,7 +4,7 @@
 -- were checked against the Forever API dump (C_Item). Both events are listened to: whichever comes first resolves the wait.
 --
 -- ItemCache.Lookup(item)        what the client knows now, or nil: { itemID, name, link, quality, level, classID,
---                               subclassID, equipLoc, bindType, boe, icon, loaded }. `loaded` is true when the full
+--                               subclassID, subType, equipLoc, bindType, boe, icon, loaded }. `loaded` is true when the full
 --                               C_Item.GetItemInfo answered; without it only the instant fields are there (classID,
 --                               subclassID, equipLoc, icon) and name / quality / bindType are nil.
 -- ItemCache.Get(item, cb)       entry when the item is loaded (cb is not called); else asks the client and returns nil,
@@ -46,6 +46,7 @@ function Cache.Lookup(item)
 	end
 	if info then
 		out.name, out.link, out.quality, out.level, out.bindType = info.name, info.link, info.quality, info.level, info.bindType
+		out.subType = info.subType   -- "Cloth", "One-Handed Swords": the client's words (the popup of M4-6 shows it)
 		out.classID, out.subclassID = info.classID or out.classID, info.subclassID or out.subclassID
 		out.equipLoc, out.icon = info.equipLoc or out.equipLoc, info.icon or out.icon
 	end
