@@ -59,7 +59,8 @@
 - Analysis: §6 (planning, effect on credits)
 - Scope: `Domain/Rotation.lua` (proposed bench by fewest benches this season, role minimums for tanks and healers, declared preferences; the ML decides), `bench.creditEffect` (none in the preset, bonus or malus for other guilds), `Adapters/Calendar.lua` (link a night to the official raid event when it exists).
 - Done when:
-  - [ ] The proposal is fair over a simulated season and respects role minimums.
+  - [x] The proposal is fair over a simulated season and respects role minimums.
+  - [ ] The calendar is read in game: the raid event of the day is found and its sign-ups are read. *(in game)*
 - Tests: `Tests/test_rotation.lua`.
 - Docs: CHANGELOG.
 - Real client: calendar reading.

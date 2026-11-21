@@ -16,6 +16,10 @@
 --   (M3-3b records those).
 -- * Attendance is for the officers: Attendance() answers only with `view.attendance` (§6, owner decision).
 --
+-- * Planning (M3-4): ProposeBench asks Domain/Rotation.lua who to bench (fewest benches, role minimums, the calendar's
+--   sign-ups) and **writes nothing**: the master looter decides and ApplyBench writes the bench in one lineup change. A night
+--   is linked to the official raid event of the game's calendar when there is one (Adapters/Calendar.lua, `eventID`).
+--
 -- Bus events: "NIGHT_OPENED"(night), "NIGHT_CLOSED"(night), "NIGHT_LINEUP_CHANGED"(night, event),
 -- "NIGHT_ENCOUNTER_RECORDED"(night, event).
 -- Not verified in the real client (M0 spike S4/S7): the group events in a raid and the encounter ids of Forever.
@@ -116,8 +120,9 @@ local function mainOf(rs, name)
 	return rs.alts[full]
 end
 
--- Opens an official night. args = { instanceID?, difficulty?, bench? = {names}, ml? }: the instance and the difficulty
--- default to the instance the player stands in (when it is a raid of the season's pack); `bench` is the planned bench, a
+-- Opens an official night. args = { instanceID?, difficulty?, bench? = {names}, ml?, eventID? }: `eventID` is the official
+-- raid event of the game's calendar the night is linked to (found for today's date when not given, left out when the
+-- calendar has none or is not loaded); the instance and the difficulty default to the instance the player stands in (when it is a raid of the season's pack); `bench` is the planned bench, a
 -- list of pool mains (they stay BENCH while they are not in the raid). The lineup is read from the raid group at once.
 -- Returns the night record, or nil and a code: "NOT_READY", "NO_SEASON", "PENDING", "NOT_IN_GUILD", "RANK_TOO_LOW",
 -- "NOT_IN_PACK" (only the official raids of the season count), "DIFFICULTY" (the client does not say which: pass it),
@@ -145,8 +150,14 @@ function NightController:Open(args)
 		end
 	end
 	local ts = now()
+	local eventID = args.eventID
+	if eventID == nil and ns.Calendar then
+		local found = ns.Calendar.FindRaidEvent(ns.Compat.ServerDay())
+		eventID = found and found.eventID or nil
+	end
 	local event, why = ns.Nights.Open(L, { author = self:Me(), ts = ts, season = season, date = today(),
-		instanceID = instanceID, difficulty = difficulty, faction = ns.Compat.Player.Faction(), ml = args.ml }, gate())
+		instanceID = instanceID, difficulty = difficulty, faction = ns.Compat.Player.Faction(), ml = args.ml,
+		eventID = eventID }, gate())
 	if not event then return nil, why end
 	local night = ns.Nights.Get(L, event.id)
 	log("info", "NIGHT_OPENED", ns.Log and ns.Log.Plain(night.difficulty), night.size)
@@ -198,6 +209,25 @@ function NightController:SetState(name, state)
 end
 
 function NightController:Bench(name) return self:SetState(name, "BENCH") end
+
+-- The master looter's decision: benches a whole list in one lineup change (names are pool mains or alts). Returns the
+-- LINEUP_CHANGED event, or nil and a code ("NO_NIGHT_OPEN", "NOT_MEMBER", "NO_CHANGE", ...).
+function NightController:ApplyBench(names)
+	local L, season = writer(self)
+	if not L then return nil, season end
+	local night = ns.Nights.Current(L, season)
+	if not night then return nil, "NO_NIGHT_OPEN" end
+	local rs, bench = ns.Roster.State(L, season), {}
+	for _, name in ipairs(type(names) == "table" and names or {}) do
+		local main = mainOf(rs, name)
+		if not main then return nil, "NOT_MEMBER" end
+		bench[#bench + 1] = main
+	end
+	local event, why = ns.Nights.SetLineup(L, { author = self:Me(), ts = now(), season = season, bench = bench }, gate())
+	if not event then return nil, why end
+	emit("NIGHT_LINEUP_CHANGED", night, event)
+	return event
+end
 
 -- Takes a member off the bench: back in the raid when they are in the group, absent otherwise.
 function NightController:Unbench(name)
@@ -286,6 +316,53 @@ function NightController:OnEncounterEnd(info)
 	log("info", "KILL", info.encounterID)
 	emit("NIGHT_ENCOUNTER_RECORDED", night, event)
 	return event
+end
+
+---------------------------------------------------------------------------------------------------------------------
+-- Planning the bench (a proposal, never a write)
+
+-- The calendar's answers for a night: the event it is linked to, else the official raid event of its date. Returns the
+-- sign-ups { [member] = "yes" | "maybe" | "no" } and the event, or nil when there is none or the client does not say.
+local function calendarSignups(night, day)
+	if not ns.Calendar then return nil end
+	local event
+	for _, e in ipairs(ns.Calendar.RaidEvents(day)) do
+		if night and night.eventID and e.eventID == night.eventID then event = e end
+	end
+	event = event or ns.Calendar.FindRaidEvent(day)
+	if not event then return nil end
+	local signups = ns.Calendar.Signups(event)
+	return signups, event
+end
+
+-- Who to bench, as Domain/Rotation.lua proposes: for the open night, or for a night about to start (args.instanceID gives
+-- the size). args = { instanceID?, volunteers?, keep?, exclude?, useCalendar? (false: ignore the sign-ups),
+-- useAvailability? }. Nothing is written: the master looter decides (ApplyBench / Open{bench}). Returns the proposal of
+-- Rotation.Propose plus `event` (the calendar event the sign-ups came from) and `signups`, or nil and a code: "NOT_READY",
+-- "NO_SEASON", a permission code, "NOT_IN_PACK" (no night open and no official instance given), "SIZE".
+function NightController:ProposeBench(args)
+	args = args or {}
+	local L, s = self:Ledger(), self:Season()
+	if not L then return nil, "NOT_READY" end
+	if not s then return nil, "NO_SEASON" end
+	local ok, why = self:Can("night.run")
+	if not ok then return nil, why end
+	local night = ns.Nights.Current(L, s.id)
+	local opts = { night = night and night.id or nil, volunteers = args.volunteers, keep = args.keep,
+		exclude = args.exclude, useAvailability = args.useAvailability }
+	local day = ns.Compat.ServerDay()
+	if not night then
+		local size = ns.Season.InstanceSize(s, args.instanceID)
+		if not size then return nil, "NOT_IN_PACK" end
+		opts.size, opts.faction, opts.date = size, ns.Compat.Player.Faction(), today()
+	end
+	local signups, event
+	if args.useCalendar ~= false then signups, event = calendarSignups(night, day) end
+	opts.signups = signups
+	local proposal, code = ns.Rotation.Propose(L, s.id, opts)
+	if not proposal then return nil, code end
+	proposal.event, proposal.signups = event, signups
+	return proposal
 end
 
 ---------------------------------------------------------------------------------------------------------------------

@@ -86,6 +86,19 @@ The declaration is **locked for the season**. If something is wrong, an officer 
 
 An officer can fill in a declaration from the **guild note** (for example "Fury / Arms"): the addon only suggests the specs it recognises and the officer confirms.
 
+## The bench
+
+When more players come than the raid holds, the **master looter decides** who sits out; the addon only proposes. The proposal starts from the players who can come (a "no" on the calendar, or a weekday you did not declare, takes you out of the count: nobody benches an absent player), and benches the surplus in this order:
+
+1. players who **asked** to sit out;
+2. players who answered **maybe** on the calendar;
+3. players with the **fewest benches** this season, so everybody sits out about as often;
+4. then the ones who have **played the most nights**, then by name.
+
+The raid always keeps its **minimum of tanks and healers** (2 and 4 by default, set in the rules); if the places cannot be filled otherwise, the minimum gives way and the master looter sees a warning. A night is linked to the guild's **official raid event** on the in-game calendar when there is one, and its sign-ups feed the proposal. The addon only reads the calendar.
+
+**The bench never costs credits** in the guild's preset: someone who plays less earns fewer credits and so already has the precedence. A guild that wants it can give a **bonus** (fewer credits for every bench, never below 0) or a **malus**. Who benched how often is shown to officers only.
+
 ## Words in the game
 
 The engine never writes sentences: it records short codes, and the addon turns them into the sentences below in your language, so the proposal, the log and this manual say the same thing. The code is shown in the audit next to the sentence.

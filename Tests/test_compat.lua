@@ -583,6 +583,7 @@ end)
 
 describe("calendar", function()
 	local function raidNight()
+		Mock.calendar.opened = false   -- the calendar adapter asks the client to load it at login (M3-4): start closed
 		Mock.calendar.Set{ events = { [20] = { { title = "Official raid", eventType = 0, invites = {
 			{ name = "Aurel", inviteStatus = 1, guid = "Player-1-0000B001" }, { name = "Bryn", inviteStatus = 4 } } } } } }
 	end

@@ -8,7 +8,9 @@
 --       official raids count: Nights.Open refuses any other), `size` the pack's size for it (10, 20 or 40), `difficulty`
 --       `normal` or `veteran` (recorded for the history; both share the one credit table, §3.1), `faction` the client's
 --       faction token of the player who opened it (a pool main of the other faction is not "absent" from this night) and
---       `ml` the master looter when it is not the officer who opened it. One night is open per season at a time.
+--       `ml` the master looter when it is not the officer who opened it, `eventID` the official raid event of the game's
+--       calendar the night is linked to when there is one (M3-4: a number, never its title). One night is open per season
+--       at a time.
 --   NIGHT_CLOSED{night?}  the night is over (`night` = the id of the NIGHT_OPENED it closes; without it, the newest night
 --       opened before the close that is still open).
 --   LINEUP_CHANGED{night, boss?, raid?, bench?, absent?}  a change of the lineup: the lists of members who are now RAID
@@ -105,6 +107,7 @@ do
 		if not Season().DIFFICULTIES[p.difficulty] then return "difficulty" end
 		if p.faction ~= nil and not Ledger().FACTIONS[p.faction] then return "faction" end
 		if p.ml ~= nil and not isName(p.ml) then return "ml" end
+		if p.eventID ~= nil and (not isInt(p.eventID) or p.eventID <= 0) then return "eventID" end
 	end
 
 	CHECKS.NIGHT_CLOSED = function(p)
@@ -149,7 +152,7 @@ local function readable(L, e)
 end
 
 -- Every night of a season in the order they were opened:
--- { id, season, date, instanceID, size, difficulty, faction, ml, author, openedAt, closed, closedAt, closeId }.
+-- { id, season, date, instanceID, size, difficulty, faction, ml, eventID, author, openedAt, closed, closedAt, closeId }.
 -- A close counts for the night it names, or for the newest night opened before it that is still open; a close whose
 -- night has not been merged yet stays in the ledger and counts once it has.
 function Nights.List(L, season)
@@ -159,7 +162,7 @@ function Nights.List(L, season)
 		local p = readable(L, e)
 		if p then
 			local n = { id = e.id, season = season, date = p.date, instanceID = p.instanceID, size = p.size,
-				difficulty = p.difficulty, faction = p.faction, ml = p.ml, author = e.author, openedAt = e.ts,
+				difficulty = p.difficulty, faction = p.faction, ml = p.ml, eventID = p.eventID, author = e.author, openedAt = e.ts,
 				closed = false }
 			list[#list + 1] = n
 			byId[e.id] = n
@@ -411,7 +414,7 @@ local function seasonOpen(L, season)
 	return s
 end
 
--- Opens an official night. draft = { author, ts, season, date, instanceID, difficulty, size?, faction?, ml? }; `size`
+-- Opens an official night. draft = { author, ts, season, date, instanceID, difficulty, size?, faction?, ml?, eventID? }; `size`
 -- defaults to the pack's size for the instance and has to match it. Returns the NIGHT_OPENED event, or nil and a code:
 -- "SEASON_UNKNOWN", "SEASON_CLOSED", "NOT_IN_PACK" (not an official raid of the season), "SIZE", "DIFFICULTY",
 -- "NIGHT_ALREADY_OPEN" or a Ledger.Append code ("date", "faction", ...). `opts` goes to Ledger.Append (the trust gate).
@@ -426,7 +429,7 @@ function Nights.Open(L, draft, opts)
 	if Nights.Current(L, draft.season) then return nil, "NIGHT_ALREADY_OPEN" end
 	return Ledger().Append(L, { author = draft.author, ts = draft.ts, season = draft.season, type = "NIGHT_OPENED",
 		payload = { date = draft.date, instanceID = draft.instanceID, size = packSize, difficulty = draft.difficulty,
-			faction = draft.faction, ml = draft.ml } }, opts)
+			faction = draft.faction, ml = draft.ml, eventID = draft.eventID } }, opts)
 end
 
 -- Closes the open night of the season. draft = { author, ts, season }. Returns the NIGHT_CLOSED event, or nil and

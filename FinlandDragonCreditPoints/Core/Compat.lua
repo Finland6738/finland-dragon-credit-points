@@ -981,7 +981,7 @@ function Calendar.MonthInfo(offset)
 	return readableCopy((first("C_Calendar.GetMonthInfo", num(offset) or 0)))
 end
 
--- The events of a day: { { eventID, title, calendarType, eventType, startTime, endTime, inviteStatus, modStatus }, ... }.
+-- The events of a day: { { index (the client's), eventID, title, calendarType, eventType, startTime, endTime, inviteStatus, modStatus }, ... }.
 -- `offset` is the month relative to the shown one (0 = this month), `day` the day of the month. Empty when the client
 -- says nothing (calendar not loaded, API missing, hidden).
 function Calendar.DayEvents(offset, day)
@@ -992,7 +992,7 @@ function Calendar.DayEvents(offset, day)
 	for i = 1, min(n, 50) do
 		local e = readableCopy((first("C_Calendar.GetDayEvent", offset, day, i)))
 		if e and str(e.title) then
-			out[#out + 1] = { eventID = e.eventID, title = e.title, calendarType = str(e.calendarType), eventType = e.eventType,
+			out[#out + 1] = { index = i, eventID = e.eventID, title = e.title, calendarType = str(e.calendarType), eventType = e.eventType,
 				startTime = e.startTime, endTime = e.endTime, inviteStatus = e.inviteStatus, modStatus = str(e.modStatus) }
 		end
 	end

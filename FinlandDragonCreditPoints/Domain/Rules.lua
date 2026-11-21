@@ -9,7 +9,7 @@
 --   session   { awardMode, autoAdvance, lockCategoryOnOpen, interventionSeconds, rollSeconds }                  §3.4, §4
 --   council   { requirePresent, vote }                                    §3.6 (the rank is the permission council.member)
 --   legendary { mode, chainPieceCost }                                    §3.7
---   bench     { creditEffect }                                            §3.1
+--   bench     { creditEffect, creditAmount, minTanks, minHealers }        §3.1, §6 (Domain/Rotation.lua)
 --   site      Domain/Progress.lua { factionName }: the guild's key on the community site   §7.1 (M3-3b)
 -- Rules.DefaultConfig() is the "Patto" preset (§3.1); Domain/Presets.lua builds the others from it.
 --
@@ -31,7 +31,7 @@ local function Ledger() return ns.Ledger end
 Rules.SECTIONS = { "night", "members", "season", "cost", "priority", "session", "council", "legendary", "bench", "site" }
 Rules.AWARD_MODES = { confirm = true, auto = true, council = true }
 Rules.LEGENDARY_MODES = { council = true, vote = true, roll = true, queue = true }
-Rules.BENCH_EFFECTS = { none = true }
+Rules.BENCH_EFFECTS = { none = true, bonus = true, malus = true }
 
 local function copy(v)
 	if type(v) ~= "table" then return v end
@@ -61,7 +61,7 @@ function Rules.DefaultConfig()
 		},
 		council = { requirePresent = true, vote = false },
 		legendary = { mode = "council", chainPieceCost = 2 },
-		bench = { creditEffect = "none" },
+		bench = { creditEffect = "none", creditAmount = 1, minTanks = 2, minHealers = 4 },
 		site = ns.Progress.DefaultConfig(),
 	}
 end
@@ -140,8 +140,13 @@ function Rules.Validate(config)
 		if not Rules.LEGENDARY_MODES[lg.mode] then add(problems, "legendary.mode") end
 		if not isNum(lg.chainPieceCost) or lg.chainPieceCost < 0 then add(problems, "legendary.chainPieceCost") end
 	end
-	if type(c.bench) == "table" and not Rules.BENCH_EFFECTS[c.bench.creditEffect] then
-		add(problems, "bench.creditEffect")
+	local b = c.bench
+	if type(b) == "table" then
+		if not Rules.BENCH_EFFECTS[b.creditEffect] then add(problems, "bench.creditEffect") end
+		if not isNum(b.creditAmount) or b.creditAmount < 0 or b.creditAmount > 100 then add(problems, "bench.creditAmount") end
+		for _, k in ipairs({ "minTanks", "minHealers" }) do
+			if type(b[k]) ~= "number" or b[k] ~= floor(b[k]) or b[k] < 0 or b[k] > 40 then add(problems, "bench." .. k) end
+		end
 	end
 	if type(c.site) == "table" then sub(problems, "site", ns.Progress.ValidateConfig(c.site)) end
 	sort(problems)

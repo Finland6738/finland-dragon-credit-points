@@ -64,6 +64,7 @@ describe("the rules schema", function()
 		eq(c.council.vote, false)
 		eq(c.legendary.mode, "council"); eq(c.legendary.chainPieceCost, 2)
 		eq(c.bench.creditEffect, "none")
+		eq(c.bench.creditAmount, 1); eq(c.bench.minTanks, 2); eq(c.bench.minHealers, 4)
 	end)
 
 	it("each section is the module's own default", function()
@@ -127,6 +128,27 @@ describe("the rules schema", function()
 		truthy(has(bad(function(c) c.legendary.mode = "dice" end), "legendary.mode"))
 		truthy(has(bad(function(c) c.legendary.chainPieceCost = -2 end), "legendary.chainPieceCost"))
 		truthy(has(bad(function(c) c.bench.creditEffect = "double" end), "bench.creditEffect"))
+		truthy(has(bad(function(c) c.bench.creditAmount = -1 end), "bench.creditAmount"))
+		truthy(has(bad(function(c) c.bench.creditAmount = 101 end), "bench.creditAmount"))
+		truthy(has(bad(function(c) c.bench.minTanks = 1.5 end), "bench.minTanks"))
+		truthy(has(bad(function(c) c.bench.minHealers = 41 end), "bench.minHealers"))
+		truthy(has(bad(function(c) c.bench.minHealers = nil end), "bench.minHealers"))
+	end)
+
+	it("accepts the bench effects bonus and malus and a minimum of zero", function()
+		local c = R().DefaultConfig()
+		c.bench.creditEffect = "bonus"; c.bench.creditAmount = 0.5; c.bench.minTanks = 0; c.bench.minHealers = 0
+		truthy(R().Validate(c))
+		c.bench.creditEffect = "malus"
+		truthy(R().Validate(c))
+	end)
+
+	it("fills the bench keys that rules written before M3-4 lack", function()
+		local old = R().DefaultConfig()
+		old.bench = { creditEffect = "none" }
+		local c = R().WithDefaults(old)
+		eq(c.bench.minTanks, 2); eq(c.bench.minHealers, 4); eq(c.bench.creditAmount, 1)
+		truthy(R().Validate(c))
 	end)
 
 	it("lists every problem, sorted", function()

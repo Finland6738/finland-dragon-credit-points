@@ -33,6 +33,7 @@ Domain\Season.lua
 Domain\Members.lua
 Domain\Roster.lua
 Domain\Nights.lua
+Domain\Rotation.lua
 Data\Instances.lua
 Data\Specs.lua
 Domain\Progress.lua
@@ -42,6 +43,7 @@ Domain\Permissions.lua
 Domain\SessionFSM.lua
 Adapters\GuildRanks.lua
 Adapters\Group.lua
+Adapters\Calendar.lua
 App\PermissionService.lua
 App\NightController.lua
 App\ProgressController.lua

@@ -86,6 +86,19 @@ La dichiarazione è **bloccata per tutta la season**. Se qualcosa è sbagliato, 
 
 Un officer può compilare una dichiarazione partendo dalla **nota di gilda** (per esempio "Fury / Arms"): l'addon si limita a suggerire le spec che riconosce e l'officer conferma.
 
+## La panchina
+
+Quando vengono più giocatori di quanti ne contenga il raid, **decide il master looter** chi sta fuori; l'addon si limita a proporre. La proposta parte da chi può venire (un "no" sul calendario, o un giorno della settimana che non hai dichiarato, ti toglie dal conteggio: nessuno mette in panchina un assente) e mette in panchina il surplus in quest'ordine:
+
+1. chi ha **chiesto** di stare fuori;
+2. chi ha risposto **forse** sul calendario;
+3. chi ha **meno panchine** in questa season, così tutti stanno fuori più o meno lo stesso numero di volte;
+4. poi chi ha **giocato più serate**, poi in ordine di nome.
+
+Il raid tiene sempre il suo **minimo di tank e healer** (2 e 4 di default, regolabili nelle regole); se i posti non si riempiono altrimenti, il minimo cede e il master looter vede un avviso. Una serata è collegata all'**evento raid ufficiale** della gilda sul calendario del gioco, se c'è, e le sue iscrizioni alimentano la proposta. L'addon legge soltanto il calendario.
+
+**La panchina non costa crediti** nel preset della gilda: chi gioca meno guadagna meno crediti e ha quindi già la precedenza. Una gilda che lo vuole può dare un **bonus** (meno crediti per ogni panchina, mai sotto 0) o un **malus**. Quante volte ciascuno è stato in panchina lo vedono solo gli officer.
+
 ## Le parole nel gioco
 
 Il motore non scrive mai frasi: registra codici brevi, e l'addon li trasforma nelle frasi qui sotto nella tua lingua, così la proposta, il log e questo manuale dicono la stessa cosa. Il codice si vede nell'audit accanto alla frase.
