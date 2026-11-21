@@ -846,12 +846,46 @@ tools/ check_docs.py, build/release
   | Tipo | Campi | Significato |
   |---|---|---|
   | `HELLOQ` | `w?` (lista di "Nome-Reame", al massimo 40), `av`, `pv`, `pm` | "chi ha l'addon?" (il `HELLO?` del §4.1: il nome di un tipo ha solo lettere e cifre); senza `w` rispondono tutti, con `w` solo i nominati; porta anche i dati di chi chiede, che ha l'addon anche lui |
-  | `HELLO` | `av` (versione dell'addon, `dev` se non pacchettizzato), `pv` (versione del protocollo di sessione), `pm` (il protocollo più vecchio che capisce ancora) | la risposta, o l'annuncio all'ingresso nel raid |
+  | `HELLO` | `av` (versione dell'addon, `dev` se non pacchettizzato), `pv` (versione del protocollo di sessione), `pm` (il protocollo più vecchio che capisce ancora), `sq?` (M4-1: "non ho nessuna sessione in vista", vale anche in `HELLOQ`) | la risposta, o l'annuncio all'ingresso nel raid |
 
   Due client sono **compatibili** se il `pv` di ciascuno è almeno il `pm` dell'altro; compatibile con versione più
   vecchia = "da aggiornare", incompatibile = "versione incompatibile" (non rolla). Un client con un formato di rete
   nuovo usa un altro prefisso (`FDCP2`) e non si sente affatto: risulta "addon non attivo". Limite per tipo: quattro
   `HELLO` e quattro `HELLOQ` al minuto (l'ultimo in attesa vince).
+- **Sessione di loot (M4-1).** `Net/Protocol.lua` (`Protocol.Session`); il protocollo di sessione passa a **2**
+  (`pv = 2`, `pm = 2`: un client del solo controllo di presenza di M3 risulta "versione incompatibile"). Il client del
+  master looter esegue `Domain/SessionFSM.lua` e trasforma i suoi **effetti** in messaggi (`Session:Publish`); ogni altro
+  client tiene una **vista** in sola lettura (`Session.view`, da cui il popup e la finestra degli officer); le risposte dei
+  membri diventano input `RESPONSE` della macchina (evento `SESSION_INPUT`, eseguito dal controller di M4-4). Messaggi
+  (oltre a `s`, l'id della sessione):
+
+  | Tipo | Canale | Campi | Significato |
+  |---|---|---|---|
+  | `SOPEN` | `RAID` | `q`, `ml`, `e?`, `it` = `{ {id, ca, cs, co?}, … }` | sessione aperta: oggetti con categoria e costi per risposta (`cs`); rimandato dopo una correzione |
+  | `SROLL` | `RAID` | `q`, `i`, `r`, `k`, `g?`, `tr?`, `am?`, `cl?`, `de?`, `rm?` | round `r` del pezzo `i` aperto: tipo, fase, tier, fra chi (reroll), `cl` = raccoglie le risposte, `de` = scadenza in ora del server (`rm` = secondi rimasti, in pausa) |
+  | `SRESP` | `RAID` | `i`, `r`, `rs`, `lb?`, `n?` | la risposta di un membro `{risposta, etichetta, nota}` (nota al massimo 80 byte): sempre la propria |
+  | `SCLOSE` | `RAID` | `q`, `i`, `r` | round chiuso |
+  | `SPROP` | `RAID` | `q`, `i`, `k`, `tg`, `w?`, `c?`, `rs?`, `tr?`, `rc?`, `f?`, `m?` | la proposta: a chi, quanto, perché (codici di motivo e segnalazioni); `m` = modificata dal ML |
+  | `SRESULT` | `RAID` | `q`, `i`, `o`, `w?`, `c?`, `tg?`, `x?` | `AWARDED` (vincitore, costo, destinatario), `REJECTED` (`x` = cosa succede dopo) o `DELIVERED` |
+  | `SPAUSE` | `RAID` | `q`, `p`, `de?`, `rm?` | pausa (`p` vero) o ripresa |
+  | `SEND` | `RAID` | `q` | sessione chiusa |
+  | `SSYNCQ` | `WHISPER` (o `RAID`) | `s?` | "mandami la sessione": dopo un buco nella sequenza, al ML |
+  | `SSTATE` | `WHISPER` | `q`, `ml`, `e?`, `it` (+ `st`, `w`, `pc`, `tg`), `a?`, `rd?`, `pr?`, `pz?`, `en?`, `my?` | tutta la vista per un membro: il pezzo attivo, il suo round e la proposta, pausa, fine, la sua risposta (`my`) |
+
+  Regole: **ogni risposta è del mittente** (il ML prende il giocatore dal mittente che dà il client, mai da un campo; una
+  risposta che nomina un altro giocatore, `p`, è rifiutata come falsificata e contata); **nessun messaggio porta un
+  roll** e niente di quello che arriva via addon diventa un input `ROLL` (i roll arrivano dalla chat, M4-3); i messaggi
+  di controllo si accettano solo dal master looter della sessione (chi ha mandato il `SOPEN` nominando se stesso in
+  `ml`); un `SOPEN` di chi non è nel raid è rifiutato, e quello di un altro mentre una sessione è in corso solo se ha
+  `award.confirm`. Ogni messaggio di controllo porta `q`, il numero di sequenza della sessione (salvato nella sessione,
+  `net`, così sopravvive al `/reload` del ML): un doppione si ignora, un **buco** (un messaggio perso, o scaduto dopo i
+  120 secondi di vita di un messaggio `RAID` durante un lockdown lungo) fa chiedere `SSTATE` al ML in sussurro, di nuovo
+  ogni 5 secondi fino a 3 volte. **Resync**: chi entra nel raid tardi, fa login o `/reload` senza una sessione in vista
+  lo dice nel suo `HELLO` (`sq`), e il ML di una sessione in corso gli sussurra `SSTATE` (al massimo uno ogni 3 secondi
+  per giocatore), con la sua risposta al pezzo aperto; il ML che fa `/reload` ricostruisce la vista dalla sessione salvata
+  (`Session:Host`). I timer viaggiano in ora del server (`GetServerTime`, uguale per tutti), mai nell'orologio locale.
+  Tutto passa dalla coda di `Net/Transport.lua` con priorità `ALERT`: aspetta il lockdown, le restrizioni e i boss
+  (piano B: sessioni dopo `ENCOUNTER_END`), in ordine; più risposte in attesa dello stesso giocatore → parte l'ultima.
 - **Coda con lockdown**: se `InChatMessagingLockdown()` o le restrizioni sono attive, i messaggi aspettano
   (riuso del modulo di Accord). Le sessioni partono dopo `ENCOUNTER_END`.
 - **Fiducia**: un evento del registro è accettato solo se l'autore ha il rango richiesto dal permesso (§3.9),

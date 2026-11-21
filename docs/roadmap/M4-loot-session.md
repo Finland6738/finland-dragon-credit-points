@@ -12,7 +12,7 @@ M4 depends on M0, M2 and M3. Until the spike results arrive, every step builds p
 - Analysis: §4, §8.4
 - Scope: `Net/Protocol.lua` session messages (session opened with items, category and cost; roll opened for item N with tier and timer; response `{response, label, note}`; round closed; proposal; result; session closed), versioned, small; a member may send only their own response; resync of a late joiner or a `/reload` by `WHISPER`; everything through the guarded queue (plan B: sessions only after `ENCOUNTER_END`).
 - Done when:
-  - [ ] A forged response for another player is refused; a client that reloads mid-session resyncs.
+  - [x] A forged response for another player is refused; a client that reloads mid-session resyncs.
 - Tests: `Tests/test_protocol_session.lua` (network simulator).
 - Docs: §8.4 if the message list changes; CHANGELOG.
 - Real client: `RAID` delivery in a raid.
