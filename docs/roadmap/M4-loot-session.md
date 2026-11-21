@@ -24,7 +24,7 @@ M4 depends on M0, M2 and M3. Until the spike results arrive, every step builds p
 - Analysis: §1 (loot window, items), §4 (collection)
 - Scope: `Adapters/LootSource.lua` (`LOOT_OPENED` as master looter: slots at or above the threshold, links, source → boss), `Adapters/ItemCache.lua` (`C_Item.GetItemInfo` misses wait for `ITEM_DATA_LOAD_RESULT`), the collection list with the classifier's category and cost for the ML to confirm or correct before the roll (category locked once the roll opens).
 - Done when:
-  - [ ] Collection from a mock corpse produces the expected list; cache misses resolve later.
+  - [x] Collection from a mock corpse produces the expected list; cache misses resolve later.
 - Tests: `Tests/test_loot_source.lua`.
 - Docs: CHANGELOG.
 - Real client: loot window reading (spike S2).

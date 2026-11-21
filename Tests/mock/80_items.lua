@@ -101,7 +101,7 @@ function C_Item.RequestLoadItemDataByID(id)
 	items.requested[#items.requested + 1] = id
 	local d = items.byId[id]
 	if d and not d.cached then
-		C_Timer.After(0, function() d.cached = true; Mock.Fire("GET_ITEM_INFO_RECEIVED", id, true) end)
+		C_Timer.After(0, function() d.cached = true; Mock.Fire("GET_ITEM_INFO_RECEIVED", id, true); Mock.Fire("ITEM_DATA_LOAD_RESULT", id, true) end)
 	end
 end
 

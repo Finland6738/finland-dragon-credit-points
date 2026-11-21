@@ -47,6 +47,8 @@ Domain\SessionFSM.lua
 Adapters\GuildRanks.lua
 Adapters\Group.lua
 Adapters\Calendar.lua
+Adapters\ItemCache.lua
+Adapters\LootSource.lua
 App\PermissionService.lua
 App\NightController.lua
 App\RosterController.lua
