@@ -5,6 +5,7 @@
 - [[Loot Rules|Loot-Rules]]
 - [[Interface Tour|Interface-Tour]]
 - [[Site Export|Site-Export]]
+- [[Addon Check|Addon-Check]]
 
 **Italiano**
 - [[Home|Home-it]]
@@ -13,3 +14,4 @@
 - [[Regole del loot|Loot-Rules-it]]
 - [[Giro dell'interfaccia|Interface-Tour-it]]
 - [[Esportazione per il sito|Site-Export-it]]
+- [[Controllo dell'addon|Addon-Check-it]]

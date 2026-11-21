@@ -553,6 +553,8 @@ ha l'addon attivo, per esempio:
   scrivere in chat, e un avviso automatico a ogni ingresso sarebbe fastidioso.
 - Ogni avviso finisce nel log della serata (chi, quando, a chi).
 
+**Come è fatto (M3-6).** `Domain/Notice.lua` (testo e divisione), `App/AddonNotice.lua` (invio e protezioni), `UI/AddonPanel.lua` (pannello **Roster › Addon** e chip del riepilogo nella barra del titolo). Il testo sta nella sezione `notice` delle regole (`text`, `outdatedText`, `link`, `whisper`, `minutes`; testo vuoto = quello di default nella lingua di chi preme; solo il GM la cambia, `CONFIG_CHANGED` nell'audit). Ogni riga inizia con `[FDCP] ` e ha al massimo 255 byte; i nomi sono senza reame e non vengono mai tagliati a metà. Il pulsante rifiuta con un codice se non si è in raid, senza permesso, durante un boss (`ENCOUNTER`: l'invio non aspetta, si riclicca dopo), con la chat bloccata, senza nessuno da nominare o prima che passino `minutes` minuti dall'ultimo avviso (un'attesa sola per serata, azzerata all'apertura di una serata). Il registro degli avvisi è nei dati del personaggio (ultimi 30) e sul bus (`ADDON_NOTICE_SENT`), non nel registro eventi della gilda: non cambia i crediti. Il riepilogo nella barra della sessione del ML arriva con M4 (la barra non esiste ancora); la finestra per modificare i testi con la scheda Impostazioni (M5).
+
 **Se qualcuno resta senza addon durante una sessione, è escluso dal roll** (`session.allowNoAddon` = no nel
 preset; il GM può riattivare il roll a mano con `ms`/`os` in chat per altre gilde). In pratica:
 

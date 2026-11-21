@@ -11,6 +11,7 @@
 --   legendary { mode, chainPieceCost }                                    §3.7
 --   bench     { creditEffect, creditAmount, minTanks, minHealers }        §3.1, §6 (Domain/Rotation.lua)
 --   site      Domain/Progress.lua { factionName }: the guild's key on the community site   §7.1 (M3-3b)
+--   notice    Domain/Notice.lua { text, outdatedText, link, whisper, minutes }: the /raid notice (no addon)  §4.1 (M3-6)
 -- Rules.DefaultConfig() is the "Patto" preset (§3.1); Domain/Presets.lua builds the others from it.
 --
 -- The rules live in the ledger, never apart: CONFIG_CHANGED{rules, preset?, confirmed?} carries the whole validated
@@ -28,7 +29,7 @@ local type, pairs, ipairs, tostring, floor, sort = type, pairs, ipairs, tostring
 
 local function Ledger() return ns.Ledger end
 
-Rules.SECTIONS = { "night", "members", "season", "cost", "priority", "session", "council", "legendary", "bench", "site" }
+Rules.SECTIONS = { "night", "members", "season", "cost", "priority", "session", "council", "legendary", "bench", "site", "notice" }
 Rules.AWARD_MODES = { confirm = true, auto = true, council = true }
 Rules.LEGENDARY_MODES = { council = true, vote = true, roll = true, queue = true }
 Rules.BENCH_EFFECTS = { none = true, bonus = true, malus = true }
@@ -63,6 +64,7 @@ function Rules.DefaultConfig()
 		legendary = { mode = "council", chainPieceCost = 2 },
 		bench = { creditEffect = "none", creditAmount = 1, minTanks = 2, minHealers = 4 },
 		site = ns.Progress.DefaultConfig(),
+		notice = ns.Notice.DefaultConfig(),
 	}
 end
 
@@ -149,6 +151,7 @@ function Rules.Validate(config)
 		end
 	end
 	if type(c.site) == "table" then sub(problems, "site", ns.Progress.ValidateConfig(c.site)) end
+	if type(c.notice) == "table" then sub(problems, "notice", ns.Notice.ValidateConfig(c.notice)) end
 	sort(problems)
 	return #problems == 0, problems
 end

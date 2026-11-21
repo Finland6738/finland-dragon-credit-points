@@ -84,7 +84,7 @@
 - Analysis: §4.1 (panel, notice in `/raid`)
 - Scope: the panel as the **Roster › Addon** sub-tab and a summary chip in the title bar, look per [`docs/specs/ui-style.md`](../specs/ui-style.md) (one row per raid member, state badge, summary also in the ML bar), the **Notify in /raid** button with GM-editable text and placeholders `{names}`, `{link}`, `{addon}`, split over several lines at 255 characters, an "outdated" variant, the whisper option, at most one notice every N minutes and never during an encounter, every notice logged; visible only with `raid.addonCheck`.
 - Done when:
-  - [ ] The notice text is in the guild language, splits correctly and is refused during an encounter in the mock.
+  - [x] The notice text is in the guild language, splits correctly and is refused during an encounter in the mock.
 - Tests: `Tests/test_addon_notice.lua`.
 - Docs: wiki **Addon Check** page (EN + IT), CHANGELOG.
 - Real client: sending to `/raid` from a click.

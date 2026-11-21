@@ -177,15 +177,20 @@ local function ask(self, names)
 	return P():Ask(names, function() self:NoteAsked(names) end)
 end
 
+-- May the player see the panel and ask by hand: the runner of the open night, or `raid.addonCheck`. true, or false and a
+-- permission code ("RANK_TOO_LOW", "PENDING", "NOT_IN_GUILD").
+function AddonCheck:CanManage()
+	if self:IsChecker() then return true end
+	if ns.PermissionService then return ns.PermissionService:Can("raid.addonCheck") end
+	return true
+end
+
 -- Asks the whole raid by hand. Returns true, or nil plus a code: "NOT_IN_RAID", the permission codes
 -- ("RANK_TOO_LOW", "PENDING", "NOT_IN_GUILD"), or the transport's reason.
 function AddonCheck:Request()
 	if not self.raid.inRaid then return nil, "NOT_IN_RAID" end
-	if not self:IsChecker() then
-		local ok, code = true, nil
-		if ns.PermissionService then ok, code = ns.PermissionService:Can("raid.addonCheck") end
-		if not ok then return nil, code end
-	end
+	local ok, code = self:CanManage()
+	if not ok then return nil, code end
 	local item, why = ask(self, nil)
 	if not item then return nil, why end
 	return true

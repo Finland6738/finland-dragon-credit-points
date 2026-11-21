@@ -38,6 +38,7 @@ Domain\Rotation.lua
 Data\Instances.lua
 Data\Specs.lua
 Domain\Progress.lua
+Domain\Notice.lua
 Domain\Rules.lua
 Domain\Presets.lua
 Domain\Permissions.lua
@@ -49,8 +50,10 @@ App\PermissionService.lua
 App\NightController.lua
 App\ProgressController.lua
 App\AddonCheck.lua
+App\AddonNotice.lua
 UI\Assets.lua
 UI\Theme.lua
 UI\Widgets.lua
+UI\AddonPanel.lua
 UI\MainWindow.lua
 UI\Minimap.lua

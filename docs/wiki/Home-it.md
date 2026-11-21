@@ -15,6 +15,7 @@
 | Sapere come funzionano crediti, costi, roll e parità | [[Regole del loot|Loot-Rules-it]] |
 | Vedere come sarà la finestra | [[Giro dell'interfaccia|Interface-Tour-it]] |
 | Aggiornare il sito della community dall'addon | [[Esportazione per il sito|Site-Export-it]] |
+| Vedere chi nel raid non ha l'addon e avvisarlo | [[Controllo dell'addon|Addon-Check-it]] |
 
 Altre pagine (la tabella dei crediti, la guida del master looter, il council, le impostazioni) arrivano con le funzioni.
 

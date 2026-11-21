@@ -541,6 +541,12 @@ function Chat.RestrictionAny()
 	return nil
 end
 
+-- Writes `text` to a chat channel ("RAID", "WHISPER" with a target). true, or false and the state of the call.
+function Chat.Send(text, chatType, target)
+	local state = Compat.Call("C_ChatInfo.SendChatMessage", text, chatType, nil, target)
+	return state == AVAILABLE, state
+end
+
 -- Sending is allowed: no lockdown, no restriction, not read only.
 function Chat.CanSend()
 	return not Chat.InChatLockdown() and not Chat.OutgoingAddonRestricted() and Chat.RestrictionAny() == nil
