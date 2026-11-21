@@ -62,6 +62,19 @@ L'addon prepara ogni risultato: a chi, quanti crediti e perché, in parole. Il m
 
 Il council (gli officer della gilda presenti nel raid) può, sempre con un motivo che finisce nel log: correggere categoria o costo **prima** dell'apertura del roll; dare l'oggetto a un altro candidato in caso di **spreco palese**; darlo a chi **non ha rollato ma è passato per fare il furbo**, a costo pieno; assegnare un leggendario; annullare un'assegnazione; correggere a mano i crediti di un membro. Chi è master looter, council o officer lo decidono i **ranghi di gilda**, e solo il **Guild Master** può cambiare cosa può fare ogni rango e le regole stesse.
 
+## Come si svolge una sessione di loot
+
+La sessione gira solo sul client del master looter; gli altri devono solo rispondere e rollare.
+
+- **Dopo l'uccisione.** Una sessione di loot si apre appena muore un boss, mai durante il combattimento, e solo sul client del master looter.
+- **Il cadavere.** Quando il master looter apre il cadavere, gli oggetti dalla soglia di loot in su entrano nella sessione con la loro categoria e il loro costo. Se in quel momento la chat è bloccata o è in corso un altro boss, l'addon aspetta e prende gli oggetti appena finisce.
+- **Da sola.** L'addon annuncia gli oggetti e apre i roll un oggetto alla volta. Apre anche il reroll fra i pari, il round off-spec quando nessuno vuole un oggetto per la main spec, e il fallback. Un round si chiude quando tutti hanno rollato o quando scade il suo timer. **Pausa** ferma ogni timer.
+- **Roll trattenuti dal gioco.** Mentre il gioco nasconde i messaggi dei roll (in istanza, durante un lockdown), un round non si chiude mai per il timer: i roll fatti in tempo contano lo stesso.
+- **Decide il master looter.** L'addon scrive la proposta: chi, quanto e perché. L'oggetto si addebita solo quando il master looter lo conferma. Ogni assegnazione entra nel registro con i suoi motivi e le sue segnalazioni.
+- **/reload o disconnessione.** La sessione si salva a ogni passo. Dopo un `/reload` o una disconnessione riparte esattamente da dove era, e le finestre del raid si rimettono in pari.
+- **Il boss successivo.** Quando muore il boss successivo, la sessione precedente si chiude se nessun oggetto è in corso. I suoi oggetti mai rollati restano elencati per il master looter.
+- **Gli altri officer.** Vedono la sessione in sola lettura; i raider vedono il popup del loro oggetto.
+
 ## I tre esempi del regolamento
 
 Aurel, Bryn e Corin rispondono tutti main-spec per un anello blu, una spallina e un mantello. Sono i casi che i test del motore eseguono.

@@ -48,7 +48,7 @@ M4 depends on M0, M2 and M3. Until the spike results arrive, every step builds p
 - Analysis: §4 (whole flow)
 - Scope: `App/SessionController.lua` wiring `Domain/SessionFSM.lua` to the adapters, the protocol and the ledger: waits after `ENCOUNTER_END` and while locked down, auto-advance and pause, timers, rerolls and the off-spec tier started automatically, state saved at every transition and resumed after `/reload` or disconnect, `ITEM_AWARDED` with reason codes on confirm, read-only view for other officers.
 - Done when:
-  - [ ] A simulated boss with five items, a reroll and an empty main-spec tier ends with the right ledger events.
+  - [x] A simulated boss with five items, a reroll and an empty main-spec tier ends with the right ledger events.
 - Tests: `Tests/test_session_controller.lua` (simulator).
 - Docs: CHANGELOG.
 - Real client: a real boss (M4-9).

@@ -518,6 +518,29 @@ segreto dopo il lockdown si scarta e si conta (`hidden`); un roll letto dopo la 
 (`held`), quindi il controller (M4-4) non deve chiudere un round mentre `Pending()` è maggiore di zero. Da verificare nel
 gioco (spike S3): che il messaggio sia leggibile in istanza o diventi leggibile dopo il lockdown.
 
+**Come è fatto (M4-4).** `App/SessionController.lua` collega la `SessionFSM` al gioco e **non decide nulla**: vincitore,
+costo, reroll, tier successivo e fallback restano nella `SessionFSM`, nella fase automatica `settle`.
+- **Apertura.** Su `ENCOUNTER_END` con successo, e solo sul client del master looter (`Compat.Loot.IsMasterLooter`), il
+  controller crea la sessione in `WAITING`: season aperta, regole in vigore (`Rules.Current`), contesto di prezzo
+  (dimensione del raid, difficoltà, soglia di loot). Poi tutto procede così:
+  - `LOOT_COLLECTED` diventa `LOOT_OPENED`; durante un lockdown la raccolta resta in attesa e si consegna quando finisce;
+  - lo stato del lockdown arriva alla sessione come `LOCKDOWN` (boss, restrizione addon, lockdown della chat);
+  - `GROUP_SCANNED` e `ADDON_CHECK_CHANGED` diventano `SET_RAID`;
+  - i roll arrivano da `RollListener` (`ROLL`) e le risposte da `SESSION_INPUT` (`RESPONSE`);
+  - un ticker di un secondo manda `TICK`, ma non finché il buffer dei roll nascosti non è vuoto.
+- **Effetti e registro.** Ogni input accettato passa da `Step`: ledger e cancello dei permessi, `Protocol.Session:Publish`
+  verso il raid, evento `SESSION_CHANGED`; `DELIVER` diventa `SESSION_DELIVER` per M4-7. `CONFIRM` scrive `ITEM_AWARDED`
+  con motivi e segnalazioni.
+- **Salvataggio.** La sessione è la tabella `session` dei dati della gilda, cambiata sul posto, quindi un `/reload` o una
+  disconnessione la ritrovano. `Resume` la riadotta, la ospita sul protocollo e riattacca il listener; una sessione di un
+  addon più nuovo riparte in sola lettura.
+- **Altri officer.** Gli officer con `award.confirm` vedono la vista del raid in sola lettura (`View`).
+- **Boss successivo.** Alla morte del boss successivo la sessione precedente si chiude (`END`) se nessun oggetto è in corso.
+  Se un oggetto è in corso, la nuova sessione viene rifiutata (`SESSION_RUNNING`).
+- **Test.** `Tests/test_session_controller.lua` copre un boss con cinque oggetti, un reroll, un tier MS vuoto, un fallback
+  al ML, il timer, la pausa, il lockdown, il `/reload` a metà reroll e la sola lettura.
+- **Da verificare nel gioco (M4-9).**
+
 ### 4.1 L'addon è obbligatorio: chi non ce l'ha
 
 Tutti i raider devono avere l'addon attivo. L'addon lo verifica da solo e aiuta GM, officer e master looter a

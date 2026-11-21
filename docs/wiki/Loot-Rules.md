@@ -62,6 +62,19 @@ The addon prepares each result: who, how many credits and why, in words. The mas
 
 The council (guild officers in the raid) can, always with a reason that goes in the log: fix a category or cost **before** the roll opens; give an item to another candidate in a case of **obvious waste**; give it to someone who **did not roll but passed to game the system**, at full cost; assign a legendary; cancel an award; correct a member's credits by hand. Who counts as master looter, council or officer comes from the **guild ranks**, and only the **Guild Master** can change what each rank may do and the rules themselves.
 
+## How a loot session runs
+
+The session runs on the master looter's client only; nobody else has to do anything except answer and roll.
+
+- **After the kill.** A loot session opens as soon as a boss dies, never during the fight, and only on the client of the master looter.
+- **The corpse.** When the master looter opens the corpse, the items at or above the loot threshold go into the session with their category and cost. If the chat is locked down or another boss is engaged at that moment, the addon waits and takes the items as soon as it is over.
+- **By itself.** The addon announces the items and opens the rolls one item at a time. It also opens the reroll among the tied, the off-spec round when nobody wants an item for main spec, and the fallback. A round closes when everybody has rolled or when its timer runs out. **Pause** stops every timer.
+- **Rolls held by the game.** While the game hides the roll messages (in an instance, during a lockdown), a round never closes on its timer: rolls made in time still count.
+- **The master looter decides.** The addon writes the proposal: who, how much and why. The item is charged only when the master looter confirms it. Each award goes into the ledger with its reasons and flags.
+- **/reload or a disconnection.** The session is saved at every step. After a `/reload` or a disconnection it starts again from exactly where it was, and the raid's windows catch up.
+- **The next boss.** When the next boss dies, the previous session ends if no item is in progress. Its items that were never rolled stay listed for the master looter.
+- **Other officers.** They see the session read-only; the raiders see their item popup.
+
 ## The three examples of the regulation
 
 Aurel, Bryn and Corin all answer main-spec on a blue ring, a shoulder and a cloak. These are the cases the engine's tests run.
