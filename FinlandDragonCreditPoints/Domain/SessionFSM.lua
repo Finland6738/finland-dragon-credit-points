@@ -73,6 +73,7 @@ FSM.INFO_FLAGS = { DISCARDED_ROLLS = true }
 local ML_ONLY = {
 	CORRECT_ITEM = true, REMOVE_ITEM = true, START = true, OPEN_ROLL = true, CLOSE_ROUND = true, ADVANCE = true,
 	CONFIRM = true, REJECT = true, MODIFY = true, CLOSE_VOTE = true, PAUSE = true, RESUME = true, END = true,
+	DELIVERY = true,
 }
 
 -- The inputs that are not written in the session's log (frequent, and already visible in the rounds).
@@ -862,7 +863,45 @@ end
 -- TICK: time passes (timers, the auto-award window); the work is done by the automatic phases.
 function H.TICK() return true end
 
--- DELIVERED{index, player}: the item reached its winner (GiveMasterLoot, or a later trade, seen in CHAT_MSG_LOOT).
+-- How an awarded item gets to its winner (M4-7, docs/ANALISI.md §4 "Consegna" and §11 risk 1): by master loot
+-- (GiveMasterLoot, the receipt is read in CHAT_MSG_LOOT) or by trade (plan B, and the deferred delivery of a night rolled
+-- at the end). The state machine only records where the delivery stands; the game calls are the controller's.
+FSM.DELIVERY_METHODS = { MASTER = true, TRADE = true }
+-- PENDING: nothing has been handed over yet (a trade to make, or a master loot call that did not go through: `code`
+-- says why); GIVEN: GiveMasterLoot was called and the receipt has not been read yet.
+FSM.DELIVERY_STATUSES = { PENDING = true, GIVEN = true }
+-- How a delivery was seen to end: the loot message of the winner, a completed trade, or the master looter's own word.
+FSM.DELIVERED_VIA = { LOOT = true, TRADE = true, MANUAL = true }
+
+-- Who must receive the item of `index`: the winner, or the master looter for an item that goes to a bank or
+-- disenchant character nobody is set for (`award.member` is nil then). Nil for an item not awarded.
+function FSM.Recipient(s, index)
+	local item = type(s) == "table" and type(s.items) == "table" and s.items[index] or nil
+	if type(item) ~= "table" or type(item.award) ~= "table" then return nil end
+	return item.award.member or s.ml
+end
+
+-- DELIVERY{index, method, status, code?, holder?}: where the delivery of an assigned item stands (the controller after
+-- a Confirm, a retry, or a loot message that tells who holds the item). `code` is a Reasons DELIVERY code.
+function H.DELIVERY(s, input, env, effects)
+	local item = itemAt(s, input.index)
+	if not item then return nil, "index" end
+	if item.state ~= "ASSIGNED" then return nil, "NOT_ASSIGNED" end
+	if not FSM.DELIVERY_METHODS[input.method] then return nil, "method" end
+	if not FSM.DELIVERY_STATUSES[input.status] then return nil, "status" end
+	if input.code ~= nil and not isCode(input.code) then return nil, "code" end
+	if input.holder ~= nil and not isName(input.holder) then return nil, "holder" end
+	local d = item.delivery or { attempts = 0 }
+	d.method, d.status, d.code, d.at = input.method, input.status, input.code, input.ts
+	if input.holder ~= nil then d.holder = input.holder end
+	if input.status == "GIVEN" then d.attempts = (d.attempts or 0) + 1 end
+	item.delivery = d
+	fx(effects, { type = "DELIVERY", item = input.index, method = d.method, status = d.status, code = d.code })
+	return true
+end
+
+-- DELIVERED{index, player, via?}: the item reached its winner (GiveMasterLoot, or a later trade, seen in CHAT_MSG_LOOT
+-- or in the trade window, or the master looter's word).
 function H.DELIVERED(s, input, env, effects)
 	local item = itemAt(s, input.index)
 	if not item then return nil, "index" end
@@ -870,7 +909,8 @@ function H.DELIVERED(s, input, env, effects)
 	if item.award.member ~= nil and input.player ~= item.award.member then return nil, "WRONG_PLAYER" end
 	item.state = "DELIVERED"
 	item.deliveredAt = input.ts
-	fx(effects, { type = "DELIVERED", item = input.index })
+	item.deliveredVia = FSM.DELIVERED_VIA[input.via] and input.via or nil
+	fx(effects, { type = "DELIVERED", item = input.index, via = item.deliveredVia })
 	return true
 end
 
@@ -941,7 +981,9 @@ function FSM.Step(s, input, env)
 	if type(input) ~= "table" or not H[input.type] then return nil, "UNKNOWN_INPUT", {} end
 	if not isNum(input.ts) then return nil, "ts", {} end
 	if ML_ONLY[input.type] and input.by ~= s.ml then return nil, "NOT_ML", {} end
-	if s.state == "ENDED" and input.type ~= "DELIVERED" and input.type ~= "TICK" then return nil, "ENDED", {} end
+	if s.state == "ENDED" and input.type ~= "DELIVERED" and input.type ~= "DELIVERY" and input.type ~= "TICK" then
+		return nil, "ENDED", {}
+	end
 	env = type(env) == "table" and env or {}
 	local effects = {}
 	local ok, code = H[input.type](s, input, env, effects)

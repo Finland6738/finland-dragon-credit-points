@@ -21,7 +21,7 @@ local L = ns.L
 
 MLSession.ITEM_ROWS, MLSession.ITEM_H, MLSession.LIST_W = 6, 62, 300
 MLSession.TICK = 1   -- seconds between two redraws of the timer while the tab is on screen
-MLSession.SUBTABS = { "session" }   -- Council arrives with M5-8
+MLSession.SUBTABS = { "session", "deliver" }   -- Council arrives with M5-8
 
 local function SC() return ns.SessionController end
 local function SB() return ns.SessionBoard end
@@ -160,7 +160,8 @@ function MLSession:Build(page, frame)
 	root:SetAllPoints(page)
 	self.root, self.page, self.frame = root, page, frame
 
-	root.sub = Widgets.Segmented(root, { { id = "session", text = L["ML_SUBTAB_SESSION"] } }, function(id) MLSession:ShowSub(id) end)
+	root.sub = Widgets.Segmented(root, { { id = "session", text = L["ML_SUBTAB_SESSION"] },
+		{ id = "deliver", text = L["ML_SUBTAB_DELIVER"] } }, function(id) MLSession:ShowSub(id) end)
 	root.sub:SetPoint("TOPLEFT", root, "TOPLEFT", 0, -4)
 	root.panes = {}
 	for _, id in ipairs(self.SUBTABS) do
@@ -171,6 +172,7 @@ function MLSession:Build(page, frame)
 		root.panes[id] = pane
 	end
 	self:BuildSession(root.panes.session)
+	self:BuildDeliver(root.panes.deliver)
 	root.sub:Select("session")
 	root:SetScript("OnShow", function() MLSession:Arm(); MLSession:Refresh() end)
 	root:SetScript("OnHide", function() MLSession:Disarm() end)
@@ -334,6 +336,73 @@ function MLSession:BuildSession(pane)
 	s.remove:SetPoint("LEFT", s.correct, "RIGHT", 8, 0)
 end
 
+-- The "to deliver" sub-tab (M4-7): the awarded items that have not reached their winner yet, how each one stands
+-- (handed over and waiting for the loot message, to hand over by trade, held by whom) and the two buttons of the master
+-- looter: hand the selected item over now (master loot, from the click) and mark it as delivered by hand.
+-- locale-key: ML_DELIVER_EYEBROW ML_DELIVER_TITLE ML_DELIVER_HELP ML_DELIVER_EMPTY ML_COL_ITEM ML_COL_WINNER ML_COL_STATUS ML_GIVE ML_MARK_DELIVERED
+function MLSession:BuildDeliver(pane)
+	local d = { pane = pane }
+	self.deliverUI = d
+	d.eyebrow = Theme.NewText(pane, "Eyebrow", "accent-text")
+	d.eyebrow:SetPoint("TOPLEFT", pane, "TOPLEFT", 0, -4)
+	d.eyebrow:SetText(L["ML_DELIVER_EYEBROW"]:upper())
+	d.title = Theme.NewText(pane, "H1", "text-1")
+	d.title:SetPoint("TOPLEFT", d.eyebrow, "BOTTOMLEFT", 0, -4)
+	d.title:SetText(L["ML_DELIVER_TITLE"])
+	d.help = Theme.NewText(pane, "Small", "text-2")
+	d.help:SetPoint("TOPLEFT", d.title, "BOTTOMLEFT", 0, -4)
+	d.help:SetPoint("RIGHT", pane, "RIGHT", 0, 0)
+	d.help:SetJustifyH("LEFT")
+	d.help:SetText(L["ML_DELIVER_HELP"])
+
+	d.mark = Widgets.Button(pane, { text = L["ML_MARK_DELIVERED"], style = "secondary", width = 170, height = 36, onClick = function()
+		MLSession:OnMarkDelivered()
+	end })
+	d.mark:SetPoint("BOTTOMRIGHT", pane, "BOTTOMRIGHT", 0, 0)
+	d.give = Widgets.Button(pane, { text = L["ML_GIVE"], style = "primary", width = 190, height = 36, onClick = function()
+		MLSession:OnGive()
+	end })
+	d.give:SetPoint("RIGHT", d.mark, "LEFT", -8, 0)
+	d.message = Theme.NewText(pane, "Small", "text-2")
+	d.message:SetPoint("BOTTOMLEFT", pane, "BOTTOMLEFT", 0, 12)
+	d.message:SetPoint("RIGHT", d.give, "LEFT", -12, 0)
+	d.message:SetJustifyH("LEFT")
+
+	d.table = Widgets.DataTable(pane, {
+		{ id = "item", title = L["ML_COL_ITEM"], width = 230, text = function(r) return MLSession.ItemName(r.itemID, MLSession:ItemInfo(r.itemID)) end,
+			render = function(fs, r)
+				fs:SetText(MLSession.ItemName(r.itemID, MLSession:ItemInfo(r.itemID)))
+				fs:SetTextColor(MLSession.QualityColor(r.quality or MLSession:ItemInfo(r.itemID).quality))
+			end },
+		{ id = "winner", title = L["ML_COL_WINNER"], width = 150, text = function(r) return SB().Short(r.recipient or "") end,
+			render = function(fs, r)
+				fs:SetText(SB().Short(r.recipient or ""))
+				fs:SetTextColor(ns.RosterWindow.ClassColor(SC() and SC():ClassOf(r.recipient)))
+			end },
+		{ id = "status", title = L["ML_COL_STATUS"], flex = 1, sortable = false, text = function(r) return r.text end,
+			token = function(r) return (r.status == "GIVEN" and not r.noReceipt) and "text-2" or "warn" end },
+	}, {
+		rowHeight = 32, headerHeight = 26, pool = 30,
+		onRowClick = function(r) MLSession:SelectDelivery(r) end,
+		rowSetup = function(r)
+			r.bar = r:CreateTexture(nil, "ARTWORK")
+			Theme.Fill(r.bar, "accent")
+			r.bar:SetPoint("TOPLEFT", r, "TOPLEFT", 0, 0)
+			r.bar:SetPoint("BOTTOMLEFT", r, "BOTTOMLEFT", 0, 0)
+			r.bar:SetWidth(2)
+			r.bar:Hide()
+			for _, fs in ipairs(r.cells) do fs:SetWordWrap(false) end
+		end,
+		rowUpdate = function(r, row)
+			local sel = MLSession.deliverSel
+			r.bar:SetShown(sel ~= nil and sel.which == row.which and sel.index == row.index)
+		end,
+	})
+	d.table:SetPoint("TOPLEFT", d.help, "BOTTOMLEFT", 0, -14)
+	d.table:SetPoint("BOTTOMRIGHT", pane, "BOTTOMRIGHT", 0, 52)
+	d.table:SetEmptyText(L["ML_DELIVER_EMPTY"])
+end
+
 ---------------------------------------------------------------------------------------------------------------------
 -- Drawing
 
@@ -487,11 +556,71 @@ local function paintDetail(self, board)
 	self:PaintTimer(board)
 end
 
+-- The "to deliver" list: the rows, the selection (kept while its item is still undelivered, else the first row) and
+-- the buttons. Only the master looter's client has a list; elsewhere the tab is empty and the buttons are hidden.
+function MLSession:PaintDeliver()
+	local d = self.deliverUI
+	if not d then return end
+	local rows = SC() and SC():Deliveries() or {}
+	self.deliveries = rows
+	local sel, found = self.deliverSel, nil
+	for _, r in ipairs(rows) do
+		if sel and r.which == sel.which and r.index == sel.index then found = r end
+	end
+	found = found or rows[1]
+	self.deliverSel = found and { which = found.which, index = found.index } or nil
+	d.table:SetData(rows)
+	d.give:SetShown(found ~= nil and found.status ~= "GIVEN")
+	d.mark:SetShown(found ~= nil)
+	local board = self.board
+	if found and board and board.readOnly then d.give:Hide(); d.mark:Hide() end
+end
+
+function MLSession:SelectDelivery(row)
+	self.deliverSel = { which = row.which, index = row.index }
+	self:SetDeliverMessage("")
+	self:Refresh()
+end
+
+function MLSession:SetDeliverMessage(text, isError)
+	local d = self.deliverUI
+	if not d then return end
+	d.message:SetText(text or "")
+	Theme.Text(d.message, isError and "warn" or "text-2")
+end
+
+-- Hand the selected item over now, from the click: master loot when the game allows it, else it stays for a trade.
+-- locale-key: ML_DELIVER_NOW_GIVEN ML_DELIVER_NOW_ALREADY
+function MLSession:OnGive()
+	local sel = self.deliverSel
+	if not sel then return end
+	local ok, code, method = SC():Deliver(sel.index, sel.which)
+	if not ok then
+		self:SetDeliverMessage(SB().ErrorText(code), true)
+	elseif method == "MASTER" then
+		self:SetDeliverMessage(L["ML_DELIVER_NOW_GIVEN"])
+	elseif method == "LOOT" then
+		self:SetDeliverMessage(L["ML_DELIVER_NOW_ALREADY"])
+	else
+		self:SetDeliverMessage(SB().DeliveryCodeText(code), true)
+	end
+	self:Refresh()
+end
+
+function MLSession:OnMarkDelivered()
+	local sel = self.deliverSel
+	if not sel then return end
+	local ok, code = SC():MarkDelivered(sel.index, sel.which)
+	if ok then self:SetDeliverMessage("") else self:SetDeliverMessage(SB().ErrorText(code), true) end
+	self:Refresh()
+end
+
 function MLSession:Refresh()
 	local s = self.ui
 	if not s then return end
 	local board = SC() and SC():Board(self.selected) or nil
 	self.board = board
+	self:PaintDeliver()
 	if not board then
 		s.status:SetText(L["ML_NONE"])
 		s.empty:SetText(L["ML_NONE_HELP"])
@@ -504,6 +633,10 @@ function MLSession:Refresh()
 	if board.held then status = L["ML_HINT_HELD"] end
 	if board.paused then status = status .. " · " .. L["ML_PAUSED"] end
 	if not board.host then status = status .. " · " .. L["ML_HINT_READONLY"] end
+	local toDeliver = self.deliveries and #self.deliveries or 0
+	if toDeliver > 0 then
+		status = status .. " · " .. L[toDeliver == 1 and "ML_TO_DELIVER_ONE" or "ML_TO_DELIVER_N"]:format(toDeliver)
+	end
 	s.status:SetText(status)
 	s.empty:SetText(#board.items == 0 and (board.held and L["ML_HINT_HELD"] or L["ML_EMPTY"]) or "")
 	paintItems(self, board)

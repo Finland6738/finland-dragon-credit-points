@@ -4,7 +4,7 @@
 -- A code is only meaningful inside its group: NOT_PRESENT is a discarded roll in one and a refused action in another.
 -- Groups: REASON (why a player won), FLAG (what to check), DISCARD (a roll set aside), SOURCE (where a cost or a
 -- category comes from), JOIN (a new member's credits), CORRECTION (the master looter's reasons), AUTO (automatic
--- phases), RANKS (guild rank changes), REFUSAL (an action refused), STATUS (a member of the pool),
+-- phases), RANKS (guild rank changes), DELIVERY (where an award is on its way to the winner, M4-7), REFUSAL (an action refused), STATUS (a member of the pool),
 -- RESPONSE, LABEL (the optional label of a main-spec response), KIND (what a proposal does), REJECT, STATE, EVENT (ledger
 -- event types) and PRESET (preset names).
 local ADDON_NAME, ns = ...
@@ -13,7 +13,7 @@ ns.modules = ns.modules or {}
 local Reasons = {}
 ns.Reasons, ns.modules.Reasons = Reasons, Reasons
 
-Reasons.GROUPS = { "REASON", "FLAG", "DISCARD", "SOURCE", "JOIN", "CORRECTION", "AUTO", "RANKS", "REFUSAL", "STATUS", "RESPONSE", "LABEL", "KIND", "REJECT", "STATE", "EVENT", "PRESET" }
+Reasons.GROUPS = { "REASON", "FLAG", "DISCARD", "SOURCE", "JOIN", "CORRECTION", "AUTO", "RANKS", "DELIVERY", "REFUSAL", "STATUS", "RESPONSE", "LABEL", "KIND", "REJECT", "STATE", "EVENT", "PRESET" }
 
 -- KEYS[group][code] = locale key.
 Reasons.KEYS = {
@@ -104,6 +104,17 @@ Reasons.KEYS = {
 		REORDERED = "RC_RANKS_REORDERED",
 		REMOVED = "RC_RANKS_REMOVED",
 		ADDED = "RC_RANKS_ADDED",
+	},
+	DELIVERY = {   -- where an award is on its way to the winner (M4-7)
+		NO_MASTER_LOOT = "RC_DELIVERY_NO_MASTER_LOOT",
+		NO_WINDOW = "RC_DELIVERY_NO_WINDOW",
+		NO_SLOT = "RC_DELIVERY_NO_SLOT",
+		NO_CANDIDATE = "RC_DELIVERY_NO_CANDIDATE",
+		CALL_FAILED = "RC_DELIVERY_CALL_FAILED",
+		GIVEN = "RC_DELIVERY_GIVEN",
+		TRADE = "RC_DELIVERY_TRADE",
+		HOLDER = "RC_DELIVERY_HOLDER",
+		NO_RECEIPT = "RC_DELIVERY_NO_RECEIPT",
 	},
 	REFUSAL = {
 		BAD_STATE = "RC_REFUSAL_BAD_STATE",

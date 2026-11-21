@@ -208,7 +208,7 @@ describe("running a whole session from the window", function()
 		truthy(ui().finish:IsShown())
 		click(ui().finish)
 		eq(s.state, "ENDED")
-		eq(ui().status:GetText(), FDCP.Reasons.Text("STATE", "ENDED"))
+		eq(ui().status:GetText(), FDCP.Reasons.Text("STATE", "ENDED") .. " · " .. L("ML_TO_DELIVER_N"):format(5))   -- nobody was handed an item yet
 		falsy(ui().main:IsShown())
 		for i = 1, 5 do eq(ui().rows[i].badge.label:GetText(), L("ML_BADGE_ASSIGNED"):upper()) end
 	end)

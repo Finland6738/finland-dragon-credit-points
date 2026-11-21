@@ -86,8 +86,9 @@ M4 depends on M0, M2 and M3. Until the spike results arrive, every step builds p
 - Analysis: §4 (delivery, deferred delivery), §11 risk 1
 - Scope: `Adapters/MasterLoot.lua`: **Confirm** charges the credits and calls `GiveMasterLoot(slot, candidate)` in the same click; `CHAT_MSG_LOOT` confirms receipt; deferred delivery when the ML rolls everything at the end of the night (the item is tracked until it changes hands by trade); **plan B** when master loot is not available: the award stays in the ledger and the item is handed over by trade after group loot, with a "to deliver" list.
 - Done when:
-  - [ ] Both paths (master loot and trade) end with the item marked delivered in the mock.
+  - [x] Both paths (master loot and trade) end with the item marked delivered in the mock.
 - Tests: `Tests/test_delivery.lua`.
+- Note: the "to deliver" list is the second sub-tab of the master looter's window (**Loot › To deliver**) and outlives the session (items of an ended session move to a carried session when the next boss dies); the receipt and the trade are read, never made by the addon ([`docs/ANALISI.md`](../ANALISI.md) §4, "Come è fatto (M4-7)").
 - Docs: Master Looter Guide (EN + IT), CHANGELOG.
 - Real client: `GiveMasterLoot` (spike S2), trade tracking.
 - Suggested model/effort: `sonnet` / high

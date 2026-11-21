@@ -827,6 +827,46 @@ function Roll.ParseLoot(text)
 end
 
 ---------------------------------------------------------------------------------------------------------------------
+-- The trade window (spike S2d): the delivery by trade of plan B (docs/ANALISI.md §4, §11 risk 1). Read only: the addon
+-- never starts, fills or accepts a trade, it watches the ones the player makes. Events (in the dump): TRADE_SHOW,
+-- TRADE_ACCEPT_UPDATE(playerAccepted, targetAccepted), TRADE_CLOSED, UI_INFO_MESSAGE(errorType, message).
+---------------------------------------------------------------------------------------------------------------------
+local Trade = {}
+Compat.Trade = Trade
+Trade.MAX_ITEMS = 6   -- the slots of a trade; the seventh is the "will not be traded" slot
+
+-- The other player of the open trade as the client names them ("Name" or "Name-Realm"), nil when unknown. The trade
+-- frame itself reads the "NPC" unit [verify S2d].
+function Trade.Partner()
+	local v = readable("UnitName", "NPC")
+	local name = v and str(v[1])
+	if not name then return nil end
+	local realm = v[2]
+	if str(realm) and not name:find("-", 1, true) then return name .. "-" .. realm end
+	return name
+end
+
+local function tradeLinks(path)
+	local out = {}
+	for slot = 1, Trade.MAX_ITEMS do
+		local link = str((first(path, slot)))
+		if link then out[#out + 1] = link end
+	end
+	return out
+end
+
+-- The item links this player has put in the trade / the other player has, in slot order.
+function Trade.PlayerItems() return tradeLinks("GetTradePlayerItemLink") end
+function Trade.TargetItems() return tradeLinks("GetTradeTargetItemLink") end
+
+-- true when `text` is the client's "trade complete" message (the global ERR_TRADE_COMPLETE; never a hidden text).
+function Trade.IsCompleteMessage(text)
+	local fmt = _G.ERR_TRADE_COMPLETE
+	if type(text) ~= "string" or IsSecret(text) or type(fmt) ~= "string" or IsSecret(fmt) or fmt == "" then return false end
+	return text == fmt
+end
+
+---------------------------------------------------------------------------------------------------------------------
 -- Items and stats (spike S5): C_Item.* first, the old globals as the fallback [verify, not in the dump]
 ---------------------------------------------------------------------------------------------------------------------
 local Item = {}
@@ -1143,6 +1183,9 @@ local CAPS = {
 	{ "loot.GetLootSourceInfo", "loot", "GetLootSourceInfo", note = "[verify S2a]" },
 	{ "loot.GetMasterLootCandidate", "loot", "GetMasterLootCandidate", note = "[verify S2b]" },
 	{ "loot.GiveMasterLoot", "loot", "GiveMasterLoot", note = "[verify S2c] from an addon" },
+	{ "trade.GetTradePlayerItemLink", "trade", "GetTradePlayerItemLink", note = "[verify S2d]" },
+	{ "trade.GetTradeTargetItemLink", "trade", "GetTradeTargetItemLink", note = "[verify S2d]" },
+	{ "trade.ERR_TRADE_COMPLETE", "trade", "ERR_TRADE_COMPLETE", string = true },
 	{ "roll.RandomRoll", "roll", "RandomRoll", note = "[verify S3b]" },
 	{ "roll.RANDOM_ROLL_RESULT", "roll", "RANDOM_ROLL_RESULT", string = true },
 	{ "roll.LOOT_ITEM", "roll", "LOOT_ITEM", string = true },

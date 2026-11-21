@@ -1028,7 +1028,7 @@ describe("guards", function()
 	end)
 
 	it("every input type is known", function()
-		deepEq(F().INPUTS, { "ADVANCE", "CLOSE_ROUND", "CLOSE_VOTE", "CONFIRM", "CORRECT_ITEM", "DELIVERED", "END",
+		deepEq(F().INPUTS, { "ADVANCE", "CLOSE_ROUND", "CLOSE_VOTE", "CONFIRM", "CORRECT_ITEM", "DELIVERED", "DELIVERY", "END",
 			"LOCKDOWN", "LOOT_OPENED", "MODIFY", "OPEN_ROLL", "PAUSE", "REJECT", "REMOVE_ITEM", "RESPONSE", "RESUME",
 			"ROLL", "SET_RAID", "START", "TICK", "VOTE" })
 	end)

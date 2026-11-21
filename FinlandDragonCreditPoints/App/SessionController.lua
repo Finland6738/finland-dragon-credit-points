@@ -26,8 +26,15 @@
 -- Other officers: their client never runs the session; they see the master looter's view (Protocol.Session.view), read
 -- only. View() returns it with `host = false`; every command answers NOT_HOST there.
 --
+-- Delivery (M4-7, Adapters/MasterLoot.lua): the DELIVER effect of a Confirm hands the item over in the same click, by
+-- master loot when the game allows it (the receipt is the winner's loot message, LOOT_RECEIVED) and otherwise by trade
+-- (plan B: the award stays in the ledger and the item sits in the "to deliver" list until a trade of this client
+-- hands it over, TRADE_COMPLETED, or the master looter marks it). The items of an ended session that are still
+-- undelivered when the next boss dies move to `carry` (an ended session of their own, saved with the guild data), so the
+-- list survives the night (deferred delivery, §4).
+--
 -- Bus events: "SESSION_CHANGED"(session, effects) after every accepted input on the host (not a bare TICK);
---             "SESSION_DELIVER"(effect, item) when an award asks for the item to change hands (M4-7 gives it);
+--             "SESSION_DELIVER"(effect, item) when an award asks for the item to change hands (the controller delivers it);
 --             "SESSION_HELD"(code) when a collection waits (LOCKDOWN) and "SESSION_STARTED"(session).
 -- Not verified in the real client: the whole flow around a real boss (M4-9), master loot (spike S2), the roll messages
 -- in an instance (S3) and the addon messages on RAID (S4).
@@ -52,7 +59,7 @@ local function now() return C().Now() end
 local ML_INPUTS = {
 	CORRECT_ITEM = true, REMOVE_ITEM = true, START = true, OPEN_ROLL = true, CLOSE_ROUND = true, ADVANCE = true,
 	CONFIRM = true, REJECT = true, MODIFY = true, CLOSE_VOTE = true, PAUSE = true, RESUME = true, END = true,
-	DELIVERED = true,
+	DELIVERED = true, DELIVERY = true,
 }
 
 function SC:Reset()
@@ -183,6 +190,7 @@ function SC:Apply(effects)
 	for _, e in ipairs(effects) do
 		if e.type == "DELIVER" then
 			emit("SESSION_DELIVER", e, s.items[e.item])
+			self:Deliver(e.item)
 		elseif e.type == "AWARDED" then
 			log("info", "AWARDED", e.item, e.cost)
 		elseif e.type == "AUTO_FAILED" then
@@ -204,6 +212,177 @@ function SC:Command(kind, fields)
 	for k, v in pairs(type(fields) == "table" and fields or {}) do input[k] = v end
 	input.type = kind
 	return self:Step(input)
+end
+
+---------------------------------------------------------------------------------------------------------------------
+-- Delivery (M4-7)
+
+-- The ended session that keeps the undelivered items of earlier sessions (nil when there is none, or when it belongs to
+-- another character: only its master looter may touch it).
+function SC:Carry()
+	local store = self:Store()
+	local carry = store and store.carry
+	if type(carry) ~= "table" or type(carry.items) ~= "table" or carry.ml ~= me() then return nil end
+	return carry
+end
+
+-- The session a delivery row belongs to: "main" (the hosted one, the default) or "carry".
+function SC:SessionOf(which)
+	if which == "carry" then return self:Carry() end
+	return self.session
+end
+
+-- Applies a delivery input to the hosted session or to the carried one. The carried one is not announced to the raid.
+-- Returns ok, code, effects.
+function SC:StepOn(which, input)
+	if which ~= "carry" then return self:Step(input) end
+	local carry = self:Carry()
+	if not carry then return nil, "NO_SESSION", {} end
+	if self.readOnly then return nil, "READ_ONLY", {} end
+	if input.ts == nil then input.ts = now() end
+	if input.by == nil then input.by = me() end
+	local ok, code, effects = F().Step(carry, input, self:Env())
+	if not ok then return nil, code, effects end
+	emit("SESSION_CHANGED", self.session, effects)
+	return true, nil, effects
+end
+
+-- Moves the awarded-but-undelivered items of `old` to the carried session, before a new session replaces it.
+function SC:CarryOver(old)
+	local store = self:Store()
+	local list = F().Undelivered(old)
+	if not store or #list == 0 then return end
+	local carry = self:Carry()
+	if not carry then
+		carry = F().New({ id = "carry-" .. tostring(old.id), season = old.season, ml = old.ml, ts = now(), rules = old.rules })
+		if not carry then return end
+		carry.state = "ENDED"
+		carry.endedAt = now()
+		store.carry = carry
+	end
+	local kept = {}
+	for _, item in ipairs(carry.items) do
+		if item.state == "ASSIGNED" then kept[#kept + 1] = item end   -- the delivered ones are history, not a list to work from
+	end
+	for _, i in ipairs(list) do kept[#kept + 1] = F().Copy(old.items[i]) end
+	carry.items = kept
+	log("info", "CARRIED", #list)
+end
+
+-- Hands the awarded item `index` over. By master loot when the game allows it, otherwise it waits for a trade (plan B):
+-- the delivery is recorded as GIVEN (the winner's loot message ends it) or PENDING with the DELIVERY code that says why
+-- master loot was out. An item the winner already received (a loot message after the session opened) is delivered at
+-- once. Returns ok, code, method: `code` is the DELIVERY code when it fell back to a trade, `method` is "MASTER", "TRADE"
+-- or "LOOT" (already with the winner); nil and a refusal code when the item cannot be delivered (not awarded, no
+-- session, read only).
+function SC:Deliver(index, which)
+	local sess = self:SessionOf(which)
+	local item = sess and sess.items[index]
+	if not item then return nil, "NO_SESSION" end
+	if item.state ~= "ASSIGNED" then return nil, "NOT_ASSIGNED" end
+	local ML = ns.MasterLoot
+	local recipient = F().Recipient(sess, index)
+	local holder = ML.Holder(item.itemID, sess.createdAt, false)
+	if holder ~= nil and holder == recipient then
+		ML.Holder(item.itemID, sess.createdAt, true)
+		local ok, code = self:StepOn(which, { type = "DELIVERED", index = index, player = recipient, via = "LOOT" })
+		return ok, code, "LOOT"
+	end
+	local given, code = ML.Give(item.itemID, item.slot, recipient)
+	local ok, refusal
+	if given then
+		ok, refusal = self:StepOn(which, { type = "DELIVERY", index = index, method = "MASTER", status = "GIVEN" })
+		return ok, refusal, "MASTER"
+	end
+	ok, refusal = self:StepOn(which, { type = "DELIVERY", index = index, method = "TRADE", status = "PENDING", code = code,
+		holder = holder })
+	return ok, ok and code or refusal, "TRADE"
+end
+
+-- The master looter's word that an item reached its winner (a trade the addon did not see, a message it did not read).
+function SC:MarkDelivered(index, which)
+	local sess = self:SessionOf(which)
+	if not sess or not sess.items[index] then return nil, "NO_SESSION" end
+	return self:StepOn(which, { type = "DELIVERED", index = index, player = F().Recipient(sess, index), via = "MANUAL" })
+end
+
+-- The "to deliver" list as the window shows it (App/SessionBoard.lua DeliveryRows): the carried items first, then the
+-- hosted session's. Empty on a client that runs no session and keeps no carried item.
+function SC:Deliveries()
+	return ns.SessionBoard.DeliveryRows({ { which = "carry", session = self:Carry() }, { which = "main", session = self.session } },
+		now())
+end
+
+-- The awarded items still to deliver: { { which, session, index, item } }, the carried ones first.
+function SC:Undelivered()
+	local out = {}
+	for _, which in ipairs({ "carry", "main" }) do
+		local sess = self:SessionOf(which)
+		if sess then
+			for _, i in ipairs(F().Undelivered(sess)) do
+				out[#out + 1] = { which = which, session = sess, index = i, item = sess.items[i] }
+			end
+		end
+	end
+	return out
+end
+
+-- A loot message: it ends the delivery of an item that reached its winner, or tells who holds an item waiting for a
+-- trade. The loot of the winner is also taken as the delivery when the item came to them some other way (the game's own
+-- roll, a master loot call made by hand): the receipt is by item and player, so a second copy of the same item looted by
+-- the same player is taken as the delivery of the first one.
+function SC:OnLootReceived(entry)
+	if type(entry) ~= "table" or entry.claimed or self.readOnly then return end
+	local list = self:Undelivered()
+	for _, row in ipairs(list) do
+		if row.item.itemID == entry.itemID and F().Recipient(row.session, row.index) == entry.player then
+			entry.claimed = true
+			self:StepOn(row.which, { type = "DELIVERED", index = row.index, player = entry.player, via = "LOOT" })
+			return
+		end
+	end
+	for _, row in ipairs(list) do
+		local d = row.item.delivery
+		if row.item.itemID == entry.itemID and not (d and (d.holder or d.status == "GIVEN")) then
+			entry.claimed = true
+			self:StepOn(row.which, { type = "DELIVERY", index = row.index, method = d and d.method or "TRADE",
+				status = d and d.status or "PENDING", code = d and d.code, holder = entry.player })
+			return
+		end
+	end
+end
+
+-- A trade of this client that went through: the items given to their winner, or received by the master looter who won
+-- them, are delivered.
+function SC:OnTradeCompleted(info)
+	if type(info) ~= "table" or self.readOnly then return end
+	local function take(list, id)
+		for i, v in ipairs(list or {}) do
+			if v == id then table.remove(list, i) return true end
+		end
+		return false
+	end
+	local mine = me()
+	for _, row in ipairs(self:Undelivered()) do
+		local recipient = F().Recipient(row.session, row.index)
+		local id = row.item.itemID
+		if (recipient == info.partner and take(info.gave, id)) or (recipient == mine and take(info.got, id)) then
+			self:StepOn(row.which, { type = "DELIVERED", index = row.index, player = recipient, via = "TRADE" })
+		end
+	end
+end
+
+-- The corpse was opened again: the items that waited for master loot are tried once more. Only the reasons that can pass
+-- (the window was closed, the item or the winner was not in it) are retried; a call the game refused stays for the
+-- master looter's own click.
+local RETRY = { NO_WINDOW = true, NO_SLOT = true, NO_CANDIDATE = true }
+
+function SC:RetryDeliveries()
+	if self.readOnly or ns.MasterLoot.Plan() ~= "MASTER" then return end
+	for _, row in ipairs(self:Undelivered()) do
+		local d = row.item.delivery
+		if d and d.status == "PENDING" and RETRY[d.code] then self:Deliver(row.index, row.which) end
+	end
 end
 
 ---------------------------------------------------------------------------------------------------------------------
@@ -281,6 +460,7 @@ function SC:OnKill(info)
 	})
 	if not s then return nil, code end
 	if self.store == nil and ns.Config and ns.Config.IsReadOnly and ns.Config:IsReadOnly() then return nil, "READ_ONLY" end
+	if old then self:CarryOver(old) end
 	store.session = s
 	self.session, self.readOnly, self.held = s, nil, nil
 	self:Host()
@@ -293,7 +473,10 @@ end
 -- LOOT_COLLECTED: the corpse's items become LOOT_OPENED; during a lockdown they wait. Returns ok, code.
 function SC:OnLoot(collection)
 	local s = self.session
-	if not s or self.readOnly or s.state ~= "WAITING" or type(collection) ~= "table" then return nil, "NOT_WAITING" end
+	if not s or self.readOnly or s.state ~= "WAITING" or type(collection) ~= "table" then
+		self:RetryDeliveries()   -- a corpse opened again: items waiting for it can be handed over now
+		return nil, "NOT_WAITING"
+	end
 	if collection.encounter ~= nil and s.encounter ~= nil and collection.encounter ~= s.encounter then
 		return nil, "OTHER_ENCOUNTER"
 	end
@@ -375,6 +558,8 @@ if ns.Bus then
 	ns.Bus:On("ENCOUNTER_ENDED", function(_, info) SC:OnKill(info) end, SC)
 	ns.Bus:On("LOOT_COLLECTED", function(_, collection) SC:OnLoot(collection) end, SC)
 	ns.Bus:On("SESSION_INPUT", function(_, input) SC:OnInput(input) end, SC)
+	ns.Bus:On("LOOT_RECEIVED", function(_, entry) SC:OnLootReceived(entry) end, SC)
+	ns.Bus:On("TRADE_COMPLETED", function(_, info) SC:OnTradeCompleted(info) end, SC)
 	ns.Bus:On("GROUP_SCANNED", function() SC:SyncRaid() end, SC)
 	ns.Bus:On("ADDON_CHECK_CHANGED", function() SC:SyncRaid() end, SC)
 	ns.Bus:On("GUILD_KEY_CHANGED", function()

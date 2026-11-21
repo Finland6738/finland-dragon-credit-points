@@ -27,7 +27,36 @@ Questa pagina è per il **master looter**: chi apre il corpo del boss e guida il
 
 Se la finestra è chiusa, `/fdcp` la apre sulla scheda Loot mentre una sessione è in corso.
 
-> **Consegna del pezzo.** **Conferma** registra l'assegnazione e i crediti. La consegna fatta dall'addon (master loot, o per scambio a fine serata) arriva con una versione successiva: fino ad allora consegna tu il pezzo al vincitore.
+> **Consegna del pezzo.** **Conferma e assegna** consegna anche il pezzo, nello stesso clic: vedi [Consegna del pezzo](#consegna-del-pezzo) più sotto.
+
+## Consegna del pezzo
+
+**Conferma e assegna** fa due cose nello stesso clic: scrive l'assegnazione e addebita i crediti, e chiede al gioco di consegnare il pezzo al vincitore con il **master loot**. Il tuo clic è quello che il gioco può richiedere.
+
+**Piano A: master loot.** L'addon cerca il pezzo nella finestra del bottino aperta (dal pezzo, non dalla posizione: la lista chiude i buchi man mano che i pezzi escono) e il vincitore nell'elenco del master loot, e lo consegna. Il pezzo aspetta poi in **Loot › Da consegnare** come *Consegnato: aspetto il messaggio del bottino* finché il messaggio di bottino del vincitore in chat (*Bryn riceve il bottino*) viene letto: allora è **Consegnato** ed esce dalla lista. Se il pezzo lo vinci tu, il tuo *Ricevi il bottino* è la ricevuta.
+
+**Piano B: per scambio.** Quando il master loot non può farlo, l'assegnazione resta nel registro (i crediti sono addebitati comunque) e il pezzo va nell'elenco **Da consegnare** con il motivo:
+
+| L'elenco dice | Cosa è successo |
+|---|---|
+| Qui il master loot non è in uso | Non sei il master looter, o il gruppo usa un altro metodo di loot: il caso tipico del piano B. |
+| La finestra del bottino è chiusa | Hai chiuso il corpo prima di confermare. Riaprilo: l'addon riprova da solo. |
+| Il pezzo non è più nella finestra del bottino | Qualcuno lo ha lootato, o era già stato consegnato. |
+| Il vincitore non è nell'elenco del master loot | Troppo lontano, o non nel raid. Digli di avvicinarsi e premi **Consegna ora**, oppure scambia. |
+| Il gioco ha rifiutato la consegna | Il gioco non ha accettato la chiamata. Premi **Consegna ora** (il tuo clic), oppure scambia. |
+
+Consegna il pezzo con un **normale scambio**: l'addon non avvia, non riempie e non accetta mai uno scambio al posto tuo, guarda solo quelli che fai. Quando uno scambio che dà il pezzo al suo vincitore va a buon fine (o ricevi in uno scambio un pezzo che hai vinto tu), il pezzo è segnato **Consegnato**. Quando un messaggio di bottino mostra chi ha il pezzo, l'elenco lo dice (*Lo ha Corin*). Un pezzo che il vincitore aveva già lootato prima della tua conferma è consegnato subito.
+
+**La scheda Da consegnare** elenca ogni pezzo assegnato che non è ancora arrivato al vincitore: il pezzo, il vincitore e a che punto è. Seleziona una riga e usa:
+
+- **Consegna ora (master loot)**: riprova con il master loot, dal tuo clic. Usalo dopo aver riaperto il corpo o quando il gioco ha rifiutato. È nascosto mentre il pezzo aspetta il suo messaggio di bottino.
+- **Segna come consegnato**: la tua parola che il pezzo è arrivato al vincitore (uno scambio che l'addon non ha potuto leggere, un messaggio di bottino nascosto dal gioco). Viene scritto come consegnato a mano.
+
+L'intestazione della scheda Sessione conta i pezzi ancora da consegnare.
+
+**Rollare tutto a fine serata.** Puoi rollare prima tutti i pezzi e consegnarli dopo: i pezzi restano nell'elenco, **Chiudi sessione** li tiene, e quando muore il boss successivo passano nell'elenco della sessione nuova, così non si perde nulla fra un boss e l'altro, nemmeno dopo un `/reload`. Quando riapri un corpo, i pezzi che lo aspettavano sono riprovati da soli (non quelli che il gioco ha rifiutato: aspettano il tuo clic).
+
+> **Non ancora verificato in gioco:** che un addon possa chiamare `GiveMasterLoot` da un clic, che la finestra del bottino e l'elenco del master loot si leggano come descritto, cosa portano gli eventi dello scambio e se i messaggi di bottino sono leggibili dentro un'istanza. Se un passaggio non funziona, il pezzo aspetta nell'elenco e lo consegni con uno scambio.
 
 ## Leggere la tabella dei candidati
 

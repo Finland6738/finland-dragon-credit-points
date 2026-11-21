@@ -194,6 +194,40 @@ describe("the loot window and master loot", function()
 	end)
 end)
 
+describe("the trade window", function()
+	it("reads the partner and the items of the open trade", function()
+		deepEq(compat().Trade.PlayerItems(), {})
+		isNil(compat().Trade.Partner(), "no trade open")
+		Mock.trade.Open("Corin", "Otherrealm")
+		Mock.trade.Put("player", ITEM_A)
+		Mock.trade.Put("target", ITEM_B)
+		eq(compat().Trade.Partner(), "Corin-Otherrealm")
+		deepEq(compat().Trade.PlayerItems(), { ITEM_A })
+		deepEq(compat().Trade.TargetItems(), { ITEM_B })
+		Mock.trade.Open("Bryn")
+		eq(compat().Trade.Partner(), "Bryn", "a player of the own realm has no realm part")
+	end)
+
+	it("knows the client's trade complete message, and never a hidden one", function()
+		truthy(compat().Trade.IsCompleteMessage("Trade complete."))
+		falsy(compat().Trade.IsCompleteMessage("Trade cancelled."))
+		falsy(compat().Trade.IsCompleteMessage(Mock.SECRET))
+		falsy(compat().Trade.IsCompleteMessage(nil))
+		ERR_TRADE_COMPLETE = nil
+		falsy(compat().Trade.IsCompleteMessage("Trade complete."))
+	end)
+
+	it("degrades without an error when the APIs are missing", function()
+		Mock.trade.Open("Corin")
+		GetTradePlayerItemLink, GetTradeTargetItemLink = nil, nil
+		deepEq(compat().Trade.PlayerItems(), {})
+		deepEq(compat().Trade.TargetItems(), {})
+		compat():Probe()
+		eq(compat():State("trade.GetTradePlayerItemLink"), "missing")
+		eq(compat():State("trade.ERR_TRADE_COMPLETE"), "available")
+	end)
+end)
+
 describe("rolls and loot messages", function()
 	it("builds the roll pattern from the global and parses a result", function()
 		local roll = compat().Roll.Parse("Aurel rolls 87 (1-100)")
@@ -825,6 +859,7 @@ describe("degradation sweep", function()
 				C.Loot.MethodAvailable("master"), C.Loot.SetMethod("group") end,
 			function() return C.Loot.NumItems(), C.Loot.Slot(1), C.Loot.Slots(), C.Loot.Candidates(1), C.Loot.Give(1, 1) end,
 			function() return C.Roll.Parse("Aurel rolls 5 (1-100)"), C.Roll.ParseLoot("You receive loot: x."), C.Roll.Send(1, 100) end,
+			function() return C.Trade.Partner(), C.Trade.PlayerItems(), C.Trade.TargetItems(), C.Trade.IsCompleteMessage("Trade complete.") end,
 			function() return C.Item.Info(1001), C.Item.Instant(1001), C.Item.Level(ITEM_A), C.Item.Stats(ITEM_A), C.Item.StatDelta(ITEM_A, ITEM_B),
 				C.Item.IsEquippable(ITEM_A), C.Item.ContainsSpec(ITEM_A, 1, 71), C.Item.SpecInfo(ITEM_A), C.Item.EquippedLink(1),
 				C.Item.Request(1001) end,

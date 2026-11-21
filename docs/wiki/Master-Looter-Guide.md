@@ -27,7 +27,36 @@ This page is for the **master looter**: the player who opens the boss's body and
 
 If the window is closed, `/fdcp` opens it on the Loot tab while a session runs.
 
-> **Handing over the item.** **Confirm** records the award and the credits. The addon handing the item over itself (master loot, or by trade at the end of the night) comes with a later version: until then, give the item to the winner yourself.
+> **Handing over the item.** **Confirm and assign** also hands the item over, in the same click: see [Handing over the item](#handing-over-the-item) below.
+
+## Handing over the item
+
+**Confirm and assign** does two things in the same click: it writes the award and charges the credits, and it asks the game to hand the item over to the winner by **master loot**. Your click is the one the game may ask for.
+
+**Plan A: master loot.** The addon looks for the item in the open loot window (by the item, not by its position: the list closes its gaps as items go) and for the winner in the master loot list, and hands it over. The item then waits in **Loot › To deliver** as *Handed over: waiting for the loot message* until the winner's loot message in the chat (*Bryn receives loot*) is read: then it is **Delivered** and leaves the list. If you win an item yourself, your own *You receive loot* is the receipt.
+
+**Plan B: by trade.** When master loot cannot do it, the award stays in the ledger (the credits are charged all the same) and the item goes to the **To deliver** list with the reason:
+
+| The list says | What happened |
+|---|---|
+| Master loot is not in use here | You are not the master looter, or the group uses another loot method: the usual case of plan B. |
+| The loot window is closed | You closed the body before confirming. Open it again: the addon tries again by itself. |
+| The item is no longer in the loot window | Someone looted it, or it was already handed over. |
+| The winner is not on the master loot list | Too far away, or not in the raid. Ask them to come closer and press **Hand over now**, or trade. |
+| The game refused to hand the item over | The game did not accept the call. Press **Hand over now** (your click), or trade. |
+
+Hand the item over with an **ordinary trade**: the addon never starts, fills or accepts a trade for you, it only watches the trades you make. When a trade that gives the item to its winner goes through (or you receive in a trade an item you won yourself), the item is marked **Delivered**. When a loot message shows who holds the item, the list says so (*Held by Corin*). An item the winner already looted before you confirmed is delivered at once.
+
+**The To deliver tab** lists every awarded item that has not reached its winner: the item, the winner and where it stands. Select a row and use:
+
+- **Hand over now (master loot)**: tries master loot again, from your click. Use it after reopening the body or when the game refused. It is hidden while the item is waiting for its loot message.
+- **Mark as delivered**: your word that the item reached its winner (a trade the addon could not read, a loot message the game hid). It is written as delivered by hand.
+
+The header of the Session tab counts the items still to deliver.
+
+**Rolling everything at the end of the night.** You may roll all the items first and hand them over later: the items stay in the list, **End session** keeps them, and when the next boss dies they move to the next session's list, so nothing is lost between bosses, even after a `/reload`. When you open a body again, the items that were waiting for it are tried again by themselves (not the ones the game refused: those wait for your click).
+
+> **Not yet checked in the game:** that an addon may call `GiveMasterLoot` from a click, that the loot window and the master loot list read as described, what the trade events carry and whether the loot messages are readable inside an instance. If a step does not work, the item waits in the list and you hand it over by trade.
 
 ## Reading the candidates table
 

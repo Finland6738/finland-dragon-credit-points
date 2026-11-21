@@ -637,6 +637,55 @@ Scelte fatte dove il testo non decideva (tutte modificabili):
   `RandomRoll` da un clic (anche in istanza, dove potrebbe essere limitato), i nomi degli oggetti mentre la cache li carica,
   il trascinamento e il ridimensionamento.
 
+**Come è fatto (M4-7).** La consegna è `Adapters/MasterLoot.lua` (il lato del gioco) più la parte "Consegna" di
+`App/SessionController.lua`; la `SessionFSM` registra solo a che punto è (nuovi input `DELIVERY` e `DELIVERED{via}`), non
+chiama mai il gioco. Chiamate e messaggi passano da `Core/Compat.lua` (`Loot.Give`, `Loot.Candidates`, `Roll.ParseLoot`, nuovo
+`Compat.Trade`); nel dump di Forever ci sono `GiveMasterLoot`, `GetMasterLootCandidate`, `GetTradePlayerItemLink`,
+`GetTradeTargetItemLink` e gli eventi `CHAT_MSG_LOOT`, `TRADE_SHOW`, `TRADE_ACCEPT_UPDATE`, `TRADE_CLOSED`,
+`UI_INFO_MESSAGE`; `ERR_TRADE_COMPLETE` è una stringa globale (non nel dump, come le altre). Scelte fatte dove il testo
+non decideva (tutte modificabili):
+
+- **Conferma = addebito + consegna nello stesso clic.** L'effetto `DELIVER` di `CONFIRM` chiama `SessionController:Deliver`.
+  Con `awardMode = auto` la conferma non viene da un clic: se il gioco rifiuta la chiamata il pezzo resta nell'elenco con
+  `CALL_FAILED` e il master looter lo consegna dal suo clic ("Consegna ora").
+- **Il pezzo si ritrova per id, non per posizione.** Lo slot visto alla raccolta è solo un suggerimento: prima di ogni
+  chiamata si rilegge la finestra del bottino aperta (alcuni client chiudono il buco di un pezzo uscito). Il candidato si cerca
+  per nome completo (`Nome-Reame`) nell'elenco di `GetMasterLootCandidate`.
+- **Piano A, ricevuta.** La chiamata riuscita segna la consegna `GIVEN` (metodo `MASTER`); la fine è il messaggio
+  `CHAT_MSG_LOOT` del vincitore per quell'oggetto (`Roll.ParseLoot`, formati del client, quindi inglese e italiano). Un
+  messaggio segreto non si legge mai (si conta e basta, `stats.hidden`): chi non vede arrivare la ricevuta dopo 20 secondi
+  trova "nessun messaggio visto" e può segnare il pezzo **consegnato a mano** (`via = MANUAL`). Lo stesso messaggio vale
+  anche per un pezzo consegnato a mano dal ML fuori dall'addon, o già lootato dal vincitore (un messaggio *dopo l'apertura
+  della sessione* prima della conferma: consegna immediata). Limite noto: la ricevuta è per oggetto e giocatore, quindi una
+  seconda copia dello stesso oggetto lootata dallo stesso giocatore chiude la consegna della prima.
+- **Piano B, scambio.** Se il master loot non è disponibile (`NO_MASTER_LOOT`: non è il ML o il metodo è un altro; `NO_WINDOW`:
+  finestra chiusa; `NO_SLOT`: il pezzo non c'è più; `NO_CANDIDATE`: il vincitore non è nell'elenco; `CALL_FAILED`: il gioco
+  rifiuta) l'assegnazione **resta nel registro** (i crediti sono addebitati comunque, il registro non sa nulla della consegna)
+  e la consegna è `PENDING` con quel codice (gruppo `DELIVERY` di `Domain/Reasons.lua`). L'addon **non avvia, non riempie e non
+  accetta** mai uno scambio: guarda `TRADE_SHOW`, `TRADE_ACCEPT_UPDATE`, `TRADE_CLOSED` e `UI_INFO_MESSAGE`, legge gli
+  oggetti messi nello scambio mentre la finestra è aperta (poi spariscono) e, se lo scambio è andato a buon fine (accettato da
+  entrambi, o `ERR_TRADE_COMPLETE`), dà il pezzo per consegnato quando il partner è il vincitore (o quando il ML, vincitore,
+  riceve il pezzo). Da chi lo ha in mano si sa solo dai messaggi di bottino ("Lo ha Corin"): uno scambio fra due altri
+  giocatori non lo vede nessun client del ML, quindi lì serve **Segna come consegnato**.
+- **Consegna rimandata.** Gli oggetti `ASSIGNED` di una sessione chiusa passano, alla morte del boss successivo, in una
+  sessione "trasportata" (`carry`, chiusa, nei dati della gilda, solo per il suo ML): l'elenco **Da consegnare** mostra prima
+  quelli e poi quelli della sessione in corso, e le ricevute e gli scambi valgono per tutte e due. Quando si riapre un corpo
+  (`LOOT_COLLECTED` a sessione già avviata) i pezzi in attesa per `NO_WINDOW`, `NO_SLOT` o `NO_CANDIDATE` sono riprovati da
+  soli; quelli rifiutati dal gioco aspettano il clic.
+- **Finestra.** Seconda sotto-scheda **Loot › Da consegnare** (`UI/Windows/MLSession.lua`): tabella pezzo / vincitore /
+  stato, **Consegna ora (master loot)** (nascosto con `GIVEN`) e **Segna come consegnato**; l'intestazione della scheda
+  Sessione conta i pezzi. Il pezzo di un banco senza personaggio impostato non arriva mai alla conferma (serve un vincitore):
+  `FSM.Recipient` darebbe comunque il ML. Nessuna richiesta alla rete: la consegna è solo del client del ML.
+- **Test.** `Tests/test_delivery.lua` (consegna riuscita e ricevuta, scorrimento degli slot, candidato di un altro reame,
+  candidato mancante, chiamata rifiutata o API assente, altro metodo di loot, corpo chiuso e riaperto, scambio riuscito,
+  annullato, con un altro, in senso inverso, ricevuta nascosta, consegna rimandata nel `carry` e dopo un `/reload`, scheda
+  della finestra) e il mock `Tests/mock/76_trade.lua`; casi nuovi per `Compat.Trade` in `test_compat.lua`.
+- **Da verificare nel gioco (spike S2c, S2d, M4-9).** Che un addon possa chiamare `GiveMasterLoot` da un clic (e da una
+  conferma automatica), come il client chiude gli slot dopo la consegna, cosa portano `TRADE_ACCEPT_UPDATE`/`TRADE_CLOSED` e
+  l'ordine con il messaggio di scambio completato, il nome del partner (`UnitName("NPC")`), la leggibilità di
+  `CHAT_MSG_LOOT` in istanza, la raccolta della sessione quando non c'è master loot (non c'è un corpo da leggere: finché lo
+  spike non dice come, la sessione parte dal ML con master loot e il piano B riguarda solo la consegna).
+
 ### 4.1 L'addon è obbligatorio: chi non ce l'ha
 
 Tutti i raider devono avere l'addon attivo. L'addon lo verifica da solo e aiuta GM, officer e master looter a

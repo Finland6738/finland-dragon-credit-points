@@ -22,6 +22,9 @@
 --   missing = { names }  (raid members who cannot roll: no addon, §4.1) | nil,
 --   actions = { start, openRoll, closeRound, advance, confirm, reject, modify, correct, remove, pause, resume, finish },
 -- }
+-- The "to deliver" list of M4-7 is not part of the board (it outlives the session): SB.DeliveryRows gives its rows,
+-- { which ("main" or "carry"), index, itemID, quality, winner, recipient, target, paid, method, status ("PENDING" or
+-- "GIVEN"), code, holder, attempts, waiting (seconds since the call), noReceipt, text }, through SessionController:Deliveries().
 local ADDON_NAME, ns = ...
 ns = ns or {}
 ns.modules = ns.modules or {}
@@ -46,6 +49,8 @@ SB.BADGES = {
 }
 
 local function L() return ns.L end
+
+SB.RECEIPT_WAIT = 20   -- seconds after a master loot call before "no loot message seen" is said
 
 -- "Aurel-Realm" -> "Aurel"
 local function short(name) return (tostring(name):gsub("%-.*$", "")) end
@@ -122,6 +127,50 @@ function SB.DiffTexts(p)
 	end
 	if p.ruleCost ~= nil and p.cost ~= nil and p.cost ~= p.ruleCost then
 		out[#out + 1] = L()["ML_DIFF_COST"]:format(SB.CreditsText(p.cost), SB.CreditsText(p.ruleCost))
+	end
+	return out
+end
+
+-- The sentence of a delivery code (Domain/Reasons.lua group DELIVERY), or "" for none.
+function SB.DeliveryCodeText(code)
+	if code == nil then return "" end
+	return ns.Reasons.Text("DELIVERY", code)
+end
+
+-- Where a delivery stands, in words: "Handed over: waiting for the loot message.", "To hand over by trade. Held by
+-- Corin." Built from the row of `deliveries`.
+function SB.DeliveryText(row)
+	if type(row) ~= "table" then return "" end
+	local R = ns.Reasons
+	local parts = {}
+	if row.status == "GIVEN" then
+		parts[1] = R.Text("DELIVERY", row.noReceipt and "NO_RECEIPT" or "GIVEN")
+	else
+		parts[1] = R.Text("DELIVERY", row.code or "TRADE")
+	end
+	if row.holder then parts[#parts + 1] = R.Text("DELIVERY", "HOLDER"):format(short(row.holder)) end
+	return table.concat(parts, " ")
+end
+
+-- The "to deliver" rows of the sessions given, in order: { { which, session }, ... }.
+function SB.DeliveryRows(sessions, now)
+	local out = {}
+	local FSM = ns.SessionFSM
+	for _, entry in ipairs(sessions) do
+		local s = entry.session
+		for _, i in ipairs(s and FSM.Undelivered(s) or {}) do
+			local item, d = s.items[i], s.items[i].delivery
+			local row = { which = entry.which, index = i, itemID = item.itemID, quality = item.quality, category = item.category,
+				equipLoc = item.info and item.info.equipLoc, winner = item.award.member, recipient = FSM.Recipient(s, i),
+				target = item.award.target, paid = item.award.cost, method = d and d.method or "TRADE",
+				status = d and d.status or "PENDING", code = d and d.code, holder = d and d.holder, attempts = d and d.attempts or 0 }
+			if row.status == "GIVEN" and d.at and now then
+				row.waiting = max(0, now - d.at)
+				row.noReceipt = row.waiting >= SB.RECEIPT_WAIT
+			end
+			row.text = SB.DeliveryText(row)
+			out[#out + 1] = row
+		end
 	end
 	return out
 end
@@ -353,7 +402,8 @@ local function buildView(v, env, selected)
 	local sel = pickSelected(items, v.a, selected)
 	local state = v.ended and "ENDED" or (v.proposal and "PROPOSAL") or (v.round and "ROLLING") or "ANNOUNCING"
 	local b = { host = false, readOnly = true, state = state, paused = v.paused == true, encounter = v.e, count = #items,
-		items = items, active = v.a, selected = sel, candidates = {}, actions = {}, selectedItem = sel and items[sel] or nil }
+		items = items, active = v.a, selected = sel, candidates = {}, actions = {},
+		selectedItem = sel and items[sel] or nil }
 	if v.round and sel == v.round.i then
 		local remaining = v.round.rm
 		if v.round.deadline and not v.paused then remaining = max(0, v.round.deadline - (env.now or 0)) end
