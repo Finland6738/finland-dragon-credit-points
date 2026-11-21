@@ -448,8 +448,9 @@ Dettagli importanti:
 - **Più officer con l'addon**: solo il master looter guida la sessione; gli altri vedono in sola lettura e possono
   intervenire come council.
 - **Conferma e consegna nello stesso clic**: "Conferma" addebita i crediti e chiama `GiveMasterLoot` insieme
-  (il clic del ML soddisfa anche un eventuale obbligo di azione fisica del gioco). "Conferma tutto" vale per le
-  proposte senza segnalazioni.
+  (il clic del ML soddisfa anche un eventuale obbligo di azione fisica del gioco). "Conferma tutto" varrebbe per le
+  proposte senza segnalazioni, ma con un pezzo alla volta (M2-6) non c'è nulla da raggruppare: non è costruito (vedi
+  "Come è fatto (M4-5)").
 - **Fasi automatiche**: apertura del roll, timer, chiusura, reroll e passaggio al tier off-spec possono partire da
   soli (`session.autoAdvance`, preset sì); il ML può sempre mettere in pausa la sessione.
 
@@ -540,6 +541,54 @@ costo, reroll, tier successivo e fallback restano nella `SessionFSM`, nella fase
 - **Test.** `Tests/test_session_controller.lua` copre un boss con cinque oggetti, un reroll, un tier MS vuoto, un fallback
   al ML, il timer, la pausa, il lockdown, il `/reload` a metà reroll e la sola lettura.
 - **Da verificare nel gioco (M4-9).**
+
+**Come è fatto (M4-5).** La finestra del master looter è la sotto-scheda **Loot › Sessione** (`UI/Windows/MLSession.lua`,
+anteprima `fdcp-loot-session.webp`). Non decide nulla: disegna la **bacheca** (`App/SessionBoard.lua`, dati semplici letti
+dalla sessione o, sul client di un altro officer, dalla vista in sola lettura del protocollo) che dà
+`SessionController:Board()`, e manda i clic come comandi (`SessionController:Command`). Le frasi sono tutte chiavi di
+traduzione; i codici passano da `Domain/Reasons.lua`. Scelte fatte dove il testo non decideva (tutte modificabili):
+
+- **Niente "Conferma tutto".** I dettagli di §4 e la roadmap lo prevedono "per le proposte
+  senza segnalazioni", ma M2-6 ha scelto **un pezzo alla volta** (il roll successivo si apre dopo l'assegnazione del
+  precedente), quindi c'è sempre una sola proposta aperta e nulla da raggruppare. Il suo scopo, non fare un clic per pezzo
+  quando tutto è pulito, lo danno già `session.autoAdvance` (il pezzo dopo si apre da solo) e `awardMode = auto` (conferma
+  da sola dopo la finestra di intervento). Se un giorno i pezzi si rollassero in parallelo, il pulsante si aggiunge sopra
+  `Board().items` senza toccare la macchina a stati.
+- **Un pulsante principale** a destra che cambia con lo stato: *Avvia la sessione* (Raccolta), *Apri il roll* (pezzo in
+  attesa, quando nessun pezzo è in corso), *Chiudi il round* (round aperto), *Apri il round successivo* (reroll o tier dopo
+  senza avanzamento automatico), *Conferma e assegna* (proposta con vincitore e costo; con `awardMode = council` solo a voto
+  chiuso). Accanto: **Modifica** e **Rifiuta** sulla proposta, **Correggi** e **Togli** sulla lista, **Pausa/Riprendi** e
+  **Chiudi sessione** in alto. Un pulsante compare solo quando la macchina a stati accetterebbe l'input (`Board().actions`);
+  ogni rifiuto che passa comunque è mostrato a parole (`Reasons` gruppo `REFUSAL`).
+- **Modifica** è una scheda (la base `Widgets.Dialog`) con la lista dei vincitori possibili (prima i candidati con risposta e
+  crediti, poi il resto del raid presente, poi banca e disincantatore; niente `UIDropDownMenu`), il costo, e il **motivo
+  obbligatorio** scelto da un elenco di codici (`WRONG_CATEGORY`, `COUNCIL_COST`, `OBVIOUS_WASTE`, `PASSED_TO_GAME`,
+  `LEGENDARY`, `MISTAKE`, `OTHER`; `COUNCIL_VOTE` lo scrive solo il voto): mai testo libero, perché il registro tiene codici.
+  Mentre il ML sceglie, la scheda mostra la proposta che ne risulterebbe e la **differenza dalla regola** ("fuori fila: Bryn
+  era primo"; "costo: 2 invece di 1"), calcolata con la stessa `SessionFSM.Step` su una copia della sessione
+  (`SessionController:PreviewModify`): la finestra non ricalcola nulla. Senza motivo, **Salva** è rifiutata con la frase
+  `REASON_REQUIRED`, prima di toccare la sessione; la macchina a stati la rifiuterebbe comunque.
+- **Rifiuta** apre la scelta di cosa succede al pezzo (i cinque esiti di `REJECT_THEN`, di preset "rimettilo in gioco");
+  il motivo del rifiuto non è richiesto. **Correggi** (categoria o costo base, motivo obbligatorio) è disponibile finché il
+  pezzo non ha una proposta e, con `session.lockCategoryOnOpen`, solo prima dell'apertura del suo roll.
+- **Candidati.** Solo sul client del master looter: chi ha risposto, chi ha rollato, e finché un round raccoglie le risposte
+  anche chi è presente con l'addon e non ha ancora risposto ("non ha ancora risposto"). Ordine: tier della risposta, crediti,
+  roll decrescente. Ogni roll di chi non ha l'addon compare subito con la nota "l'addon non è attivo" (§4.1); gli altri roll
+  scartati compaiono con il loro codice quando il round si chiude. In un reroll i non pari sono attenuati. Gli altri officer
+  vedono i pezzi, il round e la proposta, non l'elenco dei candidati: le risposte non viaggiano verso di loro (§8.4).
+- **Avviso "N membri non possono rollare"** (§4.1): un'etichetta nell'intestazione, dagli stessi dati di `SET_RAID`, con il
+  pulsante **Avvisa in /raid** (`AddonNotice:Send("MISSING")`, solo per chi può gestire il controllo dell'addon).
+- **Apertura.** Quando il ML apre il corpo (`COLLECTED`) la finestra si apre sulla scheda Loot; un `/fdcp` mentre una
+  sessione è in corso apre la finestra sulla scheda Loot (§6 della specifica).
+- **Dati.** `SessionController:Step` ora emette `SESSION_CHANGED` per ogni input accettato (anche un roll o una risposta,
+  senza effetti), non solo per quelli con effetti: la finestra si aggiorna a ogni roll. Il timer si ridisegna ogni secondo
+  solo mentre la scheda è visibile.
+- **Non fatto qui:** la consegna del pezzo (`GiveMasterLoot`, scambio: M4-7), l'annuncio in `/raid` (M4-8), il voto del
+  council (M5-8), il popup del giocatore (M4-6).
+- **Test.** `Tests/test_ui_ml_session.lua`: un boss di cinque pezzi giocato solo dai pulsanti della finestra, Modifica senza e
+  con motivo, la differenza dalla regola, Rifiuta, Correggi, Pausa, i roll senza addon, l'avviso, la vista in sola lettura.
+- **Da verificare nel gioco (M4-9).** La finestra in un raid vero (disposizione, leggibilità a 40 giocatori), i nomi degli
+  oggetti mentre la cache li carica.
 
 ### 4.1 L'addon è obbligatorio: chi non ce l'ha
 

@@ -1,5 +1,5 @@
 -- MainWindow: the one main window (docs/specs/ui-style.md §6): a title bar, six underline tabs (Roster, Credits,
--- Progress, Loot, History, Settings) and an empty page for each (M1-7). Movable, resizable from a minimum size, position
+-- Progress, Loot, History, Settings) and a page for each, empty until its step arrives (M1-7). Movable, resizable from a minimum size, position
 -- and size remembered per character, Esc closes it, /fdcp and the minimap button toggle it. Lua 5.1; unprotected frames.
 local ADDON_NAME, ns = ...
 ns = ns or {}
@@ -138,6 +138,13 @@ function MainWindow:Build()
 		ns.ProgressWindow:Build(f.pages.progress)
 	end
 
+	-- Loot (M4-5): the master looter's session replaces the empty page
+	if ns.MLSession then
+		f.pages.loot.eyebrow:Hide()
+		f.pages.loot.empty:Hide()
+		ns.MLSession:Build(f.pages.loot, f)
+	end
+
 	-- resize grip (bottom right)
 	local grip = CreateFrame("Button", nil, f)
 	grip:SetSize(18, 18)
@@ -167,6 +174,7 @@ function MainWindow:ShowPage(id)
 	for pid, page in pairs(f.pages) do page:SetShown(pid == id) end
 	if id == "credits" and ns.CreditsWindow then ns.CreditsWindow:Refresh() end
 	if id == "progress" and ns.ProgressWindow then ns.ProgressWindow:Refresh() end
+	if id == "loot" and ns.MLSession and ns.MLSession.root then ns.MLSession:Refresh() end
 end
 
 function MainWindow:SelectTab(id)
@@ -187,6 +195,8 @@ function MainWindow:IsShown() return self.frame ~= nil and self.frame:IsShown() 
 
 function MainWindow:Open(tab)
 	self:Build()
+	-- a loot session runs on this client: the window opens on the Loot tab (docs/specs/ui-style.md §6)
+	if not tab and not self:IsShown() and ns.SessionController and ns.SessionController:IsHost() then tab = "loot" end
 	if tab then self.frame.tabs:Select(tab) end
 	self.frame:Show()
 	self.frame:Raise()

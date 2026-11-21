@@ -318,3 +318,118 @@ function Widgets.Dialog(parent, name, opts)
 	function d:Close() self:Hide() end
 	return d
 end
+
+-- --- EditBox ----------------------------------------------------------------------------------------------------------
+
+-- A one-line field: surface-2 fill, 1 pt ring (accent while it has the keyboard). opts: width, height, maxLetters,
+-- onChange(text) after every edit. :GetText(), :SetText(text) (through .edit), :Clear(). The edit box itself is `.edit`.
+function Widgets.EditBox(parent, opts)
+	opts = opts or {}
+	local f = CreateFrame("Frame", nil, parent)
+	f:SetSize(opts.width or 120, opts.height or 28)
+	f.fill = Theme.Slice(f, "rr_fill_8", "surface-2", "BACKGROUND")
+	f.fill:SetAllPoints(f)
+	f.ring = Theme.Slice(f, "rr_ring_8", "border", "BORDER")
+	f.ring:SetAllPoints(f)
+	local e = CreateFrame("EditBox", nil, f)
+	e:SetPoint("TOPLEFT", f, "TOPLEFT", 10, -2)
+	e:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -10, 2)
+	e:SetAutoFocus(false)
+	if Theme.fontObjects.Body then e:SetFontObject(Theme.fontObjects.Body) end
+	if opts.maxLetters then e:SetMaxLetters(opts.maxLetters) end
+	Theme.Text(e, "text-1")
+	e:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+	e:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)
+	e:SetScript("OnEditFocusGained", function() Theme.Tint(f.ring, "accent") end)
+	e:SetScript("OnEditFocusLost", function() Theme.Tint(f.ring, "border") end)
+	e:SetScript("OnTextChanged", function(self, user) if opts.onChange then opts.onChange(self:GetText(), user) end end)
+	f.edit = e
+	function f:GetText() return self.edit:GetText() end
+	function f:SetText(text) self.edit:SetText(text or "") end
+	function f:Clear() self.edit:SetText("") end
+	return f
+end
+
+-- --- ChoiceList -------------------------------------------------------------------------------------------------------
+
+-- A list of single-choice rows (a radio list: no UIDropDownMenu, which taints, docs/specs/ui-style.md §3) inside a
+-- surface-2 field. choices = { { id, text, token? } }; `rows` rows show at once and the mouse wheel scrolls the rest.
+-- opts: rows (6), rowHeight (24), width, onSelect(id). :SetChoices(list), :Select(id), :Selected(), :Clear(), :Count().
+function Widgets.ChoiceList(parent, opts)
+	opts = opts or {}
+	local rows, rowH = opts.rows or 6, opts.rowHeight or 24
+	local f = CreateFrame("Frame", nil, parent)
+	f:SetSize(opts.width or 240, rows * rowH + 8)
+	f.fill = Theme.Slice(f, "rr_fill_8", "surface-2", "BACKGROUND")
+	f.fill:SetAllPoints(f)
+	f.ring = Theme.Slice(f, "rr_ring_8", "border", "BORDER")
+	f.ring:SetAllPoints(f)
+	f.choices, f.offset, f.rowH, f.rowsShown = {}, 0, rowH, rows
+	f:EnableMouseWheel(true)
+	f.rows = {}
+	for i = 1, rows do
+		local b = CreateFrame("Button", nil, f)
+		b:SetHeight(rowH)
+		b:SetPoint("TOPLEFT", f, "TOPLEFT", 4, -4 - (i - 1) * rowH)
+		b:SetPoint("TOPRIGHT", f, "TOPRIGHT", -4, -4 - (i - 1) * rowH)
+		b.mark = b:CreateTexture(nil, "BACKGROUND")
+		Theme.Fill(b.mark, "raised", 0)
+		b.mark:SetAllPoints(b)
+		b.dot = b:CreateTexture(nil, "ARTWORK")
+		Theme.Fill(b.dot, "accent", 0)
+		b.dot:SetSize(6, 6)
+		b.dot:SetPoint("LEFT", b, "LEFT", 8, 0)
+		b.label = Theme.NewText(b, "Body", "text-2")
+		b.label:SetPoint("LEFT", b, "LEFT", 22, 0)
+		b.label:SetPoint("RIGHT", b, "RIGHT", -6, 0)
+		b.label:SetJustifyH("LEFT")
+		b:SetScript("OnClick", function(self) if self.choice then f:Select(self.choice.id) end end)
+		b:Hide()
+		f.rows[i] = b
+	end
+	local function paint()
+		for i, b in ipairs(f.rows) do
+			local c = f.choices[f.offset + i]
+			b.choice = c
+			if c then
+				local on = f.selected ~= nil and c.id == f.selected
+				b.label:SetText(c.text or "")
+				Theme.Text(b.label, on and "text-1" or c.token or "text-2")
+				Theme.Fill(b.mark, "raised", on and 1 or 0)
+				Theme.Fill(b.dot, "accent", on and 1 or 0)
+				b:Show()
+			else
+				b:Hide()
+			end
+		end
+	end
+	function f:SetChoices(list)
+		self.choices = list or {}
+		self.offset = 0
+		if self.selected ~= nil then
+			local found = false
+			for _, c in ipairs(self.choices) do if c.id == self.selected then found = true end end
+			if not found then self.selected = nil end
+		end
+		paint()
+	end
+	function f:Select(id)
+		local found = false
+		for _, c in ipairs(self.choices) do if c.id == id then found = true end end
+		if not found then return false end
+		local changed = self.selected ~= id
+		self.selected = id
+		paint()
+		if changed and opts.onSelect then opts.onSelect(id) end
+		return true
+	end
+	function f:Selected() return self.selected end
+	function f:Clear() self.selected = nil; paint() end
+	function f:Count() return #self.choices end
+	function f:Scroll(delta)
+		self.offset = math.min(math.max(self.offset + delta, 0), math.max(#self.choices - rows, 0))
+		paint()
+	end
+	f:SetScript("OnMouseWheel", function(self, delta) self:Scroll(-delta * 2) end)
+	return f
+end

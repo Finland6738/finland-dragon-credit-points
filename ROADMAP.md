@@ -15,7 +15,7 @@ This page is the index and the rules every step follows. **The development steps
 | **[M6 – History and export](docs/roadmap/M6-history-export.md)** | M6-1 … M6-8 | History views, log and audit, Discord / CSV / JSON, the three community-site files (`roster.json`, `loot.json`, `progress.json`), officer sync, credits for members, backup | the Discord table comes out of the addon |
 | **[M7 – Polish and release](docs/roadmap/M7-release.md)** | M7-1 … M7-8 | Site-style polish, settings and permissions, profiles, diagnostics, performance, packaging, manual | first release for the guild, `v1.0.0` |
 
-M2 and M3 may run in either order after M1; M4 depends on M0, M2 and M3. **M2 is done. M3 is done offline (M3-1, M3-2, M3-3, M3-3b, M3-4, M3-5, M3-6, M3-7, M3-8, M3-8b and M3-9 done; its in-game checks are in [`docs/checklists/M3.md`](docs/checklists/M3.md), not yet run by the owner). M4 has started (M4-1 done). Next step: M4-2** (M0-7 waits for the owner's spike results).
+M2 and M3 may run in either order after M1; M4 depends on M0, M2 and M3. **M2 is done. M3 is done offline (M3-1, M3-2, M3-3, M3-3b, M3-4, M3-5, M3-6, M3-7, M3-8, M3-8b and M3-9 done; its in-game checks are in [`docs/checklists/M3.md`](docs/checklists/M3.md), not yet run by the owner). M4 has started (M4-1 … M4-5 done offline). Next step: M4-6** (M0-7 waits for the owner's spike results).
 
 The owner's in-game check of M1 is [`docs/checklists/M1.md`](docs/checklists/M1.md) (step M1-8; the offline part is ticked, the game part waits for the owner).
 

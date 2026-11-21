@@ -8,6 +8,7 @@
 - [[Addon Check|Addon-Check]]
 - [[Roster and Nights|Roster-and-Nights]]
 - [[Credits Table|Credits]]
+- [[Master Looter Guide|Master-Looter-Guide]]
 
 **Italiano**
 - [[Home|Home-it]]
@@ -19,3 +20,4 @@
 - [[Controllo dell'addon|Addon-Check-it]]
 - [[Roster e Serate|Roster-and-Nights-it]]
 - [[Tabella crediti|Credits-it]]
+- [[Guida del master looter|Master-Looter-Guide-it]]

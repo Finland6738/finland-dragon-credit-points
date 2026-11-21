@@ -18,8 +18,9 @@
 | See who in the raid lacks the addon and notify them | [[Addon Check|Addon-Check]] |
 | Manage the pool and run a raid night | [[Roster and Nights|Roster-and-Nights]] |
 | Read the credits table and your place in the queue | [[Credits Table|Credits]] |
+| Run a loot session as the master looter | [[Master Looter Guide|Master-Looter-Guide]] |
 
-More pages (the credits table, the master looter's guide, the council, settings) are added as the features are built.
+More pages (the player's popup, the council, settings) are added as the features are built.
 
 ## For developers
 

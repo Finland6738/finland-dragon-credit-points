@@ -26,7 +26,7 @@
 -- Other officers: their client never runs the session; they see the master looter's view (Protocol.Session.view), read
 -- only. View() returns it with `host = false`; every command answers NOT_HOST there.
 --
--- Bus events: "SESSION_CHANGED"(session, effects) after every accepted input on the host;
+-- Bus events: "SESSION_CHANGED"(session, effects) after every accepted input on the host (not a bare TICK);
 --             "SESSION_DELIVER"(effect, item) when an award asks for the item to change hands (M4-7 gives it);
 --             "SESSION_HELD"(code) when a collection waits (LOCKDOWN) and "SESSION_STARTED"(session).
 -- Not verified in the real client: the whole flow around a real boss (M4-9), master loot (spike S2), the roll messages
@@ -168,7 +168,11 @@ function SC:Step(input)
 	if ML_INPUTS[input.type] and input.by == nil then input.by = me() end
 	local ok, code, effects = F().Step(s, input, self:Env())
 	if not ok then return nil, code, effects end
-	if #effects > 0 then self:Apply(effects) end
+	if #effects > 0 then
+		self:Apply(effects)
+	elseif input.type ~= "TICK" then
+		emit("SESSION_CHANGED", s, effects)   -- a roll, a response, the raid: the window draws the new candidates
+	end
 	return true, nil, effects
 end
 
@@ -323,6 +327,45 @@ function SC:View()
 	if not v then return nil end
 	if ns.PermissionService and not ns.PermissionService:Can("award.confirm") then return nil end
 	return { host = false, view = v, readOnly = true }
+end
+
+-- The class of a raid member as the roster knows it ("WARRIOR", ...), for the colour of a name; nil when unknown.
+function SC:ClassOf(name)
+	local L, season = self:Ledger(), nil
+	if not L or not ns.Season or not ns.Roster then return nil end
+	season = ns.Season.Current(L)
+	if not season then return nil end
+	if self.classCache == nil or self.classCacheSeason ~= season.id or self.classCacheAt ~= ns.Ledger.Count(L) then
+		local map = {}
+		for _, m in ipairs(ns.Roster.List(L, season.id, {})) do map[m.member] = m.class end
+		self.classCache, self.classCacheSeason, self.classCacheAt = map, season.id, ns.Ledger.Count(L)
+	end
+	return self.classCache[name]
+end
+
+-- The board of the master looter's window (App/SessionBoard.lua): the session (or the read-only view) as plain data.
+-- `selected` is the item index the window shows (nil: the one in progress). nil when there is nothing to show.
+function SC:Board(selected)
+	local view = self:View()
+	if not view then return nil end
+	local s = view.session
+	return ns.SessionBoard.Build(view, {
+		now = now(), held = self.held ~= nil, classOf = function(name) return self:ClassOf(name) end,
+		rollSeconds = (s and s.rules and s.rules.session and s.rules.session.rollSeconds)
+			or (ns.Rules and ns.Rules.DefaultConfig().session.rollSeconds),
+	}, selected)
+end
+
+-- What MODIFY{change} would give (the Modify dialog's live difference from the rules); nothing is changed. Returns the
+-- board proposal, or nil and the code the state machine would answer.
+function SC:PreviewModify(change)
+	local s = self:Current()
+	if not s or self.readOnly then return nil, "NO_SESSION" end
+	if type(change) ~= "table" then return nil, "UNKNOWN_INPUT" end
+	local copy = {}
+	for k, v in pairs(change) do copy[k] = v end
+	copy.reason = copy.reason or "OTHER"   -- the reason is mandatory in the real input; the preview only shows the effect
+	return ns.SessionBoard.Preview(s, copy, now(), me())
 end
 
 ---------------------------------------------------------------------------------------------------------------------

@@ -60,8 +60,9 @@ M4 depends on M0, M2 and M3. Until the spike results arrive, every step builds p
 - Analysis: §4, §9.3 point 3, §3.4 (confirm, reject, modify); [`docs/specs/ui-style.md`](../specs/ui-style.md) §3, §6
 - Scope: `UI/Windows/MLSession.lua`, the **Loot › Session** sub-tab (look per `ui-style.md`, preview `fdcp-loot-session.webp`; the window opens on it while a session runs): items with state on the left; candidates with credits, response, roll and flags on the right; **Open roll**, **Close**, **Pause**; the proposal (who, how much, why, written by the addon) with **Confirm**, **Reject**, **Modify** (new winner or cost, mandatory reason, "out of order" difference shown), **Confirm all** for proposals without flags; the warning "N raid members cannot roll" with the notice button.
 - Done when:
-  - [ ] The ML can run a whole simulated session from the window; Modify cannot be saved without a reason.
+  - [x] The ML can run a whole simulated session from the window; Modify cannot be saved without a reason.
 - Tests: `Tests/test_ui_ml_session.lua`.
+- Note: **Confirm all** is not built: one item is in progress at a time (M2-6), so there is never a second proposal to batch; `session.autoAdvance` and `awardMode = auto` give the same saving of clicks ([`docs/ANALISI.md`](../ANALISI.md) §4, "Come è fatto (M4-5)").
 - Docs: wiki **Master Looter Guide** (EN + IT), CHANGELOG.
 - Real client: the window in a raid.
 - Suggested model/effort: `sonnet` / high

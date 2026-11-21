@@ -57,6 +57,7 @@ App\ProgressController.lua
 App\AddonCheck.lua
 App\AddonNotice.lua
 App\SessionController.lua
+App\SessionBoard.lua
 UI\Assets.lua
 UI\Theme.lua
 UI\Widgets.lua
@@ -67,5 +68,6 @@ UI\Windows\Nights.lua
 UI\Windows\Roster.lua
 UI\Windows\Credits.lua
 UI\Windows\Progress.lua
+UI\Windows\MLSession.lua
 UI\MainWindow.lua
 UI\Minimap.lua
