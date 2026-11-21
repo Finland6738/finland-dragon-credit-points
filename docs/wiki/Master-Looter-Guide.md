@@ -130,7 +130,7 @@ The next proposal carries the note *This is a new proposal after a rejection.*
 
 - **Pause** stops the timers and the automatic steps and keeps the time that was left; **Resume** goes on. Your own buttons keep working while paused.
 - The session never opens or closes anything during a boss fight or a chat lockdown: it waits and goes on afterwards. A roll the game hid during the lockdown is read when it ends, and the round does not close before then.
-- If you `/reload` or disconnect, the session comes back as you left it, even in the middle of a reroll.
+- If you `/reload` or disconnect, the session comes back as you left it, even in the middle of a reroll: type `/fdcp` to see the window again. The raid is asked again who runs the addon; while the answers come back, everyone keeps the state the session knew, so nobody is left out of the next roll. The loot window closes with a `/reload`: an item you confirm before opening the body again waits in **To deliver** and is handed over as soon as you open the body.
 
 ## Other officers
 

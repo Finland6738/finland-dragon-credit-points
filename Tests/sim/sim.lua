@@ -15,6 +15,14 @@
 --   net:Advance(5)                                                           -- 0.1-second steps, delivery after each
 --   a.addon()                                                                -- the client's FDCP table (fresh after a reload)
 --   net:Reload("Aurel")   net:Drop("Bryn")   -- /reload, or the client goes away (its player stays in the raid)
+-- The game's server for the whole raid (M4-9): what one player does that every raid member's client reads.
+--   net:Roll("Bryn", 87)                 the server's roll message (CHAT_MSG_SYSTEM) on every client in the raid
+--   net.rolls = { Bryn = { 87, 40 } }    what the next RandomRoll(1, 100) of a client gives (a click on a popup's Roll);
+--                                          the client's own RandomRoll goes to every raid client through net:Roll
+--   net:Loot("Bryn", link)               the loot message (CHAT_MSG_LOOT) of a player, on every client in the raid
+--   net:Encounter(601, "Boss", "start" | "kill" | "wipe")   ENCOUNTER_START / END on every client
+--   net:Lockdown(true | false)           the chat lockdown (no addon message goes out) on every client
+--   net:Each(function(c) ... end)        runs on every client, then checks its errors
 -- A Lua error caught by any client's error handler fails the test at once.
 local H, T = ...
 
@@ -72,6 +80,14 @@ local function afterBoot(net, c)
 	if c.opts.version then P.addonVersion = c.opts.version end
 	if c.opts.pv then P.VERSION = c.opts.pv end
 	if c.opts.pm then P.MIN = c.opts.pm end
+	-- RandomRoll: the server answers to the whole raid, with the value the test planned (50 when it planned none)
+	c.E.RandomRoll = function(lo, hi)
+		local rolls = c.Mock.loot.rolls
+		rolls[#rolls + 1] = { lo = lo, hi = hi }
+		local planned = net.rolls and net.rolls[c.name]
+		local value = planned and table.remove(planned, 1) or 50
+		net:Roll(c.name, value, lo, hi)
+	end
 	if c.opts.after then c.opts.after(c) end
 end
 
@@ -172,6 +188,47 @@ function Net:Advance(seconds)
 		self.elapsed = self.elapsed + dt
 		self:Deliver()
 	end
+end
+
+-- Runs fn(client) on every client, in the order they logged in, and fails on a Lua error of any of them.
+function Net:Each(fn)
+	for _, c in ipairs(self.order) do
+		fn(c)
+		checkErrors(c)
+	end
+end
+
+-- The server's roll message of `name` on every client in the raid (a player without the addon rolls with /roll too).
+function Net:Roll(name, value, lo, hi)
+	for _, c in ipairs(self.order) do
+		if inRaid(self, c.name) then
+			c.Mock.loot.Roll(name, value, lo or 1, hi or 100)
+			checkErrors(c)
+		end
+	end
+end
+
+-- The loot message of `name` (the item reached their bags) on every client in the raid; the player's own client reads
+-- it as "You receive loot".
+function Net:Loot(name, link)
+	for _, c in ipairs(self.order) do
+		if inRaid(self, c.name) then
+			c.Mock.loot.Receive(c.name ~= name and name or nil, link)
+			checkErrors(c)
+		end
+	end
+end
+
+-- A boss encounter on every client: "start", "kill" or "wipe".
+function Net:Encounter(id, name, what)
+	self:Each(function(c)
+		if what == "start" then c.Mock.encounter.Start(id, name) else c.Mock.encounter.End(id, name, what == "kill") end
+	end)
+end
+
+-- The chat lockdown on every client.
+function Net:Lockdown(on)
+	self:Each(function(c) c.Mock.chat.lockdown = on and true or false end)
 end
 
 -- How many messages of addon-message prefix `prefix` and chat type `chatType` client `name` sent so far.

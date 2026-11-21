@@ -715,6 +715,30 @@ dove il testo non decideva (tutte modificabili):
 - **Il clic del ML.** L'annuncio parte dal clic su "Avvia sessione" o "Conferma"; una conferma automatica (`awardMode = auto`)
   non ha un clic dietro: se il gioco chiedesse un'azione fisica, la riga aspetterebbe in coda. Da verificare in gioco (S4).
 
+**Come è fatto (M4-9).** Un boss intero gira offline in `Tests/test_sim_boss.lua` sul simulatore di rete (`Tests/sim/sim.lua`):
+un raid da 40, di cui 39 client completi dell'addon (il master looter Guild Master, un officer, 37 raider) e un giocatore
+senza addon. **Nulla è sostituito**: il registro della gilda dai dati salvati, il cancello dei permessi sui ranghi letti dal
+roster, la serata aperta dal ML (che fa partire il controllo dell'addon), il protocollo, i popup cliccati, la finestra del ML
+cliccata, il lettore dei roll, la consegna e gli annunci sono i moduli veri; la season di prova si apre con `Season.Open` sul
+registro della gilda, perché nessuna finestra la apre ancora. Il simulatore fa ora anche da **server del raid**: un roll
+(anche quello del pulsante del popup, `RandomRoll`), un messaggio di bottino, un incontro e il lockdown della chat arrivano a
+tutti i client del raid. La storia: il pull e il combattimento bloccano la chat, il ML apre il corpo durante il blocco (la
+raccolta aspetta), l'avviso "1 membro non può rollare" va in `/raid`; il primo pezzo con dieci main-spec, cinque off-spec e
+gli altri che passano, un secondo blocco della chat a metà delle risposte (arrivano dopo), un `/roll` a mano del giocatore
+senza addon (scartato, "addon non attivo"), un pari a 95 e il reroll fra i due, la conferma con il master loot e la ricevuta;
+il secondo pezzo con il `/reload` di un raider e del ML a metà del round (la card torna con la risposta, la sessione torna
+com'era, il corpo chiuso dal `/reload` lascia il pezzo in attesa finché il ML non lo riapre); il terzo con un solo candidato e
+il round chiuso dal timer, consegnato con il **piano B** (il vincitore non è nella lista del master loot, il ML lo prende e
+lo scambia); poi la fine, i popup chiusi ovunque, tre `ITEM_AWARDED` nel registro, i crediti, due righe in `/raid` per pezzo.
+
+Il test ha trovato un **bug di integrazione**, corretto: dopo il `/reload` del master looter, `AddonCheck` riparte da zero e
+richiede la presenza a tutto il raid; finché le risposte non tornano, `SessionController:SyncRaid` passava alla sessione un
+raid in cui solo il ML aveva l'addon. Un pezzo aperto in quei secondi avrebbe escluso tutto il raid dal roll e la finestra
+avvisava "38 membri non possono rollare". Ora un membro che `AddonCheck` sta ancora aspettando (chiesto, non ancora risposto,
+online) tiene quello che la sessione sapeva; chi non aveva l'addon resta escluso. Da verificare in gioco: quanto ci mettono
+39 risposte dopo il `/reload` in un raid vero. La verifica del proprietario è [`docs/checklists/M4.md`](checklists/M4.md)
+(piano A e piano B; senza una season aperta la sessione non parte: la checklist dà una riga `/run` per aprirne una di prova).
+
 ### 4.1 L'addon è obbligatorio: chi non ce l'ha
 
 Tutti i raider devono avere l'addon attivo. L'addon lo verifica da solo e aiuta GM, officer e master looter a

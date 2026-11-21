@@ -416,13 +416,26 @@ function SC:Tick()
 	self:Step({ type = "TICK" })
 end
 
--- The raid as AddonCheck sees it: who is present, who can roll.
+-- The raid as AddonCheck sees it: who is present, who can roll. A member AddonCheck still waits for (asked and not
+-- answered yet: after a /reload or a disconnection of this client every member is asked again) keeps what the session
+-- knew, so the raid is not left out of an item that opens before the answers are back (M4-9).
 function SC:SyncRaid()
 	local s = self.session
 	if not s or s.state == "ENDED" or self.readOnly or not ns.AddonCheck then return end
-	local raid = ns.AddonCheck.raid
+	local AC = ns.AddonCheck
+	local raid = AC.raid
 	if type(raid) ~= "table" or not raid.inRaid then return end
-	local input = ns.AddonCheck:RaidInput()
+	local input = AC:RaidInput()
+	local known = s.raid and s.raid.addon
+	if type(known) == "table" and type(input.addon) == "table" then
+		for name in pairs(input.present or {}) do
+			local row = raid.members and raid.members[name]
+			if known[name] == true and not input.addon[name] and AC:StateOf(name) == "WAITING"
+				and not (row and row.online == false) then
+				input.addon[name] = true
+			end
+		end
+	end
 	input.type = "SET_RAID"
 	self:Step(input)
 end

@@ -130,7 +130,7 @@ La proposta successiva porta la nota *È una nuova proposta dopo un rifiuto.*
 
 - **Pausa** ferma i timer e i passi automatici e conserva il tempo rimasto; **Riprendi** continua. I tuoi pulsanti funzionano anche in pausa.
 - La sessione non apre né chiude nulla durante un combattimento col boss o un lockdown della chat: aspetta e prosegue dopo. Un roll che il gioco ha nascosto durante il lockdown viene letto quando finisce, e il round non si chiude prima.
-- Se fai `/reload` o ti disconnetti, la sessione torna come l'hai lasciata, anche a metà di un reroll.
+- Se fai `/reload` o ti disconnetti, la sessione torna come l'hai lasciata, anche a metà di un reroll: scrivi `/fdcp` per rivedere la finestra. Al raid viene chiesto di nuovo chi ha l'addon; mentre tornano le risposte ognuno tiene lo stato che la sessione conosceva, così nessuno resta fuori dal roll successivo. La finestra del bottino si chiude con un `/reload`: un pezzo che confermi prima di riaprire il corpo aspetta in **Da consegnare** e viene consegnato appena apri il corpo.
 
 ## Gli altri officer
 

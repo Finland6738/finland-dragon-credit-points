@@ -112,9 +112,11 @@ M4 depends on M0, M2 and M3. Until the spike results arrive, every step builds p
 - Analysis: §12 (M4 exit)
 - Scope: an end-to-end simulation (40 clients, lockdown windows, a member without the addon, a `/reload` mid-session, a tie and a reroll) in `Tests/sim/`; `docs/checklists/M4.md` for the owner (a whole boss in game, plan A and plan B paths).
 - Done when:
-  - [ ] The simulation passes in CI.
+  - [x] The simulation passes in CI.
   - [ ] The owner confirms a whole boss handled by the addon. *(in game)*
 - Tests: `Tests/test_sim_boss.lua`.
+- Checklist: [`docs/checklists/M4.md`](../checklists/M4.md) (English, each item also in Italian; plan A and plan B paths, and the open items of every M4 step).
+- Note: the raid is 40 members, 39 of them whole clients of the addon (the master looter, an officer, 37 raiders) and one player without it; nothing is stubbed. The simulator gained the game's server for the whole raid (rolls, loot messages, encounters and the chat lockdown on every client). The simulation found one integration bug: after the master looter's `/reload` the session forgot who has the addon until the raid answered again ([`docs/ANALISI.md`](../ANALISI.md) §4, "Come è fatto (M4-9)").
 - Docs: checklist, README status (EN + IT), CHANGELOG.
 - Real client: the whole checklist.
 - Suggested model/effort: `opus` / medium
