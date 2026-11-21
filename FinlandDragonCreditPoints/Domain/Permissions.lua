@@ -35,7 +35,7 @@ Permissions.MAX_RANK = 9    -- a guild has at most 10 ranks, 0-9
 -- The permissions of §3.9, in its order.
 Permissions.LIST = {
 	"config.rules", "config.permissions", "season.manage", "night.run", "award.confirm", "council.member",
-	"credits.adjust", "roster.manage", "export.public", "view.attendance", "raid.addonCheck",
+	"credits.adjust", "roster.manage", "export.public", "view.attendance", "raid.addonCheck", "progress.edit",
 }
 local KNOWN = {}
 for _, p in ipairs(Permissions.LIST) do KNOWN[p] = true end
@@ -58,6 +58,7 @@ function Permissions.DefaultTable()
 		["export.public"] = OFF,
 		["view.attendance"] = OFF,
 		["raid.addonCheck"] = OFF,   -- and the master looter of the night (M3)
+		["progress.edit"] = OFF,     -- first kills entered or corrected by hand (PROGRESS_SET, M3-3b)
 	}
 end
 
@@ -72,7 +73,7 @@ Permissions.EVENT_PERMISSION = {
 	NIGHT_CLOSED = "night.run",
 	LINEUP_CHANGED = "night.run",
 	ENCOUNTER_KILLED = "night.run",
-	PROGRESS_SET = "night.run",
+	PROGRESS_SET = "progress.edit",
 	DROP_SEEN = "night.run",
 	ITEM_AWARDED = "night.run",
 	LEGENDARY_PROJECT_OPENED = "night.run",

@@ -361,18 +361,22 @@ describe("snapshots", function()
 end)
 
 describe("first kills", function()
-	it("are the oldest date of ENCOUNTER_KILLED and PROGRESS_SET per encounter", function()
+	it("PROGRESS_SET is guild-level: it needs no season, and its fields are checked", function()
 		local L = Lg().New()
-		local function ev(ts, t, p) assert(Lg().Append(L, { author = "Aurel", ts = ts, season = S, type = t, payload = p })) end
-		ev(1, "ENCOUNTER_KILLED", { encounterID = 610, difficulty = 1, time = 1, date = "2026-11-12" })
-		ev(2, "ENCOUNTER_KILLED", { encounterID = 610, difficulty = 1, time = 2, date = "2026-11-19" })
-		ev(3, "PROGRESS_SET", { encounterID = 611, faction = "Horde", date = "2026-10-01" })
-		ev(4, "PROGRESS_SET", { encounterID = 610, faction = "Alliance", date = "2026-01-01" })
-		ev(5, "ENCOUNTER_KILLED", { encounterID = 612, difficulty = 1, time = 5 })
-		deepEq(Lg().FirstKills(L, "Horde"), { [610] = "2026-11-12", [611] = "2026-10-01" })
-		local _, code = Lg().Append(L, { author = "Aurel", ts = 6, season = S, type = "PROGRESS_SET",
-			payload = { encounterID = 610, date = "12/11" } })
-		eq(code, "payload:date")
+		local function try(p, season)
+			return select(2, Lg().Append(L, { author = "Aurel", ts = 1, season = season, type = "PROGRESS_SET", payload = p }))
+		end
+		truthy(Lg().Append(L, { author = "Aurel", ts = 1, type = "PROGRESS_SET",
+			payload = { encounterID = 663, faction = "Nebulah", date = "2026-10-01" } }), "no season")
+		truthy(Lg().Append(L, { author = "Aurel", ts = 2, season = S, type = "PROGRESS_SET",
+			payload = { encounterID = 663, faction = "Nebulah", clear = true } }), "a season is allowed")
+		eq(try({ encounterID = 663, faction = "Nebulah", date = "12/11" }), "payload:date")
+		eq(try({ encounterID = 663, date = "2026-10-01" }), "payload:faction")
+		eq(try({ encounterID = 663, faction = "", date = "2026-10-01" }), "payload:faction")
+		eq(try({ encounterID = 0, faction = "Nebulah", date = "2026-10-01" }), "payload:encounterID")
+		eq(try({ encounterID = 663, faction = "Nebulah", clear = false }), "payload:clear")
+		eq(try({ encounterID = 663, faction = "Nebulah", clear = true, date = "2026-10-01" }), "payload:date")
+		eq(try({ encounterID = 663, faction = "Nebulah", date = "2026-13-01" }), "payload:date")
 	end)
 end)
 

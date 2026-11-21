@@ -46,7 +46,7 @@
 - Analysis: §7.1; [`docs/specs/site-export.md`](../specs/site-export.md) §3.3, §4, §5, §7
 - Scope: `Data/Instances.lua` (the raids of the pack: `instanceID`, the site slug, English name, size, bosses in the site's order with `encounterID` and English name) and `Data/Specs.lua` (`specID` → class, English name, role); `ENCOUNTER_KILLED` also written **outside an official night** when an editor of the ledger is in a guild raid (`InGuildParty` through Compat) inside an instance of the table; `PROGRESS_SET{encounterID, faction, date}` for a first kill before the addon or a correction (permission `progress.edit`, audited); `Domain/Progress.lua` (pure): the first kill per boss = the oldest of those events, the faction key from the setting "faction name on the site" (default `Nebulah` for Horde, `Nebulaa` for Alliance, editable by the GM), counts per instance; boss names shown in the client's language through `EJ_GetEncounterInfo` when Compat finds it, the table's names otherwise.
 - Done when:
-  - [ ] Kills inside and outside a night, a manual backfill and a correction give the expected first-kill date per boss in tests; a later kill never moves a date forward; nothing is written by a member without the rank.
+  - [x] Kills inside and outside a night, a manual backfill and a correction give the expected first-kill date per boss in tests; a later kill never moves a date forward; nothing is written by a member without the rank.
   - [ ] A real kill is recorded with the right encounter id and date. *(in game)*
 - Tests: `Tests/test_progress.lua`.
 - Docs: CHANGELOG; ANALISI §7.1 if the event shapes change.

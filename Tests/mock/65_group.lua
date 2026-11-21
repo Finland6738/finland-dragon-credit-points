@@ -1,6 +1,6 @@
 -- Mock client, part 6c: the party or raid (Accord, M1.3).
 --
--- Imitates: IsInGroup, IsInRaid, GetNumGroupMembers, GetRaidRosterInfo, UnitIsInMyGuild, and UnitGUID / UnitName /
+-- Imitates: IsInGroup, IsInRaid, GetNumGroupMembers, GetRaidRosterInfo, UnitIsInMyGuild, InGuildParty, and UnitGUID / UnitName /
 -- UnitExists for party1..4 and raid1..40 (the player's own answers stay those of Tests/mock/60_client.lua).
 -- Dump: IsInGroup, IsInRaid, GetNumGroupMembers, GetRaidRosterInfo are api.json globals; UnitIsInMyGuild and UnitGUID
 -- are in the Unit system. Whether GUIDs are readable inside instances is M0 check S7: Mock.group.secretGUIDs = true
@@ -10,6 +10,7 @@
 --   Mock.group.Set{ raid = false, members = { { name = "Ally", guid = "Player-1-...", inGuild = true, class = "MAGE",
 --                   level = 60, subgroup = 1 }, ... } }   -- the OTHER members; fires GROUP_ROSTER_UPDATE
 --   Mock.group.Leave()
+--   Mock.group.guildParty  true: InGuildParty() says the group is a guild group (false by default; Mock.SECRET hides it)
 --   Mock.group.invites     names given to C_PartyInfo.InviteUnit
 local Mock, H = ...
 local W = Mock.world
@@ -43,6 +44,11 @@ local function inGroup() return #group.members > 0 end
 
 function IsInGroup() return inGroup() end
 function IsInRaid() return inGroup() and group.raid end
+-- inGroup, numGuildPresent, numGuildRequired, xpMultiplier (the retail shape; [verify] on Forever).
+function InGuildParty()
+	if group.guildParty == Mock.SECRET then return Mock.SECRET, 0, 0, 1 end
+	return inGroup() and group.guildParty == true, 0, 0, 1
+end
 function GetNumGroupMembers() return inGroup() and (#group.members + 1) or 0 end
 
 -- The player is raid<n> at the end of the list, as the client may put them anywhere; party tokens never include them.

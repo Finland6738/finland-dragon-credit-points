@@ -37,6 +37,11 @@ local function withSpecs()
 	R().SpecInfo = function(id) return BY_ID[id] end
 end
 
+-- Data/Specs.lua plugs the real table in when the addon loads; these tests check the declaration without it.
+local function withoutSpecs()
+	R().SpecInfo = nil
+end
+
 local function ranks()
 	local h = P().NewHistory()
 	P().RecordRank(h, GM, 0, 0)
@@ -132,6 +137,7 @@ describe("the declaration", function()
 	end)
 
 	it("without the spec table the class and the role have to be declared", function()
+		withoutSpecs()
 		local L = newSeason()
 		local e, code = join(L, "Aurel", 2, { class = false })
 		isNil(e); eq(code, "CLASS_REQUIRED")
@@ -191,6 +197,7 @@ describe("the declaration", function()
 	end)
 
 	it("is refused for a season that does not exist or is closed, and for a second join", function()
+		withoutSpecs()
 		local L = newSeason()
 		local e, code = R().Join(L, { author = OFFICER, ts = 2, season = "S9", member = "Aurel", ms1 = 73, class = "WARRIOR",
 			role = "TANK" })
@@ -228,6 +235,7 @@ end)
 
 describe("the declaration is locked for the season", function()
 	it("a second declaration changes nothing: the first one counts", function()
+		withoutSpecs()
 		local L = newSeason()
 		assert(join(L, "Aurel", 2))
 		local e, code = join(L, "Aurel", 3, { ms1 = 72, ms2 = 71 })

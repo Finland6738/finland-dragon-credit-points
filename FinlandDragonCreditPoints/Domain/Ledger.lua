@@ -6,7 +6,7 @@
 --   author   the character that wrote it ("Name-Realm"); seq = that author's sequence, 1, 2, 3, ...
 --   id       author .. ":" .. seq, unique per author, so two officers never collide and a merge is a set union
 --   ts       seconds (the caller's clock: the domain never reads the time)
---   season   the season id; nil only for guild-level types (CONFIG_CHANGED, PERMISSIONS_CHANGED)
+--   season   the season id; nil only for guild-level types (CONFIG_CHANGED, PERMISSIONS_CHANGED, PROGRESS_SET)
 --   v        the schema version of the payload; older payloads are upgraded on read (Ledger.UPGRADES), a newer
 --            version or an unknown type is kept and forwarded (officer sync) but ignored by the computations
 --   payload  codes and numbers, never sentences
@@ -43,7 +43,7 @@ Ledger.SCHEMA = 1           -- the layout of the ledger table itself
 Ledger.MAX_SNAPSHOTS = 3    -- older snapshots are dropped (the events never are)
 Ledger.DECIMALS = 2         -- credits are rounded to this many places, as Pricing rounds costs
 
--- The event types of §8.3 and the current payload version of each. `guild` = the type has no season.
+-- The event types of §8.3 and the current payload version of each. `guild` = the type needs no season (it may carry one).
 Ledger.TYPES = {
 	SEASON_OPENED = { v = 1 },
 	SEASON_CLOSED = { v = 1 },
@@ -54,7 +54,7 @@ Ledger.TYPES = {
 	LINEUP_CHANGED = { v = 1 },
 	ROSTER_CHANGED = { v = 1 },
 	ENCOUNTER_KILLED = { v = 1 },
-	PROGRESS_SET = { v = 1 },
+	PROGRESS_SET = { v = 1, guild = true },   -- a first kill by hand may predate every season (M3-3b)
 	DROP_SEEN = { v = 1 },
 	ITEM_AWARDED = { v = 1 },
 	AWARD_VOIDED = { v = 1 },
@@ -570,19 +570,7 @@ function Ledger.IsVoided(L, id)
 	return false
 end
 
--- The first kill of every encounter: { [encounterID] = "YYYY-MM-DD" }, the oldest date among ENCOUNTER_KILLED (with
--- a date) and PROGRESS_SET (of `faction` when given) events, for the Progress export (docs/specs/site-export.md).
-function Ledger.FirstKills(L, faction)
-	local out = {}
-	for _, e in pairs(L.events) do
-		local p = (e.type == "ENCOUNTER_KILLED" or e.type == "PROGRESS_SET") and readable(e) and Ledger.Payload(e)
-		if p and p.date and (e.type == "ENCOUNTER_KILLED" or faction == nil or p.faction == nil or p.faction == faction) then
-			local cur = out[p.encounterID]
-			if not cur or p.date < cur then out[p.encounterID] = p.date end
-		end
-	end
-	return out
-end
+-- The first kills (Progress tab, progress.json) are Domain/Progress.lua's: Progress.FirstKills.
 
 -- Counts for the UI and the audit: { events, unreadable } (unknown types or newer versions kept for sync).
 function Ledger.Stats(L)

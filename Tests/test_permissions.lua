@@ -52,12 +52,12 @@ end
 describe("the permission table", function()
 	it("the preset of §3.9: GM only for config, seasons and credit corrections, officers for the rest", function()
 		local t = P().DefaultTable()
-		eq(#P().LIST, 11)
+		eq(#P().LIST, 12)
 		for _, p in ipairs(P().LIST) do notNil(t[p]) end
 		eq(t["config.rules"], 0); eq(t["config.permissions"], 0)
 		eq(t["season.manage"], 0); eq(t["credits.adjust"], 0)
 		for _, p in ipairs({ "night.run", "award.confirm", "council.member", "roster.manage", "export.public",
-			"view.attendance", "raid.addonCheck" }) do
+			"view.attendance", "raid.addonCheck", "progress.edit" }) do
 			eq(t[p], P().OFFICER, p)
 		end
 		truthy(P().Validate(t))

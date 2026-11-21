@@ -4,6 +4,8 @@
 -- C_Loot.IsLegacyLootModeEnabled, IsMasterLooter, GetLootThreshold, GetNumLootItems, GetLootSlotLink, GetLootSlotInfo,
 -- GetLootSlotType, GetLootSourceInfo, LootSlotHasItem, GetMasterLootCandidate, GiveMasterLoot, RandomRoll, the loot and roll
 -- format globals (RANDOM_ROLL_RESULT, LOOT_ITEM...), IsEncounterInProgress, GetInstanceInfo, GetRaidDifficultyID,
+-- EJ_GetEncounterInfo / EJ_GetInstanceInfo (Mock.journal: encounters[journalID] = { name, encounterID },
+-- instances[journalInstanceID] = { name, mapID }; empty by default, so the client "does not know" any entry),
 -- UnitIsGroupLeader / UnitIsGroupAssistant, C_RestrictedActions.{GetAddOnRestrictionState, IsAddOnRestrictionActive},
 -- the events LOOT_OPENED, LOOT_CLOSED, LOOT_SLOT_CLEARED, CHAT_MSG_SYSTEM, CHAT_MSG_LOOT, ENCOUNTER_START / END,
 -- PARTY_LOOT_METHOD_CHANGED.
@@ -155,6 +157,22 @@ function encounter.End(id, name, success)
 end
 
 function IsEncounterInProgress() return encounter.inProgress end
+
+-- The Encounter Journal: name, description, journalEncounterID, rootSectionID, link, journalInstanceID,
+-- dungeonEncounterID, instanceID (EJ_GetEncounterInfo) and name, description, bgImage, buttonImage1, loreImage,
+-- buttonImage2, dungeonAreaMapID, link, shouldDisplayDifficulty, mapID (EJ_GetInstanceInfo).
+W.journal = W.journal or { encounters = {}, instances = {} }
+Mock.journal = W.journal
+function EJ_GetEncounterInfo(journalID)
+	local e = W.journal.encounters[journalID]
+	if not e then return nil end
+	return e.name, "", journalID, 0, "", e.journalInstanceID or 0, e.encounterID, e.instanceID or 0
+end
+function EJ_GetInstanceInfo(journalInstanceID)
+	local i = W.journal.instances[journalInstanceID]
+	if not i then return nil end
+	return i.name, "", "", "", "", "", 0, "", false, i.mapID
+end
 function GetRaidDifficultyID() return encounter.raidDifficulty end
 function GetInstanceInfo()
 	local i = encounter.instance

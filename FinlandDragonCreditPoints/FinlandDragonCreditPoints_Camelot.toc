@@ -33,6 +33,9 @@ Domain\Season.lua
 Domain\Members.lua
 Domain\Roster.lua
 Domain\Nights.lua
+Data\Instances.lua
+Data\Specs.lua
+Domain\Progress.lua
 Domain\Rules.lua
 Domain\Presets.lua
 Domain\Permissions.lua
@@ -41,6 +44,7 @@ Adapters\GuildRanks.lua
 Adapters\Group.lua
 App\PermissionService.lua
 App\NightController.lua
+App\ProgressController.lua
 UI\Assets.lua
 UI\Theme.lua
 UI\Widgets.lua

@@ -14,6 +14,16 @@ The guild community site's WoW Forever page reads three files. FDCP writes all t
 
 Nebulah (Horde) and Nebulaa (Alliance) are two guilds in the game, so each one has its own addon data. Each guild exports only its own faction and keeps the other one's data as it is. The Guild Master can change the faction name the site uses in Settings › Site.
 
+## How first kills are recorded
+
+The Progress tab and `progress.json` show the date of the first kill of every boss. The addon already records them; the Progress tab that shows them comes later.
+
+- **In an official raid night**, the master looter's addon records every boss kill.
+- **Outside a raid night**, the addon of an officer who may run nights records a boss's first kill when the group counts as a guild group in the game and stands in a raid of the season's pack (Molten Core, Onyxia's Lair). A later kill of the same boss adds nothing. A season must be open.
+- **By hand.** An officer with the permission `progress.edit` can enter a first kill from before the addon, or the other guild's date as it appears on the site. A wrong date entered by hand can be corrected or removed. A date the addon recorded can only be replaced by an older one.
+
+The date never moves forward: the first kill is always the oldest date. Each change is a ledger event, so it appears in the audit. The faction name on the site is Nebulah for a Horde guild and Nebulaa for an Alliance guild, unless the Guild Master writes another name in the rules.
+
 ## How an officer exports
 
 - **Copy window (in game).** Open History › Export and choose a file. The text is already selected: press Ctrl+C and paste it on the site. "Full file" replaces the whole file. "Fragment" gives you only your part, to paste by hand.

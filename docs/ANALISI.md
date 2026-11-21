@@ -320,6 +320,7 @@ Permessi configurabili (ognuno con il rango minimo che lo ottiene; preset fra pa
 | `export.public` | Esportare la tabella per il sito e Discord | officer |
 | `view.attendance` | Vedere presenze e panchine | officer |
 | `raid.addonCheck` | Vedere chi non ha l'addon attivo e mandare l'avviso in `/raid` (§4.1) | officer (e il master looter della serata) |
+| `progress.edit` | Inserire, correggere o togliere a mano la prima uccisione di un boss (`PROGRESS_SET`, §7.1) | officer |
 
 Come si rende sicuro:
 
@@ -640,7 +641,7 @@ crediti.
   - **Formazione.** Tre stati: in raid (`RAID`, nel gruppo e gioca), panchina (`BENCH`, deciso dal ML, non gioca) e assente (`ABSENT`, ciò che resta). Un `LINEUP_CHANGED` contiene **solo i membri che sono cambiati**, tutti in un evento (un raid che si forma costa un evento, non quaranta), e porta l'ora (quella dell'evento) e il **boss di riferimento**: l'ultimo boss ucciso nella serata prima del cambio (nessuno prima della prima uccisione). Solo i main del pool entrano nella formazione (`NOT_MEMBER`); un alt nel raid conta per il suo main.
   - **Il gruppo guida la formazione.** A ogni lettura del gruppo (un secondo dopo una raffica di `GROUP_ROSTER_UPDATE`) e subito prima di scrivere una uccisione, chi è nel gruppo diventa `RAID` e chi se ne è andato `ABSENT`. Un membro in panchina resta in panchina finché non è nel gruppo e, se è nel gruppo, finché non rientra (o il ML lo toglie con `Unbench`). Se il client nasconde un nome dentro l'istanza (spike S7) la lettura **aggiunge soltanto**, non toglie nessuno. Gli sconosciuti (non nel pool) non cambiano nulla.
   - **Presenza per boss = lo stato al momento dell'uccisione.** Per ogni `ENCOUNTER_KILLED` della serata si ripetono i `LINEUP_CHANGED` che lo precedono in ordine canonico: i membri `RAID` sono presenti, quelli `BENCH` in panchina, e gli assenti sono il resto del pool **di quel momento** (già entrati, non inattivi, della fazione della serata). Chi muore o si disconnette ma resta nel raid è presente; chi entra dopo il pull ed è nel raid alla morte del boss è presente. Per membro e season `Nights.Attendance` dà serate giocate (in raid in un momento qualsiasi della serata), panchine (in panchina e mai in raid), boss presenti e boss possibili; `Nights.Played` è la tabella `nights` di `Members.LateJoinCredits` (la base `minNights` dei nuovi arrivati, §3.5). Il risultato non dipende dall'ordine con cui gli eventi arrivano (verificato mescolando).
-  - **Uccisioni.** Su `ENCOUNTER_END` con successo, dentro l'istanza della serata, il controller legge il gruppo, scrive la formazione e poi `ENCOUNTER_KILLED` (con `night`, `difficulty` = il `difficultyID` del client, `size` = `groupSize`, `time` e `date`). Un boss si registra **una volta per serata**: se due officer scrivono la stessa uccisione conta la prima (`Nights.Kills`), quindi la fusione è idempotente. Fuori da una serata, o in un'altra istanza, il controller non scrive nulla qui (lo fa M3-3b); `Nights.Kill` però già accetta una uccisione senza serata, e `Nights.KillsByEncounter` dà per ogni boss tutte le uccisioni, dentro o fuori da una serata, in ordine canonico: è ciò che leggerà `Domain/Progress.lua` (la prima uccisione è la più vecchia; `Ledger.FirstKills` la legge già).
+  - **Uccisioni.** Su `ENCOUNTER_END` con successo, dentro l'istanza della serata, il controller legge il gruppo, scrive la formazione e poi `ENCOUNTER_KILLED` (con `night`, `difficulty` = il `difficultyID` del client, `size` = `groupSize`, `time` e `date`). Un boss si registra **una volta per serata**: se due officer scrivono la stessa uccisione conta la prima (`Nights.Kills`), quindi la fusione è idempotente. Fuori da una serata, o in un'altra istanza, il controller della serata non scrive nulla: lo fa `App/ProgressController.lua` (M3-3b, §7.1); `Nights.Kill` accetta una uccisione senza serata, e `Nights.KillsByEncounter` dà per ogni boss tutte le uccisioni, dentro o fuori da una serata, in ordine canonico.
   - **Chi scrive.** Solo il client dell'officer che ha aperto la serata (o del ML indicato in `ml`) registra formazione e uccisioni; gli altri officer non duplicano. Aprire, chiudere e cambiare la formazione richiedono `night.run`; le presenze si leggono solo con `view.attendance` (`NightController:Attendance`, officer nel preset), e nessuna esportazione pubblica le contiene.
   - **Scelte fatte dove il testo non decideva (tutte modificabili):** la presenza è quella **al momento dell'uccisione** (non al pull); la difficoltà del client diventa `normal` / `veteran` dal nome che il client dà (anche "veterano") e altrimenti da una tabella (`Nights.DIFFICULTY_IDS`: 14 → normal, 15 → veteran) che è una **ipotesi** finché lo spike non dà gli id veri di Forever; l'officer può sempre indicare la difficoltà a mano; il ledger salva il `LINEUP_CHANGED` come differenza e non l'elenco completo a ogni cambio; la serata si apre anche prima di entrare nell'istanza, scegliendo istanza e difficoltà.
 - **Pianificazione della serata**: dall'evento di calendario (se esiste) o creata a mano. L'addon propone chi
@@ -695,6 +696,38 @@ assegnazioni annullate spariscono, quelle corrette hanno il costo corretto, e i 
 dell'addon. I crediti iniziali dei nuovi arrivati diventano righe sintetiche "Crediti iniziali" (costo 2 e 1) finché il
 sito non ha un campo `start`; gli oggetti alla banca di gilda non si esportano. Le estensioni `start` / `kind` restano
 dietro un'opzione spenta ([issue #3](https://github.com/Finland6738/finland-dragon-credit-points/issues/3)).
+
+**Prime uccisioni (M3-3b).** Le tabelle fisse `Data/Instances.lua` (i raid del pacchetto: `instanceID`, slug del sito,
+nome inglese, dimensione, boss nell'ordine del sito con `encounterID` e nome inglese, più gli id dell'Encounter Journal
+solo per mostrare i nomi nella lingua del client) e `Data/Specs.lua` (`specID` → classe, nome inglese, ruolo; si
+aggancia a `Roster.SpecInfo`) sono dati, non testo. `Domain/Progress.lua` (puro) calcola la prima uccisione per boss e
+per **chiave di fazione del sito**:
+
+- la chiave della gilda viene dalla nuova sezione delle regole `site.factionName` (la scrive il GM con le altre regole,
+  `CONFIG_CHANGED`); vuota vuol dire il default della fazione del client, `Nebulah` per l'Orda e `Nebulaa` per
+  l'Alleanza; una chiave è di 1-32 caratteri fra lettere, cifre, spazio, `_` e `-`;
+- `ENCOUNTER_KILLED` registrati (dentro o fuori da una serata) contano solo per la chiave della gilda;
+  `PROGRESS_SET{encounterID, faction, date}` o `PROGRESS_SET{encounterID, faction, clear = true}` è il valore inserito a
+  mano per una chiave qualsiasi (una prima uccisione precedente all'addon, o la data dell'altra gilda letta sul sito):
+  è un evento **di gilda** (la season non serve: un recupero può precedere ogni season), richiede `progress.edit`
+  (officer nel preset) e finisce nell'audit; per un boss e una chiave vale **l'ultimo** `PROGRESS_SET` in ordine
+  canonico, così una correzione sostituisce il valore precedente (anche con una data più recente: si corregge un
+  errore di battitura) e `clear` lo toglie;
+- la prima uccisione = la data più vecchia fra il valore a mano e, per la propria chiave, le uccisioni registrate:
+  un'uccisione successiva non sposta mai la data in avanti, e una correzione a mano non può superare un'uccisione
+  registrata dall'addon (a parità di giorno vale l'uccisione registrata);
+- `Progress.Build` dà per ogni istanza della tabella i boss nell'ordine del sito, la data e la fonte (`KILL` / `SET`)
+  per chiave e i conteggi `uccisi/totale` per chiave (quello che leggeranno la scheda Progress, M3-8b, e
+  l'esportazione, M6-4).
+
+`App/ProgressController.lua` scrive `ENCOUNTER_KILLED` **fuori da una serata ufficiale** su `ENCOUNTER_END` con
+successo quando: il giocatore è in un raid della tabella, nessuna serata è aperta in quell'istanza (altrimenti scrive la
+serata), il gioco dice che il gruppo è un gruppo di gilda (`InGuildParty` tramite Compat), una season è aperta (l'evento
+le appartiene), il giocatore ha `night.run` e il registro non ha ancora un'uccisione di quel boss. Basta la prima: le
+uccisioni di farm non riempiono il registro, e due officer nello stesso raid scrivono al più una uccisione ciascuno (la
+data più vecchia vince comunque). Fuori da una season non si registra nulla in automatico: si usa `PROGRESS_SET`. I nomi
+dei boss e delle istanze si mostrano nella lingua del client con `EJ_GetEncounterInfo` / `EJ_GetInstanceInfo` quando
+la voce del diario è proprio quell'incontro o quella mappa, altrimenti quelli inglesi della tabella.
 
 Due modi di esportare: la **finestra di copia** (Storico › Esporta: file completo o frammento, già selezionato,
 perché un addon non scrive file né usa la rete) e, consigliato, lo script **`tools/site_export.py`** che legge le
@@ -769,9 +802,9 @@ tools/ check_docs.py, build/release
   sono codici (`WRONG_WINNER`), mai frasi. Gli **snapshot** coprono esattamente gli eventi fino ai "fin dove sono
   arrivato" per autore (il più alto `seq` senza buchi), quindi gli eventi arrivati dopo, anche se più vecchi, stanno
   sempre nella coda: snapshot + coda = registro completo. Per la sincronizzazione (M6) il registro dà gli stessi segni
-  (`Heads`), gli eventi che mancano a chi ha certi segni (`Since`) e i buchi (`Gaps`). `FirstKills` dà la prima
-  uccisione per boss da `ENCOUNTER_KILLED{encounterID, date}` e `PROGRESS_SET{encounterID, faction, date}` (date
-  `AAAA-MM-GG` scritte dall'adapter), per `progress.json`.
+  (`Heads`), gli eventi che mancano a chi ha certi segni (`Since`) e i buchi (`Gaps`). La prima uccisione per
+  boss (da `ENCOUNTER_KILLED{encounterID, date}` e `PROGRESS_SET{encounterID, faction, date | clear}`, date
+  `AAAA-MM-GG` scritte dall'adapter) la calcola `Domain/Progress.lua` (M3-3b, §7.1), per `progress.json`.
 - **Versioni dello schema**: migrazioni esplicite a ogni cambio (come ADR 0011 di Accord). I dati di ogni gilda stanno sotto la chiave `<reame>/<gilda>` (`db.global.guilds`), così gilde diverse non si mescolano mai; un database scritto da una versione più nuova dell'addon si apre in **sola lettura** (nessuna migrazione, nessuna scrittura).
 
 ### 8.4 Rete e fiducia
@@ -900,6 +933,8 @@ Tutto ciò che è in §3 più:
 - pesi delle statistiche per spec, soglie di upgrade, auto-pass, visibilità dei verdetti;
 - annunci in chat raid (sì/no, testo), suoni, dimensione e posizione dei popup;
 - **permessi per rango di gilda** (§3.9), modificabili solo dal GM;
+- **nome della fazione sul sito** (`site.factionName`, §7.1): vuoto = `Nebulah` per l'Orda e `Nebulaa` per
+  l'Alleanza; lo cambia il GM con le regole;
 - **blocco della configurazione durante la season**: solo il GM può modificare costi o regole, a season aperta
   deve confermare esplicitamente e la modifica finisce nell'audit, così nessuno cambia le regole a metà.
 

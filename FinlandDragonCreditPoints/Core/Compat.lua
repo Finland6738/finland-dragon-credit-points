@@ -384,6 +384,15 @@ function Group.InGroup() return (first("IsInGroup")) and true or false end
 -- Members of the group including the player (0 when alone or unknown).
 function Group.Size() return num((first("GetNumGroupMembers"))) or 0 end
 
+-- true when the group counts as a guild group (InGuildParty: enough guild members in it), false when it does not, nil
+-- when the client does not say (missing, failing or hidden). [verify] on WoW Forever: the share of guild members the
+-- server requires. M3-3b records a first kill outside an official night only in a guild group.
+function Group.InGuildParty()
+	local v, state = first("InGuildParty")
+	if state == AVAILABLE then return v and true or false end
+	return nil
+end
+
 function Group.IsLeader() return (first("UnitIsGroupLeader", "player")) and true or false end
 function Group.IsAssistant() return (first("UnitIsGroupAssistant", "player")) and true or false end
 
@@ -463,6 +472,27 @@ end
 
 function Encounter.RaidDifficultyID()
 	return num((first("GetRaidDifficultyID")))
+end
+
+-- The name of a boss in the client's language from the Encounter Journal (EJ_GetEncounterInfo(journalID)), or nil.
+-- With `encounterID` (the DungeonEncounter id of ENCOUNTER_END) the journal entry must say it is that encounter (its
+-- 7th value), so a wrong journal id in a fixed table never shows another boss's name.
+function Encounter.JournalName(journalID, encounterID)
+	if type(journalID) ~= "number" then return nil end
+	local v = readable("EJ_GetEncounterInfo", journalID)
+	if not v or not str(v[1]) then return nil end
+	if encounterID ~= nil and num(v[7]) ~= nil and v[7] ~= encounterID then return nil end
+	return v[1]
+end
+
+-- The name of an instance in the client's language from the Encounter Journal (EJ_GetInstanceInfo(journalInstanceID)),
+-- or nil. With `instanceID` the journal entry must name the same map when it says one (its 10th value).
+function Encounter.JournalInstanceName(journalInstanceID, instanceID)
+	if type(journalInstanceID) ~= "number" then return nil end
+	local v = readable("EJ_GetInstanceInfo", journalInstanceID)
+	if not v or not str(v[1]) then return nil end
+	if instanceID ~= nil and num(v[10]) ~= nil and v[10] ~= instanceID then return nil end
+	return v[1]
 end
 
 ---------------------------------------------------------------------------------------------------------------------
@@ -1098,6 +1128,8 @@ local CAPS = {
 	{ "encounter.IsEncounterInProgress", "encounter", "IsEncounterInProgress", call = true },
 	{ "encounter.GetInstanceInfo", "encounter", "GetInstanceInfo", call = true },
 	{ "encounter.GetRaidDifficultyID", "encounter", "GetRaidDifficultyID", call = true },
+	{ "encounter.EJ_GetEncounterInfo", "encounter", "EJ_GetEncounterInfo", note = "[verify] journal ids of the pack" },
+	{ "encounter.EJ_GetInstanceInfo", "encounter", "EJ_GetInstanceInfo", note = "[verify] journal ids of the pack" },
 	{ "item.C_Item.GetItemInfo", "item", "C_Item.GetItemInfo" },
 	{ "item.C_Item.GetItemInfoInstant", "item", "C_Item.GetItemInfoInstant" },
 	{ "item.C_Item.GetDetailedItemLevelInfo", "item", "C_Item.GetDetailedItemLevelInfo", note = "[verify S5b]" },
@@ -1130,6 +1162,7 @@ local CAPS = {
 	{ "group.GetRaidRosterInfo", "group", "GetRaidRosterInfo", note = "[verify] secret values in instances" },
 	{ "group.UnitIsGroupLeader", "group", "UnitIsGroupLeader", call = true, args = { "player" } },
 	{ "group.UnitIsInMyGuild", "group", "UnitIsInMyGuild" },
+	{ "group.InGuildParty", "group", "InGuildParty", call = true, note = "[verify] guild group on Forever" },
 	{ "player.UnitGUID", "player", "UnitGUID", call = true, args = { "player" } },
 	{ "player.UnitClass", "player", "UnitClass", call = true, args = { "player" } },
 	{ "player.GetLocale", "player", "GetLocale", call = true, note = "[verify S8a]" },

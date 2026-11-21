@@ -143,7 +143,7 @@ Esempi completi con nomi inventati. Le date sono quelle di una season di prova.
 | `cover`, `locked`, istanze "in arrivo" | decisi dal sito | **mai scritti da FDCP**: lo script li conserva; la finestra di copia li omette |
 | `bosses[]` | i boss nell'ordine della tabella fissa | tabella fissa (`encounterID → nome inglese`) |
 | `name` | nome inglese del boss | tabella fissa: un client italiano restituisce nomi italiani |
-| `Nebulah` / `Nebulaa` | data `AAAA-MM-GG` della **prima uccisione** di quella fazione, o `null` | la più vecchia fra `ENCOUNTER_KILLED` e `PROGRESS_SET` per quel boss (M3-3b); FDCP scrive solo la chiave della **propria** fazione |
+| `Nebulah` / `Nebulaa` | data `AAAA-MM-GG` della **prima uccisione** di quella fazione, o `null` | `Progress.FirstKills` (M3-3b): la più vecchia fra le `ENCOUNTER_KILLED` della gilda e l'ultimo `PROGRESS_SET` di quel boss per quella chiave; FDCP scrive solo la chiave della **propria** fazione |
 
 ## 4. Che cosa FDCP deve registrare
 
@@ -160,7 +160,10 @@ Esempi completi con nomi inventati. Le date sono quelle di una season di prova.
 | Crediti iniziali dei nuovi arrivati | `LATE_JOIN{player, start}` (media del roster) | M2-4 |
 
 La prima uccisione **non** si salva come numero a parte: si ricava dal registro (la data più vecchia), come i
-crediti. Le date si salvano come tempo del server; l'esportazione le scrive nel giorno locale del raid.
+crediti. Come è fatto (M3-3b): `PROGRESS_SET` è un evento di gilda (la season non serve), `faction` è la chiave del sito,
+per un boss e una chiave vale l'ultimo `PROGRESS_SET` (una correzione sostituisce il precedente, `clear = true` lo
+toglie) e non può superare un'uccisione registrata; un'uccisione fuori da una serata si scrive solo se il registro non
+ne ha ancora una di quel boss e serve una season aperta; i dettagli sono in `docs/ANALISI.md` §7.1. Le date si salvano come tempo del server; l'esportazione le scrive nel giorno locale del raid.
 
 **Correzioni e annullamenti nel formato attuale.** Il controllo del sito accetta solo `cost` 0, 1 o 2 e la tabella
 mostrerebbe un costo negativo come "+-1": quindi **niente righe con costo negativo** (l'analisi lo prevedeva, ma il
@@ -183,7 +186,8 @@ Le due gilde della community (Nebulah in Orda, Nebulaa in Alleanza) sono **due g
 gilda ha il proprio registro FDCP (chiave `<reame>/<gilda>`, M1-4) e i messaggi dell'addon non attraversano le
 fazioni. Quindi:
 
-- l'impostazione **"Nome della fazione sul sito"** (scheda Impostazioni › Sito, solo GM) vale per default `Nebulah`
+- l'impostazione **"Nome della fazione sul sito"** (scheda Impostazioni › Sito, solo GM; nelle regole è la sezione
+  `site.factionName`, M3-3b) vale per default `Nebulah`
   se la gilda è dell'Orda e `Nebulaa` se è dell'Alleanza (`UnitFactionGroup("player")`); un'altra gilda che usa
   l'addon scrive il nome che usa il proprio sito;
 - `roster.json`: FDCP scrive solo i giocatori della propria fazione; lo script conserva quelli dell'altra;

@@ -10,6 +10,7 @@
 --   council   { requirePresent, vote }                                    §3.6 (the rank is the permission council.member)
 --   legendary { mode, chainPieceCost }                                    §3.7
 --   bench     { creditEffect }                                            §3.1
+--   site      Domain/Progress.lua { factionName }: the guild's key on the community site   §7.1 (M3-3b)
 -- Rules.DefaultConfig() is the "Patto" preset (§3.1); Domain/Presets.lua builds the others from it.
 --
 -- The rules live in the ledger, never apart: CONFIG_CHANGED{rules, preset?, confirmed?} carries the whole validated
@@ -27,7 +28,7 @@ local type, pairs, ipairs, tostring, floor, sort = type, pairs, ipairs, tostring
 
 local function Ledger() return ns.Ledger end
 
-Rules.SECTIONS = { "night", "members", "season", "cost", "priority", "session", "council", "legendary", "bench" }
+Rules.SECTIONS = { "night", "members", "season", "cost", "priority", "session", "council", "legendary", "bench", "site" }
 Rules.AWARD_MODES = { confirm = true, auto = true, council = true }
 Rules.LEGENDARY_MODES = { council = true, vote = true, roll = true, queue = true }
 Rules.BENCH_EFFECTS = { none = true }
@@ -61,6 +62,7 @@ function Rules.DefaultConfig()
 		council = { requirePresent = true, vote = false },
 		legendary = { mode = "council", chainPieceCost = 2 },
 		bench = { creditEffect = "none" },
+		site = ns.Progress.DefaultConfig(),
 	}
 end
 
@@ -141,6 +143,7 @@ function Rules.Validate(config)
 	if type(c.bench) == "table" and not Rules.BENCH_EFFECTS[c.bench.creditEffect] then
 		add(problems, "bench.creditEffect")
 	end
+	if type(c.site) == "table" then sub(problems, "site", ns.Progress.ValidateConfig(c.site)) end
 	sort(problems)
 	return #problems == 0, problems
 end

@@ -14,6 +14,16 @@ La pagina WoW Forever del sito della community legge tre file. FDCP li scrive tu
 
 Nebulah (Orda) e Nebulaa (Alleanza) sono due gilde diverse nel gioco, quindi ognuna ha i propri dati nell'addon. Ogni gilda esporta solo la propria fazione e lascia com'è la parte dell'altra. Il GM può cambiare il nome della fazione usato dal sito in Impostazioni › Sito.
 
+## Come si registrano le prime uccisioni
+
+La scheda Progress e `progress.json` mostrano la data della prima uccisione di ogni boss. L'addon le registra già; la scheda Progress che le mostra arriva più avanti.
+
+- **In una serata ufficiale** l'addon del master looter registra ogni boss ucciso.
+- **Fuori da una serata** l'addon di un officer che può guidare le serate registra la prima uccisione di un boss quando per il gioco il gruppo è un gruppo di gilda e si trova in un raid del pacchetto della season (Molten Core, Onyxia's Lair). Un'uccisione successiva dello stesso boss non aggiunge nulla. Serve una season aperta.
+- **A mano.** Un officer con il permesso `progress.edit` può inserire una prima uccisione precedente all'addon, o la data dell'altra gilda come appare sul sito. Una data sbagliata inserita a mano si può correggere o togliere. Una data registrata dall'addon si può sostituire solo con una più vecchia.
+
+La data non si sposta mai in avanti: la prima uccisione è sempre la data più vecchia. Ogni modifica è un evento del registro, quindi compare nell'audit. Il nome della fazione sul sito è Nebulah per una gilda dell'Orda e Nebulaa per una dell'Alleanza, a meno che il GM non scriva un altro nome nelle regole.
+
 ## Come esporta un officer
 
 - **Finestra di copia (in gioco).** Apri Storico › Esporta e scegli il file. Il testo è già selezionato: premi Ctrl+C e incollalo nel sito. "File completo" sostituisce tutto il file. "Frammento" ti dà solo la tua parte, da incollare a mano.
