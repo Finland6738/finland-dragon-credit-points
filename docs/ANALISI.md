@@ -583,7 +583,8 @@ traduzione; i codici passano da `Domain/Reasons.lua`. Scelte fatte dove il testo
 - **Dati.** `SessionController:Step` ora emette `SESSION_CHANGED` per ogni input accettato (anche un roll o una risposta,
   senza effetti), non solo per quelli con effetti: la finestra si aggiorna a ogni roll. Il timer si ridisegna ogni secondo
   solo mentre la scheda è visibile.
-- **Non fatto qui:** la consegna del pezzo (`GiveMasterLoot`, scambio: M4-7), l'annuncio in `/raid` (M4-8), il voto del
+- **Non fatto qui:** la consegna del pezzo (`GiveMasterLoot`, scambio: M4-7), l'annuncio in `/raid` (M4-8, fatto: vedi
+  sotto), il voto del
   council (M5-8); il popup del giocatore è M4-6, qui sotto.
 - **Test.** `Tests/test_ui_ml_session.lua`: un boss di cinque pezzi giocato solo dai pulsanti della finestra, Modifica senza e
   con motivo, la differenza dalla regola, Rifiuta, Correggi, Pausa, i roll senza addon, l'avviso, la vista in sola lettura.
@@ -685,6 +686,34 @@ non decideva (tutte modificabili):
   l'ordine con il messaggio di scambio completato, il nome del partner (`UnitName("NPC")`), la leggibilità di
   `CHAT_MSG_LOOT` in istanza, la raccolta della sessione quando non c'è master loot (non c'è un corpo da leggere: finché lo
   spike non dice come, la sessione parte dal ML con master loot e il piano B riguarda solo la consegna).
+
+**Come è fatto (M4-8).** `Domain/Announce.lua` (Lua puro: i testi, i segnaposto, la divisione in righe) e `App/Announcer.lua`
+(la coda e l'invio), che ascolta `SESSION_CHANGED` del controller e riusa quello che M3-6 ha costruito per l'avviso
+"addon mancante": `Notice.TAG` ("[FDCP] "), il limite di 255 byte, `Compat.Chat` e il blocco durante un incontro. Scelte fatte
+dove il testo non decideva (tutte modificabili):
+
+- **Che cosa si scrive.** Alla partenza della sessione (`ANNOUNCE_ITEMS`) una riga per pezzo con il link, la categoria e il
+  costo (regola della gilda: la categoria si annuncia prima del roll, e il primo roll si apre dopo quell'effetto); una riga di
+  "Correzione" se il ML corregge un pezzo dopo la partenza; alla conferma (`AWARDED`) una riga con pezzo, vincitore (senza
+  reame), costo e la **frase del perché**, composta dai codici di motivo (`Reasons.Text("REASON", codice, lingua)`, gruppo
+  `REASON`). Le segnalazioni (`FLAG`) sono per il ML e non vanno al raid. Un pezzo per la banca o da disincantare ha il suo
+  testo fisso ("alla banca di gilda", "da disincantare"). Il costo è quello pieno (la risposta di tier più basso, main-spec nel
+  preset); "gratis", "1 credito", "N crediti" o "costo deciso dal council".
+- **Lingua della gilda (§8.5).** Ogni parola viene da `Locale.Text(Locale.GuildLanguage(), chiave)`, mai dalla lingua del
+  client del ML: categorie (`ML_CAT_*`), unità, frasi dei motivi e testi predefiniti; i numeri seguono la lingua della gilda.
+  Il registro resta neutro (codici): la frase si compone solo al momento di scrivere in chat.
+- **Sezione `announce` delle regole** (`enabled`, `itemText`, `resultText`, `reason`), con gli stessi modi dell'avviso: solo il
+  Guild Master la cambia, come un `CONFIG_CHANGED` con l'audit (`AddonNotice.SaveSection`, ora condivisa con
+  `AddonNotice:SaveConfig`). Segnaposto: `{item}`, `{category}`, `{cost}` per l'annuncio del pezzo; `{item}`, `{winner}`,
+  `{cost}`, `{category}`, `{reason}` per il risultato. Un segnaposto sconosciuto resta com'è; un testo vuoto usa quello
+  predefinito. Il preset ha tutto acceso. Non c'è ancora una finestra per modificarla (come per l'avviso, M5).
+- **Coda e invio.** Le righe aspettano in una coda (60 al massimo) e escono con `Flush()`: **mai durante un incontro** e solo
+  quando la chat le accetta (niente lockdown né restrizioni), quattro per volta; quello che non può uscire resta in coda e
+  un ticker di un secondo riprova fino a svuotarla. Fuori da un raid non si scrive niente (i popup e la finestra portano le
+  stesse notizie). Una riga che il gioco rifiuta cinque volte di fila svuota la coda (`ANNOUNCE_DROPPED`). Le righe si
+  dividono a 255 byte in uno spazio, mai dentro un link di oggetto, e ogni parte riparte con "[FDCP] ".
+- **Il clic del ML.** L'annuncio parte dal clic su "Avvia sessione" o "Conferma"; una conferma automatica (`awardMode = auto`)
+  non ha un clic dietro: se il gioco chiedesse un'azione fisica, la riga aspetterebbe in coda. Da verificare in gioco (S4).
 
 ### 4.1 L'addon è obbligatorio: chi non ce l'ha
 

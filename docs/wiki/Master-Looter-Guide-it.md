@@ -15,7 +15,7 @@ Questa pagina è per il **master looter**: chi apre il corpo del boss e guida il
 1. **Uccidi il boss.** Quando il boss muore l'addon apre una sessione sul tuo client. Durante il combattimento non si apre nulla: la sessione aspetta la fine del combattimento, di una restrizione dell'addon o del lockdown della chat.
 2. **Apri il corpo.** Quando apri la finestra del bottino la finestra principale si apre su **Loot › Sessione**. I pezzi pari o sopra la soglia sono elencati a sinistra, ciascuno con categoria e costo (per esempio *Gioiello · 1 credito*), proposti dall'addon dalla tabella della gilda. Se i drop sono stati letti durante un lockdown, la finestra dice che sono in attesa e li legge appena finisce.
 3. **Controlla la lista.** Seleziona un pezzo per vederlo a destra. Se una categoria o un costo è sbagliato, premi **Correggi** (vedi sotto). **Togli** toglie dalla lista un pezzo che non vuoi in sessione.
-4. **Premi Avvia la sessione.** Categorie e costi vanno al raid. Con le impostazioni solite della gilda (avanzamento automatico) il primo roll si apre da solo; altrimenti premi **Apri il roll** sul pezzo che vuoi.
+4. **Premi Avvia la sessione.** Categorie e costi vanno al raid, scritti anche in `/raid` ([vedi sotto](#annunci-in-raid)). Con le impostazioni solite della gilda (avanzamento automatico) il primo roll si apre da solo; altrimenti premi **Apri il roll** sul pezzo che vuoi.
 5. **Il roll.** Ogni raider con l'addon riceve un popup, risponde *Main-spec*, *Off-spec* o *Passo* (con un'etichetta e una nota facoltative) e rolla: vedi [[Rollare per il loot|Rolling-for-Loot-it]]. La parte destra della tua finestra si riempie man mano che arrivano risposte e roll: per ogni candidato i crediti, la risposta, il roll e una nota. Una barra sottile e un orologio contano il tempo del round. Il round si chiude da solo al timer o quando tutti hanno risposto e rollato; puoi chiuderlo prima con **Chiudi il round**. Se nessuno ha chiesto il pezzo in main-spec, il round off-spec si apre da solo; se due giocatori sono pari per crediti e roll, si apre un reroll fra loro.
 6. **La proposta.** Quando il round si chiude l'addon scrive **a chi, quanto e perché**, per esempio *Proposta: Bryn, 1 credito. Stessi crediti degli altri, roll più alto.* Il giocatore proposto è segnato nella lista. Sotto la frase, in ambra, ciò che va guardato (roll scartati, un costo che deve fissare il council, una parità che le regole non sciolgono, una proposta dopo un rifiuto).
 7. **Decidi tu:**
@@ -57,6 +57,23 @@ L'intestazione della scheda Sessione conta i pezzi ancora da consegnare.
 **Rollare tutto a fine serata.** Puoi rollare prima tutti i pezzi e consegnarli dopo: i pezzi restano nell'elenco, **Chiudi sessione** li tiene, e quando muore il boss successivo passano nell'elenco della sessione nuova, così non si perde nulla fra un boss e l'altro, nemmeno dopo un `/reload`. Quando riapri un corpo, i pezzi che lo aspettavano sono riprovati da soli (non quelli che il gioco ha rifiutato: aspettano il tuo clic).
 
 > **Non ancora verificato in gioco:** che un addon possa chiamare `GiveMasterLoot` da un clic, che la finestra del bottino e l'elenco del master loot si leggano come descritto, cosa portano gli eventi dello scambio e se i messaggi di bottino sono leggibili dentro un'istanza. Se un passaggio non funziona, il pezzo aspetta nell'elenco e lo consegni con uno scambio.
+
+## Annunci in /raid
+
+Tutto quello che l'addon scrive in `/raid` è scritto nella **lingua della gilda** scelta dal Guild Master nelle impostazioni, qualunque sia la lingua del tuo gioco, così tutto il raid legge le stesse parole. Il testo e l'interruttore acceso/spento sono del Guild Master (sezione `announce` delle regole).
+
+## Che cosa scrive l'addon in /raid
+
+- **Quando premi Avvia la sessione**, una riga per pezzo: il link del pezzo, la sua **categoria** e il suo **costo**, per esempio *[Anello di Brace]: Gioiello, 1 credito.* La categoria si annuncia **prima** dell'apertura del primo roll. Un pezzo il cui costo lo decide il council lo dice (*costo deciso dal council*).
+- **Se correggi un pezzo dopo la partenza**, una riga dice *Correzione: [pezzo] ora è Arma, 2 crediti.*
+- **Quando confermi un'assegnazione**, una riga con il pezzo, il vincitore, il costo e il **perché**, composto dall'addon dai codici di motivo, per esempio *[Anello di Brace]: Bryn, 1 credito. Stessi crediti degli altri, roll più alto.* Un pezzo che va alla banca di gilda o da disincantare lo dice al posto del vincitore.
+- Ogni riga comincia con **[FDCP]**, è lunga al massimo 255 caratteri (un testo più lungo si divide, un link di oggetto non si taglia mai) ed è scritta nella lingua della gilda. Fuori da un gruppo raid non si scrive niente: i popup e la tua finestra portano le stesse notizie.
+
+**Quando scrive.** Mai durante uno scontro con un boss: le righe aspettano in una coda e escono appena lo scontro è finito e la chat del gioco le accetta (anche un lockdown della chat le fa aspettare), poche al secondo, in ordine. Se il gioco rifiuta una riga cinque volte di fila la coda si svuota. Il popup dei raider e la finestra mostrano tutto che le righe escano o no.
+
+**Cambiare il testo (Guild Master).** Il Guild Master può spegnere gli annunci, cambiare il testo del pezzo e quello del risultato e togliere la frase del perché. In un testo, `{item}`, `{category}` e `{cost}` sono sostituiti nella riga del pezzo; `{item}`, `{winner}`, `{cost}`, `{category}` e `{reason}` in quella del risultato. Un testo vuoto usa quello predefinito della lingua della gilda. La modifica è salvata nelle regole e l'audit dice chi l'ha fatta. Per ora non c'è una finestra per farlo.
+
+> **Non ancora verificato in gioco:** che il gioco lasci scrivere l'addon in `/raid` dal tuo clic (e dall'assegnazione automatica, che non ha un clic dietro) e come la chat limiti un elenco lungo.
 
 ## Leggere la tabella dei candidati
 

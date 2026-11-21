@@ -15,7 +15,7 @@ This page is for the **master looter**: the player who opens the boss's body and
 1. **Kill the boss.** The addon starts a session on your client when the boss dies. Nothing opens by itself during the fight: the session waits for the fight, an addon restriction or the chat lockdown to end.
 2. **Open the body.** When you open the loot window the main window opens on **Loot › Session**. The items at or above the loot threshold are listed on the left, each with its category and cost (for example *Jewelry · 1 credit*), proposed by the addon from the guild's table. If the drops were read during a lockdown, the window says they are held and reads them as soon as it ends.
 3. **Check the list.** Select an item to see it on the right. If a category or a cost is wrong, press **Correct** (see below). **Remove** takes an item you do not want in the session off the list.
-4. **Press Start the session.** The categories and costs go to the raid. With the guild's usual settings (automatic advance) the first roll opens by itself; if not, press **Open the roll** on the item you want.
+4. **Press Start the session.** The categories and costs go to the raid, also written in `/raid` ([see below](#announcements-in-raid)). With the guild's usual settings (automatic advance) the first roll opens by itself; if not, press **Open the roll** on the item you want.
 5. **The roll.** Every raider with the addon gets a popup, answers *Main-spec*, *Off-spec* or *Pass* (with an optional label and note) and rolls: see [[Rolling for Loot|Rolling-for-Loot]]. The right side of your window fills as the answers and the rolls arrive: for each candidate the credits, the answer, the roll and a note. A thin bar and a clock count down the round. The round closes by itself on its timer or when everybody has answered and rolled; you can close it earlier with **Close the round**. If nobody asked for the item in main-spec, the off-spec round opens by itself; if two players are tied on credits and roll, a reroll opens among them.
 6. **The proposal.** When the round closes the addon writes **who, how much and why**, for example *Proposal: Bryn, 1 credit. Same credits as the others, highest roll.* The proposed player is marked in the list. Under the sentence, in amber, are the things to look at (rolls set aside, a cost the council has to fix, a tie the rules cannot break, a proposal after a rejection).
 7. **You decide:**
@@ -57,6 +57,23 @@ The header of the Session tab counts the items still to deliver.
 **Rolling everything at the end of the night.** You may roll all the items first and hand them over later: the items stay in the list, **End session** keeps them, and when the next boss dies they move to the next session's list, so nothing is lost between bosses, even after a `/reload`. When you open a body again, the items that were waiting for it are tried again by themselves (not the ones the game refused: those wait for your click).
 
 > **Not yet checked in the game:** that an addon may call `GiveMasterLoot` from a click, that the loot window and the master loot list read as described, what the trade events carry and whether the loot messages are readable inside an instance. If a step does not work, the item waits in the list and you hand it over by trade.
+
+## Announcements in /raid
+
+Everything the addon writes in `/raid` is written in the **guild language** the Guild Master chose in the settings, whatever the language of your own game, so the whole raid reads the same words. The wording and the on/off switch are the Guild Master's (rules section `announce`).
+
+## What the addon writes in /raid
+
+- **When you press Start the session**, one line per item: the item's link, its **category** and its **cost**, for example *[Ring of Embers]: Jewelry, 1 credit.* The category is announced **before** the first roll opens. An item whose cost the council sets says so (*cost set by the council*).
+- **If you correct an item after the start**, a line says *Correction: [item] is now Weapon, 2 credits.*
+- **When you confirm an award**, one line with the item, the winner, the cost and **why**, composed by the addon from the reason codes, for example *[Ring of Embers]: Bryn, 1 credit. Same credits as the others, highest roll.* An item that goes to the guild bank or is disenchanted says so instead of a winner.
+- Every line starts with **[FDCP]**, is at most 255 characters (a longer text is split, an item link is never cut) and is written in the guild language. Nothing is written outside a raid group: the popups and your window carry the same news.
+
+**When it writes.** Never while a boss fight is going on: the lines wait in a queue and go out as soon as the fight is over and the game's chat accepts them (a chat lockdown also makes them wait), a few per second, in order. If the game refuses a line five times in a row the queue is emptied. A raider's popup and the window show everything whether or not the lines go out.
+
+**Changing the wording (Guild Master).** The Guild Master can switch the announcements off, change the item text and the result text and leave out the reason sentence. In a text, `{item}`, `{category}` and `{cost}` are replaced for the item line; `{item}`, `{winner}`, `{cost}`, `{category}` and `{reason}` for the result line. An empty text uses the default of the guild language. The change is saved in the rules and the audit says who made it. There is no window for it yet.
+
+> **Not yet verified in the game:** that the game lets the addon write in `/raid` from your click (and from the automatic award, which has no click), and how the chat throttles a long list.
 
 ## Reading the candidates table
 

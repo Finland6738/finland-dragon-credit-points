@@ -99,8 +99,9 @@ M4 depends on M0, M2 and M3. Until the spike results arrive, every step builds p
 - Analysis: §4 (announcement, result to the raid), §8.5 (guild language)
 - Scope: category and cost of each item and each result announced in `/raid` (on/off, editable text with placeholders), in the guild language chosen by the GM, never during an encounter, from the ML's click when the game needs one; the reason sentence composed from the reason codes.
 - Done when:
-  - [ ] Announcements are in the guild language whatever the ML's client language, in tests.
+  - [x] Announcements are in the guild language whatever the ML's client language, in tests.
 - Tests: `Tests/test_announcements.lua`.
+- Note: the rules' section `announce` (on/off, item and result texts, reason on/off) is edited by the Guild Master through `Announcer:SaveConfig` (no window yet, like the notice); the lines are queued and written only outside an encounter and when the chat accepts them ([`docs/ANALISI.md`](../ANALISI.md) §4, "Come è fatto (M4-8)"). Chat sending from the ML's click (spike S4) is still to be confirmed in game.
 - Docs: Master Looter Guide (EN + IT), CHANGELOG.
 - Real client: chat sending in a raid.
 - Suggested model/effort: `sonnet` / medium

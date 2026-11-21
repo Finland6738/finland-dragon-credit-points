@@ -141,22 +141,30 @@ function AddonNotice:Send(kind)
 	return record(self, kind, mode, names, sent)
 end
 
--- The Guild Master edits the wording: `fields` is a table with some of text, outdatedText, link, whisper, minutes. Written
--- as a CONFIG_CHANGED (the whole rules, the audit says who and when). Returns true, or nil and a code ("NOT_READY",
--- "NOTICE:<field>", "UNCHANGED", the permission code "NOT_GM"/... from the ledger gate).
-function AddonNotice:SaveConfig(fields)
+-- Changes `fields` of the rules' section `section` ("notice", "announce"), checked with `validate`, as a CONFIG_CHANGED
+-- (the whole rules; the audit says who and when). Shared with App/Announcer.lua. Returns true and the new section, or nil
+-- and a code ("NOT_READY", "<SECTION>:<field>", "UNCHANGED", the permission code "NOT_GM"/... from the ledger gate).
+function AddonNotice.SaveSection(section, validate, fields)
 	local ledger = ns.NightController and ns.NightController:Ledger()
 	local me = ns.GuildRanks and ns.GuildRanks.Me()
 	if not ledger or not me or type(fields) ~= "table" then return nil, "NOT_READY" end
 	local rules = ns.Rules.Current(ledger)
-	for k, v in pairs(fields) do rules.notice[k] = v end
-	local ok, problems = ns.Notice.ValidateConfig(rules.notice)
-	if not ok then return nil, "NOTICE:" .. problems[1] end
+	for k, v in pairs(fields) do rules[section][k] = v end
+	local ok, problems = validate(rules[section])
+	if not ok then return nil, section:upper() .. ":" .. problems[1] end
 	local gate = ns.PermissionService and ns.PermissionService:Gate() or nil
 	-- the wording is not a rule of the game: the confirmation a season asks for is given by the click on Save
 	local event, why = ns.Rules.Change(ledger, { author = me, ts = ns.Compat.ServerTime(), rules = rules, confirmed = true }, gate)
 	if not event then return nil, why end
-	if ns.Bus then ns.Bus:Emit("ADDON_NOTICE_CONFIG", rules.notice) end
+	return true, rules[section]
+end
+
+-- The Guild Master edits the wording: `fields` is a table with some of text, outdatedText, link, whisper, minutes.
+-- Returns true, or nil and a code (see SaveSection; the field problem reads "NOTICE:<field>").
+function AddonNotice:SaveConfig(fields)
+	local ok, section = AddonNotice.SaveSection("notice", ns.Notice.ValidateConfig, fields)
+	if not ok then return nil, section end
+	if ns.Bus then ns.Bus:Emit("ADDON_NOTICE_CONFIG", section) end
 	return true
 end
 

@@ -272,17 +272,23 @@ end
 
 -- The sentence of a code in the active language (Locale/Boot.lua), or the code itself when it has none: a code the
 -- addon does not know yet (from a newer version) still shows something readable.
-function Reasons.Text(group, code)
+-- `lang` (optional) is a language code: the text for everyone (guild language, M4-8) instead of the player's own.
+function Reasons.Text(group, code, lang)
 	local k = Reasons.Key(group, code)
 	local L = ns.L
+	if lang and ns.Locale then
+		local text = k and ns.Locale.Text(lang, k)
+		if text and text ~= k then return text end
+		return tostring(code)
+	end
 	if k and L and L[k] ~= k then return L[k] end
 	return tostring(code)
 end
 
 -- The sentences of a list of codes, in order.
-function Reasons.List(group, codes)
+function Reasons.List(group, codes, lang)
 	local out = {}
-	for i, code in ipairs(codes or {}) do out[i] = Reasons.Text(group, code) end
+	for i, code in ipairs(codes or {}) do out[i] = Reasons.Text(group, code, lang) end
 	return out
 end
 

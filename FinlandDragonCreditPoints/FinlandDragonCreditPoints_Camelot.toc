@@ -40,6 +40,7 @@ Data\Instances.lua
 Data\Specs.lua
 Domain\Progress.lua
 Domain\Notice.lua
+Domain\Announce.lua
 Domain\Rules.lua
 Domain\Presets.lua
 Domain\Permissions.lua
@@ -57,6 +58,7 @@ App\RosterController.lua
 App\ProgressController.lua
 App\AddonCheck.lua
 App\AddonNotice.lua
+App\Announcer.lua
 App\SessionController.lua
 App\SessionBoard.lua
 App\PopupBoard.lua
