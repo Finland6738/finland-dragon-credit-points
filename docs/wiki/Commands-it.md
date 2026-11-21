@@ -9,6 +9,8 @@ Tutto parte da `/fdcp`: da solo apre (o chiude) la finestra principale.
 | `/fdcp` o `/fdcp toggle` | Apre la finestra principale, oppure la chiude se è aperta. |
 | `/fdcp help` | Elenca i comandi. |
 | `/fdcp theme [nebula\|aurora\|drago]` | Mostra il tema, oppure lo imposta. Cambia subito, senza `/reload`. |
+| `/fdcp weights [on\|off\|import <spec> <stringa>\|show <spec>\|reset <spec\|all>]` | I tuoi pesi delle statistiche per i suggerimenti di upgrade: importali da una stringa tipo Pawn, mostrali, accendili o spegnili, toglili. Vedi [Suggerimenti di upgrade](Upgrade-Hints-it). |
+| `/fdcp wish [list\|add <oggetto>\|remove <oggetto>\|clear]` | La tua lista best-in-slot: il popup te lo ricorda quando uno dei pezzi è in palio. Vedi [Suggerimenti di upgrade](Upgrade-Hints-it). |
 | `/fdcp debug` | Mostra cosa offre il client di gioco all'addon: versione e build del client, poi le **funzioni** che servono all'addon (master loot, finestra del loot, messaggi dei roll, statistiche degli oggetti, specializzazioni, ranghi di gilda, calendario, roster del gruppo, messaggi addon) e ogni **API** che usa, ciascuna con il suo stato, poi i contatori dei messaggi dell'addon (vedi sotto). |
 | `/fdcp language [auto\|<codice>]` | Mostra la lingua dell'addon, oppure imposta quella personale (`auto` segue il client di gioco). La modifica vale dopo `/reload`. Per ora esistono inglese (`enUS`) e italiano (`itIT`). |
 

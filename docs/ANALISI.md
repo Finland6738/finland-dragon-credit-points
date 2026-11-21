@@ -867,7 +867,7 @@ decideva (tutte modificabili):
   Senza item level: *Non confrontabile* (`NO_ITEM_LEVEL`).
 - **Pesi predefiniti** (default reversibile della domanda 8, §13): una riga per ogni spec di `Data/Specs.lua`, statistica
   principale = 1,0, DPS dell'arma per melee e cacciatori (non per il druido feral). Sono un'approssimazione (§5.3); i
-  pesi personali e l'import facoltativo di M5-3 sostituiscono una riga intera. Restano da verificare in gioco (S5) le
+  pesi personali e l'import facoltativo di M5-3 (sotto) sostituiscono una riga intera. Restano da verificare in gioco (S5) le
   chiavi delle statistiche di Forever.
 
 **Come è fatto (M5-2).** Tre pezzi, ognuno con un solo compito:
@@ -915,6 +915,35 @@ verdetto si manda **anche con un passo**; i pezzi indossati nominati sono quelli
 `GetItemStatDelta` rispondano per l'equipaggiamento raid, che `GetItemSpecInfo` elenchi le spec come si presume (se elencasse
 solo le spec "da loot" un pezzo valido potrebbe risultare *non usabile per la spec*: è solo una preselezione), e il
 livello di un pezzo indossato con aggiornamenti.
+
+**Come è fatto (M5-3).** Pesi personali, import e wishlist, tutto del giocatore e tutto facoltativo:
+
+- **Dove vivono.** In `FinlandDragonCreditPointsCharDB.upgrade` (`personal`, `weights[specID]`, `wish[itemID]`): mai nel registro
+  della gilda, mai nei dati condivisi, mai spediti; riletti e puliti a ogni sessione (una riga o un id danneggiato si scarta).
+  Nulla è salvato finché il giocatore non importa o non segna un pezzo; i pesi predefiniti di M5-1 restano il default
+  (reversibile, domanda 8 ancora aperta, [issue #2](https://github.com/Finland6738/finland-dragon-credit-points/issues/2)).
+- **Import (`Domain/WeightImport.lua`, puro).** Stringa di formato tipo Pawn: `( Pawn: v1: "Nome": Strength=1, CritRating=0.85 )`,
+  oppure la forma nuda `Strength=1, Agility=0.5`, oppure i codici brevi dell'addon (`STR=1, CRIT=0.85`); nomi senza distinzione
+  di maiuscole, qualche sinonimo (`AttackPower`, `SpellPower`), i campi `Class`, `Spec`, `Alpha`, `Beta` si saltano. Le
+  statistiche che il punteggio non conosce (castoni, gemme) non sono un errore: si elencano come ignorate; **si rifiuta** la
+  stringa vuota o troppo lunga (2000 caratteri), un pezzo che non è `Stat=numero`, un numero che non è un decimale semplice
+  (niente esadecimali, esponenti, `inf`, `nan`, oltre ±1000) e una stringa senza nessuna statistica nota. Il rifiuto ha un
+  codice (`EMPTY`, `TOO_LONG`, `BAD_FORMAT`, `BAD_VALUE`, `NO_STATS`, gruppo `IMPORT` di `Reasons`) e il pezzo colpevole, e non
+  cambia nulla. `Format` riscrive la stringa in ordine fisso (`/fdcp weights show`). Formato e nomi sono quelli pubblici; non c'è
+  codice di altri addon.
+- **Comandi.** `/fdcp weights [on | off | import <spec> <stringa> | show <spec> | reset <spec | all>]`, con `<spec>` id numerico
+  o `ms` / `os` (le spec dichiarate). Importare sostituisce **la riga intera** di quella spec e accende i pesi personali
+  (l'import è un atto esplicito del giocatore); `off` li spegne senza perderli, `reset` li toglie.
+- **Nel verdetto.** `UpgradeAdvisor.For` passa al punteggio la riga personale della MS1 / MS2 quando i pesi personali sono accesi
+  (`advice.personal`), il tooltip del popup lo dice, e il verdetto che va al master looter è quello calcolato con i pesi
+  personali: informa il council, non cambia il vincitore. Le regole di gilda non lo vietano (scelta fatta, reversibile: una
+  regola `upgrade.personalWeights` si aggiunge senza toccare il resto se il GM la vuole).
+- **Wishlist (`Domain/Wishlist.lua`, puro).** `/fdcp wish [list | add <oggetto> | remove <oggetto> | clear]` con link (clic con
+  Maiusc) o id, anche più d'uno; al massimo 300 pezzi. Un pezzo in lista porta nel popup il badge **Nella tua lista BiS** sopra
+  le righe del verdetto, con un tooltip; il popup segue la lista mentre è aperto. È un promemoria: non manda nulla e non
+  cambia nulla per gli altri. Nessuna BiS list di gilda (solo se l'issue #2 la chiede).
+- **Da verificare in gioco.** Come sta la riga del badge nel popup in un raid vero, che il link incollato con Maiusc-clic nella
+  riga di comando arrivi com'è previsto, e che i nomi delle statistiche delle stringhe Pawn vere corrispondano.
 
 ### 5.2 Lato master looter / council
 
@@ -1405,7 +1434,9 @@ l'indice è [`ROADMAP.md`](../ROADMAP.md).
    Default reversibile finché non decide il GM: item level + pesi predefiniti modificabili, import stile Pawn
    facoltativo e spento (step M5-1 e M5-3). M5-1 ha costruito la prima parte: pesi predefiniti per spec in
    `Data/StatWeights.lua` e ripiego sul solo item level (§5.1, "Come è fatto (M5-1)"); nessuna BiS list di gilda. M5-2 li
-   usa nel popup (verdetto per MS1 e per MS2) senza aggiungere altro: i pesi personali e l'import restano a M5-3.
+   usa nel popup (verdetto per MS1 e per MS2). M5-3 aggiunge i pesi personali per spec, l'import stile Pawn (spento finché il
+   giocatore non importa, `/fdcp weights off` lo spegne senza perdere nulla) e la wishlist BiS personale (§5.1, "Come è fatto
+   (M5-3)"); ancora nessuna BiS list di gilda. La domanda resta **aperta**.
 9. **Lingua** **Risolta (19/11/2026)**: addon multilingua, all'inizio italiano e inglese, con altre lingue
    aggiungibili tramite un file (§8.5). Documentazione come Accord.
 10. **Sito della community**: va bene estendere `loot.json` con `start` (crediti iniziali) e `kind` (assegnazione /

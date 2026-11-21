@@ -20,6 +20,7 @@
 | Leggere la tabella dei crediti e il tuo posto in fila | [[Tabella crediti|Credits-it]] |
 | Condurre una sessione di loot da master looter | [[Guida del master looter|Master-Looter-Guide-it]] |
 | Rispondere e rollare per un pezzo da raider | [[Rollare per il loot|Rolling-for-Loot-it]] |
+| Impostare i miei pesi o una lista best-in-slot | [[Suggerimenti di upgrade|Upgrade-Hints-it]] |
 
 Altre pagine (il council, le impostazioni) arrivano con le funzioni.
 

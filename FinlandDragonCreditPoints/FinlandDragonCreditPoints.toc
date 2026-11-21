@@ -39,6 +39,8 @@ Domain\Rotation.lua
 Data\Instances.lua
 Data\Specs.lua
 Domain\UpgradeScore.lua
+Domain\WeightImport.lua
+Domain\Wishlist.lua
 Data\StatWeights.lua
 Domain\Progress.lua
 Domain\Notice.lua
@@ -62,6 +64,7 @@ App\ProgressController.lua
 App\AddonCheck.lua
 App\AddonNotice.lua
 App\Announcer.lua
+App\PersonalUpgrade.lua
 App\UpgradeAdvisor.lua
 App\SessionController.lua
 App\SessionBoard.lua

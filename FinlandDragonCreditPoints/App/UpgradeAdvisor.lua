@@ -8,6 +8,7 @@
 --
 -- Advisor.For(itemID)  advice = { ms = result, os = result | nil, specs = { ms = specID | nil, os = specID | nil },
 --                      autoPass (every verdict says "cannot use it" and the rules ask for the preselection),
+--                      personal = { ms = bool, os = bool } (the verdict used the player's own weights, M5-3),
 --                      equipped = { "item:..." } (the worn pieces the item was compared with),
 --                      wire = { vd = { m = packed, o = packed | nil }, eq = { ... } } (what the response carries) },
 --                      or nil and a code: DISABLED (the rules turn the verdicts off), NO_CLASS, UNKNOWN, NOT_LOADED. The
@@ -104,18 +105,29 @@ function Advisor.For(itemID)
 	local equipped = worn(ctx)
 	ns.Inventory.Fill(piece, equipped)
 	local U = ns.UpgradeScore
-	local ms = U.Evaluate(piece, equipped, { class = ctx.class, spec = ctx.ms }, ctx.config)
-	local os = ctx.os and U.Evaluate(piece, equipped, { class = ctx.class, spec = ctx.os }, ctx.config) or nil
+	-- the player's own weights for a spec (M5-3), when they imported and turned them on; else the defaults
+	local PU = ns.PersonalUpgrade
+	local msWeights = PU and PU.WeightsFor(ctx.ms)
+	local osWeights = ctx.os and PU and PU.WeightsFor(ctx.os) or nil
+	local ms = U.Evaluate(piece, equipped, { class = ctx.class, spec = ctx.ms, weights = msWeights }, ctx.config)
+	local os = ctx.os and U.Evaluate(piece, equipped, { class = ctx.class, spec = ctx.os, weights = osWeights }, ctx.config) or nil
 	local results = { ms, os }
 	local links = wornLinks(ctx, results)
 	local advice = {
 		ms = ms, os = os, specs = { ms = ctx.ms, os = ctx.os },
+		personal = { ms = msWeights ~= nil, os = osWeights ~= nil },   -- compared on the player's own weights
 		autoPass = ctx.rules.autoPass == true and ms.usable == false and (os == nil or os.usable == false),
 		equipped = links,
 		wire = { vd = { m = U.Pack(ms), o = os and U.Pack(os) or nil }, eq = links },
 	}
 	Advisor.cache[itemID] = { ctx = ctx, advice = advice }
 	return advice
+end
+
+-- The specs the verdicts are computed for: main-spec, off-spec | nil (the declared ones, else the one played now).
+function Advisor.Specs()
+	local ctx = context()
+	return ctx.ms, ctx.os
 end
 
 -- The worn pieces' names for a tooltip: "Helm of Embers". An item the client has not loaded yet is asked for and left out.

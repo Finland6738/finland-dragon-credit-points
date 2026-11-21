@@ -6,7 +6,7 @@
 -- category comes from), JOIN (a new member's credits), CORRECTION (the master looter's reasons), AUTO (automatic
 -- phases), RANKS (guild rank changes), DELIVERY (where an award is on its way to the winner, M4-7), REFUSAL (an action refused), STATUS (a member of the pool),
 -- RESPONSE, LABEL (the optional label of a main-spec response), VERDICT (the upgrade verdicts, M5-2), UPGRADE (why an item
--- cannot be used or compared, M5-2), KIND (what a proposal does), REJECT, STATE, EVENT (ledger event types) and PRESET
+-- cannot be used or compared, M5-2), IMPORT (why a weight string was refused, M5-3), KIND (what a proposal does), REJECT, STATE, EVENT (ledger event types) and PRESET
 -- (preset names).
 local ADDON_NAME, ns = ...
 ns = ns or {}
@@ -14,7 +14,7 @@ ns.modules = ns.modules or {}
 local Reasons = {}
 ns.Reasons, ns.modules.Reasons = Reasons, Reasons
 
-Reasons.GROUPS = { "REASON", "FLAG", "DISCARD", "SOURCE", "JOIN", "CORRECTION", "AUTO", "RANKS", "DELIVERY", "REFUSAL", "STATUS", "RESPONSE", "LABEL", "VERDICT", "UPGRADE", "KIND", "REJECT", "STATE", "EVENT", "PRESET" }
+Reasons.GROUPS = { "REASON", "FLAG", "DISCARD", "SOURCE", "JOIN", "CORRECTION", "AUTO", "RANKS", "DELIVERY", "REFUSAL", "STATUS", "RESPONSE", "LABEL", "VERDICT", "UPGRADE", "IMPORT", "KIND", "REJECT", "STATE", "EVENT", "PRESET" }
 
 -- KEYS[group][code] = locale key.
 Reasons.KEYS = {
@@ -231,6 +231,13 @@ Reasons.KEYS = {
 		EFFECT_TRINKETS = "RC_UPGRADE_EFFECT_TRINKETS",
 		TWO_HAND_EQUIPPED = "RC_UPGRADE_TWO_HAND_EQUIPPED",
 		NO_ITEM_LEVEL = "RC_UPGRADE_NO_ITEM_LEVEL",
+	},
+	IMPORT = {   -- why a stat-weight string was refused (Domain/WeightImport.lua)
+		EMPTY = "RC_IMPORT_EMPTY",
+		TOO_LONG = "RC_IMPORT_TOO_LONG",
+		BAD_FORMAT = "RC_IMPORT_BAD_FORMAT",
+		BAD_VALUE = "RC_IMPORT_BAD_VALUE",
+		NO_STATS = "RC_IMPORT_NO_STATS",
 	},
 	KIND = {
 		AWARD = "RC_KIND_AWARD",

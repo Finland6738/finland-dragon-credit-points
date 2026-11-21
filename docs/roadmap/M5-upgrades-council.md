@@ -38,9 +38,9 @@ Open question 8 ([#2](https://github.com/Finland6738/finland-dragon-credit-point
 - Analysis: §5.1 points 3 and 5, §13 question 8
 - Scope: personal weights per spec, import from a Pawn-like string (optional, off by default, reversible per issue #2), the player's BiS wishlist reminded by the popup. Guild-wide BiS lists only if issue #2 asks for them.
 - Done when:
-  - [ ] A valid import string sets the weights; an invalid one is refused with a message; the wishlist survives `/reload`.
+  - [x] A valid import string sets the weights; an invalid one is refused with a message; the wishlist survives `/reload`. (Offline: `Tests/test_weights_import.lua`; how the popup row looks in a raid is for the owner's in-game check.)
 - Tests: `Tests/test_weights_import.lua`.
-- Docs: Upgrade Hints (EN + IT), CHANGELOG; comment on issue #2 with what was built.
+- Docs: Upgrade Hints (EN + IT), CHANGELOG; comment on issue #2 with what was built (done).
 - Real client: nothing beyond M5-2.
 - Suggested model/effort: `sonnet` / medium
 

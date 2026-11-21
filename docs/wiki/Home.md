@@ -20,6 +20,7 @@
 | Read the credits table and your place in the queue | [[Credits Table|Credits]] |
 | Run a loot session as the master looter | [[Master Looter Guide|Master-Looter-Guide]] |
 | Answer and roll for an item as a raider | [[Rolling for Loot|Rolling-for-Loot]] |
+| Set my own stat weights or a best-in-slot list | [[Upgrade Hints|Upgrade-Hints]] |
 
 More pages (the council, settings) are added as the features are built.
 

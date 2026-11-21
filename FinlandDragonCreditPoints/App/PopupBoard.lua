@@ -141,7 +141,7 @@ end
 
 -- Build(view, env): env = { me, now (the local clock), draft = { key, rs, lb, n } | nil (the answer being typed in the
 -- round `key`), rolled = function(key), dismissed = function(key), standing = function() -> { credits, position },
--- upgrade = function(itemID) -> advice | nil (UpgradeAdvisor.For) }.
+-- upgrade = function(itemID) -> advice | nil (UpgradeAdvisor.For), wish = function(itemID) -> boolean (the BiS list) }.
 function PB.Build(view, env)
 	env = env or {}
 	local board = { cards = {} }
@@ -215,6 +215,7 @@ function PB.Build(view, env)
 		remaining = remaining, paused = view.paused == true, credits = standing and standing.credits or nil,
 		position = standing and standing.position or nil, rollMin = PB.ROLL_MIN, rollMax = PB.ROLL_MAX,
 		upgrade = advice, preselect = preselect,
+		wish = env.wish and env.wish(item.id) == true or false,   -- on the player's own best-in-slot list (M5-3)
 	}
 	return board
 end

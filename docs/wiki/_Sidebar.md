@@ -10,6 +10,7 @@
 - [[Credits Table|Credits]]
 - [[Master Looter Guide|Master-Looter-Guide]]
 - [[Rolling for Loot|Rolling-for-Loot]]
+- [[Upgrade Hints|Upgrade-Hints]]
 
 **Italiano**
 - [[Home|Home-it]]
@@ -23,3 +24,4 @@
 - [[Tabella crediti|Credits-it]]
 - [[Guida del master looter|Master-Looter-Guide-it]]
 - [[Rollare per il loot|Rolling-for-Loot-it]]
+- [[Suggerimenti di upgrade|Upgrade-Hints-it]]

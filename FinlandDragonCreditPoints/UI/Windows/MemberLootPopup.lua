@@ -14,6 +14,8 @@
 -- "Off-spec · ..."), with a tooltip (why, on what basis, what is worn, the limits); an item the character cannot use
 -- comes with Pass preselected (nothing is sent by itself); every answer carries the verdicts and the worn pieces to the
 -- master looter (App/UpgradeAdvisor.lua).
+-- M5-3: an item on the player's own best-in-slot list (/fdcp wish) carries a badge saying so, above the verdicts; the
+-- player's own stat weights (/fdcp weights) feed the verdicts and the tooltip says so.
 -- Not verified in the real client: how it looks in a raid, the tooltip comparison, RandomRoll from a click.
 local ADDON_NAME, ns = ...
 ns = ns or {}
@@ -174,6 +176,20 @@ local function buildCard(self, parent)
 	c.credits = Theme.NewText(c, "Small", "text-2")
 	c.credits:SetJustifyH("RIGHT")
 
+	-- the reminder of the player's own best-in-slot list
+	c.wish = Widgets.Badge(c, "", "ok")
+	c.wish:EnableMouse(true)
+	c.wish:SetScript("OnEnter", function(b)
+		if GameTooltip then
+			GameTooltip:SetOwner(b, "ANCHOR_TOP")
+			GameTooltip:SetText(L["WISH_BADGE"])
+			GameTooltip:AddLine(L["WISH_TIP"], 1, 1, 1, true)
+			GameTooltip:Show()
+		end
+	end)
+	c.wish:SetScript("OnLeave", function() if GameTooltip then GameTooltip:Hide() end end)
+	c.wish:Hide()
+
 	-- the upgrade verdicts, one badge per spec (main-spec, off-spec); the tooltip says why and what is worn
 	c.verdicts = {}
 	for _, which in ipairs({ "ms", "os" }) do
@@ -298,6 +314,7 @@ function Popup:ShowVerdictTip(owner, d, which)
 	local lines = A.Lines(u, which == "os" and "OS" or "MS")
 	tip:SetText(lines[1])
 	for i = 2, #lines do tip:AddLine(lines[i], 1, 1, 1, true) end
+	if advice.personal and advice.personal[which] then tip:AddLine(L["UPG_BASIS_PERSONAL"], 1, 1, 1, true) end
 	local names = A.EquippedNames(advice.equipped)
 	if #names > 0 then tip:AddLine(L["UPG_EQUIPPED"]:format(table.concat(names, ", ")), 0.8, 0.8, 0.8, true) end
 	tip:AddLine(L["UPG_LIMITS"], 0.6, 0.6, 0.6, true)
@@ -332,6 +349,14 @@ local function layoutCard(self, c, d, top)
 	c.credits:SetWidth(self.width - 2 * PAD - c.badge:GetWidth() - 8)
 	y = y + ROW_BADGE + 12
 
+	if d.wish then
+		c.wish:ClearAllPoints()
+		c.wish:SetPoint("TOPLEFT", c, "TOPLEFT", PAD, -y + 6)
+		c.wish:Show()
+		y = y + ROW_VERDICT + 2
+	else
+		c.wish:Hide()
+	end
 	for _, which in ipairs({ "ms", "os" }) do
 		local v = c.verdicts[which]
 		if d.upgrade and d.upgrade[which] then
@@ -450,6 +475,7 @@ local function applyCard(self, c, d, top)
 	end
 	c.credits:SetText(standing)
 
+	c.wish:SetBadge(L["WISH_BADGE"]:upper(), "ok")
 	-- the upgrade verdicts (M5-2)
 	local A = ns.UpgradeAdvisor
 	for _, which in ipairs({ "ms", "os" }) do
@@ -531,6 +557,10 @@ local function boardEnv(self)
 		upgrade = function(itemID)
 			local A = ns.UpgradeAdvisor
 			return A and (A.For(itemID)) or nil
+		end,
+		wish = function(itemID)
+			local PU = ns.PersonalUpgrade
+			return PU ~= nil and PU.Has(itemID)
 		end,
 	}
 end
