@@ -62,6 +62,8 @@ L'addon prepara ogni risultato: a chi, quanti crediti e perché, in parole. Il m
 
 Il council (gli officer della gilda presenti nel raid) può, sempre con un motivo che finisce nel log: correggere categoria o costo **prima** dell'apertura del roll; dare l'oggetto a un altro candidato in caso di **spreco palese**; darlo a chi **non ha rollato ma è passato per fare il furbo**, a costo pieno; assegnare un leggendario; annullare un'assegnazione; correggere a mano i crediti di un membro. Chi è master looter, council o officer lo decidono i **ranghi di gilda**, e solo il **Guild Master** può cambiare cosa può fare ogni rango e le regole stesse.
 
+**Segnalazioni del council.** Per rendere visibili in tempo i casi evidenti, l'addon alza due segnalazioni appena arrivano le risposte: **upgrade ignorato** (un raider passa su un pezzo che per la sua main-spec è un upgrade grande) e **possibile spreco** (il primo in fila ci guadagna poco o nulla, un altro candidato main-spec almeno il doppio, con un upgrade grande). Guardano solo la main-spec (MS1), non cambiano mai il vincitore da sole e fermano l'assegnazione automatica finché il master looter non guarda; intervenire è una modifica con il suo motivo. Le regole della gilda dicono se le segnalazioni sono accese, il rapporto dello spreco (preset 2) e chi oltre al master looter vede verdetti e segnalazioni (preset: il council). Vedi la [[Guida del master looter|Master-Looter-Guide-it]], "Segnalazioni del council".
+
 ## Come si svolge una sessione di loot
 
 La sessione gira solo sul client del master looter; gli altri devono solo rispondere e rollare.
@@ -152,6 +154,8 @@ Il motore non scrive mai frasi: registra codici brevi, e l'addon li trasforma ne
 | `OUT_OF_ORDER` | Fuori fila: il vincitore non è quello scelto dalle regole. |
 | `COST_CHANGED` | Il costo non è quello scelto dalle regole. |
 | `ML_DECIDED` | Le regole non avevano un vincitore o un costo: ha deciso il master looter. |
+| `UPGRADE_IGNORED` | Upgrade ignorato: qualcuno ha passato un upgrade grande per la sua main-spec. |
+| `POSSIBLE_WASTE` | Possibile spreco: il primo in fila ci guadagna poco, un altro candidato molto. |
 
 ### Perché un roll è stato scartato
 

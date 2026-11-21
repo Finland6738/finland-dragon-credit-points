@@ -67,6 +67,7 @@ function SC:Reset()
 	self.ticker = nil
 	self.ledger, self.store, self.session, self.readOnly = nil, nil, nil, nil
 	self.held, self.bound = nil, false
+	self.rulesCache, self.rulesCacheLedger, self.rulesCacheAt = nil, nil, nil
 	if ns.RollListener and ns.RollListener.getSession then ns.RollListener:Detach() end
 	if ns.Protocol and ns.Protocol.Session.host then ns.Protocol.Session:Host(nil) end
 end
@@ -514,15 +515,40 @@ end
 -- What the windows read
 
 -- The session as the windows show it: on the master looter's client { host = true, session }, elsewhere the read-only
--- view of the raid's session { host = false, view } (only for who holds `award.confirm`, the officers: the raiders
--- see their popup). nil when there is nothing to show or the player may not see it.
+-- view of the raid's session { host = false, view } (only for who holds `award.confirm`, the officers, and for a council
+-- member who may see the verdicts, M5-4: the raiders see their popup). nil when there is nothing to show or the player
+-- may not see it.
 function SC:View()
 	local s = self:Current()
 	if s then return { host = true, session = s, readOnly = self.readOnly } end
 	local v = ns.Protocol and ns.Protocol.Session.view
 	if not v then return nil end
-	if ns.PermissionService and not ns.PermissionService:Can("award.confirm") then return nil end
+	local ps = ns.PermissionService
+	if ps and not ps:Can("award.confirm") and not (ps:Can("council.member") and self:SeesVerdicts()) then return nil end
 	return { host = false, view = v, readOnly = true }
+end
+
+-- The guild's rules in force (Domain/Rules.lua), kept until the ledger changes; the presets without a ledger.
+function SC:Rules()
+	local L = self:Ledger()
+	if not L or not ns.Rules or not ns.Ledger then return ns.Rules and ns.Rules.DefaultConfig() or {} end
+	local n = ns.Ledger.Count(L)
+	if self.rulesCache == nil or self.rulesCacheLedger ~= L or self.rulesCacheAt ~= n then
+		self.rulesCache, self.rulesCacheLedger, self.rulesCacheAt = ns.Rules.Current(L), L, n
+	end
+	return self.rulesCache
+end
+
+-- May this client see the raiders' upgrade verdicts and the council's flags (docs/ANALISI.md §5.2, §5.3, M5-4)? The
+-- master looter always; another client by the rules' council.verdicts: "council" (preset: council.member), "officers"
+-- (award.confirm) or "ml". The present-in-the-raid part of the council is implied: a session's view only reaches the
+-- raid's members (Protocol.Session:CanOpen).
+function SC:SeesVerdicts()
+	if self:Current() then return true end
+	local ps = ns.PermissionService
+	local who = { council = true, officer = true }
+	if ps then who.council, who.officer = ps:Can("council.member") == true, ps:Can("award.confirm") == true end
+	return ns.Flags.MaySee(self:Rules().council, who)
 end
 
 -- The class of a raid member as the roster knows it ("WARRIOR", ...), for the colour of a name; nil when unknown.
@@ -545,11 +571,17 @@ function SC:Board(selected)
 	local view = self:View()
 	if not view then return nil end
 	local s = view.session
-	return ns.SessionBoard.Build(view, {
+	local env = {
 		now = now(), held = self.held ~= nil, classOf = function(name) return self:ClassOf(name) end,
 		rollSeconds = (s and s.rules and s.rules.session and s.rules.session.rollSeconds)
 			or (ns.Rules and ns.Rules.DefaultConfig().session.rollSeconds),
-	}, selected)
+	}
+	if not view.host then   -- another client: the verdicts and the flags only where the rules let it see them (M5-4)
+		local rules = self:Rules()
+		env.verdicts = self:SeesVerdicts()
+		env.priority, env.upgrade, env.council = rules.priority, rules.upgrade, rules.council
+	end
+	return ns.SessionBoard.Build(view, env, selected)
 end
 
 -- What MODIFY{change} would give (the Modify dialog's live difference from the rules); nothing is changed. Returns the

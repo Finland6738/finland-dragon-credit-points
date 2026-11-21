@@ -17,7 +17,7 @@ This page is for the **master looter**: the player who opens the boss's body and
 3. **Check the list.** Select an item to see it on the right. If a category or a cost is wrong, press **Correct** (see below). **Remove** takes an item you do not want in the session off the list.
 4. **Press Start the session.** The categories and costs go to the raid, also written in `/raid` ([see below](#announcements-in-raid)). With the guild's usual settings (automatic advance) the first roll opens by itself; if not, press **Open the roll** on the item you want.
 5. **The roll.** Every raider with the addon gets a popup, answers *Main-spec*, *Off-spec* or *Pass* (with an optional label and note) and rolls: see [[Rolling for Loot|Rolling-for-Loot]]. The right side of your window fills as the answers and the rolls arrive: for each candidate the credits, the answer, the roll and a note. A thin bar and a clock count down the round. The round closes by itself on its timer or when everybody has answered and rolled; you can close it earlier with **Close the round**. If nobody asked for the item in main-spec, the off-spec round opens by itself; if two players are tied on credits and roll, a reroll opens among them.
-6. **The proposal.** When the round closes the addon writes **who, how much and why**, for example *Proposal: Bryn, 1 credit. Same credits as the others, highest roll.* The proposed player is marked in the list. Under the sentence, in amber, are the things to look at (rolls set aside, a cost the council has to fix, a tie the rules cannot break, a proposal after a rejection).
+6. **The proposal.** When the round closes the addon writes **who, how much and why**, for example *Proposal: Bryn, 1 credit. Same credits as the others, highest roll.* The proposed player is marked in the list. Under the sentence, in amber, are the things to look at (rolls set aside, a cost the council has to fix, a tie the rules cannot break, a proposal after a rejection, and the [council flags](#council-flags)).
 7. **You decide:**
    - **Confirm and assign** writes the award in the ledger with the addon's reason and charges the credits. Nothing else to type.
    - **Reject** charges nobody and puts the item back (see below).
@@ -84,11 +84,27 @@ Everything the addon writes in `/raid` is written in the **guild language** the 
 | **Response** | Main-spec, Off-spec or Pass, with the label the player declared (*BiS*, *Big upgrade*, *Small upgrade*, *Situational*) when they gave one; a dot when nothing yet. The label informs you and the council; it never changes the proposal. |
 | **Upgrade** | What the player's own addon says about the item for the spec of their answer: *Big upgrade +7.4% · ilvl +6*, *Small upgrade*, *No upgrade*, *Not comparable*, *Not usable*; a dot when their addon sent nothing (an older version, or the guild turned the verdicts off). **Hover the row** to see both specs' verdicts and the pieces they wear. It is a hint for the council: it is an approximation, and it never changes the proposal (see [[Rolling for Loot|Rolling-for-Loot]], "Is it an upgrade?"). Click the header to sort: big upgrades first. |
 | **Roll** | The first 1-100 roll of the current round (a reroll replaces it for the tied players). |
-| **Notes** | *Proposed* for the winner; *No answer yet* while the round is open; the note the player wrote in their popup (shown after the other texts); the reason a roll was set aside (a second roll, not 1-100, rolled too early, **the addon is not active**). |
+| **Notes** | *Proposed* for the winner; *No answer yet* while the round is open; the note the player wrote in their popup (shown after the other texts); the reason a roll was set aside (a second roll, not 1-100, rolled too early, **the addon is not active**); *Upgrade ignored* or *Possible waste* when a [council flag](#council-flags) names the player. |
 
 Sort by clicking a header. The list is ordered main-spec first, then fewest credits, then the highest roll. In a reroll the players who are not tied are dimmed.
 
 A player who rolls without the addon is **not** counted: the roll appears with *The addon is not active* so you see it, and they cannot answer.
+
+## Council flags
+
+Two flags help you and the council spot the cases the guild's rules say must be raised **before** the item is awarded. They appear under the candidates, in amber, **as soon as the answers arrive** (you do not have to wait for the round to close), stay with the proposal, and the candidate they name says so in the **Notes** column.
+
+| Flag | When | Example |
+|---|---|---|
+| **Upgrade ignored** | A raider with the addon **passes** on an item that is a **big upgrade for their main spec** (MS1). | *Upgrade ignored: Bryn passed on it (Big upgrade +12.0%).* |
+| **Possible waste** | The **first in line** of the main-spec answers has a **small upgrade or none**, while another main-spec candidate has a **big** one, at least **twice** as large (the ratio is a guild rule). | *Possible waste: Aurel is first in line (Small upgrade +1.5%), Corin has more to gain (Big upgrade +9.0%).* |
+
+- **They never change the winner.** The proposal is still the rules' own. If the council agrees it is a case to act on, you **Modify** the proposal with the reason *Obvious waste* (another candidate) or *Passed to game the system* (to the player who passed, at full cost); the award keeps the flag in the audit.
+- **Main spec only.** Both flags read the verdict for the player's **MS1**; an off-spec answer and the off-spec verdict never raise them. "Big" uses the guild's thresholds again, so a verdict under the threshold raises nothing; an item the player cannot use never counts.
+- **Before the proposal** the "first in line" follows the credits and the roll; once the proposal is written, it is the player the rules chose (and if the item went to the off-spec round, the bank or your choice, there is no "possible waste").
+- **Automatic award.** When the guild awards automatically, a proposal with a council flag is **not** confirmed by itself: it waits for you.
+- **Who sees them.** You always do. Besides you, the guild decides who sees the verdicts and the flags: the **council** (the preset: the rank with the *council member* permission, who then gets the read-only window even without being an officer), **all officers**, or **only the master looter**. Others see only the codes of the proposal, without names. The flags can be turned off by the guild.
+- **What they cannot know.** A raider who never answers sends no verdict, so a silent player is flagged only if their addon has already sent one. The verdict is computed by the player's own addon: an approximation (see [[Upgrade Hints|Upgrade-Hints]]).
 
 ## Modify
 
@@ -135,8 +151,8 @@ The next proposal carries the note *This is a new proposal after a rejection.*
 
 ## Other officers
 
-Officers who are not the master looter see the same window **read-only**: the items, the round, the proposal and its reasons, but no buttons and no table of candidates (the answers go to the master looter only). Players without the permission see their own popup instead.
+Officers who are not the master looter see the same window **read-only**: the items, the round, the proposal and its reasons, but no buttons and no credits or rolls (they stay with the master looter). Where the guild lets them see the verdicts (the council, by default) they also see who answered what, the Upgrade column and the [council flags](#council-flags). Players without the permission see their own popup instead.
 
 ## If the guild uses other modes
 
-The guild may set the award to **automatic** (the addon confirms a clean proposal by itself after a short window, never after you intervene; the strip says *The addon confirms by itself in N s* and you can still Reject or Modify during it) or to **council** (the council votes; this arrives in a later version). Which mode is in force is a guild rule: see [[Loot Rules|Loot-Rules]].
+The guild may set the award to **automatic** (the addon confirms a clean proposal by itself after a short window, never after you intervene and never with a [council flag](#council-flags) up; the strip says *The addon confirms by itself in N s* and you can still Reject or Modify during it) or to **council** (the council votes; this arrives in a later version). Which mode is in force is a guild rule: see [[Loot Rules|Loot-Rules]].

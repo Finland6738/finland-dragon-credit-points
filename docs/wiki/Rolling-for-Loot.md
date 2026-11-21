@@ -42,7 +42,7 @@ How it is worked out: the item is compared with the piece you wear in its slot (
 
 **An item you cannot use.** When the addon is sure that no spec of yours can use the item, **Pass is preselected** and the help line says so. **Nothing is sent by itself**: not answering counts as a pass anyway. If you disagree, pick another answer; clicking Pass sends it. The Guild Master can turn the preselection off.
 
-**What the master looter gets.** Every answer you send, a pass included, carries the verdicts and the pieces you wear to the master looter (the *Upgrade* column of their table). It informs the council; it never changes who wins.
+**What the master looter gets.** Every answer you send, a pass included, carries the verdicts and the pieces you wear to the master looter (the *Upgrade* column of their table). Besides the master looter, only the council sees it (the guild may choose all officers, or the master looter alone). A **pass on a big upgrade for your main spec** is pointed out to them (*Upgrade ignored*), and so is a main-spec item that would go to someone who gains little while you gain a lot (*Possible waste*): see the [[Master Looter Guide|Master-Looter-Guide]], "Council flags". It informs the council; it never changes who wins.
 
 ### The limits of the hint
 

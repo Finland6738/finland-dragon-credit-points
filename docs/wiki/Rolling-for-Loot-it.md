@@ -42,7 +42,7 @@ Come si calcola: il pezzo si confronta con quello che indossi nel suo slot (anel
 
 **Un pezzo che non puoi usare.** Quando l'addon è sicuro che nessuna tua spec può usare il pezzo, **Passo è preselezionato** e la riga di aiuto lo dice. **Non viene mandato nulla da solo**: non rispondere vale comunque come passo. Se non sei d'accordo, scegli un'altra risposta; un clic su Passo lo manda. Il Guild Master può spegnere la preselezione.
 
-**Cosa riceve il master looter.** Ogni risposta che mandi, passo compreso, porta al master looter i verdetti e i pezzi che indossi (la colonna *Upgrade* della sua tabella). Informa il council; non cambia mai chi vince.
+**Cosa riceve il master looter.** Ogni risposta che mandi, passo compreso, porta al master looter i verdetti e i pezzi che indossi (la colonna *Upgrade* della sua tabella). Oltre al master looter lo vede solo il council (la gilda può scegliere tutti gli officer, o il solo master looter). Un **passo su un upgrade grande per la tua main-spec** viene segnalato (*Upgrade ignorato*), e così un pezzo main-spec che andrebbe a chi ci guadagna poco mentre tu ci guadagni molto (*Possibile spreco*): vedi la [[Guida del master looter|Master-Looter-Guide-it]], "Segnalazioni del council". Informa il council; non cambia mai chi vince.
 
 ### I limiti dell'indizio
 

@@ -261,7 +261,8 @@ nel registro come evento `MEMBER_JOINED{initialCredits}`: resta stabile anche se
 
 - **Chi è**: rango di gilda ≤ X **e** presente nel raid (preset), oppure lista esplicita di personaggi. Il rango è il
   permesso `council.member` di §3.9; la presenza e il voto sono `council.requirePresent` e `council.vote` delle regole
-  (M2-5).
+  (M2-5). Le segnalazioni di §5.2 e chi vede i verdetti sono `council.flags`, `council.wasteRatio` e `council.verdicts`
+  (M5-4).
 - **Cosa può fare**, sempre con una motivazione obbligatoria che finisce nel log:
   - correggere la categoria o il costo **prima** dell'apertura del roll (dopo è bloccato, come dice il regolamento);
   - *spreco palese*: assegnare a un altro candidato invece del primo in fila;
@@ -906,7 +907,7 @@ decideva (tutte modificabili):
 - **Lato ML.** La bacheca dei candidati dà a ogni riga `upgrade` (il verdetto della spec della risposta: l'off-spec per
   *Off-spec*, altrimenti la main-spec), `upgradeMS`, `upgradeOS` ed `equipped`; la tabella ha una colonna **Upgrade**
   (ordinabile: grandi prima) e il tooltip della riga mostra i due verdetti e i pezzi indossati. Le segnalazioni e la
-  visibilità ai soli council sono M5-4.
+  visibilità ai soli council sono di M5-4 (§5.2, "Come è fatto (M5-4)").
 
 Scelte fatte dove il testo non decideva (tutte modificabili): il confronto usa **l'id dell'oggetto** (livello e statistiche
 dell'oggetto base: il `SOPEN` non porta il link con i bonus, quindi un drop con livello diverso dal base non si vede); il
@@ -958,6 +959,46 @@ dei pezzi indossati. La tabella dei candidati mostra crediti, roll, risposta, de
 Le segnalazioni **non cambiano mai il vincitore da sole**: aprono l'azione del council (§3.6). Il regolamento dice
 che i casi evidenti "si dicono prima del roll": per questo il ML vede le segnalazioni *Upgrade ignorato* appena
 arrivano le risposte, prima di chiudere il round.
+
+**Come è fatto (M5-4).** Le due segnalazioni sono `Domain/Flags.lua`, puro: riceve risposte, verdetti, chi può rollare e
+la fila, e restituisce codici (`UPGRADE_IGNORED`, `POSSIBLE_WASTE`) con i giocatori che nominano, mai frasi.
+
+- **Solo la MS1 (§6).** Si legge solo il verdetto `m` dell'`SRESP` (pesi della MS1), mai `o`. *Grande* si ricontrolla con le
+  soglie della gilda (sezione `upgrade`: `bigThreshold`, o `ilvlBigThreshold` per un confronto sul solo item level): un client
+  che dice BIG con una percentuale sotto soglia non fa scattare nulla; un BIG senza percentuale (slot vuoto, indossato che vale
+  0) resta grande. Un pezzo non usabile (`u = false`) e un verdetto danneggiato non contano mai.
+- **Upgrade ignorato.** Un giocatore che può rollare il pezzo (presente e, con `requireAddon`, con l'addon: §4.1) che **passa**,
+  o che non ha risposto ma di cui si conosce un verdetto, su un *Upgrade grande* della MS1. Oggi un verdetto arriva solo con una
+  risposta, quindi chi non risponde mai non è segnalabile: il caso "non risponde" scatta solo se il client ha già mandato un
+  verdetto (resta pronto per un client che lo mandi prima). Rispondere *Off-spec* o *Transmog* non è un passo e non lo fa
+  scattare (scelta fatta, reversibile).
+- **Possibile spreco.** La fila sono le risposte del tier a costo pieno (MS nel preset). Il primo in fila ha un upgrade
+  *piccolo* **o nessuno** (scelta fatta: chi non ci guadagna nulla è lo spreco più evidente) e un altro candidato della stessa
+  fila ha un *Upgrade grande* almeno `council.wasteRatio` volte maggiore (preset 2; se il primo è a 0 o sotto basta il grande).
+  Si nomina chi ci guadagna di più. Prima della proposta la fila è quella dei crediti congelati e del primo roll valido (poi il
+  nome); scritta la proposta, il primo è il vincitore della regola (`item.rule.winner`): se il pezzo è andato al tier
+  off-spec, alla banca, al disenchant o al ML non c'è spreco da dire. Un primo *non confrontabile* non fa scattare nulla.
+- **Nella sessione.** `SessionFSM.Flags(s, i)` le calcola dal pezzo; la bacheca le mostra **appena arrivano le risposte**, prima
+  di chiudere il round (§5.2), e le tiene con la proposta. Alla proposta i codici si aggiungono a `proposal.flags` (quindi
+  arrivano nell'`ITEM_AWARDED` e nell'`SPROP`) e i dettagli restano sul pezzo (`item.flagged`); un rifiuto che rimette il pezzo
+  in attesa li dimentica. **Non cambiano mai il vincitore, il costo o la fila**: non sono `INFO_FLAGS`, quindi un'assegnazione
+  `auto` aspetta il ML (scelta fatta, reversibile: basta aggiungerle a `FSM.INFO_FLAGS`). Intervenire è un `MODIFY` con il
+  motivo (`OBVIOUS_WASTE`, `PASSED_TO_GAME`), e la segnalazione resta nell'audit. La sessione congela anche le sezioni `upgrade`
+  e `council` delle regole; una sessione salvata prima usa i preset.
+- **Regole.** Nella sezione `council`: `flags` (acceso), `wasteRatio` (2, fra 1 e 100), `verdicts` = `council` (preset) |
+  `officers` | `ml`: chi vede verdetti e segnalazioni oltre al ML, che li vede sempre. Le regole scritte prima ricevono i
+  preset (`Rules.WithDefaults`).
+- **Visibilità.** Il ML vede tutto. Su un altro client la finestra in sola lettura mostra candidati, colonna Upgrade e
+  segnalazioni solo se `Flags.MaySee` lo permette (`SessionController:SeesVerdicts`): `council` = chi ha `council.member` (che da
+  ora apre la finestra in sola lettura anche senza `award.confirm`), `officers` = chi ha `award.confirm`, `ml` = nessuno. La
+  presenza nel raid richiesta da `council.requirePresent` è implicita: la vista di una sessione arriva solo ai membri del raid.
+  Sulla vista non viaggiano crediti né roll, quindi lì lo spreco si dice solo dopo la proposta. Gli altri vedono i soli codici
+  della proposta, senza nomi. **Limite dichiarato:** l'`SRESP` viaggia sul canale `RAID` (M5-2), quindi la visibilità è della
+  finestra, non dei dati: un client modificato potrebbe leggerli.
+- **Parole.** Gruppo `FLAG` di `Reasons` (`RC_FLAG_UPGRADE_IGNORED`, `RC_FLAG_POSSIBLE_WASTE`) per i codici, e le frasi con nomi e
+  verdetti `ML_FLAG_IGNORED_PASS`, `ML_FLAG_IGNORED_SILENT`, `ML_FLAG_WASTE`, `ML_FLAG_SHORT_*` (colonna Note), inglese e italiano.
+- **Da verificare in gioco:** come stanno le righe delle segnalazioni nella striscia della finestra in un raid vero (lunghezza,
+  a capo), e la finestra in sola lettura di un membro del council che non è officer. Nient'altro è nuovo per il client.
 
 ### 5.3 Limiti da dichiarare al raid
 
@@ -1359,7 +1400,7 @@ Tutto ciò che è in §3 più:
 - importa/esporta un profilo come stringa da incollare su Discord;
 - soglia di qualità, istanze considerate "ufficiali", durata del timer di roll, parole chiave in chat;
 - rango del council e degli editor del registro, voto sì/no;
-- pesi delle statistiche per spec, soglie di upgrade, auto-pass, visibilità dei verdetti (le soglie, `useStats`, l'auto-pass e l'interruttore dei verdetti sono la sezione `upgrade` delle regole, M5-2; la visibilità ai soli council è di M5-4);
+- pesi delle statistiche per spec, soglie di upgrade, auto-pass, visibilità dei verdetti (le soglie, `useStats`, l'auto-pass e l'interruttore dei verdetti sono la sezione `upgrade` delle regole, M5-2; la visibilità ai soli council è `council.verdicts`, M5-4, con `council.flags` e `council.wasteRatio` delle segnalazioni);
 - annunci in chat raid (sì/no, testo), suoni, dimensione e posizione dei popup;
 - **permessi per rango di gilda** (§3.9), modificabili solo dal GM;
 - **nome della fazione sul sito** (`site.factionName`, §7.1): vuoto = `Nebulah` per l'Orda e `Nebulaa` per

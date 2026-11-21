@@ -111,6 +111,10 @@ local function Ledger() return ns.Ledger end
 
 local function sessionRules(s) return s.rules.session end
 local function priorityRules(s) return s.rules.priority end
+-- The rules' `upgrade` and `council` sections, frozen on the session from M5-4 (a session saved before has none: the
+-- presets then).
+local function upgradeRules(s) return type(s.rules.upgrade) == "table" and s.rules.upgrade or Rules().DefaultConfig().upgrade end
+local function councilRules(s) return type(s.rules.council) == "table" and s.rules.council or Rules().DefaultConfig().council end
 
 local function log(s, entry)
 	s.log[#s.log + 1] = entry
@@ -257,7 +261,7 @@ local function openItem(s, index, now, env, effects)
 	item.responses, item.rounds, item.proposal, item.rule = {}, {}, nil, nil
 	item.labels, item.notes, item.verdicts, item.equipped = nil, nil, nil, nil
 	item.discarded, item.history, item.dropped, item.votes, item.voteClosed = nil, nil, nil, nil, nil
-	item.intervention, item.autoAt, item.autoRemaining = nil, nil, nil
+	item.intervention, item.autoAt, item.autoRemaining, item.flagged = nil, nil, nil, nil
 	s.active = index
 	openRound(s, index, newRound(s, "ROLL", "TIER", firstTier(s), nil, now, true), effects)
 end
@@ -295,6 +299,39 @@ local function allRolled(s, item)
 	return true
 end
 
+-- The council's flags of an item (Domain/Flags.lua, docs/ANALISI.md §5.2, M5-4): "upgrade ignored" and "possible waste",
+-- from the responses and the main-spec verdicts the raiders' clients sent. Only the players who may roll the item count
+-- (present, with the addon under §4.1). The line of the full-cost tier is the rules' own once the proposal is written
+-- (`item.rule.winner` first); before that, fewer credits then the higher roll of the first round. A list of
+-- { code, player, other?, response?, pct?, otherPct?, basis? }; empty for an item whose roll has not opened.
+function FSM.Flags(s, index)
+	local item = type(s) == "table" and type(s.items) == "table" and s.items[index] or nil
+	if type(item) ~= "table" or not item.opened or type(item.verdicts) ~= "table" then return {} end
+	local first = firstTier(s)
+	local main = {}
+	for code, t in pairs(responseTiers(s)) do
+		if t == first then main[code] = true end
+	end
+	local players = {}
+	for p in pairs(item.verdicts) do
+		if eligible(s, item, p) then players[p] = true end
+	end
+	for p in pairs(item.responses or {}) do
+		if eligible(s, item, p) then players[p] = true end
+	end
+	local cfg = priorityRules(s)
+	local rollMin, rollMax = cfg.rollMin or 1, cfg.rollMax or 100
+	local rolls = {}
+	local firstRound = (item.rounds and item.rounds[1]) or item.round
+	for _, r in ipairs(firstRound and firstRound.rolls or {}) do
+		if rolls[r.player] == nil and r.min == rollMin and r.max == rollMax then rolls[r.player] = r.value end
+	end
+	local decided = type(item.rule) == "table"
+	return ns.Flags.Evaluate({ responses = item.responses, verdicts = item.verdicts, main = main, players = players,
+		credits = item.credits, rolls = rolls, head = decided and item.rule.winner or nil, decided = decided },
+		upgradeRules(s), councilRules(s))
+end
+
 local function hasBlockingFlag(flags)
 	for _, f in ipairs(flags or {}) do
 		if not FSM.INFO_FLAGS[f] then return true end
@@ -316,6 +353,11 @@ local function setProposal(s, index, proposal, now, effects)
 	if item.rejected and #item.rejected > 0 then proposal.flags[#proposal.flags + 1] = "AFTER_REJECT" end
 	item.proposal = proposal
 	item.rule = { kind = proposal.kind, winner = proposal.winner, cost = proposal.cost }
+	-- The council's flags (M5-4) go with the proposal: the master looter sees them, the award's event keeps their codes,
+	-- and an "auto" award waits for the master looter (they are not INFO_FLAGS). They never change the winner.
+	item.flagged = FSM.Flags(s, index)
+	for _, code in ipairs(ns.Flags.Codes(item.flagged)) do proposal.flags[#proposal.flags + 1] = code end
+	if #item.flagged == 0 then item.flagged = nil end
 	item.intervention, item.votes, item.voteClosed, item.vote = nil, nil, nil, nil
 	item.autoAt, item.autoRemaining = nil, nil
 	item.state = "PROPOSAL"
@@ -751,7 +793,7 @@ function H.REJECT(s, input, env, effects)
 	if thenWhat == "PENDING" or thenWhat == "REOPEN" then
 		item.state, item.proposal, item.rule, item.round, item.next = "PENDING", nil, nil, nil, nil
 		item.responses, item.rounds = {}, {}
-		item.labels, item.notes, item.verdicts, item.equipped = nil, nil, nil, nil
+		item.labels, item.notes, item.verdicts, item.equipped, item.flagged = nil, nil, nil, nil, nil
 		item.skipTiers = nil
 		item.hold = true
 		s.active, s.state = nil, "ANNOUNCING"
@@ -963,7 +1005,8 @@ function FSM.New(params)
 		schema = FSM.SCHEMA,
 		id = params.id, season = params.season, ml = params.ml, createdAt = params.ts,
 		encounter = isInt(params.encounter) and params.encounter or nil,
-		rules = { session = copy(rules.session), priority = copy(rules.priority), cost = copy(rules.cost) },
+		rules = { session = copy(rules.session), priority = copy(rules.priority), cost = copy(rules.cost),
+			upgrade = copy(rules.upgrade), council = copy(rules.council) },
 		priceCtx = copy(type(params.priceCtx) == "table" and params.priceCtx or {}),
 		raid = { present = copy(params.present), addon = copy(params.addon) },
 		state = "WAITING", paused = false, lockdown = false,

@@ -704,3 +704,72 @@ describe("upgrade verdicts (M5-2)", function()
 		eq(ui().card.table.columns[4].title, "Upgrade")
 	end)
 end)
+
+describe("council flags (M5-4)", function()
+	before_boot(setup)
+
+	local function bootstrap()
+		local b = bench(1)
+		b.collect()
+		click(ui().main)
+		local s = b.s()
+		local function answer(name, fields)
+			fields.s, fields.i, fields.r = s.id, s.active, s.net.rounds[s.active]
+			Mock.chat.Receive("FDCP1", Codec():Encode("SRESP", fields), "RAID", name)
+		end
+		return b, answer
+	end
+
+	local function rowsByName()
+		local rows = {}
+		for _, row in ipairs(ui().card.table.rows) do
+			if row:IsShown() and row.cells[1]:GetText() ~= "" then rows[row.cells[1]:GetText()] = row end
+		end
+		return rows
+	end
+
+	it("tells the master looter about a pass on a big upgrade before the round closes", function()
+		local b, answer = bootstrap()
+		answer("Bryn", { rs = "PASS", vd = { m = { v = "BIG", b = "STATS", p = 120 } } })
+		eq(b.s().state, "ROLLING")
+		contains(ui().card.strip.sub:GetText(), L("ML_FLAG_IGNORED_PASS"):format("Bryn", "Big upgrade +12.0%"))
+		eq(rowsByName().Bryn.cells[6]:GetText(), L("ML_FLAG_SHORT_UPGRADE_IGNORED"))
+	end)
+
+	it("keeps the flags with the proposal and still proposes the rules' winner", function()
+		local b, answer = bootstrap()
+		answer("Aurel", { rs = "MS", vd = { m = { v = "SMALL", b = "STATS", p = 10 } } })
+		answer("Corin", { rs = "MS", vd = { m = { v = "BIG", b = "STATS", p = 90 } } })
+		answer("Bryn", { rs = "PASS" })
+		b.respond("Dara", "PASS")
+		b.roll("Aurel", 90); b.roll("Corin", 10)
+		if b.s().state == "ROLLING" then click(ui().main) end   -- close the round
+		local board = SC():Board()
+		eq(board.proposal.winner, full("Aurel"), "same credits, the higher roll: the flag changes nothing")
+		local sub = ui().card.strip.sub:GetText()
+		contains(sub, L("ML_FLAG_WASTE"):format("Aurel", "Small upgrade +1.0%", "Corin", "Big upgrade +9.0%"))
+		eq(rowsByName().Corin.cells[6]:GetText(), L("ML_FLAG_SHORT_POSSIBLE_WASTE"))
+	end)
+
+	it("a council member who is not an officer sees the view with the verdicts; an officer outside the council does not, by default", function()
+		bench(1)
+		PS().view = { s = "S1-9", q = 4, ml = full("Bryn"), items = { { id = 19003, ca = "jewelry", cs = { MS = 1, OS = 0 }, st = "ROLLING" } },
+			a = 1, mine = {}, responses = { [1] = {
+				[full("Aurel")] = { rs = "PASS", vd = { m = { v = "BIG", b = "STATS", p = 120 } } },
+				[full("Corin")] = { rs = "MS", vd = { m = { v = "SMALL", b = "STATS", p = 20 } } } } } }
+		FDCP.PermissionService.Can = function(_, p) return p == "council.member" end
+		MW():Open("loot")
+		W():Refresh()
+		local board = SC():Board()
+		eq(board.host, false)
+		eq(#board.candidates, 2)
+		eq(rowsByName().Aurel.cells[2]:GetText(), "·", "no credits travel to the view")
+		contains(ui().card.strip.sub:GetText(), L("ML_FLAG_IGNORED_PASS"):format("Aurel", "Big upgrade +12.0%"))
+		FDCP.PermissionService.Can = function(_, p) return p == "award.confirm" end
+		board = SC():Board()
+		eq(#board.candidates, 0, "verdicts to the council only (preset)")
+		eq(#board.flags, 0)
+		FDCP.PermissionService.Can = function() return false end
+		isNil(SC():Board(), "neither officer nor council: no window")
+	end)
+end)

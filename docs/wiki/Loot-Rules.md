@@ -62,6 +62,8 @@ The addon prepares each result: who, how many credits and why, in words. The mas
 
 The council (guild officers in the raid) can, always with a reason that goes in the log: fix a category or cost **before** the roll opens; give an item to another candidate in a case of **obvious waste**; give it to someone who **did not roll but passed to game the system**, at full cost; assign a legendary; cancel an award; correct a member's credits by hand. Who counts as master looter, council or officer comes from the **guild ranks**, and only the **Guild Master** can change what each rank may do and the rules themselves.
 
+**Council flags.** To make the obvious cases visible in time, the addon raises two flags as soon as the answers arrive: **upgrade ignored** (a raider passes on an item that is a big upgrade for their main spec) and **possible waste** (the first in line gains little or nothing, another main-spec candidate gains at least twice as much, with a big upgrade). They look only at the main spec (MS1), never change the winner by themselves and stop an automatic award until the master looter looks; acting on them is a modification with its reason. The guild's rules set whether the flags are on, the waste ratio (preset 2) and who besides the master looter sees the verdicts and the flags (preset: the council). See the [[Master Looter Guide|Master-Looter-Guide]], "Council flags".
+
 ## How a loot session runs
 
 The session runs on the master looter's client only; nobody else has to do anything except answer and roll.
@@ -152,6 +154,8 @@ The engine never writes sentences: it records short codes, and the addon turns t
 | `OUT_OF_ORDER` | Out of line: the winner is not the one the rules chose. |
 | `COST_CHANGED` | The cost is not the one the rules chose. |
 | `ML_DECIDED` | The rules had no winner or no cost: the master looter decided. |
+| `UPGRADE_IGNORED` | Upgrade ignored: someone passed on a big upgrade for their main spec. |
+| `POSSIBLE_WASTE` | Possible waste: the first in line gains little, another candidate a lot. |
 
 ### Why a roll was discarded
 

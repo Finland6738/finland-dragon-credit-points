@@ -50,10 +50,11 @@ Open question 8 ([#2](https://github.com/Finland6738/finland-dragon-credit-point
 - Analysis: §5.2, §6 (flags look only at MS1)
 - Scope: `Domain/Flags.lua`: **upgrade ignored** (a raider with the addon passes or does not answer on a big MS1 upgrade) and **possible waste** (the first in the queue has a small upgrade, another candidate a big one, configurable ratio); flags shown to the ML as soon as responses arrive, before the round closes; verdicts visible only to the council (configurable); flags never change the winner by themselves.
 - Done when:
-  - [ ] Both flags fire on the documented cases and never on MS2 or below the thresholds.
-- Tests: `Tests/test_flags.lua`.
-- Docs: CHANGELOG.
-- Real client: nothing beyond M4.
+  - [x] Both flags fire on the documented cases and never on MS2 or below the thresholds.
+- Tests: `Tests/test_flags.lua`, `Tests/test_ui_ml_session.lua` extended.
+- Docs: CHANGELOG; wiki **Master Looter Guide**, **Loot Rules** and **Rolling for Loot** (EN + IT).
+- Note: built as `Domain/Flags.lua` (pure: codes and the players they name), `SessionFSM.Flags` (live from the responses, written with the proposal: codes in `proposal.flags` and the award's event, details on the item; not `INFO_FLAGS`, so an `auto` award waits for the master looter) and the board / ML window (lines under the candidates before the round closes, the *Notes* column). New rules keys in the `council` section: `flags`, `wasteRatio` (preset 2), `verdicts` (`council` preset, `officers`, `ml`); a council member now gets the read-only window with the verdicts even without `award.confirm`. "Possible waste" also fires when the first in line has no upgrade at all; an off-spec answer is not a pass; a player who never answers sends no verdict, so the "no answer" case fires only when a verdict is known ([`docs/ANALISI.md`](../ANALISI.md) §5.2, "Come è fatto (M5-4)").
+- Real client: nothing beyond M4 (the look of the flag lines in the window's strip in a real raid).
 - Suggested model/effort: `opus` / high
 
 ### M5-5 — Council interventions and vote

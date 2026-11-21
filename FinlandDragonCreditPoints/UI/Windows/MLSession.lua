@@ -6,7 +6,11 @@
 --
 -- The window draws what App/SessionController.lua's Board gives (App/SessionBoard.lua) and sends the master looter's
 -- clicks back as commands (Command): it decides nothing. On another officer's client the same window shows the master
--- looter's view, read only: the items, the round, the proposal; the candidates travel only to the master looter.
+-- looter's view, read only: the items, the round, the proposal; the candidates (without credits and rolls, which travel
+-- only to the master looter) only where the rules let that client see the verdicts (M5-4: the council by default).
+-- The council's flags (M5-4, "upgrade ignored" and "possible waste") are written under the candidates as soon as the
+-- responses arrive and stay with the proposal; a candidate they name says it in the Notes column. They never change
+-- the winner: the master looter (for the council) modifies the proposal with a reason.
 -- "Confirm all" is not built: one item is in progress at a time (docs/ANALISI.md §4, M2-6), so there is never a second
 -- proposal to confirm with the first; with `session.autoAdvance` the next roll opens by itself after each award.
 -- Lua 5.1; unprotected frames. Not verified in the real client: the window in a raid.
@@ -125,6 +129,10 @@ local function candidateColumns()
 		if d.proposed then text = L["ML_NOTE_PROPOSED"]
 		elseif d.flag then text = ns.Reasons.Text(d.flag.group, d.flag.code)
 		elseif d.response == nil then text = L["ML_NOTE_WAITING"] end
+		for _, code in ipairs(d.flags or {}) do   -- the council's flags that name the player (M5-4)
+			local f = SB().FlagShort(code)
+			text = text ~= "" and (text .. " · " .. f) or f
+		end
 		if d.note then text = text ~= "" and (text .. " · " .. d.note) or d.note end   -- the player's own note (M4-6)
 		return text
 	end
@@ -136,7 +144,7 @@ local function candidateColumns()
 				fs:SetTextColor(ns.RosterWindow.ClassColor(d.class))
 			end },
 		{ id = "credits", title = L["ML_COL_CREDITS"], width = 76, align = "CENTER", mono = true,
-			text = function(d) return d.credits end, value = function(d) return d.credits end },
+			text = function(d) return d.credits or "·" end, value = function(d) return d.credits or -1 end },
 		{ id = "response", title = L["ML_COL_RESPONSE"], width = 176,
 			text = function(d)
 				if not d.response then return "·" end
@@ -165,7 +173,10 @@ local function candidateColumns()
 		{ id = "roll", title = L["ML_COL_ROLL"], width = 60, align = "RIGHT", mono = true,
 			text = function(d) return d.roll or "—" end, value = function(d) return d.roll or -1 end },
 		{ id = "note", title = L["ML_COL_NOTES"], flex = 1.7, sortable = false, text = noteText,
-			token = function(d) return d.proposed and "ok" or d.flag and "warn" or "text-3" end },
+			token = function(d)
+				if d.flag or (d.flags and #d.flags > 0) then return "warn" end
+				return d.proposed and "ok" or "text-3"
+			end },
 	}
 end
 
@@ -579,13 +590,16 @@ local function paintDetail(self, board)
 	if p then
 		main = SB().ProposalText(p)
 		local lines = SB().DiffTexts(p)
-		for _, f in ipairs(SB().FlagTexts(p)) do lines[#lines + 1] = f end
+		for _, f in ipairs(SB().FlagTexts(p, board.flags)) do lines[#lines + 1] = f end
+		for _, f in ipairs(SB().FlagLines(board.flags)) do lines[#lines + 1] = f end   -- the council's (M5-4)
 		if p.autoIn then lines[#lines + 1] = L["ML_AUTO_IN"]:format(math.ceil(p.autoIn)) end
 		sub = table.concat(lines, " ")
 	elseif sel.winner then
 		main = SB().AwardText(sel)
+		sub = table.concat(SB().FlagLines(board.flags), " ")
 	else
 		main = hint(board, sel)
+		sub = table.concat(SB().FlagLines(board.flags), " ")   -- before the round closes (§5.2)
 	end
 	card.strip.main:SetText(main)
 	card.strip.sub:SetText(sub)

@@ -41,6 +41,7 @@ Data\Specs.lua
 Domain\UpgradeScore.lua
 Domain\WeightImport.lua
 Domain\Wishlist.lua
+Domain\Flags.lua
 Data\StatWeights.lua
 Domain\Progress.lua
 Domain\Notice.lua

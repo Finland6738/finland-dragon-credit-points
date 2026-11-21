@@ -17,7 +17,7 @@ Questa pagina è per il **master looter**: chi apre il corpo del boss e guida il
 3. **Controlla la lista.** Seleziona un pezzo per vederlo a destra. Se una categoria o un costo è sbagliato, premi **Correggi** (vedi sotto). **Togli** toglie dalla lista un pezzo che non vuoi in sessione.
 4. **Premi Avvia la sessione.** Categorie e costi vanno al raid, scritti anche in `/raid` ([vedi sotto](#annunci-in-raid)). Con le impostazioni solite della gilda (avanzamento automatico) il primo roll si apre da solo; altrimenti premi **Apri il roll** sul pezzo che vuoi.
 5. **Il roll.** Ogni raider con l'addon riceve un popup, risponde *Main-spec*, *Off-spec* o *Passo* (con un'etichetta e una nota facoltative) e rolla: vedi [[Rollare per il loot|Rolling-for-Loot-it]]. La parte destra della tua finestra si riempie man mano che arrivano risposte e roll: per ogni candidato i crediti, la risposta, il roll e una nota. Una barra sottile e un orologio contano il tempo del round. Il round si chiude da solo al timer o quando tutti hanno risposto e rollato; puoi chiuderlo prima con **Chiudi il round**. Se nessuno ha chiesto il pezzo in main-spec, il round off-spec si apre da solo; se due giocatori sono pari per crediti e roll, si apre un reroll fra loro.
-6. **La proposta.** Quando il round si chiude l'addon scrive **a chi, quanto e perché**, per esempio *Proposta: Bryn, 1 credito. Stessi crediti degli altri, roll più alto.* Il giocatore proposto è segnato nella lista. Sotto la frase, in ambra, ciò che va guardato (roll scartati, un costo che deve fissare il council, una parità che le regole non sciolgono, una proposta dopo un rifiuto).
+6. **La proposta.** Quando il round si chiude l'addon scrive **a chi, quanto e perché**, per esempio *Proposta: Bryn, 1 credito. Stessi crediti degli altri, roll più alto.* Il giocatore proposto è segnato nella lista. Sotto la frase, in ambra, ciò che va guardato (roll scartati, un costo che deve fissare il council, una parità che le regole non sciolgono, una proposta dopo un rifiuto, e le [segnalazioni del council](#segnalazioni-del-council)).
 7. **Decidi tu:**
    - **Conferma e assegna** scrive l'assegnazione nel registro con il motivo dell'addon e addebita i crediti. Non c'è altro da scrivere.
    - **Rifiuta** non addebita nulla e rimette il pezzo in gioco (vedi sotto).
@@ -84,11 +84,27 @@ Tutto quello che l'addon scrive in `/raid` è scritto nella **lingua della gilda
 | **Risposta** | Main-spec, Off-spec o Passo, con l'etichetta dichiarata dal giocatore (*BiS*, *Upgrade grande*, *Upgrade piccolo*, *Situazionale*) se l'ha data; un punto se non ha ancora risposto. L'etichetta informa te e il council; non cambia mai la proposta. |
 | **Upgrade** | Cosa dice l'addon del giocatore sul pezzo per la spec della sua risposta: *Upgrade grande +7,4% · ilvl +6*, *Upgrade piccolo*, *Nessun upgrade*, *Non confrontabile*, *Non usabile*; un punto se il suo addon non ha mandato nulla (una versione più vecchia, o la gilda ha spento i verdetti). **Passa il mouse sulla riga** per vedere i verdetti di entrambe le spec e i pezzi che indossa. È un indizio per il council: è un'approssimazione e non cambia mai la proposta (vedi [[Rollare per il loot|Rolling-for-Loot-it]], "È un upgrade?"). Clicca l'intestazione per ordinare: prima gli upgrade grandi. |
 | **Roll** | Il primo roll 1-100 del round in corso (un reroll lo sostituisce per i pari). |
-| **Note** | *Proposto* per il vincitore; *Non ha ancora risposto* a round aperto; la nota che il giocatore ha scritto nel suo popup (dopo gli altri testi); il motivo per cui un roll è stato scartato (un secondo roll, non 1-100, troppo presto, **l'addon non è attivo**). |
+| **Note** | *Proposto* per il vincitore; *Non ha ancora risposto* a round aperto; la nota che il giocatore ha scritto nel suo popup (dopo gli altri testi); il motivo per cui un roll è stato scartato (un secondo roll, non 1-100, troppo presto, **l'addon non è attivo**); *Upgrade ignorato* o *Possibile spreco* quando una [segnalazione del council](#segnalazioni-del-council) nomina il giocatore. |
 
 Ordina cliccando su un'intestazione. La lista è in ordine: prima main-spec, poi meno crediti, poi il roll più alto. In un reroll i giocatori non pari sono attenuati.
 
 Un giocatore che rolla senza l'addon **non** conta: il roll compare con *L'addon non è attivo* così lo vedi, e lui non può rispondere.
+
+## Segnalazioni del council
+
+Due segnalazioni aiutano te e il council a vedere i casi che il regolamento dice di sollevare **prima** dell'assegnazione. Compaiono sotto i candidati, in ambra, **appena arrivano le risposte** (non devi aspettare la chiusura del round), restano con la proposta, e il candidato che nominano lo dice nella colonna **Note**.
+
+| Segnalazione | Quando | Esempio |
+|---|---|---|
+| **Upgrade ignorato** | Un raider con l'addon **passa** su un pezzo che per la sua **main-spec** (MS1) è un **upgrade grande**. | *Upgrade ignorato: Bryn passa (Upgrade grande +12,0%).* |
+| **Possibile spreco** | Il **primo in fila** fra le risposte main-spec ha un **upgrade piccolo o nessuno**, un altro candidato main-spec ne ha uno **grande**, almeno **il doppio** (il rapporto è una regola della gilda). | *Possibile spreco: Aurel è primo in fila (Upgrade piccolo +1,5%), Corin ci guadagna di più (Upgrade grande +9,0%).* |
+
+- **Non cambiano mai il vincitore.** La proposta resta quella delle regole. Se il council è d'accordo che è un caso su cui intervenire, **Modifichi** la proposta con il motivo *Spreco palese* (un altro candidato) o *Passato per fare il furbo* (a chi ha passato, a costo pieno); l'assegnazione tiene la segnalazione nell'audit.
+- **Solo la main-spec.** Entrambe leggono il verdetto della **MS1** del giocatore; una risposta off-spec e il verdetto off-spec non le fanno mai scattare. "Grande" si ricontrolla con le soglie della gilda, quindi un verdetto sotto soglia non segnala nulla; un pezzo che il giocatore non può usare non conta mai.
+- **Prima della proposta** il "primo in fila" segue crediti e roll; scritta la proposta, è il giocatore scelto dalle regole (e se il pezzo è andato al round off-spec, alla banca o a una tua scelta, non c'è "possibile spreco").
+- **Assegnazione automatica.** Quando la gilda assegna in automatico, una proposta con una segnalazione del council **non** si conferma da sola: aspetta te.
+- **Chi le vede.** Tu sempre. Oltre a te, la gilda decide chi vede verdetti e segnalazioni: il **council** (il preset: il rango con il permesso *membro del council*, che riceve la finestra in sola lettura anche se non è officer), **tutti gli officer**, oppure **solo il master looter**. Gli altri vedono solo i codici della proposta, senza nomi. La gilda può spegnere le segnalazioni.
+- **Cosa non possono sapere.** Chi non risponde mai non manda nessun verdetto, quindi un giocatore in silenzio è segnalato solo se il suo addon ne ha già mandato uno. Il verdetto lo calcola l'addon del giocatore: è un'approssimazione (vedi [[Suggerimenti di upgrade|Upgrade-Hints-it]]).
 
 ## Modifica
 
@@ -135,8 +151,8 @@ La proposta successiva porta la nota *È una nuova proposta dopo un rifiuto.*
 
 ## Gli altri officer
 
-Gli officer che non sono il master looter vedono la stessa finestra **in sola lettura**: i pezzi, il round, la proposta e i suoi motivi, ma nessun pulsante e nessuna tabella dei candidati (le risposte vanno solo al master looter). Chi non ha il permesso vede invece il proprio popup.
+Gli officer che non sono il master looter vedono la stessa finestra **in sola lettura**: i pezzi, il round, la proposta e i suoi motivi, ma nessun pulsante e né crediti né roll (restano al master looter). Dove la gilda lascia vedere i verdetti (al council, di base) vedono anche chi ha risposto cosa, la colonna Upgrade e le [segnalazioni del council](#segnalazioni-del-council). Chi non ha il permesso vede invece il proprio popup.
 
 ## Se la gilda usa altre modalità
 
-La gilda può impostare l'assegnazione **automatica** (l'addon conferma da solo una proposta pulita dopo una breve finestra, mai dopo un tuo intervento; la striscia dice *L'addon conferma da solo fra N s* e puoi ancora Rifiutare o Modificare in quel tempo) oppure **council** (il council vota; arriva in una versione successiva). Quale modalità vale è una regola della gilda: vedi [[Regole del loot|Loot-Rules-it]].
+La gilda può impostare l'assegnazione **automatica** (l'addon conferma da solo una proposta pulita dopo una breve finestra, mai dopo un tuo intervento e mai con una [segnalazione del council](#segnalazioni-del-council) attiva; la striscia dice *L'addon conferma da solo fra N s* e puoi ancora Rifiutare o Modificare in quel tempo) oppure **council** (il council vota; arriva in una versione successiva). Quale modalità vale è una regola della gilda: vedi [[Regole del loot|Loot-Rules-it]].
