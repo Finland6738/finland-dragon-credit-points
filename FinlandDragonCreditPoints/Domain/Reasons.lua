@@ -6,7 +6,7 @@
 -- category comes from), JOIN (a new member's credits), CORRECTION (the master looter's reasons), AUTO (automatic
 -- phases), RANKS (guild rank changes), DELIVERY (where an award is on its way to the winner, M4-7), REFUSAL (an action refused), STATUS (a member of the pool),
 -- RESPONSE, LABEL (the optional label of a main-spec response), VERDICT (the upgrade verdicts, M5-2), UPGRADE (why an item
--- cannot be used or compared, M5-2), IMPORT (why a weight string was refused, M5-3), KIND (what a proposal does), REJECT, STATE, EVENT (ledger event types) and PRESET
+-- cannot be used or compared, M5-2), IMPORT (why a weight string was refused, M5-3), KIND (what a proposal does), REJECT, STATE, EVENT (ledger event types), OUTCOME (how a legendary project ended, M5-6) and PRESET
 -- (preset names).
 local ADDON_NAME, ns = ...
 ns = ns or {}
@@ -14,7 +14,7 @@ ns.modules = ns.modules or {}
 local Reasons = {}
 ns.Reasons, ns.modules.Reasons = Reasons, Reasons
 
-Reasons.GROUPS = { "REASON", "FLAG", "DISCARD", "SOURCE", "JOIN", "CORRECTION", "AUTO", "RANKS", "DELIVERY", "REFUSAL", "STATUS", "RESPONSE", "LABEL", "VERDICT", "UPGRADE", "IMPORT", "KIND", "REJECT", "STATE", "EVENT", "PRESET" }
+Reasons.GROUPS = { "REASON", "FLAG", "DISCARD", "SOURCE", "JOIN", "CORRECTION", "AUTO", "RANKS", "DELIVERY", "REFUSAL", "STATUS", "RESPONSE", "LABEL", "VERDICT", "UPGRADE", "IMPORT", "KIND", "REJECT", "STATE", "EVENT", "OUTCOME", "PRESET" }
 
 -- KEYS[group][code] = locale key.
 Reasons.KEYS = {
@@ -35,6 +35,8 @@ Reasons.KEYS = {
 		ML_CHOICE = "RC_REASON_ML_CHOICE",
 		REJECTED_TO_BANK = "RC_REASON_REJECTED_TO_BANK",
 		REJECTED_TO_DISENCHANT = "RC_REASON_REJECTED_TO_DISENCHANT",
+		LEGENDARY_BUILDER = "RC_REASON_LEGENDARY_BUILDER",   -- a legendary chain piece (Domain/Legendary.lua, M5-6)
+		LEGENDARY_QUEUE = "RC_REASON_LEGENDARY_QUEUE",
 	},
 	FLAG = {
 		DISCARDED_ROLLS = "RC_FLAG_DISCARDED_ROLLS",
@@ -50,6 +52,9 @@ Reasons.KEYS = {
 		ML_DECIDED = "RC_FLAG_ML_DECIDED",
 		UPGRADE_IGNORED = "RC_FLAG_UPGRADE_IGNORED",   -- the council flags (Domain/Flags.lua, M5-4)
 		POSSIBLE_WASTE = "RC_FLAG_POSSIBLE_WASTE",
+		NO_BUILDER = "RC_FLAG_NO_BUILDER",   -- a legendary chain piece nobody receives by the project (M5-6)
+		BUILDER_ABSENT = "RC_FLAG_BUILDER_ABSENT",
+		QUEUE_EMPTY = "RC_FLAG_QUEUE_EMPTY",
 	},
 	DISCARD = {
 		NOT_1_100 = "RC_DISCARD_NOT_1_100",
@@ -204,6 +209,14 @@ Reasons.KEYS = {
 		BAD_DELTA = "RC_REFUSAL_BAD_DELTA",
 		NO_SEASON = "RC_REFUSAL_NO_SEASON",
 		NOT_READY = "RC_REFUSAL_NOT_READY",
+		PROJECT_UNKNOWN = "RC_REFUSAL_PROJECT_UNKNOWN",   -- the legendary projects (M5-6)
+		PROJECT_CLOSED = "RC_REFUSAL_PROJECT_CLOSED",
+		NOT_A_PIECE = "RC_REFUSAL_NOT_A_PIECE",
+		PIECE_TAKEN = "RC_REFUSAL_PIECE_TAKEN",
+		BAD_NAME = "RC_REFUSAL_BAD_NAME",
+		BAD_ITEM = "RC_REFUSAL_BAD_ITEM",
+		BAD_PIECES = "RC_REFUSAL_BAD_PIECES",
+		BAD_OUTCOME = "RC_REFUSAL_BAD_OUTCOME",
 	},
 	STATUS = {
 		ACTIVE = "RC_STATUS_ACTIVE",
@@ -295,6 +308,10 @@ Reasons.KEYS = {
 		LEGENDARY_PROJECT_CLOSED = "RC_EVENT_LEGENDARY_PROJECT_CLOSED",
 		CONFIG_CHANGED = "RC_EVENT_CONFIG_CHANGED",
 		PERMISSIONS_CHANGED = "RC_EVENT_PERMISSIONS_CHANGED",
+	},
+	OUTCOME = {   -- how a legendary project ended (Domain/Legendary.lua, M5-6)
+		COMPLETED = "RC_OUTCOME_COMPLETED",
+		ABANDONED = "RC_OUTCOME_ABANDONED",
 	},
 	PRESET = {
 		PATTO = "RC_PRESET_PATTO",

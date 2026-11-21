@@ -36,6 +36,13 @@
 -- Credits are frozen on the item when its roll opens too (the ledger's credits of the season), so the result is the
 -- one the raid rolled against and a resumed session computes the same thing. One item is in progress at a time:
 -- the next roll opens only after the previous item is assigned, so its winner's credits are already charged.
+--
+-- Legendary chain pieces (§3.7, M5-6): LOOT_OPENED marks an item that is a piece of an open project (env.legendary =
+-- Domain/Legendary.lua Pieces) unless legendary.mode is "roll"; it costs legendary.chainPieceCost for every response.
+-- When its turn comes (OPEN_ROLL) no round opens: the proposal names the project's receiver (Legendary.Recipient: the
+-- builder, or the first of the queue who is present), with the flags NO_BUILDER, BUILDER_ABSENT or QUEUE_EMPTY when
+-- there is none; in mode "vote" the council's vote decides (CONFIRM waits for CLOSE_VOTE). CONFIRM writes ITEM_AWARDED
+-- (with `legendary` = the project) and then LEGENDARY_PROJECT_PAID, both through the same gate.
 local ADDON_NAME, ns = ...
 ns = ns or {}
 ns.modules = ns.modules or {}
@@ -117,11 +124,29 @@ local function priorityRules(s) return s.rules.priority end
 local function upgradeRules(s) return type(s.rules.upgrade) == "table" and s.rules.upgrade or Rules().DefaultConfig().upgrade end
 local function councilRules(s) return type(s.rules.council) == "table" and s.rules.council or Rules().DefaultConfig().council end
 
--- Does the council vote on this session's proposals (M5-5)? Always with awardMode "council" (the vote decides: CONFIRM
--- waits for CLOSE_VOTE); with the rules' council.vote in the other modes too, where the votes only inform the master
--- looter (he sees them before confirming) and a vote against the proposal holds an "auto" award for him.
-local function votesOn(s)
-	return sessionRules(s).awardMode == "council" or councilRules(s).vote == true
+-- The rules' `legendary` section (M5-6), frozen on the session; the presets for a session saved before.
+local function legendaryRules(s)
+	return type(s.rules.legendary) == "table" and s.rules.legendary or Rules().DefaultConfig().legendary
+end
+
+-- Is the item a legendary chain piece the project decides (M5-6: legendary.mode council, vote or queue; in mode roll
+-- the piece is rolled like any other item and is not marked)?
+local function isPiece(item)
+	return type(item) == "table" and type(item.legendary) == "table"
+end
+
+-- Does the council's vote decide the item (CONFIRM waits for CLOSE_VOTE)? awardMode "council", and a chain piece in
+-- legendary.mode "vote" (M5-6).
+local function voteDecides(s, item)
+	return sessionRules(s).awardMode == "council" or (isPiece(item) and item.legendary.mode == "vote")
+end
+FSM.VoteDecides = voteDecides
+
+-- Does the council vote on this session's proposals (M5-5)? Always when the vote decides (voteDecides); with the
+-- rules' council.vote in the other modes too, where the votes only inform the master looter (he sees them before
+-- confirming) and a vote against the proposal holds an "auto" award for him. `item` (optional) is the item voted on.
+local function votesOn(s, item)
+	return voteDecides(s, item) or councilRules(s).vote == true
 end
 FSM.VotesOn = votesOn
 
@@ -193,15 +218,33 @@ local function priceItem(s, item)
 	return base, costs
 end
 
+-- A chain piece (M5-6) costs legendary.chainPieceCost for every response (or the base cost the ML corrected it to):
+-- the project decides who gets it, not the response.
+local function priceLegendary(s, item)
+	local cost = legendaryRules(s).chainPieceCost
+	if type(item.override) == "table" and isNum(item.override.cost) then cost = item.override.cost end
+	local costs = {}
+	for response in pairs(type(s.rules.cost.responseMultiplier) == "table" and s.rules.cost.responseMultiplier or {}) do
+		costs[response] = cost
+	end
+	for code in pairs(type(priorityRules(s).responses) == "table" and priorityRules(s).responses or {}) do
+		costs[code] = cost
+	end
+	item.costs, item.council, item.priceSource = costs, nil, "LEGENDARY"
+	item.legendary.cost = cost
+end
+
 local function reprice(s, item)
 	local base, costs = priceItem(s, item)
 	item.category, item.council, item.costs = base.category, base.council == true or nil, costs
 	item.priceSource = base.source
+	if isPiece(item) then priceLegendary(s, item) end
 	return base
 end
 
--- An item of LOOT_OPENED: { itemID, slot?, quality, classID?, subclassID?, equipLoc?, startsQuest?, boe? }.
-local function newItem(s, raw)
+-- An item of LOOT_OPENED: { itemID, slot?, quality, classID?, subclassID?, equipLoc?, startsQuest?, boe? }. `pieces` =
+-- Legendary.Pieces (M5-6): a chain piece of an open project is kept even when the cost rules would not track it.
+local function newItem(s, raw, pieces)
 	if type(raw) ~= "table" or not isInt(raw.itemID) or raw.itemID <= 0 then return nil, "item" end
 	if raw.slot ~= nil and not isInt(raw.slot) then return nil, "slot" end
 	local info = {
@@ -210,8 +253,14 @@ local function newItem(s, raw)
 	}
 	local item = { itemID = raw.itemID, slot = raw.slot, quality = raw.quality, boe = raw.boe == true or nil,
 		info = info, state = "PENDING" }
+	local mode = legendaryRules(s).mode
+	local piece = type(pieces) == "table" and pieces[raw.itemID] or nil
+	if type(piece) == "table" and mode ~= "roll" and type(piece.project) == "string" then
+		item.legendary = { project = piece.project, name = piece.name, final = piece.item, builder = piece.builder,
+			queue = copy(piece.queue), mode = mode }
+	end
 	local base = reprice(s, item)
-	if not base.tracked then return nil, "NOT_TRACKED" end
+	if not base.tracked and not isPiece(item) then return nil, "NOT_TRACKED" end
 	return item
 end
 
@@ -265,6 +314,8 @@ local function openRound(s, index, round, effects)
 		among = copy(round.among), collect = round.collect, deadline = round.deadline })
 end
 
+local setProposal   -- below (the proposal of a chain piece is written when its turn comes)
+
 -- Opens the roll of an item: freezes the raid and the credits, opens the first round, which collects the responses.
 local function openItem(s, index, now, env, effects)
 	local item = s.items[index]
@@ -281,6 +332,15 @@ local function openItem(s, index, now, env, effects)
 	item.discarded, item.history, item.dropped, item.votes, item.voteClosed = nil, nil, nil, nil, nil
 	item.intervention, item.autoAt, item.autoRemaining, item.flagged, item.autoHeld = nil, nil, nil, nil, nil
 	s.active = index
+	if isPiece(item) then
+		-- A chain piece (M5-6): no roll. The project names the receiver (Legendary.Recipient), the cost is the chain's.
+		local L = item.legendary
+		local winner, reason, flags = ns.Legendary.Recipient(L, L.mode, item.present)
+		fx(effects, { type = "LEGENDARY_PIECE", item = index, project = L.project, mode = L.mode, winner = winner })
+		setProposal(s, index, { kind = "AWARD", winner = winner, cost = L.cost,
+			credits = winner and (item.credits[winner] or 0) or nil, reasons = { reason }, flags = flags }, now, effects)
+		return
+	end
 	openRound(s, index, newRound(s, "ROLL", "TIER", firstTier(s), nil, now, true), effects)
 end
 
@@ -363,7 +423,7 @@ local function ready(p)
 end
 FSM.Ready = ready
 
-local function setProposal(s, index, proposal, now, effects)
+function setProposal(s, index, proposal, now, effects)
 	local item = s.items[index]
 	proposal = copy(proposal)
 	proposal.flags = proposal.flags or {}
@@ -381,12 +441,12 @@ local function setProposal(s, index, proposal, now, effects)
 	item.state = "PROPOSAL"
 	s.state = "PROPOSAL"
 	local session = sessionRules(s)
-	if session.awardMode == "auto" and ready(proposal) then
+	if session.awardMode == "auto" and ready(proposal) and not voteDecides(s, item) then
 		local wait = type(session.interventionSeconds) == "number" and session.interventionSeconds or 0
 		if s.paused then item.autoRemaining = wait else item.autoAt = now + wait end
 	end
 	item.autoHeld = nil
-	if votesOn(s) then item.votes = {} end
+	if votesOn(s, item) then item.votes = {} end
 	fx(effects, { type = "PROPOSAL", item = index, autoAt = item.autoAt })
 end
 
@@ -481,11 +541,25 @@ local function confirm(s, index, now, env, effects, auto)
 		end
 		payload.corrections = list
 	end
+	if isPiece(item) then payload.legendary = item.legendary.project end
 	local e, code = Ledger().Append(env.ledger, {
 		author = s.ml, ts = now, season = s.season, type = "ITEM_AWARDED", payload = payload,
 	}, env.opts)
 	if not e then return nil, code end
 	item.award = { event = e.id, member = p.winner, target = payload.target, cost = p.cost, ts = now }
+	-- A chain piece given to a character (M5-6): the project records it (LEGENDARY_PROJECT_PAID, same gate). The credits
+	-- are the award's; if the project closed meanwhile the award stands and the master looter sees why it is not counted.
+	if isPiece(item) and payload.target == "member" then
+		local paid, why = ns.Legendary.Pay(env.ledger, { author = s.ml, ts = now, ref = item.legendary.project,
+			item = item.itemID, member = p.winner, cost = p.cost, award = e.id }, env.opts)
+		if paid then
+			item.legendary.paid = paid.id
+			fx(effects, { type = "LEGENDARY_PAID", item = index, project = item.legendary.project, event = paid.id,
+				member = p.winner })
+		else
+			fx(effects, { type = "LEGENDARY_NOT_PAID", item = index, project = item.legendary.project, code = why })
+		end
+	end
 	item.state = "ASSIGNED"
 	item.autoAt, item.autoRemaining = nil, nil
 	s.active = nil
@@ -649,9 +723,13 @@ function H.LOOT_OPENED(s, input, env, effects)
 	if s.state ~= "WAITING" then return nil, "BAD_STATE" end
 	if s.lockdown then return nil, "LOCKDOWN" end
 	if type(input.items) ~= "table" then return nil, "items" end
+	-- The chain pieces of the open legendary projects (M5-6): env.legendary = Legendary.Pieces, or a function that
+	-- returns it (the controller reads the ledger only when a corpse is opened).
+	local pieces = env.legendary
+	if type(pieces) == "function" then pieces = pieces() end
 	local items, skipped = {}, {}
 	for _, raw in ipairs(input.items) do
-		local item, code = newItem(s, raw)
+		local item, code = newItem(s, raw, pieces)
 		if item then
 			items[#items + 1] = item
 		elseif code == "NOT_TRACKED" then
@@ -802,7 +880,7 @@ end
 function H.CONFIRM(s, input, env, effects)
 	if s.state ~= "PROPOSAL" then return nil, "BAD_STATE" end
 	local item = current(s)
-	if sessionRules(s).awardMode == "council" and not item.voteClosed then return nil, "VOTE_OPEN" end
+	if voteDecides(s, item) and not item.voteClosed then return nil, "VOTE_OPEN" end
 	return confirm(s, s.active, input.ts, env, effects, false)
 end
 
@@ -875,7 +953,7 @@ end
 function H.VOTE(s, input, env, effects)
 	if s.state ~= "PROPOSAL" then return nil, "BAD_STATE" end
 	local item = current(s)
-	if not votesOn(s) then return nil, "NOT_COUNCIL_MODE" end
+	if not votesOn(s, item) then return nil, "NOT_COUNCIL_MODE" end
 	if item.voteClosed then return nil, "VOTE_CLOSED" end
 	if not isName(input.by) then return nil, "by" end
 	if not isName(input.choice) then return nil, "choice" end
@@ -898,7 +976,7 @@ end
 function H.CLOSE_VOTE(s, input, env, effects)
 	if s.state ~= "PROPOSAL" then return nil, "BAD_STATE" end
 	local item = current(s)
-	if not votesOn(s) then return nil, "NOT_COUNCIL_MODE" end
+	if not votesOn(s, item) then return nil, "NOT_COUNCIL_MODE" end
 	if item.voteClosed then return nil, "VOTE_CLOSED" end
 	local tally = tallyOf(item.votes) or {}
 	local best, bestN, tie = nil, 0, false
@@ -1050,7 +1128,7 @@ function FSM.New(params)
 		id = params.id, season = params.season, ml = params.ml, createdAt = params.ts,
 		encounter = isInt(params.encounter) and params.encounter or nil,
 		rules = { session = copy(rules.session), priority = copy(rules.priority), cost = copy(rules.cost),
-			upgrade = copy(rules.upgrade), council = copy(rules.council) },
+			upgrade = copy(rules.upgrade), council = copy(rules.council), legendary = copy(rules.legendary) },
 		priceCtx = copy(type(params.priceCtx) == "table" and params.priceCtx or {}),
 		raid = { present = copy(params.present), addon = copy(params.addon) },
 		state = "WAITING", paused = false, lockdown = false,

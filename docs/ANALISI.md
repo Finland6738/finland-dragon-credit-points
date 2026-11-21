@@ -329,6 +329,38 @@ con ranghi, raid, protocollo e registro). Scelte fatte dove il testo sopra non d
 Un **progetto leggendario** ha: nome, oggetto finale, `itemID` dei pezzi della catena, costruttore, pezzi già
 pagati. Quando un pezzo della catena cade, l'addon lo riconosce e propone direttamente il costruttore.
 
+**Come è fatto (M5-6).** `Domain/Legendary.lua` (puro), il riconoscimento nella `SessionFSM` e `App/LegendaryService.lua`
+(la colla con season, regole e registro). Scelte fatte dove il testo sopra non decideva (tutte reversibili):
+
+- **Il progetto nel registro.** Tre eventi della season, tutti dal cancello dei permessi (`night.run`, gli officer nel
+  preset): `LEGENDARY_PROJECT_OPENED{name, item, pieces, builder?, queue?}` (l'id del progetto è l'id di questo evento;
+  `name` è un dato come l'etichetta di una season, non una frase), `LEGENDARY_PROJECT_PAID{ref, item, member, cost,
+  award}` e `LEGENDARY_PROJECT_CLOSED{ref, outcome, reason?}` con esito `COMPLETED` o `ABANDONED`. I controlli dei payload
+  li registra il modulo in `Ledger.CHECKS`. Il costruttore e i nomi della lista devono essere nel pool della season
+  (`NOT_MEMBER`); un pezzo appartiene a un solo progetto aperto (`PIECE_TAKEN`), così un `itemID` nomina un progetto. Un
+  progetto vive nella sua season: in una season nuova si riapre.
+- **I crediti restano dell'assegnazione.** Il pezzo si addebita con il solito `ITEM_AWARDED` (che porta `legendary` = il
+  progetto); subito dopo, con la stessa firma e lo stesso cancello, la conferma scrive `PAID` con il riferimento
+  all'assegnazione. `PAID` non muove crediti: segna il progresso. Se l'assegnazione viene annullata (`AWARD_VOIDED`) il
+  pezzo non conta più. I progetti si ricostruiscono leggendo prima le aperture e poi pagamenti e chiusure, perché la
+  sessione timbra i suoi eventi con il proprio orologio; un `PAID` o un `CLOSED` dopo la chiusura, o per un progetto
+  sconosciuto, resta nel registro ma non conta.
+- **Il pezzo nella sessione.** A `LOOT_OPENED` la sessione riceve i pezzi dei progetti aperti (`env.legendary`, letto dal
+  registro solo quando si apre un corpo) e, se `legendary.mode` non è `roll`, segna l'oggetto: costa
+  `legendary.chainPieceCost` per ogni risposta (anche un pezzo sotto la soglia del loot entra nella sessione). Quando
+  arriva il suo turno non si apre nessun round: la proposta nomina chi lo riceve (`Legendary.Recipient`). `council`: il
+  costruttore; `vote`: il costruttore proposto, poi il voto del council decide (`CONFIRM` aspetta `CLOSE_VOTE`, anche con
+  `awardMode = auto`); `queue`: il primo della lista presente nel raid (senza lista, il costruttore); `roll`: un oggetto
+  normale, il progetto non c'entra. Senza nessuno da proporre la proposta non ha vincitore e porta una segnalazione
+  (`NO_BUILDER`, `BUILDER_ABSENT`, `QUEUE_EMPTY`): il ML sceglie con `MODIFY` e un motivo (il costo resta quello della
+  catena) o manda il pezzo in banca (niente `PAID`). Con `awardMode = auto` e nessuna segnalazione il pezzo va al
+  costruttore da solo. Il ML può correggere il costo prima del turno del pezzo (`CORRECT_ITEM`).
+- **Interfaccia.** Fino alla finestra del council (M5-8) il comando `/fdcp legendary` (elenco con modalità e costo,
+  dettagli di un progetto, `open`, `complete`, `abandon`), parole tutte da chiavi di traduzione; gli oggetti si scrivono
+  come link o come id.
+- **Da verificare in gioco:** l'output di `/fdcp legendary` nella chat e i link degli oggetti scritti nel comando (il resto
+  è la sessione di M4).
+
 ### 3.8 BoE
 
 Un BoE si rolla come gli altri oggetti (stessa categoria, stesso costo). Se nessuno risponde main-spec,

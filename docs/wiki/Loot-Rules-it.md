@@ -50,7 +50,16 @@ Un BoE si rolla come gli altri. Se **nessuno risponde main-spec**, va alla **ban
 
 ## Leggendari
 
-Un leggendario **non si rolla**: il council sceglie chi costruisce il progetto leggendario e ogni pezzo della catena va a lui a **2 crediti l'uno**. Le regole possono passare al voto del council, al roll normale o a una coda decisa a inizio season.
+Nel preset un leggendario **non si rolla**: il council apre un **progetto leggendario** (un nome, l'oggetto finale, gli id degli oggetti della catena e il **costruttore** che sceglie) e quando cade un pezzo della catena l'addon lo riconosce e lo propone direttamente al costruttore a **2 crediti** (il *costo del pezzo della catena* delle regole). Modalità e costo stanno nelle regole della gilda:
+
+| Modalità | Cosa succede a un pezzo della catena |
+|---|---|
+| **council** (preset) | Nessun roll: va al costruttore del progetto, al costo del pezzo della catena. |
+| **vote** | Nessun roll: il council vota (prima viene proposto il costruttore), vince la maggioranza, stesso costo. Il master looter chiude il voto prima di confermare. |
+| **roll** | Si rolla come ogni altro oggetto: il costo lo decide la categoria e il progetto non viene consultato. |
+| **queue** | Nessun roll: va al primo della lista del progetto, decisa a inizio season, che è nel raid; stesso costo. |
+
+Se il costruttore non è nel raid (o nessuno della lista lo è), o il progetto non ha un costruttore, la proposta non ha un vincitore e una segnalazione dice perché: il master looter sceglie a chi va il pezzo, con un motivo, oppure lo manda in banca. Un pezzo dato a un personaggio finisce nel progetto come **pagato** (i crediti sono quelli dell'assegnazione, quindi annullarla li restituisce e il pezzo non conta più). Un pezzo può appartenere a un solo progetto aperto alla volta. Quando il leggendario è costruito il progetto si chiude come **completato**; se la gilda rinuncia, come **abbandonato**. Un progetto appartiene alla sua season. Finché non arriva la finestra del council, i progetti si gestiscono con `/fdcp legendary` (vedi [[Comandi|Commands-it]]).
 
 ## Cosa possono cambiare il master looter e il council
 
@@ -140,6 +149,8 @@ Il motore non scrive mai frasi: registra codici brevi, e l'addon li trasforma ne
 | `ML_CHOICE` | Scelto dal master looter. |
 | `REJECTED_TO_BANK` | La proposta è stata rifiutata: l'oggetto va alla banca di gilda. |
 | `REJECTED_TO_DISENCHANT` | La proposta è stata rifiutata: l'oggetto viene disincantato. |
+| `LEGENDARY_BUILDER` | Un pezzo di una catena leggendaria: va al costruttore del progetto, senza roll. |
+| `LEGENDARY_QUEUE` | Un pezzo di una catena leggendaria: va al primo della lista del progetto che è presente. |
 
 ### Segnalazioni su una proposta (cosa controllare)
 
@@ -158,6 +169,9 @@ Il motore non scrive mai frasi: registra codici brevi, e l'addon li trasforma ne
 | `ML_DECIDED` | Le regole non avevano un vincitore o un costo: ha deciso il master looter. |
 | `UPGRADE_IGNORED` | Upgrade ignorato: qualcuno ha passato un upgrade grande per la sua main-spec. |
 | `POSSIBLE_WASTE` | Possibile spreco: il primo in fila ci guadagna poco, un altro candidato molto. |
+| `NO_BUILDER` | Pezzo leggendario: il progetto non ha un costruttore. Scegli a chi va. |
+| `BUILDER_ABSENT` | Pezzo leggendario: il costruttore non è nel raid. Scegli a chi va. |
+| `QUEUE_EMPTY` | Pezzo leggendario: nessuno della lista del progetto è nel raid. Scegli a chi va. |
 
 ### Perché un roll è stato scartato
 
@@ -325,6 +339,14 @@ L'addon legge i ranghi dal roster della gilda, per posizione e mai per nome. Dop
 | `BAD_DELTA` | Scrivi i crediti come numero diverso da zero (al massimo 1000 in più o in meno). |
 | `NO_SEASON` | Nessuna season è aperta. |
 | `NOT_READY` | I dati della gilda non sono ancora caricati. |
+| `PROJECT_UNKNOWN` | Questo progetto leggendario non esiste. |
+| `PROJECT_CLOSED` | Il progetto leggendario è già chiuso. |
+| `NOT_A_PIECE` | L'oggetto non è un pezzo di quella catena leggendaria. |
+| `PIECE_TAKEN` | Un altro progetto leggendario aperto ha già uno di questi pezzi. |
+| `BAD_NAME` | Dai un nome al progetto (al massimo 48 caratteri). |
+| `BAD_ITEM` | L'oggetto finale non è un oggetto valido. |
+| `BAD_PIECES` | Elenca i pezzi della catena: da 1 a 40 oggetti diversi. |
+| `BAD_OUTCOME` | Un progetto finisce completato o abbandonato. |
 
 ### Stato di un membro del pool
 
@@ -429,6 +451,13 @@ Come un oggetto si confronta con quello che un giocatore indossa (vedi [[Rollare
 | `LEGENDARY_PROJECT_CLOSED` | Progetto leggendario chiuso |
 | `CONFIG_CHANGED` | Regole cambiate |
 | `PERMISSIONS_CHANGED` | Permessi cambiati |
+
+### Come è finito un progetto leggendario
+
+| Codice | Frase |
+|---|---|
+| `COMPLETED` | completato |
+| `ABANDONED` | abbandonato |
 
 ### Preset delle regole
 

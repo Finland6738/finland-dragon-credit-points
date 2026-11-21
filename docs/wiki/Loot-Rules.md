@@ -50,7 +50,16 @@ A BoE is rolled like any item. If **nobody answers main-spec**, it goes to the *
 
 ## Legendaries
 
-A legendary is **not rolled**: the council picks who builds the legendary project, and every piece of the chain goes to them at **2 credits each**. The rules can switch to a council vote, a normal roll or a queue decided at the start of the season.
+A legendary is **not rolled** in the preset: the council opens a **legendary project** (a name, the final item, the item ids of the chain pieces and the **builder** it chooses), and when a piece of the chain drops the addon recognises it and proposes it directly to the builder at **2 credits** (the rules' *chain piece cost*). Both the mode and the cost are in the guild's rules:
+
+| Mode | What happens to a chain piece |
+|---|---|
+| **council** (preset) | No roll: it goes to the project's builder, at the chain piece cost. |
+| **vote** | No roll: the council votes (the builder is proposed first), the majority wins, same cost. The master looter closes the vote before confirming. |
+| **roll** | Rolled like any other item: the category sets the cost and the project is not consulted. |
+| **queue** | No roll: it goes to the first of the project's list, decided at the start of the season, who is in the raid; same cost. |
+
+If the builder is not in the raid (or nobody of the list is), or the project has no builder, the proposal has no winner and a flag says why: the master looter chooses who gets the piece, with a reason, or sends it to the bank. A piece given to a character is recorded in the project as **paid** (the credits are the award's, so cancelling the award gives them back and the piece no longer counts). A piece can belong to one open project at a time. When the legendary is built the project is closed as **completed**; if the guild gives up, as **abandoned**. A project belongs to its season. Until the council window arrives, projects are managed with `/fdcp legendary` (see [[Commands|Commands]]).
 
 ## What the master looter and the council may change
 
@@ -140,6 +149,8 @@ The engine never writes sentences: it records short codes, and the addon turns t
 | `ML_CHOICE` | Chosen by the master looter. |
 | `REJECTED_TO_BANK` | The proposal was rejected: the item goes to the guild bank. |
 | `REJECTED_TO_DISENCHANT` | The proposal was rejected: the item is disenchanted. |
+| `LEGENDARY_BUILDER` | A piece of a legendary chain: it goes to the project's builder, no roll. |
+| `LEGENDARY_QUEUE` | A piece of a legendary chain: it goes to the first of the project's queue who is present. |
 
 ### Flags on a proposal (what to check)
 
@@ -158,6 +169,9 @@ The engine never writes sentences: it records short codes, and the addon turns t
 | `ML_DECIDED` | The rules had no winner or no cost: the master looter decided. |
 | `UPGRADE_IGNORED` | Upgrade ignored: someone passed on a big upgrade for their main spec. |
 | `POSSIBLE_WASTE` | Possible waste: the first in line gains little, another candidate a lot. |
+| `NO_BUILDER` | Legendary piece: the project has no builder. Choose who gets it. |
+| `BUILDER_ABSENT` | Legendary piece: the builder is not in the raid. Choose who gets it. |
+| `QUEUE_EMPTY` | Legendary piece: nobody of the project's queue is in the raid. Choose who gets it. |
 
 ### Why a roll was discarded
 
@@ -325,6 +339,14 @@ The addon reads ranks from the guild roster, by their position, never by their n
 | `BAD_DELTA` | Enter the credits as a number other than zero (at most 1000 either way). |
 | `NO_SEASON` | No season is open. |
 | `NOT_READY` | The guild's data is not loaded yet. |
+| `PROJECT_UNKNOWN` | There is no such legendary project. |
+| `PROJECT_CLOSED` | The legendary project is already closed. |
+| `NOT_A_PIECE` | The item is not a piece of that legendary chain. |
+| `PIECE_TAKEN` | Another open legendary project already has one of these pieces. |
+| `BAD_NAME` | Give the project a name (at most 48 characters). |
+| `BAD_ITEM` | The final item is not a valid item. |
+| `BAD_PIECES` | List the chain pieces: from 1 to 40 different items. |
+| `BAD_OUTCOME` | A project ends completed or abandoned. |
 
 ### Status of a member of the pool
 
@@ -429,6 +451,13 @@ How an item compares with what a player wears (see [[Rolling for Loot|Rolling-fo
 | `LEGENDARY_PROJECT_CLOSED` | Legendary project closed |
 | `CONFIG_CHANGED` | Rules changed |
 | `PERMISSIONS_CHANGED` | Permissions changed |
+
+### How a legendary project ended
+
+| Code | Sentence |
+|---|---|
+| `COMPLETED` | completed |
+| `ABANDONED` | abandoned |
 
 ### Presets of the rules
 

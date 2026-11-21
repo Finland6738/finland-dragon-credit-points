@@ -110,8 +110,17 @@ local function isCouncil()
 	return function(name) return CS:IsMember(name) == true end
 end
 
+-- The chain pieces of the season's open legendary projects (M5-6), read from the ledger only when LOOT_OPENED asks.
+local function legendaryPieces(self)
+	return function()
+		local L, s = self:Ledger(), self.session
+		if not L or not s or not ns.Legendary then return nil end
+		return ns.Legendary.Pieces(L, s.season)
+	end
+end
+
 function SC:Env()
-	return { ledger = self:Ledger(), opts = gate(), isCouncil = isCouncil() }
+	return { ledger = self:Ledger(), opts = gate(), isCouncil = isCouncil(), legendary = legendaryPieces(self) }
 end
 
 -- Adopts the saved session after a /reload, a disconnection or a guild change: hosts it, attaches the roll listener,

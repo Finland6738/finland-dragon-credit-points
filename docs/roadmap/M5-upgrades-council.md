@@ -76,10 +76,11 @@ Open question 8 ([#2](https://github.com/Finland6738/finland-dragon-credit-point
 - Analysis: §3.7
 - Scope: `Domain/Legendary.lua`: projects (name, final item, chain piece item ids, builder, pieces paid), modes `council` (preset), `vote`, `roll`, `queue`; a chain piece that drops is recognised and proposed to the builder at `legendary.chainPieceCost`; `LEGENDARY_PROJECT_*` events.
 - Done when:
-  - [ ] Each mode gives the documented result; a chain piece goes to the builder without a roll in `council` mode.
+  - [x] Each mode gives the documented result; a chain piece goes to the builder without a roll in `council` mode.
 - Tests: `Tests/test_legendary.lua`.
-- Docs: CHANGELOG.
-- Real client: nothing.
+- Docs: CHANGELOG; wiki **Loot Rules** (the legendary section) and **Commands** (EN + IT).
+- Note: built as `Domain/Legendary.lua` (pure: the projects folded from `LEGENDARY_PROJECT_OPENED` / `_PAID` / `_CLOSED`, whose payload checks it registers in the ledger; who receives a piece in each mode), the piece recognised by `Domain/SessionFSM.lua` at `LOOT_OPENED` (`env.legendary`, read from the ledger by `App/SessionController.lua` only when a corpse is opened) and proposed without a roll when its turn comes, and `App/LegendaryService.lua` with `/fdcp legendary` as the interface until M5-8. The project's id is its `OPENED` event's id; a piece belongs to one open project; `PAID` is written by the master looter's confirm next to the `ITEM_AWARDED` (which still charges the credits) and stops counting when the award is voided; in mode `roll` the project is not consulted ([`docs/ANALISI.md`](../ANALISI.md) §3.7, "Come è fatto (M5-6)").
+- Real client: nothing (the `/fdcp legendary` output and item links typed into it are for the owner's M5 checklist).
 - Suggested model/effort: `opus` / high
 
 ### M5-7 — BoE and the guild bank fallback

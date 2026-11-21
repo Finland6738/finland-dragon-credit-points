@@ -301,7 +301,8 @@ local function hostItem(s, i, item, response)
 	local out = { index = i, itemID = item.itemID, quality = item.quality, equipLoc = item.info and item.info.equipLoc,
 		category = item.category, council = item.council, costs = item.costs, state = item.state, active = s.active == i,
 		hold = item.hold, boe = item.boe, rejected = item.rejected and #item.rejected or 0,
-		cost = response and item.costs and item.costs[response] or nil }
+		cost = response and item.costs and item.costs[response] or nil,
+		legendary = type(item.legendary) == "table" and item.legendary.name or nil }   -- a chain piece's project (M5-6)
 	if item.award then out.winner, out.paid, out.target = item.award.member, item.award.cost, item.award.target end
 	return out
 end
@@ -453,7 +454,7 @@ local function hostActions(s, sel, item)
 	local inProposal = st == "PROPOSAL" and activeSel and p ~= nil
 	a.reject, a.modify = inProposal, inProposal
 	a.confirm = inProposal and p.winner ~= nil and p.cost ~= nil
-		and (rules.awardMode ~= "council" or item.voteClosed == true)
+		and (not ns.SessionFSM.VoteDecides(s, item) or item.voteClosed == true)
 	a.closeVote = inProposal and type(item.votes) == "table" and next(item.votes) ~= nil and not item.voteClosed
 	a.correct = item ~= nil and not ended and (st == "COLLECTING" or st == "ANNOUNCING" or st == "ROLLING" or st == "COMPUTING")
 		and (item.state == "PENDING" or item.state == "ROLLING" or item.state == "COMPUTING")
