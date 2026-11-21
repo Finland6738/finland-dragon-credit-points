@@ -501,6 +501,23 @@ passa dal cancello dei permessi (§3.9). Scelte fatte dove il testo sopra non de
 - la sessione scrive solo `ITEM_AWARDED` (destinatario `member`, `bank` o `disenchant`); `DROP_SEEN` e gli altri eventi
   della serata arrivano con gli adapter (M3, M4). "Conferma tutto" non serve: c'è una sola proposta aperta alla volta.
 
+**Come è fatto (M4-3).** `Adapters/RollListener.lua` legge i risultati di `/roll` da `CHAT_MSG_SYSTEM` con il pattern
+costruito dalla stringa globale `RANDOM_ROLL_RESULT` del client (`Compat.Roll`, mai scritto a mano: ogni lingua del
+client legge i suoi messaggi; il dump delle API elenca solo funzioni ed eventi, quindi un client senza la stringa non
+legge nessun roll). I nomi diventano `Nome-Reame` come nel registro. Il listener classifica e consegna, la sessione
+decide: ogni roll visto mentre un round è aperto diventa un input `ROLL` della `SessionFSM` (che li tiene tutti e
+`Priority` scarta quelli non validi con un codice, così il ML li vede); la classificazione immediata del listener usa gli
+stessi codici e lo stesso ordine (`VALID`, `NOT_1_100`, `BAD_VALUE`, `BEFORE_OPEN`, `AFTER_CLOSE`, `NOT_PRESENT`,
+`NO_ADDON`, `NOT_ELIGIBLE`, `DUPLICATE`) più il nuovo `NO_ROUND` (nessun round aperto: il roll non va alla sessione).
+Scelte fatte (modificabili): i duplicati si giudicano dai roll già salvati nel round, quindi un `/reload` del ML non li
+azzera; un roll con un altro intervallo non consuma il turno (come in `Priority`). **Piano B (§11 rischio 2):** un
+messaggio segreto non viene mai letto né confrontato; resta in un buffer (al massimo 200) con l'ora di arrivo e si
+rilegge quando il lockdown finisce (`ADDON_RESTRICTION_STATE_CHANGED`, `ENCOUNTER_END`, `PLAYER_REGEN_ENABLED` o un
+controllo ogni secondo); l'ora di arrivo è l'ora del roll, quindi conta per il round in cui è stato fatto. Ciò che resta
+segreto dopo il lockdown si scarta e si conta (`hidden`); un roll letto dopo la chiusura del suo round è `NO_ROUND`
+(`held`), quindi il controller (M4-4) non deve chiudere un round mentre `Pending()` è maggiore di zero. Da verificare nel
+gioco (spike S3): che il messaggio sia leggibile in istanza o diventi leggibile dopo il lockdown.
+
 ### 4.1 L'addon è obbligatorio: chi non ce l'ha
 
 Tutti i raider devono avere l'addon attivo. L'addon lo verifica da solo e aiuta GM, officer e master looter a

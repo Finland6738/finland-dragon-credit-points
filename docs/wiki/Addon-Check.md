@@ -40,3 +40,14 @@ The message looks like this (in your language):
 - Never during a boss fight: the button answers "a boss fight is in progress" and you click again after it.
 - It only goes out when someone with the permission clicks: the addon never writes it by itself.
 - Every notice is logged: who, when, to whom, how many lines.
+
+## Which rolls count
+
+Rolls are the game's own `/roll` results: the addon reads them from the system chat in your client's language and never makes one up. A roll counts only when it is:
+
+- a **1-100** roll (`/roll 50` or `/roll 1-1000` does not count, and does not use up your turn);
+- made **after the master looter opened the round** (an earlier roll is ignored);
+- your **first** valid roll of that round (a second one is ignored);
+- from a character **in the raid** with the **addon active**. A manual `/roll` from someone without the addon is set aside, and the master looter sees it as "discarded roll: addon not active", so nobody thinks it was lost by mistake.
+
+During a boss fight the game may hide the chat from addons: the addon then keeps those messages and reads them when the fight ends, with the time they arrived, so a roll still counts for the round it was made in.

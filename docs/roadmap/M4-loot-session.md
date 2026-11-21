@@ -36,7 +36,7 @@ M4 depends on M0, M2 and M3. Until the spike results arrive, every step builds p
 - Analysis: §0 point 3, §4 (rolls), §11 risk 2
 - Scope: `Adapters/RollListener.lua`: the `RANDOM_ROLL_RESULT` pattern built from the global string, only 1–100, only after the round opened, the first per player, from a character in the raid **with the addon active**; manual `/roll` from a player without the addon recorded as "discarded roll: addon not active"; secret values never compared (plan B: buffer the system messages and read them once the lockdown ends).
 - Done when:
-  - [ ] Valid, duplicate, out-of-range, early, absent and no-addon rolls are classified correctly in the mock, in English and Italian clients.
+  - [x] Valid, duplicate, out-of-range, early, absent and no-addon rolls are classified correctly in the mock, in English and Italian clients.
 - Tests: `Tests/test_roll_listener.lua`.
 - Docs: CHANGELOG.
 - Real client: roll messages in an instance (spike S3).

@@ -40,3 +40,14 @@ Il messaggio è fatto così (nella tua lingua):
 - Mai durante un boss: il pulsante risponde "un boss è in corso" e si riclicca dopo.
 - Parte solo dal clic di chi ha il permesso: l'addon non lo scrive mai da solo.
 - Ogni avviso finisce nel registro: chi, quando, a chi, quante righe.
+
+## Quali roll contano
+
+I roll sono i risultati del `/roll` del gioco: l'addon li legge dalla chat di sistema nella lingua del tuo client e non ne inventa mai uno. Un roll conta solo se è:
+
+- un roll **1-100** (`/roll 50` o `/roll 1-1000` non conta, e non consuma il tuo turno);
+- fatto **dopo che il master looter ha aperto il round** (un roll di prima è ignorato);
+- il tuo **primo** roll valido del round (un secondo è ignorato);
+- di un personaggio **nel raid** con l'**addon attivo**. Un `/roll` fatto a mano da chi non ha l'addon viene messo da parte e il master looter lo vede come "roll scartato: addon non attivo", così nessuno pensa che sia stato perso per errore.
+
+Durante un boss il gioco può nascondere la chat agli addon: l'addon tiene da parte quei messaggi e li legge a fine combattimento, con l'ora in cui sono arrivati, così un roll conta comunque per il round in cui è stato fatto.
