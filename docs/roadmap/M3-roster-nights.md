@@ -135,7 +135,7 @@
 - Analysis: §12 (M3 exit)
 - Scope: `docs/checklists/M3.md` (open and close a night, lineup and bench, attendance per boss, addon check with someone without the addon, the `/raid` notice, credits table, a first kill in the Progress tab).
 - Done when:
-  - [ ] The checklist exists and is linked from the README.
+  - [x] The checklist exists and is linked from the README.
   - [ ] The owner confirms M3 in game. *(in game)*
 - Docs: checklist, README (EN + IT), CHANGELOG.
 - Real client: the whole checklist.

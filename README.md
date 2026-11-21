@@ -32,7 +32,7 @@
 
 - One roadmap step per session and per pull request, shipped by `tools/ship_step.py` when the checks are green ([ADR 0001](docs/adr/0001-git-flow-and-automated-shipping.md)); see [CLAUDE.md](CLAUDE.md) and [ROADMAP.md](ROADMAP.md).
 - Checks: `python -I -X utf8 tools/check_docs.py`.
-- The in-game checklist of each milestone is in [docs/checklists/](docs/checklists/M1.md) (M1 so far).
+- The in-game checklist of each milestone is in [docs/checklists/](docs/checklists/): [M1](docs/checklists/M1.md) and [M3](docs/checklists/M3.md) so far (M3-9 adds the M3 one, with the open items of every M3 step).
 - The user manual lives in [docs/wiki/](docs/wiki/Home.md) in English and Italian and is published to the GitHub wiki automatically ([ADR 0002](docs/adr/0002-github-wiki-generated-from-docs-wiki.md)).
 - Foundations are copied and adapted from the sister project Azeroth Accord (same owner, GPL-3.0); the two addons stay independent in game.
 
