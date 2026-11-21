@@ -4,12 +4,16 @@
 -- place in the queue, the segmented control Main-spec / Off-spec / Pass, the optional label (BiS, big upgrade, small
 -- upgrade, situational), a note, the timer bar and the Roll button, which calls the game's RandomRoll(1, 100). The
 -- popup is a window of its own (not a tab): it opens when a round asks this player something and closes when the round
--- closes. Position and width are remembered per character. No upgrade verdict yet (M5-2).
+-- closes. Position and width are remembered per character.
 --
 -- It draws what App/PopupBoard.lua gives (the session as this client sees it: Net/Protocol.lua's view) and sends the
 -- player's answer back through Protocol.Session:Respond, which only ever sends the player's own response (the master
 -- looter takes the name from the sender, §8.4). The roll is the game's: the addon never writes a roll value; the master
 -- looter's client reads it from the chat (Adapters/RollListener.lua). Lua 5.1; unprotected frames.
+-- M5-2: under the chip, one line per spec says whether the item is an upgrade ("Main-spec · Big upgrade +7.4% · ilvl +6",
+-- "Off-spec · ..."), with a tooltip (why, on what basis, what is worn, the limits); an item the character cannot use
+-- comes with Pass preselected (nothing is sent by itself); every answer carries the verdicts and the worn pieces to the
+-- master looter (App/UpgradeAdvisor.lua).
 -- Not verified in the real client: how it looks in a raid, the tooltip comparison, RandomRoll from a click.
 local ADDON_NAME, ns = ...
 ns = ns or {}
@@ -27,9 +31,9 @@ Popup.CARD_GAP = 8
 Popup.TICK = 0.25   -- seconds between two redraws of the timer while the popup is on screen
 Popup.WARN_SECONDS = 5
 
--- locale-key: POPUP_HINT_CHOOSE POPUP_HINT_PASSED POPUP_HINT_LATER POPUP_HINT_ROLL POPUP_HINT_ROLLED POPUP_HINT_REROLL POPUP_HINT_FREE POPUP_HINT_TURN
+-- locale-key: POPUP_HINT_CHOOSE POPUP_HINT_UNUSABLE POPUP_HINT_PASSED POPUP_HINT_LATER POPUP_HINT_ROLL POPUP_HINT_ROLLED POPUP_HINT_REROLL POPUP_HINT_FREE POPUP_HINT_TURN
 Popup.HINTS = {
-	CHOOSE = "POPUP_HINT_CHOOSE", PASSED = "POPUP_HINT_PASSED", LATER = "POPUP_HINT_LATER", ROLL = "POPUP_HINT_ROLL",
+	CHOOSE = "POPUP_HINT_CHOOSE", UNUSABLE = "POPUP_HINT_UNUSABLE", PASSED = "POPUP_HINT_PASSED", LATER = "POPUP_HINT_LATER", ROLL = "POPUP_HINT_ROLL",
 	ROLLED = "POPUP_HINT_ROLLED", REROLL = "POPUP_HINT_REROLL", FREE = "POPUP_HINT_FREE", TURN = "POPUP_HINT_TURN",
 }
 
@@ -108,6 +112,7 @@ end
 -- Build
 
 local ROW_ITEM, ROW_BADGE, ROW_SEG, ROW_LABELS, ROW_NOTE, ROW_BAR = 40, 24, 32, 26, 28, 4
+local ROW_VERDICT = 24
 local PAD = 16
 
 local function buildCard(self, parent)
@@ -168,6 +173,18 @@ local function buildCard(self, parent)
 	c.badge = Widgets.Badge(c, "", "accent")
 	c.credits = Theme.NewText(c, "Small", "text-2")
 	c.credits:SetJustifyH("RIGHT")
+
+	-- the upgrade verdicts, one badge per spec (main-spec, off-spec); the tooltip says why and what is worn
+	c.verdicts = {}
+	for _, which in ipairs({ "ms", "os" }) do
+		local v = Widgets.Badge(c, "", "neutral")
+		v.which = which
+		v:EnableMouse(true)
+		v:SetScript("OnEnter", function(b) Popup:ShowVerdictTip(b, c.data, which) end)
+		v:SetScript("OnLeave", function() if GameTooltip then GameTooltip:Hide() end end)
+		v:Hide()
+		c.verdicts[which] = v
+	end
 
 	c.segs = {}
 	c.chips = {}
@@ -271,6 +288,22 @@ function Popup:ShowTooltip(owner, itemID)
 	if _G.GameTooltip_ShowCompareItem then pcall(_G.GameTooltip_ShowCompareItem, tip) end
 end
 
+-- The tooltip of a verdict badge: the verdict and why, what it was compared on, the worn pieces, the limits.
+function Popup:ShowVerdictTip(owner, d, which)
+	local tip, A = GameTooltip, ns.UpgradeAdvisor
+	local advice = d and d.upgrade
+	local u = advice and advice[which]
+	if not tip or not u or not A then return end
+	tip:SetOwner(owner, "ANCHOR_TOP")
+	local lines = A.Lines(u, which == "os" and "OS" or "MS")
+	tip:SetText(lines[1])
+	for i = 2, #lines do tip:AddLine(lines[i], 1, 1, 1, true) end
+	local names = A.EquippedNames(advice.equipped)
+	if #names > 0 then tip:AddLine(L["UPG_EQUIPPED"]:format(table.concat(names, ", ")), 0.8, 0.8, 0.8, true) end
+	tip:AddLine(L["UPG_LIMITS"], 0.6, 0.6, 0.6, true)
+	tip:Show()
+end
+
 -- Puts one card's rows in place (a row that does not apply is hidden and takes no room). Returns the card's height.
 local function layoutCard(self, c, d, top)
 	local y = 14
@@ -298,6 +331,18 @@ local function layoutCard(self, c, d, top)
 	c.credits:SetPoint("TOPRIGHT", c, "TOPRIGHT", -PAD, -y - 5)
 	c.credits:SetWidth(self.width - 2 * PAD - c.badge:GetWidth() - 8)
 	y = y + ROW_BADGE + 12
+
+	for _, which in ipairs({ "ms", "os" }) do
+		local v = c.verdicts[which]
+		if d.upgrade and d.upgrade[which] then
+			v:ClearAllPoints()
+			v:SetPoint("TOPLEFT", c, "TOPLEFT", PAD, -y + 6)
+			v:Show()
+			y = y + ROW_VERDICT + 2
+		else
+			v:Hide()
+		end
+	end
 
 	local seg = d.seg
 	for _, other in pairs(c.segs) do if other ~= seg then other:Hide() end end
@@ -405,13 +450,26 @@ local function applyCard(self, c, d, top)
 	end
 	c.credits:SetText(standing)
 
+	-- the upgrade verdicts (M5-2)
+	local A = ns.UpgradeAdvisor
+	for _, which in ipairs({ "ms", "os" }) do
+		local u = d.upgrade and d.upgrade[which]
+		if u and A then
+			c.verdicts[which]:SetBadge(ns.Reasons.Text("RESPONSE", which == "os" and "OS" or "MS") .. " · " .. A.Text(u), A.Tone(u))
+		end
+	end
+
 	-- the response selector: shown while the round collects responses, or locked when the player answered
 	d.seg = nil
 	if d.collect or d.response ~= nil then
 		local seg = segmentFor(self, c, d.offered)
 		d.seg = seg
 		c.syncing = true
-		if d.response and seg.buttons[d.response] then seg:Select(d.response) else seg:Clear() end
+		if d.response and seg.buttons[d.response] then seg:Select(d.response)
+		elseif d.preselect and seg.buttons[d.preselect] then
+			seg:Select(d.preselect)
+			seg.active = nil   -- a preselection is not an answer: clicking Pass sends it
+		else seg:Clear() end
 		c.syncing = false
 		seg:SetEnabled(d.canAnswer)
 	end
@@ -470,6 +528,10 @@ local function boardEnv(self)
 			return PB.Standing(me(), PS() and PS().raid)
 		end,
 		boss = PB.BossName,
+		upgrade = function(itemID)
+			local A = ns.UpgradeAdvisor
+			return A and (A.For(itemID)) or nil
+		end,
 	}
 end
 
@@ -556,7 +618,7 @@ function Popup:Send(card)
 	if not d or d.key ~= card.key or not d.rs then return false, "NO_RESPONSE" end
 	local ps = PS()
 	if not ps then return false, "NO_SESSION" end
-	local ok, code = ps:Respond(d.rs, d.lb, PB.ClipNote(d.n))
+	local ok, code = ps:Respond(d.rs, d.lb, PB.ClipNote(d.n), card.upgrade and card.upgrade.wire or nil)
 	if not ok then
 		self.err = card.key
 		self:Refresh()
@@ -646,4 +708,5 @@ if ns.Bus then
 	end, Popup)
 	ns.Bus:On("THEME_CHANGED", function() if Popup.frame then Popup:Refresh() end end, Popup)
 	ns.Bus:On("GUILD_KEY_CHANGED", function() if Popup.frame then Popup:Refresh() end end, Popup)
+	ns.Bus:On("UPGRADE_ADVICE_CHANGED", function() if Popup.frame then Popup:Refresh() end end, Popup)   -- gear or spec changed
 end

@@ -160,6 +160,53 @@ function UpgradeScore.ValidateConfig(c)
 	return true
 end
 
+-- The rules' section "upgrade" (Domain/Rules.lua, M5-2): the guild's thresholds and switches, written by the Guild
+-- Master like the rest of the rules and read by every client, so the verdicts of a raid use the same numbers.
+--   enabled   false = the popup shows no verdict and the responses carry none
+--   autoPass  true = an item the character cannot use is preselected on Pass (nothing is sent by itself)
+-- and the thresholds / useStats of DefaultConfig. A fresh copy on every call.
+function UpgradeScore.DefaultRules()
+	local c = UpgradeScore.DefaultConfig()
+	c.proficiency = nil
+	c.enabled, c.autoPass = true, true
+	return c
+end
+
+local RULE_FIELDS = { enabled = true, autoPass = true, useStats = true, bigThreshold = true, smallThreshold = true,
+	ilvlBigThreshold = true }
+
+-- Checks the section: true, or false and a sorted list of codes (a field name, or "unknown:<field>").
+function UpgradeScore.ValidateRules(c)
+	if type(c) ~= "table" then return false, { "upgrade" } end
+	local p = {}
+	for _, k in ipairs({ "enabled", "autoPass", "useStats" }) do
+		if type(c[k]) ~= "boolean" then p[#p + 1] = k end
+	end
+	for _, k in ipairs({ "bigThreshold", "smallThreshold", "ilvlBigThreshold" }) do
+		local v = c[k]
+		if type(v) ~= "number" or v ~= v or v < 0 or v > 10 then p[#p + 1] = k end
+	end
+	if type(c.smallThreshold) == "number" and type(c.bigThreshold) == "number" and c.smallThreshold > c.bigThreshold then
+		p[#p + 1] = "smallThreshold"
+	end
+	for k in pairs(c) do
+		if not RULE_FIELDS[k] then p[#p + 1] = "unknown:" .. tostring(k) end
+	end
+	sort(p)
+	return #p == 0, p
+end
+
+-- The score's configuration of a rules section (nil: the presets).
+function UpgradeScore.ConfigFromRules(rules)
+	local c = UpgradeScore.DefaultConfig()
+	if type(rules) == "table" then
+		for _, k in ipairs({ "bigThreshold", "smallThreshold", "ilvlBigThreshold", "useStats" }) do
+			if rules[k] ~= nil then c[k] = rules[k] end
+		end
+	end
+	return c
+end
+
 local DEFAULT_PROFICIENCY = UpgradeScore.DefaultProficiency()
 
 -- Hooks set by Data/StatWeights.lua: the client's stat key -> short code, and a spec's default weights (a fresh copy).
@@ -457,6 +504,39 @@ function UpgradeScore.Evaluate(item, equipped, who, config)
 	end
 	r.verdict = UpgradeScore.Verdict(r.pct, config, basis)
 	return r
+end
+
+-- The wire form of a result (Net/Protocol.lua, SRESP `vd`): a few small fields, codes and integers only.
+--   v = verdict, u = false when the character cannot use the item, c = code, b = basis, p = upgrade in permille
+--   (74 = +7.4%), l = item-level delta. nil for something that is not a result.
+local floor = math.floor
+local function whole(n, lo, hi)
+	n = n >= 0 and floor(n + 0.5) or -floor(-n + 0.5)
+	return n < lo and lo or n > hi and hi or n
+end
+
+UpgradeScore.PERMILLE_MAX, UpgradeScore.ILVL_MAX = 100000, 2000
+
+function UpgradeScore.Pack(r)
+	if type(r) ~= "table" or type(r.verdict) ~= "string" then return nil end
+	local w = { v = r.verdict }
+	if r.usable == false then w.u = false end
+	if type(r.code) == "string" then w.c = r.code end
+	if type(r.basis) == "string" then w.b = r.basis end
+	if type(r.pct) == "number" and r.pct == r.pct then
+		w.p = whole(r.pct * 1000, -UpgradeScore.PERMILLE_MAX, UpgradeScore.PERMILLE_MAX)
+	end
+	if type(r.ilvlDelta) == "number" and r.ilvlDelta == r.ilvlDelta then
+		w.l = whole(r.ilvlDelta, -UpgradeScore.ILVL_MAX, UpgradeScore.ILVL_MAX)
+	end
+	return w
+end
+
+-- The other way: a wire verdict as the shape of Evaluate's result (verdict, usable, code, basis, pct, ilvlDelta).
+function UpgradeScore.Unpack(w)
+	if type(w) ~= "table" or type(w.v) ~= "string" then return nil end
+	return { verdict = w.v, usable = w.u ~= false, code = w.c, basis = w.b, pct = w.p and w.p / 1000 or nil,
+		ilvlDelta = w.l }
 end
 
 -- A short debug rendering (tests and /fdcp debug): "BIG STATS +7.4% ilvl +6".

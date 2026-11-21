@@ -326,6 +326,35 @@ The addon reads ranks from the guild roster, by their position, never by their n
 | `TMOG` | Transmog |
 | `PASS` | Pass |
 
+### Upgrade verdicts
+
+How an item compares with what a player wears (see [[Rolling for Loot|Rolling-for-Loot]]).
+
+| Code | Sentence |
+|---|---|
+| `BIG` | Big upgrade |
+| `SMALL` | Small upgrade |
+| `NONE` | No upgrade |
+| `NOT_COMPARABLE` | Not comparable |
+| `UNUSABLE` | Not usable |
+
+### Why an item cannot be used or compared
+
+| Code | Sentence |
+|---|---|
+| `ARMOR_TYPE` | Your class cannot wear this type of armor. |
+| `WEAPON_TYPE` | Your class cannot use this type of weapon. |
+| `DUAL_WIELD` | Your class or spec cannot dual wield. |
+| `CLASS_RESTRICTED` | This item is for other classes. |
+| `SPEC_RESTRICTED` | This item is not for your specialization. |
+| `UNKNOWN_CLASS` | The addon does not know your class. |
+| `NOT_EQUIPPABLE` | This is not a piece of equipment: the addon cannot compare it. |
+| `COSMETIC` | A shirt or a tabard: there is nothing to compare. |
+| `EFFECT_TRINKET` | A trinket with a use effect: the stats cannot tell its worth. |
+| `EFFECT_TRINKETS` | Both your trinkets have a use effect: the addon keeps them. |
+| `TWO_HAND_EQUIPPED` | You wear a two-handed weapon: this item goes in the other hand. |
+| `NO_ITEM_LEVEL` | The game gave no item level for this item. |
+
 ### What a proposal does with the item
 
 | Code | Sentence |

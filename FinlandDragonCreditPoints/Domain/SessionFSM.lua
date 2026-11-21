@@ -255,7 +255,7 @@ local function openItem(s, index, now, env, effects)
 	item.credits = copy(type(credits) == "table" and credits or {})
 	item.nights = copy(type(env.nights) == "table" and env.nights or nil)
 	item.responses, item.rounds, item.proposal, item.rule = {}, {}, nil, nil
-	item.labels, item.notes = nil, nil
+	item.labels, item.notes, item.verdicts, item.equipped = nil, nil, nil, nil
 	item.discarded, item.history, item.dropped, item.votes, item.voteClosed = nil, nil, nil, nil, nil
 	item.intervention, item.autoAt, item.autoRemaining = nil, nil, nil
 	s.active = index
@@ -668,7 +668,10 @@ end
 -- only, with the optional label (a code: BIS, BIG_UPGRADE ...; informative, never read by the rules, §3.3) and note
 -- (at most FSM.MAX_NOTE bytes). The latest answer replaces the earlier one, label and note included; it cannot change
 -- after the player rolled in that round. A label or a note that is not valid is dropped, the response still counts; a
--- pass carries neither.
+-- pass carries neither. `verdict` ({ m, o? }: the upgrade verdicts of main-spec and off-spec, UpgradeScore.Pack) and
+-- `equipped` (a list of "item:..." strings) are what the raider's client says about the piece (§5.1, M5-2): kept as given
+-- for the master looter's table, a pass keeps them too (the "upgrade ignored" flag of M5-4 needs them), the rules never
+-- read them.
 function H.RESPONSE(s, input)
 	local item = current(s)
 	if s.state ~= "ROLLING" or not item.round.collect then return nil, "RESPONSES_CLOSED" end
@@ -688,6 +691,11 @@ function H.RESPONSE(s, input)
 	if response == "PASS" or type(note) ~= "string" or note == "" or #note > FSM.MAX_NOTE then note = nil end
 	item.labels, item.notes = item.labels or {}, item.notes or {}
 	item.labels[input.player], item.notes[input.player] = label, note
+	local verdict, equipped = input.verdict, input.equipped
+	if type(verdict) ~= "table" or type(verdict.m) ~= "table" then verdict = nil end
+	if type(equipped) ~= "table" or #equipped == 0 then equipped = nil end
+	item.verdicts, item.equipped = item.verdicts or {}, item.equipped or {}
+	item.verdicts[input.player], item.equipped[input.player] = copy(verdict), copy(equipped)
 	return true
 end
 
@@ -743,7 +751,7 @@ function H.REJECT(s, input, env, effects)
 	if thenWhat == "PENDING" or thenWhat == "REOPEN" then
 		item.state, item.proposal, item.rule, item.round, item.next = "PENDING", nil, nil, nil, nil
 		item.responses, item.rounds = {}, {}
-		item.labels, item.notes = nil, nil
+		item.labels, item.notes, item.verdicts, item.equipped = nil, nil, nil, nil
 		item.skipTiers = nil
 		item.hold = true
 		s.active, s.state = nil, "ANNOUNCING"

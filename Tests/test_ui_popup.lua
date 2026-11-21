@@ -850,3 +850,239 @@ describe("the master looter hears the popups", function()
 		eq(h.refused[#h.refused], "NOT_PRESENT", "the raid of the open item was frozen: Edda comes in from the next item")
 	end)
 end)
+
+---------------------------------------------------------------------------------------------------------------------
+-- The upgrade verdicts in the card (M5-2)
+
+local STR, STA = "ITEM_MOD_STRENGTH_SHORT", "ITEM_MOD_STAMINA_SHORT"
+local function hlink(id, name) return "|cffa335ee|Hitem:" .. id .. "::::::::70:::::|h[" .. name .. "]|h|r" end
+local VERDICT_ITEMS = {
+	{ id = 19100, link = hlink(19100, "Old Helm"), name = "Old Helm", quality = 4, equipLoc = "INVTYPE_HEAD", classID = 4,
+		subclassID = 4, type = "Armor", subType = "Plate", level = 64, stats = { [STR] = 90, [STA] = 40 } },
+	{ id = 19101, link = hlink(19101, "Helm of Embers"), name = "Helm of Embers", quality = 4, equipLoc = "INVTYPE_HEAD",
+		classID = 4, subclassID = 4, type = "Armor", subType = "Plate", level = 70, stats = { [STR] = 100, [STA] = 50 } },
+	{ id = 19120, link = hlink(19120, "Wand of Sparks"), name = "Wand of Sparks", quality = 4, equipLoc = "INVTYPE_RANGEDRIGHT",
+		classID = 2, subclassID = 19, type = "Weapon", subType = "Wands", level = 70, stats = { ITEM_MOD_SPELL_POWER_SHORT = 20 } },
+}
+local function verdictItems(M)
+	for _, def in ipairs(VERDICT_ITEMS) do M.items.Add(def) end
+	M.items.equipped = { [1] = hlink(19100, "Old Helm") }
+	_G.INVTYPE_HEAD, _G.INVTYPE_RANGEDRIGHT = "Head", "Ranged"
+end
+
+describe("the upgrade verdicts in the card", function()
+	before_boot(function(M)
+		M.player.name, M.player.realm = "Bryn", REALM
+		verdictItems(M)
+	end)
+
+	local function raid()
+		Mock.group.Set{ raid = true, members = { { name = "Aurel" }, { name = "Corin" } } }
+		Mock.Advance(3)
+	end
+	local function receive(t, fields) return Mock.chat.Receive("FDCP1", Codec():Encode(t, fields), "RAID", ML) end
+	local function open(itemID)
+		raid()
+		receive("SOPEN", { s = "S1-1", q = 1, ml = ML, e = 663, rt = { MS = 1, OS = 2 },
+			it = { { id = itemID, ca = "armor", cs = { MS = 1, OS = 0 } } } })
+		receive("SROLL", { s = "S1-1", q = 2, i = 1, r = 1, k = "ROLL", g = "TIER", tr = 1, cl = true,
+			de = FDCP.Compat.ServerTime() + 30 })
+	end
+
+	-- the player's declared specs and the guild's rules come from a ledger bound to the client
+	local function declare(ms1, ms2, rules)
+		local Lg, Sn, R = FDCP.Ledger, FDCP.Season, FDCP.Roster
+		Mock.guild.Set({ name = "Keepers", ranks = { [0] = "Guild Master", "Officer" }, myRank = 1, members = {
+			{ name = "Aurel", rank = 0 }, { name = "Bryn", rank = 1 } } })
+		local L1 = Lg.New()
+		assert(Sn.Open(L1, { author = ML, ts = 1, season = "S1", instances = { { id = 409, size = 40 } } }))
+		assert(R.Join(L1, { author = ML, ts = 2, season = "S1", member = full("Bryn"), faction = "Horde", ms1 = ms1, ms2 = ms2 }))
+		if rules then assert(FDCP.Rules.Change(L1, { author = ML, ts = 3, rules = rules, confirmed = true })) end
+		FDCP.NightController:Bind(L1)
+		FDCP.UpgradeAdvisor.Reset()
+	end
+
+	it("shows how much of an upgrade the item is for the main-spec, in the player's words", function()
+		open(19101)
+		local v = card().verdicts
+		truthy(v.ms:IsShown())
+		eq(v.ms.label:GetText(), "Main-spec · Big upgrade +11.7% · ilvl +6")
+		falsy(v.os:IsShown(), "no declared off-spec: no second line")
+		eq(card().data.upgrade.ms.verdict, "BIG")
+	end)
+
+	it("speaks Italian with the decimal comma", function()
+		FDCP.Locale.SetActive("itIT")
+		open(19101)
+		eq(card().verdicts.ms.label:GetText(), "Main-spec · Upgrade grande +11,7% · ilvl +6")
+	end)
+
+	it("the tooltip says the verdict, what it was compared on, what is worn and the limits", function()
+		open(19101)
+		Mock.RunScript(card().verdicts.ms, "OnEnter")
+		truthy(GameTooltip:IsShown())
+		local lines = GameTooltip._lines
+		eq(lines[1], L("UPG_BASIS_STATS"))
+		contains(lines[2], "Old Helm")
+		eq(lines[3], L("UPG_LIMITS"))
+		Mock.RunScript(card().verdicts.ms, "OnLeave")
+		falsy(GameTooltip:IsShown())
+	end)
+
+	it("an item the character cannot use comes with Pass preselected, and nothing is sent by itself", function()
+		open(19120)
+		eq(card().verdicts.ms.label:GetText(), "Main-spec · Not usable")
+		eq(card().data.preselect, "PASS")
+		eq(card().data.hint, "UNUSABLE")
+		eq(card().hint:GetText(), L("POPUP_HINT_UNUSABLE"))
+		isNil(seg():Active(), "a preselection is not an answer")
+		eq(card().data.response, nil)
+		falsy(card().data.canRoll, "no answer, no roll")
+		Mock.Advance(2)
+		eq(count(sentMessages(Mock), "SRESP"), 0)
+	end)
+
+	it("clicking the preselected Pass sends it, with the verdict", function()
+		open(19120)
+		seg().buttons.PASS:Click()
+		Mock.Advance(2)
+		local m = lastOf(sentMessages(Mock), "SRESP")
+		truthy(m); eq(m.rs, "PASS")
+		deepEq(m.vd, { m = { v = "NONE", u = false, c = "WEAPON_TYPE" } })
+	end)
+
+	it("the player may answer main-spec on an item that was preselected as Pass", function()
+		open(19120)
+		seg().buttons.MS:Click()
+		Mock.Advance(2)
+		eq(lastOf(sentMessages(Mock), "SRESP").rs, "MS")
+		eq(card().data.hint, "ROLL")
+		eq(card().data.preselect, nil, "an answer is given")
+	end)
+
+	it("every answer carries the verdicts and the worn pieces to the master looter", function()
+		open(19101)
+		seg().buttons.MS:Click()
+		Mock.Advance(2)
+		local m = lastOf(sentMessages(Mock), "SRESP")
+		deepEq(m.vd, { m = { v = "BIG", b = "STATS", p = 117, l = 6 } })
+		deepEq(m.eq, { "item:19100::::::::70:::::" })
+		-- a label sent later carries them again
+		P():SetLabel("BIS")
+		Mock.Advance(2)
+		m = lastOf(sentMessages(Mock), "SRESP")
+		eq(m.lb, "BIS")
+		eq(m.vd.m.v, "BIG")
+	end)
+
+	it("the window does not wait for an item whose data is not loaded, and shows the verdict when it arrives", function()
+		Mock.items.Add{ id = 19160, link = hlink(19160, "Late Helm"), name = "Late Helm", quality = 4, equipLoc = "INVTYPE_HEAD",
+			classID = 4, subclassID = 4, level = 70, stats = { [STR] = 100 }, cached = false }
+		open(19160)
+		falsy(card().verdicts.ms:IsShown(), "no data yet")
+		Mock.Advance(1)
+		truthy(card().verdicts.ms:IsShown())
+	end)
+
+	it("redraws when the player puts a better piece on", function()
+		open(19101)
+		eq(card().data.upgrade.ms.verdict, "BIG")
+		Mock.items.Add{ id = 19102, link = hlink(19102, "Better Helm"), name = "Better Helm", quality = 4, equipLoc = "INVTYPE_HEAD",
+			classID = 4, subclassID = 4, level = 72, stats = { [STR] = 130, [STA] = 50 } }
+		Mock.items.equipped[1] = hlink(19102, "Better Helm")
+		Mock.Fire("PLAYER_EQUIPMENT_CHANGED", 1, false)
+		eq(card().data.upgrade.ms.verdict, "NONE")
+		eq(card().verdicts.ms.label:GetText(), "Main-spec · No upgrade -22.2% · ilvl -2")
+	end)
+
+	it("shows no verdict when the guild's rules turn them off", function()
+		local rules = FDCP.Rules.DefaultConfig()
+		rules.upgrade.enabled = false
+		declare(72, nil, rules)
+		open(19101)
+		falsy(card().verdicts.ms:IsShown())
+		isNil(card().data.upgrade)
+		seg().buttons.MS:Click()
+		Mock.Advance(2)
+		local m = lastOf(sentMessages(Mock), "SRESP")
+		isNil(m.vd); isNil(m.eq)
+	end)
+
+	it("the two specs get a line each when the player declared an off-spec", function()
+		declare(72, 73)
+		open(19101)
+		truthy(card().verdicts.ms:IsShown()); truthy(card().verdicts.os:IsShown())
+		eq(card().verdicts.ms.label:GetText(), "Main-spec · Big upgrade +11.7% · ilvl +6")
+		eq(card().verdicts.os.label:GetText():find("Off-spec", 1, true), 1)
+		local msY = select(5, card().verdicts.ms:GetPoint(1))
+		local osY = select(5, card().verdicts.os:GetPoint(1))
+		truthy(osY < msY, "the off-spec line is under the main-spec one")
+	end)
+end)
+
+describe("the master looter sees the verdicts of the raid", function()
+	local NAMES = { "Aurel", "Bryn", "Corin" }
+	local function popup(c) return c.addon().MemberLootPopup end
+
+	local function started()
+		local net = Sim.new{ realm = REALM }
+		local c = {}
+		for _, n in ipairs(NAMES) do c[n] = net:Client(n, { setup = verdictItems }) end
+		-- Corin wears a better helm than the one on offer
+		c.Corin.Mock.items.Add{ id = 19102, link = hlink(19102, "Better Helm"), name = "Better Helm", quality = 4,
+			equipLoc = "INVTYPE_HEAD", classID = 4, subclassID = 4, level = 72, stats = { [STR] = 130, [STA] = 50 } }
+		c.Corin.Mock.items.equipped = { [1] = hlink(19102, "Better Helm") }
+		c.Aurel.Mock.items.Add{ id = 19102, link = hlink(19102, "Better Helm"), name = "Better Helm", quality = 4,
+			equipLoc = "INVTYPE_HEAD", classID = 4, subclassID = 4, level = 72, stats = { [STR] = 130, [STA] = 50 }, cached = false }
+		net:Raid(NAMES)
+		net:Advance(3)
+		local h = host(c.Aurel, NAMES)
+		h.step({ type = "LOOT_OPENED", items = { { itemID = 19101, slot = 1, classID = 4, subclassID = 4, equipLoc = "INVTYPE_HEAD",
+			quality = 4 } }, encounter = 663 })
+		h.ml("START")
+		h.ml("OPEN_ROLL")
+		net:Advance(3)
+		return net, c, h
+	end
+
+	it("each answer brings the player's own verdict and worn piece, passes included", function()
+		local net, c, h = started()
+		popup(c.Bryn):Choose("MS")
+		popup(c.Corin):Choose("PASS")
+		popup(c.Aurel):Choose("OS")
+		net:Advance(3)
+		local item = h.s.items[1]
+		eq(item.verdicts[full("Bryn")].m.v, "BIG")
+		eq(item.verdicts[full("Bryn")].m.p, 117)
+		deepEq(item.equipped[full("Bryn")], { "item:19100::::::::70:::::" })
+		eq(item.verdicts[full("Corin")].m.v, "NONE", "Corin wears a better helm and passes: the verdict still comes")
+		eq(item.verdicts[full("Corin")].m.l, -2)
+		deepEq(item.equipped[full("Corin")], { "item:19102::::::::70:::::" })
+		eq(item.verdicts[full("Aurel")].m.v, "BIG")
+		eq(#h.refused, 0, tostring(h.refused[1]))
+	end)
+
+	it("the candidates' board carries them, ready for the Upgrade column and its tooltip", function()
+		local net, c, h = started()
+		popup(c.Bryn):Choose("MS")
+		popup(c.Corin):Choose("MS")
+		net:Advance(3)
+		local A = c.Aurel.addon()
+		local board = A.SessionBoard.Build({ host = true, session = h.s }, { now = A.Compat.Now() })
+		local by = {}
+		for _, row in ipairs(board.candidates) do by[row.player] = row end
+		eq(A.UpgradeAdvisor.Text(by[full("Bryn")].upgrade), "Big upgrade +11.7% · ilvl +6")
+		eq(A.UpgradeAdvisor.Text(by[full("Corin")].upgrade), "No upgrade -22.2% · ilvl -2")
+		deepEq(A.UpgradeAdvisor.EquippedNames(by[full("Corin")].equipped), {}, "the master looter's client has not loaded it yet: asked")
+		net:Advance(1)
+		deepEq(A.UpgradeAdvisor.EquippedNames(by[full("Corin")].equipped), { "Better Helm" })
+	end)
+
+	it("a client of protocol 2 that sends no verdict is heard all the same", function()
+		local net, c, h = started()
+		c.Aurel.Mock.chat.Receive("FDCP1", c.Aurel.addon().Codec:Encode("SRESP", { s = "S1-1", i = 1, r = 1, rs = "MS" }),
+			"RAID", full("Corin"))
+		eq(h.s.items[1].responses[full("Corin")], "MS")
+		isNil(h.s.items[1].verdicts[full("Corin")])
+	end)
+end)

@@ -82,6 +82,7 @@ Tutto quello che l'addon scrive in `/raid` è scritto nella **lingua della gilda
 | **Candidato** | Il nome, nel colore della classe. |
 | **Crediti** | I crediti del giocatore all'apertura del roll di questo pezzo (congelati per il pezzo, così il risultato è quello contro cui il raid ha rollato). |
 | **Risposta** | Main-spec, Off-spec o Passo, con l'etichetta dichiarata dal giocatore (*BiS*, *Upgrade grande*, *Upgrade piccolo*, *Situazionale*) se l'ha data; un punto se non ha ancora risposto. L'etichetta informa te e il council; non cambia mai la proposta. |
+| **Upgrade** | Cosa dice l'addon del giocatore sul pezzo per la spec della sua risposta: *Upgrade grande +7,4% · ilvl +6*, *Upgrade piccolo*, *Nessun upgrade*, *Non confrontabile*, *Non usabile*; un punto se il suo addon non ha mandato nulla (una versione più vecchia, o la gilda ha spento i verdetti). **Passa il mouse sulla riga** per vedere i verdetti di entrambe le spec e i pezzi che indossa. È un indizio per il council: è un'approssimazione e non cambia mai la proposta (vedi [[Rollare per il loot|Rolling-for-Loot-it]], "È un upgrade?"). Clicca l'intestazione per ordinare: prima gli upgrade grandi. |
 | **Roll** | Il primo roll 1-100 del round in corso (un reroll lo sostituisce per i pari). |
 | **Note** | *Proposto* per il vincitore; *Non ha ancora risposto* a round aperto; la nota che il giocatore ha scritto nel suo popup (dopo gli altri testi); il motivo per cui un roll è stato scartato (un secondo roll, non 1-100, troppo presto, **l'addon non è attivo**). |
 

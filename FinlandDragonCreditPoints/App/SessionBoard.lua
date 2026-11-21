@@ -14,7 +14,10 @@
 --   first item waiting, else the first),
 --   round = { kind, stage, tier, among, collect, remaining, total, expired, rolls } | nil   (the selected item's open round),
 --   candidates = { { player, name, class, credits, response, label, note, tier, roll, flag = { group, code }, proposed,
---                    inRound } }   (label = the declared label code, note = the player's note, safe to draw: M4-6)
+--                    inRound, upgrade, upgradeMS, upgradeOS, equipped } }   (label = the declared label code, note = the
+--                    player's note, safe to draw: M4-6; upgrade = the verdict the player's client sent for the spec of the
+--                    answer, upgradeMS / upgradeOS = both, each { verdict, usable, code, basis, pct, ilvlDelta } as
+--                    UpgradeScore.Unpack gives it, nil without one; equipped = the worn pieces' item strings: M5-2)
 --                 (host only: the view carries no list of candidates),
 --   proposal = { kind, target, winner, cost, response, tier, roll, credits, reasons, flags, modified, mlReason,
 --                ruleWinner, ruleCost, autoIn } | nil   (the selected item's proposal, or its award once assigned),
@@ -293,11 +296,17 @@ local function hostCandidates(s, item, proposal, env)
 	local out = {}
 	for p in pairs(names) do
 		local response = item.responses and item.responses[p] or nil
+		local verdicts = item.verdicts and item.verdicts[p]
+		local U = ns.UpgradeScore
+		local upMS = verdicts and U and U.Unpack(verdicts.m) or nil
+		local upOS = verdicts and verdicts.o and U and U.Unpack(verdicts.o) or nil
 		local row = { player = p, name = short(p), class = env.classOf and env.classOf(p) or nil,
 			credits = item.credits[p] or 0, response = response, tier = response and tiers[response] or nil,
 			label = item.labels and item.labels[p] or nil, note = SB.SafeNote(item.notes and item.notes[p]),
 			roll = rollOf(item, p, rollMin, rollMax), proposed = proposal ~= nil and proposal.winner == p,
-			inRound = among == nil or among[p] == true }
+			inRound = among == nil or among[p] == true, upgradeMS = upMS, upgradeOS = upOS,
+			upgrade = response == "OS" and (upOS or upMS) or upMS,
+			equipped = item.equipped and item.equipped[p] or nil }
 		local rolled = hasRolled(item, p)
 		if rolled and priority.requireAddon and type(item.addon) == "table" and item.addon[p] ~= true then
 			row.flag = { group = "DISCARD", code = "NO_ADDON" }

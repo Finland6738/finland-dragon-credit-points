@@ -16,7 +16,10 @@
 --   no longer collects the responses), labelsOn (a label can be set now: the answer is main-spec or still empty),
 --   response, label, note (the player's own answer, nil before one),
 --   canAnswer (response, label and note can still change), canRoll (the player rolls in this round), rolled,
---   hint = CHOOSE | PASSED | LATER | ROLL | ROLLED | REROLL | FREE | TURN (a locale hint, see the window),
+--   hint = CHOOSE | UNUSABLE | PASSED | LATER | ROLL | ROLLED | REROLL | FREE | TURN (a locale hint, see the window),
+--   upgrade (M5-2: the verdicts of this player for the item, UpgradeAdvisor.For: { ms, os | nil, specs, autoPass, equipped,
+--   wire }; nil when the rules turn them off or the item's data is not loaded yet), preselect ("PASS" when the item cannot
+--   be used, the rules ask for it and the player has not answered: the window shows it selected, nothing is sent),
 --   remaining (seconds, nil without a timer), paused,
 --   credits, position (the player's credits and estimated place in the queue, nil when this client does not know them),
 --   rollMin, rollMax,
@@ -137,7 +140,8 @@ end
 -- The board
 
 -- Build(view, env): env = { me, now (the local clock), draft = { key, rs, lb, n } | nil (the answer being typed in the
--- round `key`), rolled = function(key), dismissed = function(key), standing = function() -> { credits, position } }.
+-- round `key`), rolled = function(key), dismissed = function(key), standing = function() -> { credits, position },
+-- upgrade = function(itemID) -> advice | nil (UpgradeAdvisor.For) }.
 function PB.Build(view, env)
 	env = env or {}
 	local board = { cards = {} }
@@ -179,12 +183,15 @@ function PB.Build(view, env)
 	-- a round that is not collecting responses is for the players who roll in it: the others see no card
 	if not collect and not canRoll then return board end
 
+	local advice = env.upgrade and env.upgrade(item.id) or nil
+	local preselect = collect and not rolled and response == nil and advice and advice.autoPass and "PASS" or nil
+
 	local hint
 	if rolled then hint = "ROLLED"
 	elseif round.k == "REROLL" then hint = "REROLL"
 	elseif round.g == "FREE_ROLL" then hint = "FREE"
 	elseif collect then
-		if response == nil then hint = "CHOOSE"
+		if response == nil then hint = preselect and "UNUSABLE" or "CHOOSE"
 		elseif response == "PASS" then hint = "PASSED"
 		elseif canRoll then hint = "ROLL"
 		else hint = "LATER" end
@@ -207,6 +214,7 @@ function PB.Build(view, env)
 		canAnswer = collect and not rolled, canRoll = canRoll and not rolled, rolled = rolled, hint = hint,
 		remaining = remaining, paused = view.paused == true, credits = standing and standing.credits or nil,
 		position = standing and standing.position or nil, rollMin = PB.ROLL_MIN, rollMax = PB.ROLL_MAX,
+		upgrade = advice, preselect = preselect,
 	}
 	return board
 end

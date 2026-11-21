@@ -51,6 +51,7 @@ Adapters\GuildRanks.lua
 Adapters\Group.lua
 Adapters\Calendar.lua
 Adapters\ItemCache.lua
+Adapters\Inventory.lua
 Adapters\LootSource.lua
 Adapters\RollListener.lua
 Adapters\MasterLoot.lua
@@ -61,6 +62,7 @@ App\ProgressController.lua
 App\AddonCheck.lua
 App\AddonNotice.lua
 App\Announcer.lua
+App\UpgradeAdvisor.lua
 App\SessionController.lua
 App\SessionBoard.lua
 App\PopupBoard.lua

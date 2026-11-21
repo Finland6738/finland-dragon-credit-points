@@ -620,11 +620,11 @@ Scelte fatte dove il testo non decideva (tutte modificabili):
 - **Messaggi: `rt`.** `SOPEN` e `SSTATE` portano `rt = { MS = 1, OS = 2 }`, le risposte offerte (quelle abilitate della
   configurazione) con il loro tier: serve al popup per sapere cosa mostrare e chi rolla in un round di tier, perché i costi
   per risposta (`cs`) contengono anche risposte disattivate (TMOG). Un ML più vecchio che non lo manda funziona lo stesso
-  (ordine MS, OS, TMOG dai costi). Il protocollo resta alla versione 2 (non è ancora uscito).
+  (ordine MS, OS, TMOG dai costi). Il protocollo era ancora alla versione 2 (con M5-2 passa alla 3: §5.1).
 - **Crediti e posto in fila: solo se il client li conosce.** `PopupBoard.Standing` legge il registro locale
   (`CreditTable.Build`): i crediti del giocatore (o del suo main) e `1 + i membri del raid con meno crediti` (una parità la
   scioglie il roll, da qui il "~"). Finché i membri non ricevono la tabella (M6-6) la riga resta vuota sui client senza
-  registro: nessun numero inventato. Nessun verdetto di upgrade (M5-2).
+  registro: nessun numero inventato. Il verdetto di upgrade è arrivato con M5-2 (§5.1).
 - **Aspetto.** Card raggio 18, segmento Main-spec / Off-spec / Passo, chip di etichetta (`Widgets.Chip`, nuovo), barra sottile
   del timer, pulsante principale; l'**unico elemento neon** è il bagliore e l'anello della card in cima. Il tooltip è quello
   del gioco (`GameTooltip:SetItemByID` o `SetHyperlink`), con il confronto chiesto con `GameTooltip_ShowCompareItem` in
@@ -830,7 +830,7 @@ Per ogni pezzo in palio, il client del giocatore calcola da solo, con i propri d
 Il popup mostra: icona e nome nel colore della qualità, slot, tooltip con confronto, chip "Arma · 2 crediti",
 chip del verdetto ("Upgrade +7,4% · ilvl +6" in verde), i propri crediti e la posizione in fila stimata,
 i pulsanti di risposta, un campo nota e la barra del timer. Il popup senza il verdetto esiste dal passo M4-6 (§4, "Come è
-fatto (M4-6)"); il chip del verdetto arriva con M5-2.
+fatto (M4-6)"); il chip del verdetto è di M5-2 ("Come è fatto (M5-2)", sotto).
 
 **Come è fatto (M5-1).** Il punteggio è `Domain/UpgradeScore.lua`, puro: non chiama mai il gioco. L'adapter
 dell'inventario (M5-2) gli passa il pezzo, i pezzi indossati per slot (`INVSLOT_*`) e la spec dichiarata come tabelle
@@ -860,7 +860,7 @@ decideva (tutte modificabili):
   le statistiche senza peso si elencano (`unscored`). Se l'indossato vale 0 e il nuovo più di 0: *Upgrade grande*
   (`FROM_ZERO`).
 - **Soglie.** `bigThreshold` 5%, `smallThreshold` 0 (piccolo se strettamente sopra), `ilvlBigThreshold` 5% per il
-  confronto sul solo item level. Validate da `ValidateConfig`; la sezione delle regole che le terrà arriva con M5-2/M5-4.
+  confronto sul solo item level. Validate da `ValidateConfig`; le soglie stanno nella sezione `upgrade` delle regole (M5-2).
 - **Ripiego sul solo item level (piano B di S5).** Quando `useStats` è spento (per tutti), quando le statistiche di una
   delle due parti sono sconosciute (`nil`, diverso da `{}`), quando la spec non ha pesi o quando nessuna delle due parti
   ha una statistica pesata; ogni caso lascia una nota (`STATS_OFF`, `NO_STATS`, `NO_WEIGHTS`, `NO_WEIGHTED_STATS`).
@@ -869,6 +869,52 @@ decideva (tutte modificabili):
   principale = 1,0, DPS dell'arma per melee e cacciatori (non per il druido feral). Sono un'approssimazione (§5.3); i
   pesi personali e l'import facoltativo di M5-3 sostituiscono una riga intera. Restano da verificare in gioco (S5) le
   chiavi delle statistiche di Forever.
+
+**Come è fatto (M5-2).** Tre pezzi, ognuno con un solo compito:
+
+- **`Adapters/Inventory.lua`** legge il gioco, sempre attraverso `Core/Compat.lua` (nomi controllati nel dump di Forever):
+  i pezzi indossati per slot (`GetInventoryItemLink`; camicia e tabard non si confrontano), i dati di un oggetto
+  (`C_Item.GetItemInfo` / `GetItemInfoInstant`, livello da `GetDetailedItemLevelInfo`, statistiche da `GetItemStats`,
+  `IsEquippableItem`) e le spec per cui è fatto (`GetItemSpecInfo`, altrimenti `DoesItemContainSpec` su ogni spec della
+  classe). Se `GetItemStats` non dà nulla da una parte, `GetItemStatDelta(indossato, nuovo)` completa l'altra
+  (`nuovo − delta`, `indossato + delta`); un valore segreto si legge come "nessuna statistica". Al dominio arrivano
+  tabelle semplici. Non si possono leggere dall'API, e restano fuori: la restrizione di classe di un token e l'effetto
+  d'uso di un trinket (solo nel testo del tooltip): vedi i limiti, §5.3.
+- **`App/UpgradeAdvisor.lua`** mette insieme regole, spec dichiarate e gioco. Le soglie sono la nuova sezione `upgrade`
+  delle regole (`enabled`, `autoPass`, `useStats`, `bigThreshold`, `smallThreshold`, `ilvlBigThreshold`; letta dal
+  registro come le altre, riempita coi predefiniti per le regole scritte prima di M5-2), quindi tutto il raid usa gli stessi
+  numeri. Il verdetto si calcola **due volte**: coi pesi della **MS1** dichiarata (*Main-spec*) e, se c'è, della **MS2**
+  (*Off-spec*); senza dichiarazione la spec che il personaggio gioca ora fa da main-spec e l'off-spec non c'è (una spec
+  dichiarata di un'altra classe si ignora). Il risultato (`For(itemID)`) si tiene finché non cambiano equipaggiamento
+  (`PLAYER_EQUIPMENT_CHANGED`), spec (`PLAYER_SPECIALIZATION_CHANGED`), registro o regole; un oggetto i cui dati non sono
+  ancora caricati non si tiene e il popup lo richiede e si ridisegna. Senza classe nota non si dice nulla.
+- **Il popup** mostra sotto il chip del costo una riga per spec, *"Main-spec · Upgrade grande +7,4% · ilvl +6"* (verde per
+  grande, accento per piccolo, neutro per nessuno e non confrontabile, ambra per non usabile; la virgola decimale dalla
+  lingua), con un tooltip che dice il perché (per un pezzo non usabile il codice, es. "La tua classe non può indossare
+  questo tipo di armatura"), su cosa si è confrontato (statistiche o solo item level), cosa si indossa e il limite
+  ("un'approssimazione"). Le parole passano da `Reasons` (nuovi gruppi `VERDICT` e `UPGRADE`) e dalle chiavi `UPG_*`.
+- **Pezzo non usabile → Passo preselezionato.** Se *ogni* verdetto calcolato dice `usable = false` e le regole lo chiedono
+  (`autoPass`, acceso), il popup mostra Passo selezionato con la riga di aiuto che lo dice, **senza mandare nulla**: nessuna
+  risposta vale passo per le regole (§3.4), il giocatore può scegliere un'altra risposta, e un clic su Passo lo manda
+  davvero. Un pezzo non confrontabile (un token) non fa mai passare da solo.
+- **Rete (protocollo 3).** `SRESP` porta `vd` ed `eq` (tabella in §8.4) a ogni invio, anche per un passo: il flag
+  *Upgrade ignorato* di M5-4 ne ha bisogno. `Session.ReadResponse` controlla i campi uno per uno e **scarta** quello
+  danneggiato senza rifiutare la risposta (come per etichetta e nota); `eq` è solo testo `item:…`, mai un hyperlink.
+  `pv` sale a 3 e `pm` resta 2: un client della 2 è capito e capisce, "versione vecchia ma compatibile" come sempre. Il
+  `SESSION_INPUT` porta `verdict` ed `equipped`, la macchina a stati li tiene per giocatore (`item.verdicts`,
+  `item.equipped`; la risposta più recente sostituisce, si azzerano alla riapertura; le regole non li leggono mai).
+- **Lato ML.** La bacheca dei candidati dà a ogni riga `upgrade` (il verdetto della spec della risposta: l'off-spec per
+  *Off-spec*, altrimenti la main-spec), `upgradeMS`, `upgradeOS` ed `equipped`; la tabella ha una colonna **Upgrade**
+  (ordinabile: grandi prima) e il tooltip della riga mostra i due verdetti e i pezzi indossati. Le segnalazioni e la
+  visibilità ai soli council sono M5-4.
+
+Scelte fatte dove il testo non decideva (tutte modificabili): il confronto usa **l'id dell'oggetto** (livello e statistiche
+dell'oggetto base: il `SOPEN` non porta il link con i bonus, quindi un drop con livello diverso dal base non si vede); il
+verdetto si manda **anche con un passo**; i pezzi indossati nominati sono quelli degli slot confrontati (al massimo 4);
+`autoPass` è una regola di gilda, non una preferenza personale. Da verificare in gioco (S5): che `GetItemStats` e
+`GetItemStatDelta` rispondano per l'equipaggiamento raid, che `GetItemSpecInfo` elenchi le spec come si presume (se elencasse
+solo le spec "da loot" un pezzo valido potrebbe risultare *non usabile per la spec*: è solo una preselezione), e il
+livello di un pezzo indossato con aggiornamenti.
 
 ### 5.2 Lato master looter / council
 
@@ -890,7 +936,13 @@ arrivano le risposte, prima di chiudere il round.
 - Chi non ha l'addon non rolla (§4.1), quindi ogni candidato manda sempre i propri dati di confronto.
 - Se Forever applica bonus "contestuali" all'equipaggiamento raid (vedi proposta di design), le statistiche lette
   dal tooltip possono non coincidere con quelle reali in raid: da verificare in M0.
-- Il verdetto calcolato è visibile solo al council (configurabile), per non trasformarlo in una discussione in chat.
+- Il verdetto calcolato è visibile solo al council (configurabile), per non trasformarlo in una discussione in chat. Dal
+  M5-2 il giocatore lo vede anche nel proprio popup (decisione del proprietario: i giocatori vedono se un pezzo è un
+  upgrade); la visibilità agli altri nella tabella dei candidati resta quella del ML e dei council.
+- Il confronto parte dall'**id** dell'oggetto: il livello e le statistiche sono quelli dell'oggetto base, non di una
+  variante con bonus (il `SOPEN` non porta il link); la classe richiesta da un token e l'effetto d'uso di un trinket non
+  si leggono dall'API (un token per un'altra classe è *non confrontabile*, non *non usabile*; un trinket con effetto
+  d'uso indossato può risultare "il peggiore").
 
 ---
 
@@ -1141,7 +1193,7 @@ tools/ check_docs.py, build/release
   |---|---|---|---|
   | `SOPEN` | `RAID` | `q`, `ml`, `e?`, `rt?`, `it` = `{ {id, ca, cs, co?}, … }` | sessione aperta: oggetti con categoria e costi per risposta (`cs`); `rt` = le risposte offerte con il loro tier (`{ MS = 1, OS = 2 }`, M4-6); rimandato dopo una correzione |
   | `SROLL` | `RAID` | `q`, `i`, `r`, `k`, `g?`, `tr?`, `am?`, `cl?`, `de?`, `rm?` | round `r` del pezzo `i` aperto: tipo, fase, tier, fra chi (reroll), `cl` = raccoglie le risposte, `de` = scadenza in ora del server (`rm` = secondi rimasti, in pausa) |
-  | `SRESP` | `RAID` | `i`, `r`, `rs`, `lb?`, `n?` | la risposta di un membro `{risposta, etichetta, nota}` (nota al massimo 80 byte): sempre la propria; il popup (M4-6) la rimanda intera a ogni cambiamento |
+  | `SRESP` | `RAID` | `i`, `r`, `rs`, `lb?`, `n?`, `vd?`, `eq?` | la risposta di un membro `{risposta, etichetta, nota}` (nota al massimo 80 byte): sempre la propria; il popup (M4-6) la rimanda intera a ogni cambiamento. Da M5-2 porta anche `vd = { m, o? }` (i verdetti per main-spec e off-spec, ognuno `{ v, u?, c?, b?, p?, l? }`) ed `eq` (al massimo quattro stringhe `item:…` dei pezzi indossati usati nel confronto); campi facoltativi, un client più vecchio non li manda e il ML non ne ha bisogno per far contare la risposta |
   | `SCLOSE` | `RAID` | `q`, `i`, `r` | round chiuso |
   | `SPROP` | `RAID` | `q`, `i`, `k`, `tg`, `w?`, `c?`, `rs?`, `tr?`, `rc?`, `f?`, `m?` | la proposta: a chi, quanto, perché (codici di motivo e segnalazioni); `m` = modificata dal ML |
   | `SRESULT` | `RAID` | `q`, `i`, `o`, `w?`, `c?`, `tg?`, `x?` | `AWARDED` (vincitore, costo, destinatario), `REJECTED` (`x` = cosa succede dopo) o `DELIVERED` |
@@ -1278,7 +1330,7 @@ Tutto ciò che è in §3 più:
 - importa/esporta un profilo come stringa da incollare su Discord;
 - soglia di qualità, istanze considerate "ufficiali", durata del timer di roll, parole chiave in chat;
 - rango del council e degli editor del registro, voto sì/no;
-- pesi delle statistiche per spec, soglie di upgrade, auto-pass, visibilità dei verdetti;
+- pesi delle statistiche per spec, soglie di upgrade, auto-pass, visibilità dei verdetti (le soglie, `useStats`, l'auto-pass e l'interruttore dei verdetti sono la sezione `upgrade` delle regole, M5-2; la visibilità ai soli council è di M5-4);
 - annunci in chat raid (sì/no, testo), suoni, dimensione e posizione dei popup;
 - **permessi per rango di gilda** (§3.9), modificabili solo dal GM;
 - **nome della fazione sul sito** (`site.factionName`, §7.1): vuoto = `Nebulah` per l'Orda e `Nebulaa` per
@@ -1352,7 +1404,8 @@ l'indice è [`ROADMAP.md`](../ROADMAP.md).
    importare? **Aperta**, opzioni in [issue #2](https://github.com/Finland6738/finland-dragon-credit-points/issues/2).
    Default reversibile finché non decide il GM: item level + pesi predefiniti modificabili, import stile Pawn
    facoltativo e spento (step M5-1 e M5-3). M5-1 ha costruito la prima parte: pesi predefiniti per spec in
-   `Data/StatWeights.lua` e ripiego sul solo item level (§5.1, "Come è fatto (M5-1)"); nessuna BiS list di gilda.
+   `Data/StatWeights.lua` e ripiego sul solo item level (§5.1, "Come è fatto (M5-1)"); nessuna BiS list di gilda. M5-2 li
+   usa nel popup (verdetto per MS1 e per MS2) senza aggiungere altro: i pesi personali e l'import restano a M5-3.
 9. **Lingua** **Risolta (19/11/2026)**: addon multilingua, all'inizio italiano e inglese, con altre lingue
    aggiungibili tramite un file (§8.5). Documentazione come Accord.
 10. **Sito della community**: va bene estendere `loot.json` con `start` (crediti iniziali) e `kind` (assegnazione /

@@ -236,7 +236,7 @@ describe("running a whole session from the window", function()
 		eq(by.Aurel.proposed, false)
 		eq(by.Edda.flag.code, "NO_ADDON")
 		eq(by.Dara.response, "PASS", "the ML's own answer is in the list")
-		eq(ui().card.table.rows[1].cells[5]:GetText(), L("ML_NOTE_PROPOSED"))
+		eq(ui().card.table.rows[1].cells[6]:GetText(), L("ML_NOTE_PROPOSED"))
 		eq(ui().card.table.rows[1].cells[2]:GetText(), "0")
 	end)
 end)
@@ -269,7 +269,7 @@ describe("labels and notes (M4-6)", function()
 		end
 		eq(rows.Aurel.cells[3]:GetText(), "Main-spec · Big upgrade")
 		eq(rows.Corin.cells[3]:GetText(), "Off-spec")
-		eq(rows.Aurel.cells[5]:GetText(), "two-hander")
+		eq(rows.Aurel.cells[6]:GetText(), "two-hander")
 		eq(rows.Bryn.cells[3]:GetText(), "Main-spec · BiS")
 	end)
 end)
@@ -621,5 +621,86 @@ describe("the board", function()
 		W():Refresh()
 		eq(rowName(1), "Ring")
 		eq(ui().rows[1].badge.label:GetText(), L("ML_BADGE_ROLLING"):upper())
+	end)
+end)
+
+describe("upgrade verdicts (M5-2)", function()
+	before_boot(setup)
+
+	local function bootstrap()
+		local b = bench(1)
+		b.collect()
+		click(ui().main)
+		local s = b.s()
+		local function answer(name, fields)
+			fields.s, fields.i, fields.r = s.id, s.active, s.net.rounds[s.active]
+			Mock.chat.Receive("FDCP1", Codec():Encode("SRESP", fields), "RAID", name)
+		end
+		return b, answer
+	end
+
+	local function rowsByName()
+		local rows = {}
+		for _, row in ipairs(ui().card.table.rows) do
+			if row:IsShown() and row.cells[1]:GetText() ~= "" then rows[row.cells[1]:GetText()] = row end
+		end
+		return rows
+	end
+
+	it("shows the verdict the player's client sent next to the response, and a dot for a player who sent none", function()
+		local b, answer = bootstrap()
+		answer("Aurel", { rs = "MS", vd = { m = { v = "BIG", b = "STATS", p = 74, l = 6 } }, eq = { "item:19100" } })
+		answer("Bryn", { rs = "PASS", vd = { m = { v = "NONE", u = false, c = "ARMOR_TYPE" } } })
+		answer("Corin", { rs = "OS", vd = { m = { v = "SMALL", p = 20 }, o = { v = "BIG", p = 150, l = 12 } } })
+		answer("Dara", { rs = "MS" })
+		local rows = rowsByName()
+		eq(rows.Aurel.cells[4]:GetText(), "Big upgrade +7.4% · ilvl +6")
+		eq(rows.Bryn.cells[4]:GetText(), "Not usable")
+		eq(rows.Corin.cells[4]:GetText(), "Big upgrade +15.0% · ilvl +12", "an off-spec answer shows the off-spec verdict")
+		eq(rows.Dara.cells[4]:GetText(), "·")
+		eq(ui().card.table.columns[4].title, L("ML_COL_UPGRADE"))
+	end)
+
+	it("sorts by verdict: big upgrades first, then small, none, not comparable, not usable, nothing", function()
+		local b, answer = bootstrap()
+		answer("Aurel", { rs = "MS", vd = { m = { v = "NONE" } } })
+		answer("Bryn", { rs = "MS", vd = { m = { v = "BIG", p = 90 } } })
+		answer("Corin", { rs = "MS", vd = { m = { v = "NONE", u = false } } })
+		answer("Dara", { rs = "MS" })
+		ui().card.table:SortBy("upgrade", false)
+		local names = {}
+		for _, d in ipairs(ui().card.table:GetData()) do names[#names + 1] = d.name end
+		deepEq(names, { "Bryn", "Aurel", "Corin", "Dara" })
+	end)
+
+	it("hovering a row shows both verdicts, what is worn and the limits", function()
+		local b, answer = bootstrap()
+		Mock.items.Add{ id = 19100, link = link(19100), name = "Old Helm", quality = 4, equipLoc = "INVTYPE_HEAD", classID = 4, subclassID = 4 }
+		answer("Corin", { rs = "OS", vd = { m = { v = "SMALL", p = 20 }, o = { v = "BIG", p = 150, l = 12 } }, eq = { "item:19100" } })
+		local row = rowsByName().Corin
+		Mock.RunScript(row, "OnEnter")
+		truthy(GameTooltip:IsShown())
+		local lines = GameTooltip._lines
+		eq(lines[1], "Main-spec: Small upgrade +2.0%")
+		contains(table.concat(lines, "\n"), "Off-spec: Big upgrade +15.0% · ilvl +12")
+		contains(table.concat(lines, "\n"), "Old Helm")
+		eq(lines[#lines], L("UPG_LIMITS"))
+		Mock.RunScript(row, "OnLeave")
+		falsy(GameTooltip:IsShown())
+	end)
+
+	it("a row without a verdict shows no tooltip", function()
+		local b, answer = bootstrap()
+		answer("Dara", { rs = "MS" })
+		Mock.RunScript(rowsByName().Dara, "OnEnter")
+		falsy(GameTooltip:IsShown())
+	end)
+
+	it("reads the same in Italian", function()
+		FDCP.Locale.SetActive("itIT")
+		local b, answer = bootstrap()
+		answer("Aurel", { rs = "MS", vd = { m = { v = "SMALL", p = 74, l = 6 } } })
+		eq(rowsByName().Aurel.cells[4]:GetText(), "Upgrade piccolo +7,4% · ilvl +6")
+		eq(ui().card.table.columns[4].title, "Upgrade")
 	end)
 end)

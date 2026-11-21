@@ -63,8 +63,8 @@ describe("session messages on one client", function()
 		receive("SOPEN", fields, sender)
 	end
 
-	it("speaks protocol 2: the presence check plus the session messages", function()
-		eq(P().VERSION, 2)
+	it("speaks protocol 3 (and still understands 2): the presence check plus the session messages", function()
+		eq(P().VERSION, 3)
 		eq(P().MIN, 2)
 		for _, t in ipairs(S().TYPES) do truthy(Codec().SCHEMA[t], t .. " is registered") end
 		eq(#S().TYPES, 10)

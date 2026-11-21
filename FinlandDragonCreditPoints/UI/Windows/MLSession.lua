@@ -118,7 +118,7 @@ end
 local COLUMN_TOKENS = { MS = "accent-text", OS = "text-2", TMOG = "text-2", PASS = "text-3" }
 
 -- The columns of the candidates' table.
--- locale-key: ML_COL_CANDIDATE ML_COL_CREDITS ML_COL_RESPONSE ML_COL_ROLL ML_COL_NOTES ML_NOTE_PROPOSED ML_NOTE_WAITING
+-- locale-key: ML_COL_CANDIDATE ML_COL_CREDITS ML_COL_RESPONSE ML_COL_UPGRADE ML_COL_ROLL ML_COL_NOTES ML_NOTE_PROPOSED ML_NOTE_WAITING
 local function candidateColumns()
 	local function noteText(d)
 		local text = ""
@@ -146,11 +146,44 @@ local function candidateColumns()
 			end,
 			token = function(d) return COLUMN_TOKENS[d.response] or "text-3" end,
 			value = function(d) return d.tier or 99 end },
+		{ id = "upgrade", title = L["ML_COL_UPGRADE"], width = 190,   -- the verdict the player's client sent (M5-2)
+			text = function(d)
+				if not d.upgrade then return "·" end
+				return ns.UpgradeAdvisor.Text(d.upgrade)
+			end,
+			token = function(d)
+				if not d.upgrade then return "text-3" end
+				local tone = ns.UpgradeAdvisor.Tone(d.upgrade)
+				return tone == "ok" and "ok" or tone == "warn" and "warn" or tone == "accent" and "accent-text" or "text-2"
+			end,
+			value = function(d)
+				local u = d.upgrade
+				if not u then return 99 end
+				if u.usable == false then return 5 end
+				return ({ BIG = 1, SMALL = 2, NONE = 3, NOT_COMPARABLE = 4 })[u.verdict] or 6
+			end },
 		{ id = "roll", title = L["ML_COL_ROLL"], width = 60, align = "RIGHT", mono = true,
 			text = function(d) return d.roll or "—" end, value = function(d) return d.roll or -1 end },
 		{ id = "note", title = L["ML_COL_NOTES"], flex = 1.7, sortable = false, text = noteText,
 			token = function(d) return d.proposed and "ok" or d.flag and "warn" or "text-3" end },
 	}
+end
+
+-- The tooltip of a candidate's row: the verdict for each spec the player's client sent, what is worn, the limits (M5-2).
+function MLSession:ShowCandidateTip(row)
+	local d, tip, A = row.data, GameTooltip, ns.UpgradeAdvisor
+	if not d or not tip or not d.upgradeMS then return end
+	tip:SetOwner(row, "ANCHOR_RIGHT")
+	local lines = A.Lines(d.upgradeMS, "MS")
+	tip:SetText(d.name)
+	for _, line in ipairs(lines) do tip:AddLine(line, 1, 1, 1, true) end
+	if d.upgradeOS then
+		for _, line in ipairs(A.Lines(d.upgradeOS, "OS")) do tip:AddLine(line, 1, 1, 1, true) end
+	end
+	local names = A.EquippedNames(d.equipped)
+	if #names > 0 then tip:AddLine(L["UPG_EQUIPPED"]:format(table.concat(names, ", ")), 0.8, 0.8, 0.8, true) end
+	tip:AddLine(L["UPG_LIMITS"], 0.6, 0.6, 0.6, true)
+	tip:Show()
 end
 
 -- Builds the tab's content in `page` (once). `frame` is the main window (the dialogs cover it).
@@ -278,6 +311,9 @@ function MLSession:BuildSession(pane)
 			r.square:SetSize(10, 10)
 			r.square:SetColorTexture(1, 1, 1, 1)
 			for _, fs in ipairs(r.cells) do fs:SetWordWrap(false) end
+			-- the verdicts of both specs and the worn pieces, from what the player's client sent
+			r:HookScript("OnEnter", function(self) MLSession:ShowCandidateTip(self) end)
+			r:HookScript("OnLeave", function() if GameTooltip then GameTooltip:Hide() end end)
 		end,
 		rowUpdate = function(r, d)
 			r.bar:SetShown(d.proposed == true)

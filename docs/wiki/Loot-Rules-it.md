@@ -326,6 +326,35 @@ L'addon legge i ranghi dal roster della gilda, per posizione e mai per nome. Dop
 | `TMOG` | Transmog |
 | `PASS` | Passo |
 
+### Verdetti di upgrade
+
+Come un oggetto si confronta con quello che un giocatore indossa (vedi [[Rollare per il loot|Rolling-for-Loot-it]]).
+
+| Code | Frase |
+|---|---|
+| `BIG` | Upgrade grande |
+| `SMALL` | Upgrade piccolo |
+| `NONE` | Nessun upgrade |
+| `NOT_COMPARABLE` | Non confrontabile |
+| `UNUSABLE` | Non usabile |
+
+### Perché un oggetto non si può usare o confrontare
+
+| Code | Frase |
+|---|---|
+| `ARMOR_TYPE` | La tua classe non può indossare questo tipo di armatura. |
+| `WEAPON_TYPE` | La tua classe non può usare questo tipo di arma. |
+| `DUAL_WIELD` | La tua classe o spec non può impugnare due armi. |
+| `CLASS_RESTRICTED` | Questo oggetto è per altre classi. |
+| `SPEC_RESTRICTED` | Questo oggetto non è per la tua specializzazione. |
+| `UNKNOWN_CLASS` | L'addon non conosce la tua classe. |
+| `NOT_EQUIPPABLE` | Non è un pezzo di equipaggiamento: l'addon non può confrontarlo. |
+| `COSMETIC` | Una camicia o un tabard: non c'è nulla da confrontare. |
+| `EFFECT_TRINKET` | Un trinket con effetto d'uso: le statistiche non ne dicono il valore. |
+| `EFFECT_TRINKETS` | Hai due trinket con effetto d'uso: l'addon li tiene entrambi. |
+| `TWO_HAND_EQUIPPED` | Indossi un'arma a due mani: questo oggetto va nell'altra mano. |
+| `NO_ITEM_LEVEL` | Il gioco non ha dato il livello di questo oggetto. |
+
 ### Cosa fa una proposta con l'oggetto
 
 | Code | Frase |

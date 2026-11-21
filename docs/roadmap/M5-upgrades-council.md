@@ -24,9 +24,11 @@ Open question 8 ([#2](https://github.com/Finland6738/finland-dragon-credit-point
 - Analysis: §5.1, §6 (MS1 / MS2 weights)
 - Scope: `Adapters/Inventory.lua` (equipped items, `C_Item.GetItemStatDelta`, `GetDetailedItemLevelInfo`, `IsEquippableItem`, `DoesItemContainSpec`), the score computed twice (MS1 weights → Main-spec, MS2 weights → Off-spec), the verdict chip ("Upgrade +7.4% · ilvl +6"), auto-pass on unusable items (configurable), verdict and equipped links sent with the response.
 - Done when:
-  - [ ] The popup shows the verdict per spec in the mock; unusable items preselect Pass.
+  - [x] The popup shows the verdict per spec in the mock; unusable items preselect Pass.
+  - [ ] The owner confirms in game that the verdicts of raid items read sensibly: the stat deltas and item levels of real drops, the spec lists (spike S5). *(in game)*
 - Tests: `Tests/test_inventory.lua`, `Tests/test_ui_popup.lua` extended.
 - Docs: wiki **Upgrade Hints** (EN + IT), CHANGELOG.
+- Note: built as `Adapters/Inventory.lua` (the game reads), `App/UpgradeAdvisor.lua` (rules + declared specs + the score twice, cached) and a new rules section `upgrade` (thresholds, `useStats`, `autoPass`, `enabled`). The protocol is now version 3: `SRESP` carries `vd` (verdicts) and `eq` (worn pieces) as optional fields. The ML sees them in an *Upgrade* column of the candidates' table; hiding them from non-council clients is M5-4. The wiki text lives in the **Rolling for Loot** page (verdicts and their limits), not in a page of its own ([`docs/ANALISI.md`](../ANALISI.md) §5.1, "Come è fatto (M5-2)").
 - Real client: stat deltas of raid items (spike S5).
 - Suggested model/effort: `sonnet` / medium
 

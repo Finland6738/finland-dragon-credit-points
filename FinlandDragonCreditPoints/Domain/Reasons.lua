@@ -5,15 +5,16 @@
 -- Groups: REASON (why a player won), FLAG (what to check), DISCARD (a roll set aside), SOURCE (where a cost or a
 -- category comes from), JOIN (a new member's credits), CORRECTION (the master looter's reasons), AUTO (automatic
 -- phases), RANKS (guild rank changes), DELIVERY (where an award is on its way to the winner, M4-7), REFUSAL (an action refused), STATUS (a member of the pool),
--- RESPONSE, LABEL (the optional label of a main-spec response), KIND (what a proposal does), REJECT, STATE, EVENT (ledger
--- event types) and PRESET (preset names).
+-- RESPONSE, LABEL (the optional label of a main-spec response), VERDICT (the upgrade verdicts, M5-2), UPGRADE (why an item
+-- cannot be used or compared, M5-2), KIND (what a proposal does), REJECT, STATE, EVENT (ledger event types) and PRESET
+-- (preset names).
 local ADDON_NAME, ns = ...
 ns = ns or {}
 ns.modules = ns.modules or {}
 local Reasons = {}
 ns.Reasons, ns.modules.Reasons = Reasons, Reasons
 
-Reasons.GROUPS = { "REASON", "FLAG", "DISCARD", "SOURCE", "JOIN", "CORRECTION", "AUTO", "RANKS", "DELIVERY", "REFUSAL", "STATUS", "RESPONSE", "LABEL", "KIND", "REJECT", "STATE", "EVENT", "PRESET" }
+Reasons.GROUPS = { "REASON", "FLAG", "DISCARD", "SOURCE", "JOIN", "CORRECTION", "AUTO", "RANKS", "DELIVERY", "REFUSAL", "STATUS", "RESPONSE", "LABEL", "VERDICT", "UPGRADE", "KIND", "REJECT", "STATE", "EVENT", "PRESET" }
 
 -- KEYS[group][code] = locale key.
 Reasons.KEYS = {
@@ -209,6 +210,27 @@ Reasons.KEYS = {
 		BIG_UPGRADE = "RC_LABEL_BIG_UPGRADE",
 		SMALL_UPGRADE = "RC_LABEL_SMALL_UPGRADE",
 		SITUATIONAL = "RC_LABEL_SITUATIONAL",
+	},
+	VERDICT = {   -- the upgrade verdict of an item for a player (Domain/UpgradeScore.lua); UNUSABLE = the character cannot use it
+		BIG = "RC_VERDICT_BIG",
+		SMALL = "RC_VERDICT_SMALL",
+		NONE = "RC_VERDICT_NONE",
+		NOT_COMPARABLE = "RC_VERDICT_NOT_COMPARABLE",
+		UNUSABLE = "RC_VERDICT_UNUSABLE",
+	},
+	UPGRADE = {   -- why an item cannot be used or compared (the `code` of an UpgradeScore result)
+		ARMOR_TYPE = "RC_UPGRADE_ARMOR_TYPE",
+		WEAPON_TYPE = "RC_UPGRADE_WEAPON_TYPE",
+		DUAL_WIELD = "RC_UPGRADE_DUAL_WIELD",
+		CLASS_RESTRICTED = "RC_UPGRADE_CLASS_RESTRICTED",
+		SPEC_RESTRICTED = "RC_UPGRADE_SPEC_RESTRICTED",
+		UNKNOWN_CLASS = "RC_UPGRADE_UNKNOWN_CLASS",
+		NOT_EQUIPPABLE = "RC_UPGRADE_NOT_EQUIPPABLE",
+		COSMETIC = "RC_UPGRADE_COSMETIC",
+		EFFECT_TRINKET = "RC_UPGRADE_EFFECT_TRINKET",
+		EFFECT_TRINKETS = "RC_UPGRADE_EFFECT_TRINKETS",
+		TWO_HAND_EQUIPPED = "RC_UPGRADE_TWO_HAND_EQUIPPED",
+		NO_ITEM_LEVEL = "RC_UPGRADE_NO_ITEM_LEVEL",
 	},
 	KIND = {
 		AWARD = "RC_KIND_AWARD",

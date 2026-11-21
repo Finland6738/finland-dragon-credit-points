@@ -29,8 +29,10 @@ ns.Protocol, ns.modules.Protocol = Protocol, Protocol
 local type, ipairs, tostring, tonumber, floor = type, ipairs, tostring, tonumber, math.floor
 local match, gmatch = string.match, string.gmatch
 
-Protocol.VERSION = 2         -- the session protocol this client speaks (raise it when a session message changes);
-                             -- 2 = the loot session messages of M4-1 (1 = the presence check of M3 only)
+Protocol.VERSION = 3         -- the session protocol this client speaks (raise it when a session message changes);
+                             -- 2 = the loot session messages of M4-1 (1 = the presence check of M3 only);
+                             -- 3 = SRESP carries the upgrade verdicts and the worn pieces (M5-2): optional fields, so
+                             --     a client of protocol 2 still understands every message and is understood
 Protocol.MIN = 2             -- the oldest session protocol this client still understands
 Protocol.MAX_NAMES = 40      -- a HELLOQ names at most this many members; more means "everybody"
 Protocol.MAX_VERSION_LEN = 32
@@ -200,9 +202,15 @@ end
 --   SROLL    RAID      q, i, r, k, g?, tr?, am?, cl?, de?, rm?      round r of item i opened: kind, stage, tier, among (a
 --                                                                 reroll), cl = it collects the responses, de = the
 --                                                                 deadline in server time (rm = seconds left, paused)
---   SRESP    RAID      i, r, rs, lb?, n?                          a member's response {response, label, note} to the
+--   SRESP    RAID      i, r, rs, lb?, n?, vd?, eq?                a member's response {response, label, note} to the
 --                                                                 round r of item i: always the sender's own (the popup
---                                                                 of M4-6 sends the whole answer again at every change)
+--                                                                 of M4-6 sends the whole answer again at every change).
+--                                                                 M5-2: vd = { m = verdict, o? = verdict } (main-spec and
+--                                                                 off-spec; a verdict is { v, u?, c?, b?, p?, l? }, see
+--                                                                 UpgradeScore.Pack) and eq = { "item:..." } (the worn
+--                                                                 pieces it was compared with). Both are information for
+--                                                                 the master looter; a damaged one is dropped and the
+--                                                                 response still counts; an older client sends neither
 --   SCLOSE   RAID      q, i, r                                    round closed
 --   SPROP    RAID      q, i, k, tg, w?, c?, rs?, tr?, rc?, f?, m?  the proposal: who, how much, why (reason and flag
 --                                                                 codes); m = modified by the ML
@@ -394,14 +402,71 @@ local function readProposal(m, items)
 		m = m.m == true or nil }
 end
 
--- A SRESP from `from`: { s, i, r, rs, lb, n }, or nil and a code ("FORGED" when it names another player).
+Session.MAX_LINKS = 4       -- worn pieces named by a response
+Session.MAX_LINK = 120      -- bytes of one "item:..." string
+
+-- One verdict of a SRESP `vd`: { v, u?, c?, b?, p?, l? } checked field by field, or nil when damaged.
+local function readVerdict(t)
+	if type(t) ~= "table" or not isCode(t.v) then return nil end
+	local out = { v = t.v }
+	if t.u ~= nil then
+		if t.u ~= false then return nil end
+		out.u = false
+	end
+	if t.c ~= nil then
+		if not isCode(t.c) then return nil end
+		out.c = t.c
+	end
+	if t.b ~= nil then
+		if not isCode(t.b) then return nil end
+		out.b = t.b
+	end
+	if t.p ~= nil then
+		if not isNum(t.p) or t.p ~= floor(t.p) or t.p < -100000 or t.p > 100000 then return nil end
+		out.p = t.p
+	end
+	if t.l ~= nil then
+		if not isNum(t.l) or t.l ~= floor(t.l) or t.l < -2000 or t.l > 2000 then return nil end
+		out.l = t.l
+	end
+	return out
+end
+
+-- The `vd` of a SRESP: { m, o? } or nil (absent or damaged).
+local function readVerdicts(vd)
+	if type(vd) ~= "table" then return nil end
+	local m = readVerdict(vd.m)
+	if not m then return nil end
+	local o
+	if vd.o ~= nil then
+		o = readVerdict(vd.o)
+		if not o then return nil end
+	end
+	return { m = m, o = o }
+end
+
+-- The `eq` of a SRESP: a short list of item strings, or nil (absent or damaged). The text is a plain "item:123:..."
+-- string, never a hyperlink: nothing in it can carry markup.
+local function readLinks(eq)
+	if type(eq) ~= "table" or #eq == 0 or #eq > Session.MAX_LINKS then return nil end
+	local out = {}
+	for i, link in ipairs(eq) do
+		if type(link) ~= "string" or #link > Session.MAX_LINK or not match(link, "^item:%d+[%-%d:]*$") then return nil end
+		out[i] = link
+	end
+	return out
+end
+Session.ReadVerdicts, Session.ReadLinks = readVerdicts, readLinks
+
+-- A SRESP from `from`: { s, i, r, rs, lb, n, vd?, eq? }, or nil and a code ("FORGED" when it names another player).
 function Session.ReadResponse(msg, from)
 	if type(msg) ~= "table" or not from then return nil, "BAD" end
 	if msg.p ~= nil and nameOf(msg.p) ~= from then return nil, "FORGED" end
 	if not isSid(msg.s) or not isInt(msg.i, 1) or not isInt(msg.r, 1) or not isCode(msg.rs) then return nil, "BAD" end
 	if msg.lb ~= nil and not isCode(msg.lb) then return nil, "BAD" end
 	if msg.n ~= nil and (type(msg.n) ~= "string" or #msg.n > Session.MAX_NOTE) then return nil, "BAD" end
-	return { s = msg.s, i = msg.i, r = msg.r, rs = msg.rs, lb = msg.lb, n = msg.n ~= "" and msg.n or nil }
+	return { s = msg.s, i = msg.i, r = msg.r, rs = msg.rs, lb = msg.lb, n = msg.n ~= "" and msg.n or nil,
+		vd = readVerdicts(msg.vd), eq = readLinks(msg.eq) }
 end
 
 ---------------------------------------------------------------------------------------------------------------------
@@ -585,12 +650,12 @@ function Session:OnResponse(msg, from, own)
 		if r.i ~= s.active or r.r ~= (net(s).rounds[r.i] or 1) then return refuse("STALE", from) end
 		self.stats.inputs = self.stats.inputs + 1
 		emit("SESSION_INPUT", { type = "RESPONSE", ts = now(), player = from, response = r.rs, label = r.lb,
-			note = r.n })
+			note = r.n, verdict = r.vd, equipped = r.eq })
 	end
 	local v = self.view
 	if v and v.s == r.s and v.round and v.round.i == r.i and v.round.r == r.r and v.round.cl then
 		v.responses[r.i] = v.responses[r.i] or {}
-		v.responses[r.i][from] = { rs = r.rs, lb = r.lb, n = r.n }
+		v.responses[r.i][from] = { rs = r.rs, lb = r.lb, n = r.n, vd = r.vd, eq = r.eq }
 		if from == me() then v.mine[r.i] = r.rs end
 		emit("SESSION_VIEW", v, "RESPONSE", r.i, from)
 	end
@@ -839,10 +904,11 @@ function Session:MyAnswer(index)
 	return { rs = a.rs, lb = a.lb, n = a.n }
 end
 
--- This player's response {response, label, note} to the open round of the view. Returns the transport item (or true
--- for the ML, whose own answer is also taken at once), or nil and a code: NO_SESSION, RESPONSES_CLOSED, BAD_RESPONSE,
--- BAD_LABEL, BAD_NOTE, or the transport's reason.
-function Session:Respond(response, label, note)
+-- This player's response {response, label, note} to the open round of the view. `extra` (optional) = { vd, eq }: the
+-- upgrade verdicts and the worn pieces of UpgradeAdvisor (M5-2); a damaged one is left out. Returns the transport item
+-- (or true for the ML, whose own answer is also taken at once), or nil and a code: NO_SESSION, RESPONSES_CLOSED,
+-- BAD_RESPONSE, BAD_LABEL, BAD_NOTE, or the transport's reason.
+function Session:Respond(response, label, note, extra)
 	local v = self.view
 	if not v or v.ended then return nil, "NO_SESSION" end
 	local round = v.round
@@ -852,6 +918,9 @@ function Session:Respond(response, label, note)
 	if note ~= nil and (type(note) ~= "string" or #note > Session.MAX_NOTE) then return nil, "BAD_NOTE" end
 	if note == "" then note = nil end
 	local msg = { t = "SRESP", s = v.s, i = round.i, r = round.r, rs = response, lb = label, n = note }
+	if type(extra) == "table" then
+		msg.vd, msg.eq = readVerdicts(extra.vd), readLinks(extra.eq)
+	end
 	local item, why
 	if ns.Transport then
 		-- the latest answer waiting wins (a player who changes their mind during a lockdown sends one message)
