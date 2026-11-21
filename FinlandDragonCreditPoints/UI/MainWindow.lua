@@ -124,6 +124,13 @@ function MainWindow:Build()
 		ns.RosterWindow:Build(f.pages.roster, f.titleBar)
 	end
 
+	-- Credits (M3-8): the table of the season's credits replaces the empty page
+	if ns.CreditsWindow then
+		f.pages.credits.eyebrow:Hide()
+		f.pages.credits.empty:Hide()
+		ns.CreditsWindow:Build(f.pages.credits)
+	end
+
 	-- resize grip (bottom right)
 	local grip = CreateFrame("Button", nil, f)
 	grip:SetSize(18, 18)
@@ -151,6 +158,7 @@ function MainWindow:ShowPage(id)
 	local f = self.frame
 	if not f then return end
 	for pid, page in pairs(f.pages) do page:SetShown(pid == id) end
+	if id == "credits" and ns.CreditsWindow then ns.CreditsWindow:Refresh() end
 end
 
 function MainWindow:SelectTab(id)

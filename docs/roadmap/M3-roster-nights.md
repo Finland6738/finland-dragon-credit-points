@@ -109,7 +109,8 @@
 - Analysis: §9.3 point 4, §7
 - Scope: `UI/Windows/Credits.lua`, the **Credits** tab as on the site ([`docs/specs/ui-style.md`](../specs/ui-style.md) §3, §6): one accordion per season (newest open), one column per night with `+N` in mono, the total chip and the queue position, sortable headers, filters by role and class, the player's own row highlighted; computed from the local ledger.
 - Done when:
-  - [ ] The table matches the ledger totals in tests; sorting and filters work.
+  - [x] The table matches the ledger totals in tests; sorting and filters work.
+  - [ ] The tab looks like the preview `docs/specs/mockups/fdcp-credits.webp` in game. *(in game)*
 - Tests: `Tests/test_ui_credits.lua`.
 - Docs: wiki **Credits** page (EN + IT), README features, CHANGELOG.
 - Real client: the window in game.

@@ -7,6 +7,7 @@
 - [[Site Export|Site-Export]]
 - [[Addon Check|Addon-Check]]
 - [[Roster and Nights|Roster-and-Nights]]
+- [[Credits Table|Credits]]
 
 **Italiano**
 - [[Home|Home-it]]
@@ -17,3 +18,4 @@
 - [[Esportazione per il sito|Site-Export-it]]
 - [[Controllo dell'addon|Addon-Check-it]]
 - [[Roster e Serate|Roster-and-Nights-it]]
+- [[Tabella crediti|Credits-it]]

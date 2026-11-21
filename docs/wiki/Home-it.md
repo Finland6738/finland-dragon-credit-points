@@ -17,6 +17,7 @@
 | Aggiornare il sito della community dall'addon | [[Esportazione per il sito|Site-Export-it]] |
 | Vedere chi nel raid non ha l'addon e avvisarlo | [[Controllo dell'addon|Addon-Check-it]] |
 | Gestire il pool e condurre una serata di raid | [[Roster e Serate|Roster-and-Nights-it]] |
+| Leggere la tabella dei crediti e il tuo posto in fila | [[Tabella crediti|Credits-it]] |
 
 Altre pagine (la tabella dei crediti, la guida del master looter, il council, le impostazioni) arrivano con le funzioni.
 

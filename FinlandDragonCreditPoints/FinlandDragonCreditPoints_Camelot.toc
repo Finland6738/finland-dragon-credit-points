@@ -34,6 +34,7 @@ Domain\Season.lua
 Domain\Members.lua
 Domain\Roster.lua
 Domain\Nights.lua
+Domain\CreditTable.lua
 Domain\Rotation.lua
 Data\Instances.lua
 Data\Specs.lua
@@ -60,5 +61,6 @@ UI\Widgets\ThinBar.lua
 UI\AddonPanel.lua
 UI\Windows\Nights.lua
 UI\Windows\Roster.lua
+UI\Windows\Credits.lua
 UI\MainWindow.lua
 UI\Minimap.lua
