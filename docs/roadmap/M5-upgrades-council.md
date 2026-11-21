@@ -12,7 +12,7 @@ Open question 8 ([#2](https://github.com/Finland6738/finland-dragon-credit-point
 - Analysis: §5.1 (can use, compare against, how much, verdict), §5.3
 - Scope: `Domain/UpgradeScore.lua`: proficiency table per class (armour and weapon types), slot comparison (rings and trinkets against the worse of the two, two-hand vs main-hand + off-hand), item-level delta, weighted stat delta (`score = Σ weight × value`, `upgrade % = (new − equipped) / equipped`), verdicts *big* (≥ threshold, preset 5%), *small*, *none*, *not comparable*; default weights per class and spec (editable, reversible default of issue #2); item-level-only fallback when stats are unreliable (plan B of spike S5).
 - Done when:
-  - [ ] Verdicts for a table of known item pairs per class match the expected ones.
+  - [x] Verdicts for a table of known item pairs per class match the expected ones.
 - Tests: `Tests/test_upgrade_score.lua`.
 - Docs: CHANGELOG.
 - Real client: nothing (inputs come from M5-2).

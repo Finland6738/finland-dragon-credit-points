@@ -38,6 +38,8 @@ Domain\CreditTable.lua
 Domain\Rotation.lua
 Data\Instances.lua
 Data\Specs.lua
+Domain\UpgradeScore.lua
+Data\StatWeights.lua
 Domain\Progress.lua
 Domain\Notice.lua
 Domain\Announce.lua

@@ -832,6 +832,44 @@ chip del verdetto ("Upgrade +7,4% · ilvl +6" in verde), i propri crediti e la p
 i pulsanti di risposta, un campo nota e la barra del timer. Il popup senza il verdetto esiste dal passo M4-6 (§4, "Come è
 fatto (M4-6)"); il chip del verdetto arriva con M5-2.
 
+**Come è fatto (M5-1).** Il punteggio è `Domain/UpgradeScore.lua`, puro: non chiama mai il gioco. L'adapter
+dell'inventario (M5-2) gli passa il pezzo, i pezzi indossati per slot (`INVSLOT_*`) e la spec dichiarata come tabelle
+semplici; il risultato sono solo codici e numeri (verdetto, `usable`, codice, base `STATS` / `ILVL`, `pct`, delta di
+item level, punteggi, slot confrontati, note), le parole arrivano con il chip di M5-2. I pesi stanno in un file di dati,
+`Data/StatWeights.lua`, che si aggancia al punteggio come `Data/Specs.lua` al roster. Scelte fatte dove il testo non
+decideva (tutte modificabili):
+
+- **Competenze.** Tabella per le nove classi (tipi di armatura, scudi, libram / idoli / totem, tipi di arma, bacchette,
+  doppia arma), modificabile dalla configurazione (`proficiency`). La doppia arma dello sciamano vale solo per
+  Enhancement (263). Mantelli (sono "stoffa"), anelli, collane, trinket e oggetti tenuti in mano vanno bene a tutti; una
+  sottoclasse che la tabella non conosce non viene mai rifiutata. Le restrizioni di classe e di spec del pezzo (se
+  l'adapter le conosce, `DoesItemContainSpec`) vengono prima: un token per un'altra classe è *non usabile*, un token per
+  la propria classe è solo *non confrontabile* (`usable` assente), così il popup non lo passa da solo.
+- **Non usabile = Nessun upgrade** con `usable = false` e il codice (`ARMOR_TYPE`, `WEAPON_TYPE`, `DUAL_WIELD`,
+  `CLASS_RESTRICTED`, `SPEC_RESTRICTED`): è il dato da cui M5-2 preseleziona *Passo*.
+- **Coppie (anelli, trinket).** Prima lo stesso oggetto già indossato (si confronta con sé stesso), poi uno slot vuoto
+  (sempre *Upgrade grande*, senza percentuale), poi il peggiore dei due (per punteggio, o per item level nel ripiego).
+  Un trinket indossato con effetto d'uso non è mai "il peggiore" (lo si tiene); se lo sono entrambi, *Non confrontabile*.
+  Un trinket nuovo con effetto d'uso è *Non confrontabile*; su un altro slot l'effetto si ignora con una nota.
+- **Armi.** Due mani contro mano destra + sinistra: statistiche sommate, item level medio dei due. Una mano contro la
+  peggiore delle due mani solo se il personaggio sta già usando due armi (un'arma nella sinistra) e la classe/spec può;
+  altrimenti contro la destra. Una mano contro una due mani indossata: il pezzo da solo (nota `REPLACES_TWO_HAND`, di
+  solito *Nessun upgrade*). Sinistra, scudo o oggetto in mano con una due mani indossata: *Non confrontabile*.
+- **Punteggio.** `punteggio = Σ peso × valore` con i pesi del personaggio o, senza, quelli predefiniti della spec; le
+  chiavi del client (`ITEM_MOD_STRENGTH_SHORT`, `RESISTANCE0_NAME`, …) diventano codici brevi (`STR`, `ARMOR`, `DPS`…);
+  le statistiche senza peso si elencano (`unscored`). Se l'indossato vale 0 e il nuovo più di 0: *Upgrade grande*
+  (`FROM_ZERO`).
+- **Soglie.** `bigThreshold` 5%, `smallThreshold` 0 (piccolo se strettamente sopra), `ilvlBigThreshold` 5% per il
+  confronto sul solo item level. Validate da `ValidateConfig`; la sezione delle regole che le terrà arriva con M5-2/M5-4.
+- **Ripiego sul solo item level (piano B di S5).** Quando `useStats` è spento (per tutti), quando le statistiche di una
+  delle due parti sono sconosciute (`nil`, diverso da `{}`), quando la spec non ha pesi o quando nessuna delle due parti
+  ha una statistica pesata; ogni caso lascia una nota (`STATS_OFF`, `NO_STATS`, `NO_WEIGHTS`, `NO_WEIGHTED_STATS`).
+  Senza item level: *Non confrontabile* (`NO_ITEM_LEVEL`).
+- **Pesi predefiniti** (default reversibile della domanda 8, §13): una riga per ogni spec di `Data/Specs.lua`, statistica
+  principale = 1,0, DPS dell'arma per melee e cacciatori (non per il druido feral). Sono un'approssimazione (§5.3); i
+  pesi personali e l'import facoltativo di M5-3 sostituiscono una riga intera. Restano da verificare in gioco (S5) le
+  chiavi delle statistiche di Forever.
+
 ### 5.2 Lato master looter / council
 
 Ogni risposta arriva al ML con: risposta, etichetta dichiarata, verdetto calcolato, `upgrade %`, item level e link
@@ -1313,7 +1351,8 @@ l'indice è [`ROADMAP.md`](../ROADMAP.md).
 8. **Pesi delle statistiche**: vi basta l'item level + pesi predefiniti, o avete già pesi/BiS list per spec da
    importare? **Aperta**, opzioni in [issue #2](https://github.com/Finland6738/finland-dragon-credit-points/issues/2).
    Default reversibile finché non decide il GM: item level + pesi predefiniti modificabili, import stile Pawn
-   facoltativo e spento (step M5-1 e M5-3).
+   facoltativo e spento (step M5-1 e M5-3). M5-1 ha costruito la prima parte: pesi predefiniti per spec in
+   `Data/StatWeights.lua` e ripiego sul solo item level (§5.1, "Come è fatto (M5-1)"); nessuna BiS list di gilda.
 9. **Lingua** **Risolta (19/11/2026)**: addon multilingua, all'inizio italiano e inglese, con altre lingue
    aggiungibili tramite un file (§8.5). Documentazione come Accord.
 10. **Sito della community**: va bene estendere `loot.json` con `start` (crediti iniziali) e `kind` (assegnazione /
