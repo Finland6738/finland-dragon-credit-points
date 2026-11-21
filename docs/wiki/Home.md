@@ -16,6 +16,7 @@
 | See what the window will look like | [[Interface Tour|Interface-Tour]] |
 | Update the community site from the addon | [[Site Export|Site-Export]] |
 | See who in the raid lacks the addon and notify them | [[Addon Check|Addon-Check]] |
+| Manage the pool and run a raid night | [[Roster and Nights|Roster-and-Nights]] |
 
 More pages (the credits table, the master looter's guide, the council, settings) are added as the features are built.
 

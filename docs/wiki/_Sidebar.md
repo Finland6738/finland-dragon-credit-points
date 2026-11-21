@@ -6,6 +6,7 @@
 - [[Interface Tour|Interface-Tour]]
 - [[Site Export|Site-Export]]
 - [[Addon Check|Addon-Check]]
+- [[Roster and Nights|Roster-and-Nights]]
 
 **Italiano**
 - [[Home|Home-it]]
@@ -15,3 +16,4 @@
 - [[Giro dell'interfaccia|Interface-Tour-it]]
 - [[Esportazione per il sito|Site-Export-it]]
 - [[Controllo dell'addon|Addon-Check-it]]
+- [[Roster e Serate|Roster-and-Nights-it]]

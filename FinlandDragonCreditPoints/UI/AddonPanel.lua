@@ -47,19 +47,14 @@ function AddonPanel:RefreshChip()
 	chip:Show()
 end
 
--- Builds the sub-tab inside the roster `page` (once).
+-- Builds the sub-tab inside `page`, the Addon pane of the Roster tab (UI/Windows/Roster.lua hosts the selector; once).
 function AddonPanel:Build(page, titleBar)
 	if self.root then return self.root end
 	self:BuildChip(titleBar)
 	local root = CreateFrame("Frame", nil, page)
-	root:SetPoint("TOPLEFT", page, "TOPLEFT", 0, -40)
+	root:SetPoint("TOPLEFT", page, "TOPLEFT", 0, 0)
 	root:SetPoint("BOTTOMRIGHT", page, "BOTTOMRIGHT", 0, 0)
 	self.root = root
-
-	-- the sub-tabs of the Roster page: Pool and Night come with M3-7
-	root.sub = Widgets.Segmented(page, { { id = "addon", text = L["ADDON_PANEL_SUBTAB"] } }, function() end)
-	root.sub:SetPoint("TOPLEFT", page, "TOPLEFT", 0, -4)
-	root.sub:Select("addon")
 
 	root.eyebrow = Theme.NewText(root, "Eyebrow", "accent-text")
 	root.eyebrow:SetPoint("TOPLEFT", root, "TOPLEFT", 0, -4)

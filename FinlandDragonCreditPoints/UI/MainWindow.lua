@@ -117,12 +117,11 @@ function MainWindow:Build()
 		f.pages[t.id] = page
 	end
 
-	-- Roster > Addon (M3-6): the roster page hosts the sub-tabs, its own placeholder goes away
-	if ns.AddonPanel then
+	-- Roster (M3-7): the roster page hosts the sub-tabs Pool, Night and Addon, its own placeholder goes away
+	if ns.RosterWindow then
 		f.pages.roster.eyebrow:Hide()
 		f.pages.roster.empty:Hide()
-		ns.AddonPanel:Build(f.pages.roster, f.titleBar)
-		ns.AddonPanel:Refresh()
+		ns.RosterWindow:Build(f.pages.roster, f.titleBar)
 	end
 
 	-- resize grip (bottom right)

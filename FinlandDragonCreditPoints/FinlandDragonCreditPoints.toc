@@ -48,12 +48,17 @@ Adapters\Group.lua
 Adapters\Calendar.lua
 App\PermissionService.lua
 App\NightController.lua
+App\RosterController.lua
 App\ProgressController.lua
 App\AddonCheck.lua
 App\AddonNotice.lua
 UI\Assets.lua
 UI\Theme.lua
 UI\Widgets.lua
+UI\Widgets\DataTable.lua
+UI\Widgets\ThinBar.lua
 UI\AddonPanel.lua
+UI\Windows\Nights.lua
+UI\Windows\Roster.lua
 UI\MainWindow.lua
 UI\Minimap.lua

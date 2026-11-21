@@ -96,7 +96,8 @@
 - Analysis: §6, §9.3; [`docs/specs/ui-style.md`](../specs/ui-style.md) §3, §6
 - Scope: `UI/Widgets/DataTable.lua` (sortable, ScrollBox with pooled rows, fixed first and last columns, header outside the list, as in `ui-style.md` §3), the **Roster** tab: `UI/Windows/Roster.lua` (sub-tab Pool: the site's three role columns with class tags, counts against the targets, the 4 px gradient bar, Trial badges and free slots, the faction switch; declarations, alts and approvals), `UI/Windows/Nights.lua` as the sub-tab **Serata** (open / close a night, lineup, proposed bench, attendance only for officers per `view.attendance`).
 - Done when:
-  - [ ] Officers can manage the pool and run a night from the windows in the mock; members see no attendance.
+  - [x] Officers can manage the pool and run a night from the windows in the mock; members see no attendance.
+  - [ ] The Roster and Night sub-tabs look like the preview `docs/specs/mockups/fdcp-roster.webp` in game. *(in game)*
 - Tests: `Tests/test_ui_roster.lua`.
 - Docs: wiki **Roster and Nights** page (EN + IT), CHANGELOG.
 - Real client: the windows in game.
