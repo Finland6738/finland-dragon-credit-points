@@ -30,6 +30,8 @@ Le ultime righe di `/fdcp debug` descrivono i messaggi dell'addon verso gli altr
 
 L'output di `/fdcp debug` ha anche due **righe sull'interfaccia**: il tema attivo, quanti stili di testo usano i font dell'addon e quanti sono ripiegati sui font del gioco, quante texture il client ha rifiutato e cosa ha risposto a qualche prova dell'interfaccia (liste ScrollBox, data provider, forme arrotondate 9-slice, bagliore additivo, foglio di icone, la dimensione di un pixel dello schermo e la scala dell'interfaccia). Servono all'autore per controllare l'aspetto in gioco.
 
+Una riga **Controllo addon** riassume chi nel tuo raid ha l'addon: "37/40 con l'addon", poi quanti sono attivi, da aggiornare, con una versione incompatibile, senza addon attivo o ancora in attesa, le versioni del tuo addon e del protocollo e quante domande e risposte di presenza sono arrivate. L'addon di ogni raider risponde da solo quando entra nel raid; l'officer che guida la serata chiede di nuovo quando la serata si apre e quando entra qualcuno. Rolla solo chi ha un addon compatibile.
+
 Una riga **Permissions** dice se il roster della gilda è stato letto in questa sessione (`loaded` o `loading`), il tuo rango di gilda per posizione (0 è il Guild Master) e quanti eventi degli altri giocatori aspettano il roster.
 
 `/fdcp debug` non stampa mai nomi di giocatori, di gilda o di oggetti, quindi puoi incollarne l'output in una segnalazione di errore. Controlla di nuovo il client a ogni esecuzione.

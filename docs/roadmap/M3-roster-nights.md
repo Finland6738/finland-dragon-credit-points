@@ -72,7 +72,7 @@
 - Analysis: §4.1 (how it knows, states), §8.4
 - Scope: `Net/Protocol.lua` first messages `HELLO?` / `HELLO{addonVersion, protocolVersion}` on `RAID` at night open, on every raid join and on request; `App/AddonCheck.lua` with the states active / outdated / incompatible / not active / waiting, the summary "37/40 with the addon", the rule "candidates are only members with a compatible addon" exposed for M4.
 - Done when:
-  - [ ] Simulated raids with old, incompatible and missing addons give the right states.
+  - [x] Simulated raids with old, incompatible and missing addons give the right states.
 - Tests: `Tests/test_addon_check.lua` (network simulator).
 - Docs: CHANGELOG.
 - Real client: `RAID` delivery (spike S4).

@@ -24,6 +24,7 @@ Core\Compat.lua
 Core\Config.lua
 Net\Codec.lua
 Net\Transport.lua
+Net\Protocol.lua
 Domain\Classifier.lua
 Domain\Pricing.lua
 Domain\Reasons.lua
@@ -47,6 +48,7 @@ Adapters\Calendar.lua
 App\PermissionService.lua
 App\NightController.lua
 App\ProgressController.lua
+App\AddonCheck.lua
 UI\Assets.lua
 UI\Theme.lua
 UI\Widgets.lua

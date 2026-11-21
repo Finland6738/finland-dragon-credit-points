@@ -512,6 +512,19 @@ dell'addon e del protocollo. Chi non risponde entro qualche secondo è "senza ad
 da "installato ma disattivato" non è possibile (in entrambi i casi non risponde nulla): l'addon dice "addon non
 attivo".
 
+**Come è fatto (M3-5).** `Net/Protocol.lua` e `App/AddonCheck.lua`. Chi chiede è chi guida la serata aperta
+(l'officer che l'ha aperta o il suo master looter): chiede a tutto il raid all'apertura della serata (o quando entra in
+un raid durante la serata) e solo ai **nuovi arrivati** a ogni ingresso successivo (chi torna online conta come nuovo);
+chi ha `raid.addonCheck` può chiedere di nuovo a mano. Ogni client manda anche il suo `HELLO` da solo quando entra in un
+raid e dopo un login o un `/reload` dentro un raid, così chi installa l'addon e ricarica rientra senza che nessuno
+chieda. Domande e risposte viaggiano su `RAID`, quindi **ogni client ha la stessa tabella**. Una risposta conta solo se
+non è più vecchia dell'ultima domanda che nominava quel giocatore (una risposta di prima di un `/reload` con l'addon
+disattivato non lo tiene "attivo"). "Non attivo" scatta 15 secondi dopo che la domanda è **davvero partita**: una domanda
+trattenuta da un boss o dal lockdown della chat non fa scadere nessuno. "In attesa" vale per chi è offline, per chi non è
+ancora stato interpellato e per chi è stato interpellato da meno di 15 secondi. La regola per M4:
+`AddonCheck:Candidates()` restituisce `{[nome] = true}` per chi ha un addon compatibile (attivo o da aggiornare),
+`AddonCheck:RaidInput()` il `{present, addon}` che `SessionFSM` riceve con `SET_RAID`.
+
 **Pannello "Addon nel raid"** (visibile a chi ha `raid.addonCheck`), una riga per membro del raid:
 
 | Stato | Significato |
@@ -825,6 +838,18 @@ tools/ check_docs.py, build/release
 
 - Prefisso versionato (es. `FDCP1`); messaggi serializzati con `C_EncodingUtil` e spezzati da AceComm.
 - **Come è fatto (M1-6).** Il testo è `<versione>|<TIPO>|<payload>`: versione e tipo in chiaro, il payload è CBOR (deflate quando conviene) in Base64 (`Net/Codec.lua`). Una versione più recente o un tipo sconosciuto si ignorano senza decodificare; il prefisso porta la versione del protocollo (`FDCP1`), un protocollo incompatibile userebbe `FDCP2`. `Net/Transport.lua` accoda i messaggi con priorità (ALERT, NORMAL, BULK), un messaggio ogni `GAP` secondi per canale (`RAID` 0,5 · `GUILD` 1 · `OFFICER` 1 · `WHISPER` 0,25), un limite per tipo, l'ultimo messaggio per chiave, e li **tiene in attesa** durante il lockdown della chat, una restrizione addon **o un incontro con un boss** (`IsEncounterInProgress`); un rifiuto di lockdown del client è un'attesa, non un fallimento. Un messaggio `RAID` aspetta anche finché il personaggio non è in un raid e scade dopo 120 secondi (un messaggio di sessione vecchio non arriva mai nel raid successivo). Ogni messaggio porta la chiave della gilda per cui è stato scritto: aspetta se la gilda non è nota e cade se il personaggio è passato a un'altra. La coda si salva al logout (`FinlandDragonCreditPointsCharDB.outbox`) e si ripristina al login, quindi sopravvive a `/reload`. L'eco dei propri messaggi `RAID`, `GUILD` e `OFFICER` è contata e scartata. I tipi dei moduli successivi (protocollo di sessione, sincronizzazione del registro) si registrano con `Codec:RegisterType`; i messaggi in arrivo escono solo come evento `NET_MESSAGE(msg, mittente, canale)` sul bus.
+- **Presenza dell'addon (M3-5).** I primi messaggi del protocollo di sessione, solo su `RAID` (da un altro canale si
+  ignorano):
+
+  | Tipo | Campi | Significato |
+  |---|---|---|
+  | `HELLOQ` | `w?` (lista di "Nome-Reame", al massimo 40), `av`, `pv`, `pm` | "chi ha l'addon?" (il `HELLO?` del §4.1: il nome di un tipo ha solo lettere e cifre); senza `w` rispondono tutti, con `w` solo i nominati; porta anche i dati di chi chiede, che ha l'addon anche lui |
+  | `HELLO` | `av` (versione dell'addon, `dev` se non pacchettizzato), `pv` (versione del protocollo di sessione), `pm` (il protocollo più vecchio che capisce ancora) | la risposta, o l'annuncio all'ingresso nel raid |
+
+  Due client sono **compatibili** se il `pv` di ciascuno è almeno il `pm` dell'altro; compatibile con versione più
+  vecchia = "da aggiornare", incompatibile = "versione incompatibile" (non rolla). Un client con un formato di rete
+  nuovo usa un altro prefisso (`FDCP2`) e non si sente affatto: risulta "addon non attivo". Limite per tipo: quattro
+  `HELLO` e quattro `HELLOQ` al minuto (l'ultimo in attesa vince).
 - **Coda con lockdown**: se `InChatMessagingLockdown()` o le restrizioni sono attive, i messaggi aspettano
   (riuso del modulo di Accord). Le sessioni partono dopo `ENCOUNTER_END`.
 - **Fiducia**: un evento del registro è accettato solo se l'autore ha il rango richiesto dal permesso (§3.9),

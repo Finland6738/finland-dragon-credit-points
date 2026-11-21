@@ -8,7 +8,7 @@
 --
 -- Configure (kept across Mock.Reload):
 --   Mock.group.Set{ raid = false, members = { { name = "Ally", guid = "Player-1-...", inGuild = true, class = "MAGE",
---                   level = 60, subgroup = 1 }, ... } }   -- the OTHER members; fires GROUP_ROSTER_UPDATE
+--                   level = 60, subgroup = 1, online = true }, ... } }   -- the OTHER members; fires GROUP_ROSTER_UPDATE
 --   Mock.group.Leave()
 --   Mock.group.guildParty  true: InGuildParty() says the group is a guild group (false by default; Mock.SECRET hides it)
 --   Mock.group.invites     names given to C_PartyInfo.InviteUnit
@@ -30,7 +30,7 @@ function group.Set(config)
 	for i, m in ipairs(config.members or {}) do
 		group.members[i] = { name = m.name or ("Member" .. i), guid = m.guid or string.format("Player-1-%08X", 0x2000 + i),
 			inGuild = m.inGuild == true, class = m.class or "WARRIOR", level = m.level or 60, subgroup = m.subgroup or 1,
-			realm = m.realm }
+			realm = m.realm, online = m.online ~= false }
 	end
 	Mock.Fire("GROUP_ROSTER_UPDATE")
 end
@@ -105,7 +105,7 @@ function GetRaidRosterInfo(index)
 	end
 	if not m then return nil end
 	if group.secretGUIDs then return Mock.SECRET end
-	return m.name, 0, m.subgroup, m.level, m.class, m.class, "Orgrimmar", true, false, "NONE", false
+	return m.name, 0, m.subgroup, m.level, m.class, m.class, "Orgrimmar", m.online ~= false, false, "NONE", false
 end
 
 function IsInInstance() return W.inInstance == true, W.inInstance and "party" or "none" end

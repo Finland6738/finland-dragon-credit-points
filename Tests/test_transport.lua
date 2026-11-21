@@ -23,7 +23,9 @@ local function rec(n) return { t = "REC", s = "ledger", r = { { id = "r" .. (n o
 local function open() return { t = "OPEN", s = "session-1" } end
 local function hello() return { t = "HELLO", av = "0.1.0" } end
 
+-- The addon's own presence messages (App/AddonCheck.lua says HELLO on entering a raid) would add to the counts here.
 local function inRaid()
+	Bus():Off(nil, FDCP.AddonCheck)
 	Mock.group.Set{ raid = true, members = { { name = "Bryn" }, { name = "Corin" } } }
 end
 
@@ -143,14 +145,13 @@ describe("pacing", function()
 		eq(#W.calls, 2)
 	end)
 
-	it("sends at most one HELLO every five minutes", function()
+	it("sends at most four HELLO a minute (Net/Protocol.lua sets the rate)", function()
 		local W = fakeWire()
-		Tr():Send("GUILD", hello())
-		Tr():Send("GUILD", hello())
-		Mock.Advance(60)
-		eq(#W.calls, 1)
-		Mock.Advance(241)
-		eq(#W.calls, 2)
+		for _ = 1, 6 do Tr():Send("GUILD", hello()) end
+		Mock.Advance(30)
+		eq(#W.calls, 4)
+		Mock.Advance(35)
+		eq(#W.calls, 6)
 	end)
 
 	it("gives the HELLO allowance back when the send fails", function()
@@ -427,6 +428,7 @@ describe("the saved queue", function()
 		Tr():Send("RAID", open())
 		Mock.Advance(5)
 		Mock.Reload()
+		Bus():Off(nil, FDCP.AddonCheck)   -- the reloaded addon would say HELLO in the raid
 		eq(Tr():Pending("RAID"), 1)
 		Mock.Advance(5)
 		eq(#Mock.chat.sent, 0, "still the same encounter")
