@@ -10,7 +10,7 @@ One file per milestone; each file lists the **development steps** of that milest
 | **M3** | [M3-roster-nights.md](M3-roster-nights.md) | Pool, mains and alts, nights, lineup, bench, attendance, first kills, addon check and `/raid` notice, Roster, Credits and Progress tabs | 11 | final check |
 | **M4** | [M4-loot-session.md](M4-loot-session.md) | A whole boss run by the addon: collection, popup, rolls, proposal, delivery | 9 | final check |
 | **M5** | [M5-upgrades-council.md](M5-upgrades-council.md) | Upgrade hints, council flags and interventions, vote, legendaries, BoE and bank | 8 | final check |
-| **M6** | [M6-history-export.md](M6-history-export.md) | History views, log and audit, exports, officer sync, read-only credits for members | 8 | final check |
+| **M6** | [M6-history-export.md](M6-history-export.md) | History views, season window (M6-1b), log and audit, exports, officer sync, read-only credits for members | 8 | final check |
 | **M7** | [M7-release.md](M7-release.md) | Site-style polish, settings, profiles, diagnostics, packaging, manual, v1.0.0 | 8 | beta and release checklist |
 
 ## Order and dependencies

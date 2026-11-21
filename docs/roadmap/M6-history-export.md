@@ -18,6 +18,20 @@ Open question 10 ([#3](https://github.com/Finland6738/finland-dragon-credit-poin
 - Real client: the windows in game.
 - Suggested model/effort: `sonnet` / medium
 
+### M6-1b — Season management window
+- Branch: `step/m6-1b-season-window`
+- Depends on: M2-5 (`Domain/Season.lua`), M2-6 (permissions), M4-9 (the gap found there), M1-7 (theme)
+- Analysis: §6, §9.3 (windows), §8.3 (ledger events), permission `season.manage`
+- Scope: a window for the season lifecycle, replacing the `/run` workaround of `docs/checklists/M4.md`. A holder of `season.manage` (the Guild Master by default) opens a season and closes it from the UI: picks the pack of instances from `Data/Instances.lua`, the raid size of each, and the late-join rule and the start credits; sees a summary and must confirm explicitly (closing a season asks a second, separate confirmation). Both actions are audited ledger events (`SEASON_OPEN`, `SEASON_CLOSE`) through `Season.Open` / `Season.Close` and the permission gate; nothing is deleted. Every member sees the current season (name, instances, rule, state) read-only; members without the permission get no buttons. Follows [`docs/specs/ui-style.md`](../specs/ui-style.md); every string through a locale key (itIT + enUS).
+- Done when:
+  - [ ] Offline: the window opens a season from the chosen pack, sizes, rule and start credits and the ledger holds one audited event; closing works the same; both ask for confirmation and do nothing without it.
+  - [ ] Offline: without `season.manage` the buttons are absent and a forced call is refused; a member sees the season read-only; a second open season is refused with a clear message.
+  - [ ] In game: the Guild Master opens and closes a season from the window and the officers' windows update; the `/run` lines of `docs/checklists/M4.md` are no longer needed.
+- Tests: `Tests/test_season_window.lua` (windows driven by their buttons on the mock client).
+- Docs: wiki **Seasons** page or section (EN + IT), update `docs/checklists/M4.md`, CHANGELOG, README status.
+- Real client: layout and confirmation dialogs, the permission-based visibility.
+- Suggested model/effort: `sonnet` / medium
+
 ### M6-2 — Loot log and audit
 - Branch: `step/m6-2-log-audit`
 - Depends on: M6-1, M5-5

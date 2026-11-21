@@ -1214,7 +1214,9 @@ della finestra e nel pulsante della minimappa in ogni tema.
 1. **App principale** con barra del titolo (logo, nome, season e fazione, stato della serata) e **schede orizzontali
    come sul sito**: **Roster** (Pool · Serata · Addon) · **Crediti** · **Progress** (prima uccisione per boss e per
    fazione) · **Loot** (Sessione · Council) · **Storico** (Serate · Log · Audit · Esporta) · **Impostazioni**
-   (Personali · Regole · Permessi · Sito). Le schede che un rango non può usare non compaiono.
+   (Personali · Regole · Permessi · Sito). Le schede che un rango non può usare non compaiono. L'apertura e la
+   chiusura della season (pacchetto di istanze, taglie, regola dei late joiner, crediti iniziali; permesso
+   `season.manage`) hanno una finestra propria, step M6-1b della roadmap; i membri vedono la season in sola lettura.
 2. **Popup del pezzo (giocatore)**: una card per pezzo, impilabili; vedi §5.1.
 3. **Sessione (ML)**, nella scheda Loot: a sinistra i pezzi della sessione con stato; a destra i candidati con
    crediti, risposta, roll, segnalazioni; sotto la proposta con "Conferma e assegna", "Modifica", "Intervento del
