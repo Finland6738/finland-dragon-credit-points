@@ -29,7 +29,11 @@
 --                ruleWinner, ruleCost, autoIn } | nil   (the selected item's proposal, or its award once assigned),
 --   pool = { names } (everybody the selected item's roll counted as present: who the master looter can pick instead),
 --   missing = { names }  (raid members who cannot roll: no addon, §4.1) | nil,
---   actions = { start, openRoll, closeRound, advance, confirm, reject, modify, correct, remove, pause, resume, finish },
+--   votes = { open, total, tally = { { choice, name, n } } (most votes first), voters = { [voter] = choice } } | nil
+--                 (the council's votes on the selected item's proposal, M5-5: the master looter sees them before
+--                 confirming; nil when the council does not vote on it),
+--   actions = { start, openRoll, closeRound, advance, confirm, closeVote, reject, modify, correct, remove, pause, resume,
+--               finish },
 -- }
 -- The "to deliver" list of M4-7 is not part of the board (it outlives the session): SB.DeliveryRows gives its rows,
 -- { which ("main" or "carry"), index, itemID, quality, winner, recipient, target, paid, method, status ("PENDING" or
@@ -191,6 +195,37 @@ function SB.DiffTexts(p)
 	return out
 end
 
+-- The board's votes from a { [voter] = choice } table (M5-5); nil without a table.
+local function votesOf(map, open)
+	if type(map) ~= "table" then return nil end
+	local counts, voters, total = {}, {}, 0
+	for voter, choice in pairs(map) do
+		if type(voter) == "string" and type(choice) == "string" then
+			counts[choice] = (counts[choice] or 0) + 1
+			voters[voter] = choice
+			total = total + 1
+		end
+	end
+	local tally = {}
+	for choice, n in pairs(counts) do tally[#tally + 1] = { choice = choice, name = short(choice), n = n } end
+	table.sort(tally, function(a, b)
+		if a.n ~= b.n then return a.n > b.n end
+		return a.choice < b.choice
+	end)
+	return { open = open == true, total = total, tally = tally, voters = voters }
+end
+SB.VotesOf = votesOf
+
+-- "Council votes: Corin 2, Bryn 1 (open)." | "No council vote yet." | "" without a vote.
+-- locale-key: ML_VOTES_OPEN ML_VOTES_CLOSED ML_VOTES_NONE ML_VOTE_ENTRY
+function SB.VoteText(votes)
+	if type(votes) ~= "table" then return "" end
+	if votes.total == 0 then return votes.open and L()["ML_VOTES_NONE"] or "" end
+	local parts = {}
+	for i, t in ipairs(votes.tally) do parts[i] = L()["ML_VOTE_ENTRY"]:format(t.name, t.n) end
+	return L()[votes.open and "ML_VOTES_OPEN" or "ML_VOTES_CLOSED"]:format(table.concat(parts, ", "))
+end
+
 -- The sentence of a delivery code (Domain/Reasons.lua group DELIVERY), or "" for none.
 function SB.DeliveryCodeText(code)
 	if code == nil then return "" end
@@ -291,7 +326,8 @@ local function hostProposal(item, now)
 	return { kind = p.kind, target = target, winner = p.winner, cost = p.cost, response = p.response, tier = p.tier,
 		roll = p.roll, credits = p.credits, reasons = p.reasons or {}, flags = p.flags or {},
 		modified = item.intervention ~= nil, mlReason = item.intervention and item.intervention.reason,
-		ruleWinner = item.rule and item.rule.winner, ruleCost = item.rule and item.rule.cost, autoIn = autoIn }
+		ruleWinner = item.rule and item.rule.winner, ruleCost = item.rule and item.rule.cost, autoIn = autoIn,
+		autoHeld = item.autoHeld }
 end
 
 -- The roll a player shows in the table: their first roll in the newest round that has one (a reroll replaces the roll
@@ -418,6 +454,7 @@ local function hostActions(s, sel, item)
 	a.reject, a.modify = inProposal, inProposal
 	a.confirm = inProposal and p.winner ~= nil and p.cost ~= nil
 		and (rules.awardMode ~= "council" or item.voteClosed == true)
+	a.closeVote = inProposal and type(item.votes) == "table" and next(item.votes) ~= nil and not item.voteClosed
 	a.correct = item ~= nil and not ended and (st == "COLLECTING" or st == "ANNOUNCING" or st == "ROLLING" or st == "COMPUTING")
 		and (item.state == "PENDING" or item.state == "ROLLING" or item.state == "COMPUTING")
 		and not (item.opened and rules.lockCategoryOnOpen)
@@ -440,6 +477,7 @@ local function buildHost(s, env, selected, readOnly)
 	if item then
 		b.round = hostRound(s, item, now)
 		b.proposal = hostProposal(item, now)
+		if item.state == "PROPOSAL" then b.votes = votesOf(item.votes, not item.voteClosed) end
 		-- The council's flags (M5-4): live while the item is rolled, then the ones written with the proposal. The master
 		-- looter always sees them.
 		local flags
@@ -552,6 +590,8 @@ local function buildView(v, env, selected)
 	if p and sel == p.i then
 		b.proposal = { kind = p.k, target = p.tg, winner = p.w, cost = p.c, response = p.rs, tier = p.tr,
 			reasons = p.rc or {}, flags = p.f or {}, modified = p.m }
+		local votes = v.votes and v.votes[sel]
+		if votes or p.vc then b.votes = votesOf(votes or {}, not p.vc) end
 	end
 	b.flags = {}
 	if env.verdicts and sel then b.candidates, b.flags = viewCandidates(v, env, sel, b) end

@@ -106,6 +106,28 @@ Two flags help you and the council spot the cases the guild's rules say must be 
 - **Who sees them.** You always do. Besides you, the guild decides who sees the verdicts and the flags: the **council** (the preset: the rank with the *council member* permission, who then gets the read-only window even without being an officer), **all officers**, or **only the master looter**. Others see only the codes of the proposal, without names. The flags can be turned off by the guild.
 - **What they cannot know.** A raider who never answers sends no verdict, so a silent player is flagged only if their addon has already sent one. The verdict is computed by the player's own addon: an approximation (see [[Upgrade Hints|Upgrade-Hints]]).
 
+## The council: interventions and the vote
+
+**Who is on the council.** By default, the guild ranks with the *council member* permission (officers) who are **in the raid**. The guild may instead write an **explicit list of characters** in its rules: then the list replaces the rank (still only those in the raid, unless the guild turns the presence rule off). Type `/fdcp council` to see whether you are on it.
+
+**What the council can do, always with a reason.** You carry out the council's decisions from your window, and each one is written in the log with its reason and your name:
+
+| What | How | Reason |
+|---|---|---|
+| Fix the category or the cost | **Correct**, before the item's roll opens. Once it is open the addon refuses (*The category cannot change once the roll is open.*). | *The category or the cost was wrong*, *The council priced the item* |
+| Obvious waste: another candidate | **Modify**, pick the candidate. They pay the cost of their own answer. | *Obvious waste* |
+| Passed to game the system | **Modify**, pick the player who did not roll. They pay the **full cost**. | *Passed to game the system* |
+| Cancel an award | `/fdcp council awards`, then `/fdcp council void <n> <reason>`. The credits come back; the award stays in the log, marked cancelled. | *mistake*, *duplicate_award*, *obvious_waste*, *passed_to_game*, *council_vote*, *legendary*, *other* |
+| Correct a member's credits by hand | `/fdcp council adjust <player> <credits> <reason>` (positive adds credits, like a cost; negative removes them; at most 1000). | *mistake*, *penalty*, *bonus*, *council_vote*, *other* |
+
+Without a reason nothing is written. Cancelling and correcting credits need the *night* permission while a night of the season is open (you, the master looter, write the council's corrections) and the *credits correction* permission outside a night (the Guild Master in the preset). Other players' addons check the same permission when the event reaches them. `/fdcp council audit` lists the last interventions of the season: modified awards (with the rules' winner), corrections before the roll, votes, cancellations and credit corrections.
+
+**The vote.** When the guild's award mode is **council**, or the guild turns the **council vote** on, every council member votes from their own game with `/fdcp council vote <player>` once the proposal is up (a member votes only for themselves; a vote from someone who is not on the council is ignored, and a member can change their vote until it is closed). You see the votes in the strip under the proposal, for example *Council votes (open): Corin 2, Bryn 1.*, and the main button becomes **Close the vote**:
+
+- in **council** mode you cannot confirm before closing the vote. A strict majority decides; if it names someone else, the proposal changes with the reason *Decided by the council's vote*. A tie or no votes: you decide with **Modify**;
+- with the vote in the other modes the votes only inform you: you may confirm at once, close the vote to apply the majority, or modify. In **automatic** mode a vote for another player stops the automatic award and waits for you (*A council vote disagrees: the master looter decides.*);
+- the votes go into the award in the log.
+
 ## Modify
 
 Press **Modify** on a proposal. A card opens with:
@@ -155,4 +177,4 @@ Officers who are not the master looter see the same window **read-only**: the it
 
 ## If the guild uses other modes
 
-The guild may set the award to **automatic** (the addon confirms a clean proposal by itself after a short window, never after you intervene and never with a [council flag](#council-flags) up; the strip says *The addon confirms by itself in N s* and you can still Reject or Modify during it) or to **council** (the council votes; this arrives in a later version). Which mode is in force is a guild rule: see [[Loot Rules|Loot-Rules]].
+The guild may set the award to **automatic** (the addon confirms a clean proposal by itself after a short window, never after you intervene and never with a [council flag](#council-flags) up; the strip says *The addon confirms by itself in N s* and you can still Reject or Modify during it) or to **council** (the council votes on every proposal and you close the vote before confirming: see [The council: interventions and the vote](#the-council-interventions-and-the-vote)). Which mode is in force is a guild rule: see [[Loot Rules|Loot-Rules]].

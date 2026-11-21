@@ -29,10 +29,13 @@ ns.Protocol, ns.modules.Protocol = Protocol, Protocol
 local type, ipairs, tostring, tonumber, floor = type, ipairs, tostring, tonumber, math.floor
 local match, gmatch = string.match, string.gmatch
 
-Protocol.VERSION = 3         -- the session protocol this client speaks (raise it when a session message changes);
+Protocol.VERSION = 4         -- the session protocol this client speaks (raise it when a session message changes);
                              -- 2 = the loot session messages of M4-1 (1 = the presence check of M3 only);
                              -- 3 = SRESP carries the upgrade verdicts and the worn pieces (M5-2): optional fields, so
                              --     a client of protocol 2 still understands every message and is understood
+                             -- 4 = SVOTE, the council's vote (M5-5), and the optional `vc` of SPROP / `vt` of SSTATE: a
+                             --     client of protocol 2 or 3 ignores the new type and fields (an unknown type is dropped
+                             --     unread), so it still follows the session; it only cannot vote
 Protocol.MIN = 2             -- the oldest session protocol this client still understands
 Protocol.MAX_NAMES = 40      -- a HELLOQ names at most this many members; more means "everybody"
 Protocol.MAX_VERSION_LEN = 32
@@ -221,11 +224,19 @@ end
 --   SSYNCQ   RAID or   s?                                         "send me the session": after a /reload, on joining
 --            WHISPER                                              the raid late (RAID), after a gap (WHISPER to the ML)
 --   SSTATE   WHISPER   q, ml, e?, rt?, it (+ st, w, pc, tg), a?,  the whole view, for one member: the active item,
---                      rd?, pr?, pz?, en?, my?                    its round and proposal, paused, ended, the asker's
---                                                                 own response (`my` = { rs, lb?, n? })
+--                      rd?, pr?, pz?, en?, my?, vt?               its round and proposal, paused, ended, the asker's
+--                                                                 own response (`my` = { rs, lb?, n? }), the votes on
+--                                                                 the proposal (`vt` = { [voter] = choice }, M5-5)
+--   SVOTE    RAID      i, c                                       a council member's vote on the proposal of item i
+--                                                                 (M5-5): c = the player they vote for. Always the
+--                                                                 sender's own vote, like SRESP. SPROP carries `vc` = the
+--                                                                 vote is closed
 --
 -- Trust (§8.4): a response is always the sender's own: the ML takes the player from the sender the client gives, never
--- from a field; a response that names another player (`p`) is refused as forged and counted. Rolls never travel by
+-- from a field; a response that names another player (`p`) is refused as forged and counted. A vote (SVOTE) is the
+-- sender's own the same way (a `p` or `by` naming someone else is forged), and it counts only from a council member
+-- (App/CouncilService.lua: the rank or the explicit list, and present in the raid): every client checks it for its view,
+-- the master looter's state machine again (env.isCouncil). Rolls never travel by
 -- addon message: no message carries a roll and nothing read here ever becomes a ROLL input (rolls come from the chat,
 -- M4-3). Control messages are taken only from the session's master looter (the sender of its SOPEN, who must name
 -- himself in `ml`); a SOPEN from someone outside the raid is refused, and one from another player while a session
@@ -237,13 +248,13 @@ end
 --
 -- Bus events: "SESSION_INPUT"(input)          a SessionFSM input for the hosted session (RESPONSE), with ts
 --             "SESSION_VIEW"(view, what, i, who) the view changed: what = OPENED, ITEMS, ROLL, CLOSED, PROPOSAL,
---                                             RESULT, PAUSE, ENDED, SYNCED, RESPONSE, CLEARED
+--                                             RESULT, PAUSE, ENDED, SYNCED, RESPONSE, VOTE, CLEARED
 --             "SESSION_REFUSED"(code, sender) a session message refused (FORGED, NOT_ML, NOT_IN_RAID, BUSY, ...)
 local Session = {}
 Protocol.Session = Session
 
 Session.CONTROL = { SOPEN = true, SROLL = true, SCLOSE = true, SPROP = true, SRESULT = true, SPAUSE = true, SEND = true }
-Session.TYPES = { "SOPEN", "SROLL", "SRESP", "SCLOSE", "SPROP", "SRESULT", "SPAUSE", "SEND", "SSYNCQ", "SSTATE" }
+Session.TYPES = { "SOPEN", "SROLL", "SRESP", "SCLOSE", "SPROP", "SRESULT", "SPAUSE", "SEND", "SSYNCQ", "SSTATE", "SVOTE" }
 Session.LABELS = { "BIS", "BIG_UPGRADE", "SMALL_UPGRADE", "SITUATIONAL" }   -- the preset labels (§3.3); any code passes
 Session.OUTCOMES = { AWARDED = true, REJECTED = true, DELIVERED = true }
 Session.TARGETS = { member = true, bank = true, disenchant = true }
@@ -257,7 +268,7 @@ Session.SYNC_COOLDOWN = 3   -- the ML sends one state per member per this many s
 Session.STATE_TTL = 60      -- a whispered state or question older than this is dropped (it would be stale)
 
 Session.stats = { published = 0, inputs = 0, forged = 0, stale = 0, refused = 0, gaps = 0, dups = 0, syncAsked = 0,
-	syncServed = 0, synced = 0, bad = 0 }
+	syncServed = 0, synced = 0, bad = 0, votes = 0 }
 
 local huge = math.huge
 
@@ -399,7 +410,20 @@ local function readProposal(m, items)
 	local reasons, flags = codeList(m.rc), codeList(m.f)
 	if not reasons or not flags then return nil end
 	return { i = m.i, k = m.k, tg = m.tg, w = winner, c = m.c, rs = m.rs, tr = m.tr, rc = reasons, f = flags,
-		m = m.m == true or nil }
+		m = m.m == true or nil, vc = m.vc == true or nil }
+end
+
+-- The votes of a SSTATE (`vt`): { [voter] = choice }, normalized; nil when absent or damaged.
+local function readVotes(t)
+	if type(t) ~= "table" then return nil end
+	local out, n = {}, 0
+	for voter, choice in pairs(t) do
+		n = n + 1
+		local a, b = nameOf(voter), nameOf(choice)
+		if n > Protocol.MAX_NAMES or not a or not b then return nil end
+		out[a] = b
+	end
+	return out
 end
 
 Session.MAX_LINKS = 4       -- worn pieces named by a response
@@ -469,6 +493,16 @@ function Session.ReadResponse(msg, from)
 		vd = readVerdicts(msg.vd), eq = readLinks(msg.eq) }
 end
 
+-- A SVOTE from `from`: { s, i, c }, or nil and a code ("FORGED" when it names another voter).
+function Session.ReadVote(msg, from)
+	if type(msg) ~= "table" or not from then return nil, "BAD" end
+	if (msg.p ~= nil and nameOf(msg.p) ~= from) or (msg.by ~= nil and nameOf(msg.by) ~= from) then return nil, "FORGED" end
+	if not isSid(msg.s) or not isInt(msg.i, 1) then return nil, "BAD" end
+	local choice = nameOf(msg.c)
+	if not choice then return nil, "BAD" end
+	return { s = msg.s, i = msg.i, c = choice }
+end
+
 ---------------------------------------------------------------------------------------------------------------------
 -- The master looter's side: the hosted session, its effects as messages, the members' answers as inputs
 
@@ -533,11 +567,13 @@ local function wireProposal(s, index)
 	local p = item and item.proposal
 	if not p then return nil end
 	return { i = index, k = p.kind, tg = targetOf(p), w = p.winner, c = p.cost, rs = p.response, tr = p.tier,
-		rc = copy(p.reasons), f = copy(p.flags), m = item.intervention and true or nil }
+		rc = copy(p.reasons), f = copy(p.flags), m = item.intervention and true or nil,
+		vc = (item.voteClosed and item.votes) and true or nil }
 end
 
 -- The message for one SessionFSM effect, or nil (the effects the raid does not need: COLLECTED, NEXT_ROUND, DELIVER,
--- NO_ADDON, TIMER_EXPIRED, AUTO_FAILED, VOTE_CLOSED; ITEM_CORRECTED before the session was announced).
+-- NO_ADDON, TIMER_EXPIRED, AUTO_FAILED, AUTO_HELD, VOTED (the vote itself went out as SVOTE); ITEM_CORRECTED before the
+-- session was announced). VOTE_CLOSED sends the proposal again, with `vc`.
 function Session.MessageFor(s, e)
 	local t = e.type
 	local n = net(s)
@@ -552,7 +588,7 @@ function Session.MessageFor(s, e)
 			cl = e.collect or nil, de = Session.ToServer(e.deadline), rm = remaining }
 	elseif t == "CLOSE_ROUND" then
 		return { t = "SCLOSE", i = e.item, r = n.rounds[e.item] or 1 }
-	elseif t == "PROPOSAL" then
+	elseif t == "PROPOSAL" or t == "VOTE_CLOSED" then
 		local p = wireProposal(s, e.item)
 		if p then p.t = "SPROP" end
 		return p
@@ -612,7 +648,10 @@ function Session.StateFor(s, asker)
 	local item = s.active and s.items[s.active]
 	if item then
 		msg.rd = wireRound(s, s.active, t, st)
-		if s.state == "PROPOSAL" then msg.pr = wireProposal(s, s.active) end
+		if s.state == "PROPOSAL" then
+			msg.pr = wireProposal(s, s.active)
+			if type(item.votes) == "table" and next(item.votes) ~= nil then msg.vt = copy(item.votes) end
+		end
 		if asker and type(item.responses) == "table" and item.responses[asker] ~= nil then
 			msg.my = { rs = item.responses[asker], lb = item.labels and item.labels[asker] or nil,
 				n = item.notes and item.notes[asker] or nil }
@@ -662,10 +701,39 @@ function Session:OnResponse(msg, from, own)
 	return true
 end
 
+-- May `from` vote? A council member (App/CouncilService.lua); every vote counts where that service is not loaded.
+local function mayVote(from)
+	local CS = ns.CouncilService
+	if not CS then return true end
+	return CS:IsMember(from) == true
+end
+
+-- SVOTE: the ML turns it into a VOTE input (the voter is the sender); every client notes it in its view, the council
+-- members' votes only (the master looter sees them before confirming, §3.6).
+function Session:OnVote(msg, from, own)
+	local r, code = Session.ReadVote(msg, from)
+	if not r then return refuse(code, from) end
+	if not mayVote(from) then return refuse("NOT_COUNCIL", from) end
+	local s = self.host
+	if s and s.id == r.s then
+		if r.i ~= s.active or s.state ~= "PROPOSAL" then return refuse("STALE", from) end
+		self.stats.votes = self.stats.votes + 1
+		emit("SESSION_INPUT", { type = "VOTE", ts = now(), by = from, choice = r.c })
+	end
+	local v = self.view
+	if v and v.s == r.s and v.proposal and v.proposal.i == r.i and not v.proposal.vc then
+		v.votes[r.i] = v.votes[r.i] or {}
+		v.votes[r.i][from] = r.c
+		emit("SESSION_VIEW", v, "VOTE", r.i, from)
+	end
+	return true
+end
+
 ---------------------------------------------------------------------------------------------------------------------
 -- Every client's side: the view
 
-Session.view = nil   -- { s, q, ml, e, items, a, round, proposal, paused, ended, mine = {[i] = rs}, responses }
+Session.view = nil   -- { s, q, ml, e, items, a, round, proposal, paused, ended, mine = {[i] = rs}, responses,
+                     --   votes = {[i] = {[voter] = choice}} }
 Session.raid = nil   -- the last GROUP_SCANNED snapshot
 
 local function changed(v, what, index, who) emit("SESSION_VIEW", v, what, index, who) end
@@ -716,7 +784,7 @@ end
 
 local function newView(msg, ml, items, tiers)
 	return { s = msg.s, q = msg.q, ml = ml, e = isInt(msg.e) and msg.e or nil, items = items, tiers = tiers, mine = {},
-		responses = {} }
+		responses = {}, votes = {} }
 end
 
 -- Applies a SSTATE (from the ML, or built locally by Session:Host). Returns true, or false and a code.
@@ -748,6 +816,8 @@ function Session:ApplyState(msg, from, own)
 	if msg.pr ~= nil then
 		nv.proposal = readProposal(msg.pr, items)
 		if not nv.proposal then return refuse("BAD", from) end
+		local votes = readVotes(msg.vt)
+		if votes then nv.votes[nv.proposal.i] = votes end
 	end
 	if nv.a and type(msg.my) == "table" and isCode(msg.my.rs) then
 		local my = msg.my
@@ -829,6 +899,7 @@ function Session:OnControl(msg, from, own)
 		local round = readRound(msg, v.items)
 		if not round then return refuse("BAD", from) end
 		if round.cl then v.responses[index], v.mine[index] = {}, nil end
+		v.votes[index] = nil
 		v.a, v.round, v.proposal = index, round, nil
 		item.st = "ROLLING"
 		what = "ROLL"
@@ -840,6 +911,8 @@ function Session:OnControl(msg, from, own)
 	elseif t == "SPROP" then
 		local p = readProposal(msg, v.items)
 		if not p then return refuse("BAD", from) end
+		-- a new proposal starts a new vote; a modified one (or the vote closed) keeps the votes cast on it
+		if not p.m and not p.vc and not (v.proposal and v.proposal.i == index) then v.votes[index] = nil end
 		v.a, v.proposal, v.round = index, p, nil
 		item.st = "PROPOSAL"
 		what = "PROPOSAL"
@@ -853,9 +926,11 @@ function Session:OnControl(msg, from, own)
 			end
 			item.st, item.w, item.pc, item.tg = "ASSIGNED", winner, msg.c, msg.tg
 			v.a, v.round, v.proposal = nil, nil, nil
+			v.votes[index] = nil
 		elseif msg.o == "REJECTED" then
 			if not isCode(msg.x) then return refuse("BAD", from) end
 			v.proposal = nil
+			v.votes[index] = nil
 			if msg.x == "PENDING" or msg.x == "REOPEN" then
 				item.st, v.a, v.round = "PENDING", nil, nil
 			elseif msg.x == "NEXT_TIER" then
@@ -932,6 +1007,37 @@ function Session:Respond(response, label, note, extra)
 	return item or true
 end
 
+-- This council member's vote for `choice` ("Name-Realm") on the open proposal of the view (M5-5). Returns the transport
+-- item (or true for the ML, whose own vote is also taken at once), or nil and a code: NO_SESSION, NO_PROPOSAL,
+-- VOTE_CLOSED, BAD_CHOICE, NOT_COUNCIL, or the transport's reason.
+function Session:Vote(choice)
+	local v = self.view
+	if not v or v.ended then return nil, "NO_SESSION" end
+	local p = v.proposal
+	if not p then return nil, "NO_PROPOSAL" end
+	if p.vc then return nil, "VOTE_CLOSED" end
+	local target = nameOf(choice)
+	if not target then return nil, "BAD_CHOICE" end
+	local mine = me()
+	if mine and not mayVote(mine) then return nil, "NOT_COUNCIL" end
+	local msg = { t = "SVOTE", s = v.s, i = p.i, c = target }
+	local item, why
+	if ns.Transport then
+		item, why = ns.Transport:Send("RAID", msg, { prio = "ALERT", key = "SVOTE" })
+		if not item then return nil, why end
+	end
+	if mine then self:OnVote(msg, mine, true) end   -- the client never hands a RAID message back to its sender
+	return item or true
+end
+
+-- The votes the view holds for item `index`: { [voter] = choice } (a copy; empty without votes).
+function Session:Votes(index)
+	local v = self.view
+	local out = {}
+	for voter, choice in pairs(v and v.votes and v.votes[index] or {}) do out[voter] = choice end
+	return out
+end
+
 -- True when this client has no session in view and does not run one: its HELLO asks for the state (`sq`).
 function Session:NeedsState()
 	return not self.host and (not self.view or self.view.ended == true)
@@ -953,7 +1059,7 @@ end
 function Session:OnMessage(msg, sender, dist)
 	if type(msg) ~= "table" then return false end
 	local t = msg.t
-	if not (Session.CONTROL[t] or t == "SRESP" or t == "SSYNCQ" or t == "SSTATE") then return false end
+	if not (Session.CONTROL[t] or t == "SRESP" or t == "SVOTE" or t == "SSYNCQ" or t == "SSTATE") then return false end
 	local from = fullName(sender)
 	if not from then return refuse("BAD", sender) end
 	if t == "SSTATE" then
@@ -966,6 +1072,7 @@ function Session:OnMessage(msg, sender, dist)
 	end
 	if dist ~= "RAID" then return refuse("DIST", from) end
 	if t == "SRESP" then return self:OnResponse(msg, from, false) end
+	if t == "SVOTE" then return self:OnVote(msg, from, false) end
 	return self:OnControl(msg, from, false)
 end
 

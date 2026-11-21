@@ -7,8 +7,9 @@
 --   cost      Domain/Pricing.lua (matrix, multipliers, overrides, tokens) §3.2
 --   priority  Domain/Priority.lua (metric, tie-breaks, responses, BoE and other fallbacks, addon required)  §3.3-§3.4, §3.8
 --   session   { awardMode, autoAdvance, lockCategoryOnOpen, interventionSeconds, rollSeconds }                  §3.4, §4
---   council   { requirePresent, vote, flags, wasteRatio, verdicts }      §3.6, §5.2 (the rank is the permission council.member;
---             flags, wasteRatio and verdicts are Domain/Flags.lua's, M5-4)
+--   council   { requirePresent, vote, flags, wasteRatio, verdicts, members }   §3.6, §5.2 (the rank is the permission
+--             council.member; flags, wasteRatio and verdicts are Domain/Flags.lua's, M5-4; members, the explicit list
+--             that replaces the rank when it is not empty, is Domain/Council.lua's, M5-5)
 --   legendary { mode, chainPieceCost }                                    §3.7
 --   bench     { creditEffect, creditAmount, minTanks, minHealers }        §3.1, §6 (Domain/Rotation.lua)
 --   site      Domain/Progress.lua { factionName }: the guild's key on the community site   §7.1 (M3-3b)
@@ -63,7 +64,7 @@ function Rules.DefaultConfig()
 			interventionSeconds = 30,    -- the window before an "auto" award is written
 			rollSeconds = 30,            -- the timer of a roll round (Domain/SessionFSM.lua)
 		},
-		council = { requirePresent = true, vote = false, flags = true, wasteRatio = 2, verdicts = "council" },   -- Flags (M5-4)
+		council = { requirePresent = true, vote = false, flags = true, wasteRatio = 2, verdicts = "council", members = {} },   -- Flags (M5-4), Council (M5-5)
 		legendary = { mode = "council", chainPieceCost = 2 },
 		bench = { creditEffect = "none", creditAmount = 1, minTanks = 2, minHealers = 4 },
 		site = ns.Progress.DefaultConfig(),
@@ -142,6 +143,7 @@ function Rules.Validate(config)
 		bool(problems, "council.requirePresent", c.council.requirePresent)
 		bool(problems, "council.vote", c.council.vote)
 		for _, code in ipairs(ns.Flags.ValidateConfig(c.council)) do add(problems, code) end
+		for _, code in ipairs(ns.Council.ValidateConfig(c.council)) do add(problems, code) end
 	end
 	local lg = c.legendary
 	if type(lg) == "table" then

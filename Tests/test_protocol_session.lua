@@ -63,11 +63,11 @@ describe("session messages on one client", function()
 		receive("SOPEN", fields, sender)
 	end
 
-	it("speaks protocol 3 (and still understands 2): the presence check plus the session messages", function()
-		eq(P().VERSION, 3)
+	it("speaks protocol 4 (and still understands 2): the presence check plus the session messages", function()
+		eq(P().VERSION, 4)
 		eq(P().MIN, 2)
 		for _, t in ipairs(S().TYPES) do truthy(Codec().SCHEMA[t], t .. " is registered") end
-		eq(#S().TYPES, 10)
+		eq(#S().TYPES, 11)
 		for _, t in ipairs(S().TYPES) do
 			falsy(t:find("ROLL") and t ~= "SROLL", "no message carries a roll")
 		end
@@ -108,9 +108,10 @@ describe("session messages on one client", function()
 		eq(M(s, { type = "RESUMED" }).p, false)
 		eq(M(s, { type = "ENDED" }).t, "SEND")
 		for _, kind in ipairs({ "COLLECTED", "NEXT_ROUND", "DELIVER", "NO_ADDON", "TIMER_EXPIRED", "AUTO_FAILED",
-			"VOTE_CLOSED" }) do
+			"AUTO_HELD", "VOTED" }) do
 			isNil(M(s, { type = kind, item = 1 }), kind)
 		end
+		eq(M(s, { type = "VOTE_CLOSED", item = 1 }).t, "SPROP", "a closed vote sends the proposal again (M5-5)")
 	end)
 
 	it("announces the responses on offer with their tier, and the view keeps them (M4-6)", function()

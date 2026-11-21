@@ -106,6 +106,28 @@ Due segnalazioni aiutano te e il council a vedere i casi che il regolamento dice
 - **Chi le vede.** Tu sempre. Oltre a te, la gilda decide chi vede verdetti e segnalazioni: il **council** (il preset: il rango con il permesso *membro del council*, che riceve la finestra in sola lettura anche se non è officer), **tutti gli officer**, oppure **solo il master looter**. Gli altri vedono solo i codici della proposta, senza nomi. La gilda può spegnere le segnalazioni.
 - **Cosa non possono sapere.** Chi non risponde mai non manda nessun verdetto, quindi un giocatore in silenzio è segnalato solo se il suo addon ne ha già mandato uno. Il verdetto lo calcola l'addon del giocatore: è un'approssimazione (vedi [[Suggerimenti di upgrade|Upgrade-Hints-it]]).
 
+## Il council: interventi e voto
+
+**Chi è il council.** Di base, i ranghi di gilda con il permesso *membro del council* (gli officer) che sono **nel raid**. La gilda può invece scrivere nelle sue regole una **lista esplicita di personaggi**: allora la lista sostituisce il rango (sempre solo chi è nel raid, salvo che la gilda spenga la regola della presenza). Scrivi `/fdcp council` per sapere se ne fai parte.
+
+**Cosa può fare il council, sempre con un motivo.** Le decisioni del council le esegui tu dalla tua finestra, e ognuna finisce nel log con il motivo e il tuo nome:
+
+| Cosa | Come | Motivo |
+|---|---|---|
+| Correggere categoria o costo | **Correggi**, prima che si apra il roll del pezzo. Una volta aperto l'addon rifiuta (*La categoria non si cambia dopo l'apertura del roll.*). | *La categoria o il costo erano sbagliati*, *Il council ha dato un prezzo all'oggetto* |
+| Spreco palese: un altro candidato | **Modifica**, scegli il candidato. Paga il costo della sua risposta. | *Spreco palese* |
+| Passato per fare il furbo | **Modifica**, scegli chi non ha rollato. Paga il **costo pieno**. | *Passato per fare il furbo* |
+| Annullare un'assegnazione | `/fdcp council awards`, poi `/fdcp council void <n> <motivo>`. I crediti tornano; l'assegnazione resta nel log, segnata come annullata. | *mistake*, *duplicate_award*, *obvious_waste*, *passed_to_game*, *council_vote*, *legendary*, *other* |
+| Correggere a mano i crediti di un membro | `/fdcp council adjust <giocatore> <crediti> <motivo>` (positivo aggiunge crediti, come un costo; negativo li toglie; al massimo 1000). | *mistake*, *penalty*, *bonus*, *council_vote*, *other* |
+
+Senza motivo non si scrive nulla. Annullare e correggere i crediti richiedono il permesso della *serata* mentre una serata della season è aperta (tu, master looter, scrivi le correzioni del council) e il permesso di *correzione dei crediti* fuori dalla serata (il Guild Master nel preset). Gli addon degli altri ricontrollano lo stesso permesso quando l'evento arriva. `/fdcp council audit` elenca gli ultimi interventi della season: assegnazioni modificate (con il vincitore delle regole), correzioni prima del roll, voti, annullamenti e correzioni dei crediti.
+
+**Il voto.** Quando la modalità di assegnazione della gilda è **council**, o la gilda accende il **voto del council**, ogni membro del council vota dal proprio gioco con `/fdcp council vote <giocatore>` appena c'è la proposta (ognuno vota solo per sé; il voto di chi non è nel council viene ignorato, e un membro può cambiare il voto finché non è chiuso). Vedi i voti nella striscia sotto la proposta, per esempio *Voti del council (aperto): Corin 2, Bryn 1.*, e il pulsante principale diventa **Chiudi il voto**:
+
+- in modalità **council** non puoi confermare prima di chiudere il voto. Decide la maggioranza stretta; se nomina un altro, la proposta cambia con il motivo *Deciso dal voto del council*. Parità o nessun voto: decidi tu con **Modifica**;
+- con il voto nelle altre modalità i voti ti informano soltanto: puoi confermare subito, chiudere il voto per applicare la maggioranza, o modificare. In modalità **automatica** un voto per un altro giocatore ferma l'assegnazione automatica e aspetta te (*Un voto del council non è d'accordo: decide il master looter.*);
+- i voti finiscono nell'assegnazione nel log.
+
 ## Modifica
 
 Premi **Modifica** su una proposta. Si apre una scheda con:
@@ -155,4 +177,4 @@ Gli officer che non sono il master looter vedono la stessa finestra **in sola le
 
 ## Se la gilda usa altre modalità
 
-La gilda può impostare l'assegnazione **automatica** (l'addon conferma da solo una proposta pulita dopo una breve finestra, mai dopo un tuo intervento e mai con una [segnalazione del council](#segnalazioni-del-council) attiva; la striscia dice *L'addon conferma da solo fra N s* e puoi ancora Rifiutare o Modificare in quel tempo) oppure **council** (il council vota; arriva in una versione successiva). Quale modalità vale è una regola della gilda: vedi [[Regole del loot|Loot-Rules-it]].
+La gilda può impostare l'assegnazione **automatica** (l'addon conferma da solo una proposta pulita dopo una breve finestra, mai dopo un tuo intervento e mai con una [segnalazione del council](#segnalazioni-del-council) attiva; la striscia dice *L'addon conferma da solo fra N s* e puoi ancora Rifiutare o Modificare in quel tempo) oppure **council** (il council vota su ogni proposta e tu chiudi il voto prima di confermare: vedi [Il council: interventi e voto](#il-council-interventi-e-voto)). Quale modalità vale è una regola della gilda: vedi [[Regole del loot|Loot-Rules-it]].

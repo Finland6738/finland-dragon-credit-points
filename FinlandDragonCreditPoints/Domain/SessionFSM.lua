@@ -23,7 +23,8 @@
 --               tied, the next tier, a free roll): autoAdvance opens it, otherwise the ML does (ADVANCE)
 --   PROPOSAL    who, how much and why, written by the addon. CONFIRM writes ITEM_AWARDED in the ledger; REJECT puts the
 --               item back (PENDING, REOPEN, NEXT_TIER, BANK, DISENCHANT); MODIFY changes the winner and/or the cost
---               with a mandatory reason code and comes back to PROPOSAL, flagged as an intervention
+--               with a mandatory reason code and comes back to PROPOSAL, flagged as an intervention; the council votes
+--               on it (VOTE / CLOSE_VOTE) in awardMode "council" or with the rules' council.vote (M5-5)
 --   ENDED       END; deliveries are still recorded after the end (delayed delivery by trade, §4)
 -- Item states: PENDING, ROLLING, COMPUTING, PROPOSAL, ASSIGNED (credits charged, ITEM_AWARDED written), DELIVERED
 -- (GiveMasterLoot or a trade confirmed by CHAT_MSG_LOOT: DELIVERED input). PAUSE / RESUME stop and restart every
@@ -115,6 +116,23 @@ local function priorityRules(s) return s.rules.priority end
 -- presets then).
 local function upgradeRules(s) return type(s.rules.upgrade) == "table" and s.rules.upgrade or Rules().DefaultConfig().upgrade end
 local function councilRules(s) return type(s.rules.council) == "table" and s.rules.council or Rules().DefaultConfig().council end
+
+-- Does the council vote on this session's proposals (M5-5)? Always with awardMode "council" (the vote decides: CONFIRM
+-- waits for CLOSE_VOTE); with the rules' council.vote in the other modes too, where the votes only inform the master
+-- looter (he sees them before confirming) and a vote against the proposal holds an "auto" award for him.
+local function votesOn(s)
+	return sessionRules(s).awardMode == "council" or councilRules(s).vote == true
+end
+FSM.VotesOn = votesOn
+
+-- The votes of an item as a tally: { [choice] = n } (nil without votes).
+local function tallyOf(votes)
+	if type(votes) ~= "table" or next(votes) == nil then return nil end
+	local tally = {}
+	for _, choice in pairs(votes) do tally[choice] = (tally[choice] or 0) + 1 end
+	return tally
+end
+FSM.Tally = tallyOf
 
 local function log(s, entry)
 	s.log[#s.log + 1] = entry
@@ -261,7 +279,7 @@ local function openItem(s, index, now, env, effects)
 	item.responses, item.rounds, item.proposal, item.rule = {}, {}, nil, nil
 	item.labels, item.notes, item.verdicts, item.equipped = nil, nil, nil, nil
 	item.discarded, item.history, item.dropped, item.votes, item.voteClosed = nil, nil, nil, nil, nil
-	item.intervention, item.autoAt, item.autoRemaining, item.flagged = nil, nil, nil, nil
+	item.intervention, item.autoAt, item.autoRemaining, item.flagged, item.autoHeld = nil, nil, nil, nil, nil
 	s.active = index
 	openRound(s, index, newRound(s, "ROLL", "TIER", firstTier(s), nil, now, true), effects)
 end
@@ -366,9 +384,9 @@ local function setProposal(s, index, proposal, now, effects)
 	if session.awardMode == "auto" and ready(proposal) then
 		local wait = type(session.interventionSeconds) == "number" and session.interventionSeconds or 0
 		if s.paused then item.autoRemaining = wait else item.autoAt = now + wait end
-	elseif session.awardMode == "council" then
-		item.votes = {}
 	end
+	item.autoHeld = nil
+	if votesOn(s) then item.votes = {} end
 	fx(effects, { type = "PROPOSAL", item = index, autoAt = item.autoAt })
 end
 
@@ -449,7 +467,20 @@ local function confirm(s, index, now, env, effects, auto)
 		payload.ruleWinner = item.rule.winner
 		payload.ruleCost = item.rule.cost
 	end
-	if item.vote then payload.votes = copy(item.vote.tally) end
+	if item.vote then
+		payload.votes = copy(item.vote.tally)
+	else
+		payload.votes = tallyOf(item.votes)   -- advisory votes (council.vote) the master looter saw before confirming
+	end
+	-- The corrections of category or cost made before the roll opened (CORRECT_ITEM, §3.6): they go to the audit with the
+	-- award they priced.
+	if type(item.corrections) == "table" and #item.corrections > 0 then
+		local list = {}
+		for i, c in ipairs(item.corrections) do
+			list[i] = { category = c.category, cost = c.cost, reason = c.reason, by = c.by }
+		end
+		payload.corrections = list
+	end
 	local e, code = Ledger().Append(env.ledger, {
 		author = s.ml, ts = now, season = s.season, type = "ITEM_AWARDED", payload = payload,
 	}, env.opts)
@@ -835,28 +866,41 @@ function H.MODIFY(s, input, env, effects)
 	return modify(s, s.active, input.by, input.ts, input, effects)
 end
 
--- VOTE{by, choice}: a council member's vote (awardMode "council"); the adapter checks the council.member permission.
-function H.VOTE(s, input)
+-- VOTE{by, choice}: a council member's vote on the open proposal (awardMode "council", or the rules' council.vote: M5-5).
+-- `by` is the voter (the protocol takes it from the sender, never from a field); the latest vote of a member replaces
+-- the earlier one. env.isCouncil(name) (the controller's: Domain/Council.lua membership, rank or list, and presence)
+-- refuses a voter who is not on the council (NOT_COUNCIL); without it every voter counts. The choice is a player who
+-- was present when the roll opened (NOT_PRESENT otherwise; anyone when presence is not known). In awardMode "auto" a
+-- vote for another player than the proposal's holds the automatic award: the master looter decides (AUTO_HELD).
+function H.VOTE(s, input, env, effects)
 	if s.state ~= "PROPOSAL" then return nil, "BAD_STATE" end
 	local item = current(s)
-	if sessionRules(s).awardMode ~= "council" then return nil, "NOT_COUNCIL_MODE" end
+	if not votesOn(s) then return nil, "NOT_COUNCIL_MODE" end
 	if item.voteClosed then return nil, "VOTE_CLOSED" end
 	if not isName(input.by) then return nil, "by" end
 	if not isName(input.choice) then return nil, "choice" end
+	if type(env.isCouncil) == "function" and not env.isCouncil(input.by) then return nil, "NOT_COUNCIL" end
+	if type(item.present) == "table" and item.present[input.choice] ~= true then return nil, "NOT_PRESENT" end
+	item.votes = item.votes or {}
 	item.votes[input.by] = input.choice
+	fx(effects, { type = "VOTED", item = s.active, by = input.by, choice = input.choice })
+	if (item.autoAt or item.autoRemaining) and input.choice ~= item.proposal.winner then
+		item.autoAt, item.autoRemaining, item.autoHeld = nil, nil, "VOTE"
+		fx(effects, { type = "AUTO_HELD", item = s.active, code = "VOTE" })
+	end
 	return true
 end
 
--- CLOSE_VOTE: the ML closes the council's vote. A strict majority decides; when it is not the rule's winner the
+-- CLOSE_VOTE: the ML closes the council's vote (awardMode "council", or council.vote: then it is how the master looter
+-- applies the votes he saw). A strict majority decides; when it is not the rule's winner the
 -- proposal changes with the reason COUNCIL_VOTE (flagged OUT_OF_ORDER). A tie or no vote changes nothing: the ML
 -- modifies the proposal himself.
 function H.CLOSE_VOTE(s, input, env, effects)
 	if s.state ~= "PROPOSAL" then return nil, "BAD_STATE" end
 	local item = current(s)
-	if sessionRules(s).awardMode ~= "council" then return nil, "NOT_COUNCIL_MODE" end
+	if not votesOn(s) then return nil, "NOT_COUNCIL_MODE" end
 	if item.voteClosed then return nil, "VOTE_CLOSED" end
-	local tally = {}
-	for _, choice in pairs(item.votes) do tally[choice] = (tally[choice] or 0) + 1 end
+	local tally = tallyOf(item.votes) or {}
 	local best, bestN, tie = nil, 0, false
 	for _, choice in ipairs(sortedKeys(tally)) do
 		if tally[choice] > bestN then best, bestN, tie = choice, tally[choice], false

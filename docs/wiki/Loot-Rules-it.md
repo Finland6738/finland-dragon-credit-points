@@ -60,7 +60,9 @@ L'addon prepara ogni risultato: a chi, quanti crediti e perché, in parole. Il m
 - **rifiuta**: nessun addebito e l'oggetto torna in sessione (riapri il roll, tier successivo, banca o disenchant);
 - **modifica**: un altro vincitore o costo, sempre **con un motivo** scelto dall'elenco qui sotto. L'addon mostra come si discosta dalla regola ("fuori fila") e l'evento è segnato come intervento nell'audit.
 
-Il council (gli officer della gilda presenti nel raid) può, sempre con un motivo che finisce nel log: correggere categoria o costo **prima** dell'apertura del roll; dare l'oggetto a un altro candidato in caso di **spreco palese**; darlo a chi **non ha rollato ma è passato per fare il furbo**, a costo pieno; assegnare un leggendario; annullare un'assegnazione; correggere a mano i crediti di un membro. Chi è master looter, council o officer lo decidono i **ranghi di gilda**, e solo il **Guild Master** può cambiare cosa può fare ogni rango e le regole stesse.
+Il council (gli officer della gilda presenti nel raid, o la lista di personaggi che la gilda scrive nelle sue regole) può, sempre con un motivo che finisce nel log: correggere categoria o costo **prima** dell'apertura del roll (a roll aperto l'addon rifiuta); dare l'oggetto a un altro candidato in caso di **spreco palese**; darlo a chi **non ha rollato ma è passato per fare il furbo**, a costo pieno; assegnare un leggendario; annullare un'assegnazione (l'assegnazione resta nel log, segnata come annullata, e i crediti tornano); correggere a mano i crediti di un membro. Senza motivo non si scrive nulla, e ogni intervento è elencato nell'audit della season (`/fdcp council audit`). Chi è master looter, council o officer lo decidono i **ranghi di gilda**, e solo il **Guild Master** può cambiare cosa può fare ogni rango e le regole stesse.
+
+**Il voto del council.** Spento nel preset. Con la modalità di assegnazione **council** il council vota su ogni proposta e il master looter chiude il voto prima di confermare: decide la maggioranza stretta (parità, o nessun voto, lasciano la decisione al master looter). Con il **voto del council** acceso nelle altre modalità i voti informano soltanto il master looter, che li vede prima di confermare; in modalità automatica un voto per un altro giocatore ferma l'assegnazione automatica. Ognuno vota solo per sé, dal proprio gioco; i voti finiscono scritti con l'assegnazione. Vedi la [[Guida del master looter|Master-Looter-Guide-it]], "Il council: interventi e voto".
 
 **Segnalazioni del council.** Per rendere visibili in tempo i casi evidenti, l'addon alza due segnalazioni appena arrivano le risposte: **upgrade ignorato** (un raider passa su un pezzo che per la sua main-spec è un upgrade grande) e **possibile spreco** (il primo in fila ci guadagna poco o nulla, un altro candidato main-spec almeno il doppio, con un upgrade grande). Guardano solo la main-spec (MS1), non cambiano mai il vincitore da sole e fermano l'assegnazione automatica finché il master looter non guarda; intervenire è una modifica con il suo motivo. Le regole della gilda dicono se le segnalazioni sono accese, il rapporto dello spreco (preset 2) e chi oltre al master looter vede verdetti e segnalazioni (preset: il council). Vedi la [[Guida del master looter|Master-Looter-Guide-it]], "Segnalazioni del council".
 
@@ -213,6 +215,11 @@ Il motore non scrive mai frasi: registra codici brevi, e l'addon li trasforma ne
 | `LEGENDARY` | Un pezzo di una catena leggendaria. |
 | `MISTAKE` | Un errore del master looter o dell'addon. |
 | `OTHER` | Un altro motivo, scritto dal master looter. |
+| `DUPLICATE_AWARD` | Lo stesso oggetto è stato assegnato due volte. |
+| `PENALTY` | Una penalità decisa dal council. |
+| `BONUS` | Un bonus deciso dal council. |
+
+Gli ultimi tre, e alcuni degli altri, sono i motivi di un'assegnazione annullata o di una correzione dei crediti a mano.
 
 ### Fasi automatiche
 
@@ -261,7 +268,7 @@ L'addon legge i ranghi dal roster della gilda, per posizione e mai per nome. Dop
 | `NO_LEDGER` | Non c'è un registro su cui scrivere. |
 | `VOTE_OPEN` | Il voto del council è ancora aperto. |
 | `VOTE_CLOSED` | Il voto del council è chiuso. |
-| `NOT_COUNCIL_MODE` | Le assegnazioni non si decidono a voto del council. |
+| `NOT_COUNCIL_MODE` | Il council non vota in questa sessione. |
 | `NO_VOTES` | Nessuno ha votato. |
 | `VOTE_TIE` | Il voto è in parità: decide il master looter. |
 | `NOT_ASSIGNED` | Questo oggetto non è ancora stato assegnato. |
@@ -312,6 +319,12 @@ L'addon legge i ranghi dal roster della gilda, per posizione e mai per nome. Dop
 | `REQUEST_CLOSED` | Quella richiesta è già stata decisa. |
 | `REQUEST_PENDING` | C'è già un'altra richiesta per questo personaggio in attesa di un officer. |
 | `REQUEST_LIMIT` | Troppe richieste in attesa di un officer. |
+| `NOT_COUNCIL` | Solo un membro del loot council può farlo. |
+| `NO_PROPOSAL` | Non c'è nessuna proposta da votare. |
+| `BAD_CHOICE` | Scrivi il giocatore che voti. |
+| `BAD_DELTA` | Scrivi i crediti come numero diverso da zero (al massimo 1000 in più o in meno). |
+| `NO_SEASON` | Nessuna season è aperta. |
+| `NOT_READY` | I dati della gilda non sono ancora caricati. |
 
 ### Stato di un membro del pool
 

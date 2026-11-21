@@ -273,6 +273,48 @@ nel registro come evento `MEMBER_JOINED{initialCredits}`: resta stabile anche se
 - **Voto** (facoltativo, spento nel preset): sugli interventi, ogni membro del council vota dalla propria finestra
   e il ML vede i voti prima di confermare.
 
+**Come è fatto (M5-5).** `Domain/Council.lua` (puro) più il voto nella `SessionFSM` e `App/CouncilService.lua` (la colla
+con ranghi, raid, protocollo e registro). Scelte fatte dove il testo sopra non decideva (tutte reversibili):
+
+- **Chi è.** Nuova chiave `council.members` (lista di personaggi `Nome-Reame`, al massimo 40, vuota nel preset): se non
+  è vuota **sostituisce** il rango (è "oppure lista esplicita"); vuota, decide il permesso `council.member`. Con
+  `council.requirePresent` conta solo chi è nel raid: sul client del ML la presenza è quella della sessione, altrove
+  l'ultima lettura del raid; presenza sconosciuta = fuori. La finestra in sola lettura e la visibilità dei verdetti
+  (M5-4) usano la stessa appartenenza, senza chiedere il raid (la vista arriva solo ai membri del raid).
+- **Interventi sulla proposta.** Restano gli input del ML di M2-6, sempre con un codice motivo: `CORRECT_ITEM`
+  (categoria o costo, rifiutato a roll aperto con `CATEGORY_LOCKED`), `MODIFY` con `OBVIOUS_WASTE` (un altro candidato,
+  paga il costo della sua risposta) o `PASSED_TO_GAME` (chi non ha rollato, costo pieno). Le correzioni fatte prima del
+  roll ora viaggiano con l'assegnazione (`ITEM_AWARDED.corrections`: categoria, costo, motivo, chi), così finiscono
+  nell'audit; una correzione di un pezzo mai assegnato resta solo nel log della sessione (non muove crediti). I membri
+  del council che non sono il ML non comandano la sessione: votano, e il ML esegue (§3.9, "le correzioni del council le
+  scrive il ML").
+- **Annullare e correggere i crediti.** `Council.Void` scrive `AWARD_VOIDED{ref, reason, member?, item?}` (stessa season
+  dell'evento annullato) e `Council.Adjust` `CREDITS_ADJUSTED{member, delta, reason}` (un main del pool della season;
+  delta diverso da 0 e al massimo 1000 in valore assoluto; positivo pesa come un costo). Motivi propri: annullamento
+  `MISTAKE`, `DUPLICATE_AWARD`, `OBVIOUS_WASTE`, `PASSED_TO_GAME`, `COUNCIL_VOTE`, `LEGENDARY`, `OTHER`; correzione
+  `MISTAKE`, `PENALTY`, `BONUS`, `COUNCIL_VOTE`, `OTHER` (nuovi codici del gruppo `CORRECTION`). Entrambi passano dal
+  cancello di `Ledger.Append`: `night.run` mentre una serata della season è aperta, `credits.adjust` fuori (M2-5).
+- **Audit.** `Council.Audit(L, season)` rilegge dal registro, in ordine canonico, ogni intervento: `MODIFY`
+  (assegnazione fuori regola, con vincitore e costo della regola, motivo, segnalazioni, voti), `CORRECT` (una per
+  correzione prima del roll), `VOTE` (assegnazione con voti che ha tenuto il vincitore della regola), `VOID`, `ADJUST`;
+  un evento poi annullato è segnato. `/fdcp council audit` ne stampa gli ultimi.
+- **Voto.** In `awardMode = council` come in M2-6 (`CONFIRM` aspetta `CLOSE_VOTE`, maggioranza stretta, parità o
+  nessun voto: decide il ML). Con `council.vote` acceso nelle altre modalità i voti **informano** il ML: può confermare
+  subito, chiudere il voto per applicare la maggioranza o modificare; in `auto` un voto per un altro giocatore ferma
+  l'assegnazione automatica (`AUTO_HELD`). Il votante deve essere del council (`env.isCouncil`, rifiuto `NOT_COUNCIL`),
+  la scelta un presente all'apertura del roll (`NOT_PRESENT`); l'ultimo voto di un membro sostituisce il precedente; i
+  voti (anche quelli consultivi) finiscono nell'`ITEM_AWARDED` (`votes`). La finestra del ML li mostra nella striscia e
+  offre **Chiudi il voto**.
+- **Protocollo 4.** Nuovo `SVOTE` su RAID (`i`, `c`): sempre il voto del mittente (un `p` o un `by` che nomina un altro
+  è falso, `FORGED`), contato solo da un membro del council su ogni client e di nuovo dalla macchina a stati del ML;
+  `SPROP` porta `vc` (voto chiuso), `SSTATE` i voti già dati (`vt`). Retrocompatibile: un client di protocollo 2 o 3
+  scarta il tipo nuovo senza leggerlo e continua a seguire la sessione (`Protocol.MIN` resta 2); semplicemente non vota.
+- **Interfaccia.** Fino alla finestra del council (M5-8) il comando `/fdcp council` (stato, `vote`, `awards`, `void`,
+  `adjust`, `audit`), parole tutte da chiavi di traduzione.
+- **Da verificare in gioco:** il messaggio `SVOTE` sul canale del raid durante una sessione vera (spike S4, come
+  `SRESP`), la riga dei voti e il pulsante *Chiudi il voto* nella striscia della finestra, e l'output di `/fdcp council`
+  nella chat.
+
 ### 3.7 Leggendari
 
 `legendary.mode` configurabile:

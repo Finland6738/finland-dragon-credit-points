@@ -63,10 +63,11 @@ Open question 8 ([#2](https://github.com/Finland6738/finland-dragon-credit-point
 - Analysis: §3.6, §3.4 (award modes)
 - Scope: council membership (rank ≤ X and present, or explicit list); interventions with mandatory reason: correct category or cost **before** the roll opens, assign to another candidate (waste), assign to a non-roller at full cost, void an award (compensation event), adjust credits; the optional vote (each council member votes from their window, the ML sees votes before confirming); `awardMode` `auto` and `council`; every intervention in the audit.
 - Done when:
-  - [ ] Interventions without a reason are impossible; a category change after the roll opened is refused; votes reach the ML in the simulator.
+  - [x] Interventions without a reason are impossible; a category change after the roll opened is refused; votes reach the ML in the simulator.
 - Tests: `Tests/test_council.lua`.
-- Docs: CHANGELOG.
-- Real client: nothing beyond M4.
+- Docs: CHANGELOG; wiki **Master Looter Guide**, **Loot Rules** and **Commands** (EN + IT).
+- Note: built as `Domain/Council.lua` (membership by the rules' new `council.members` list or the rank, presence; `Void` and `Adjust` through the permission gate; `Audit`), the vote in `Domain/SessionFSM.lua` (awardMode `council`, or `council.vote` in the other modes as advice; a dissenting vote holds an `auto` award), the corrections before the roll written with the award, and `App/CouncilService.lua` with `/fdcp council` as the interface until M5-8. The session protocol is now version 4: `SVOTE` (the sender's own vote, only from a council member), `vc` on `SPROP`, `vt` on `SSTATE`; older clients drop the new type ([`docs/ANALISI.md`](../ANALISI.md) §3.6, "Come è fatto (M5-5)").
+- Real client: nothing beyond M4 (the `SVOTE` message on RAID, like `SRESP`).
 - Suggested model/effort: `opus` / high
 
 ### M5-6 — Legendary projects

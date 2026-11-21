@@ -542,10 +542,11 @@ function MLSession:PaintTimer(board)
 end
 
 -- The main button: what the master looter does next.
--- locale-key: ML_START ML_OPEN_ROLL ML_CLOSE_ROUND ML_NEXT_ROUND ML_CONFIRM
+-- locale-key: ML_START ML_OPEN_ROLL ML_CLOSE_ROUND ML_NEXT_ROUND ML_CONFIRM ML_CLOSE_VOTE
 local MAIN = {
 	{ "start", "START", "ML_START" }, { "closeRound", "CLOSE_ROUND", "ML_CLOSE_ROUND" },
-	{ "advance", "ADVANCE", "ML_NEXT_ROUND" }, { "confirm", "CONFIRM", "ML_CONFIRM" }, { "openRoll", "OPEN_ROLL", "ML_OPEN_ROLL" },
+	{ "advance", "ADVANCE", "ML_NEXT_ROUND" }, { "confirm", "CONFIRM", "ML_CONFIRM" },
+	{ "closeVote", "CLOSE_VOTE", "ML_CLOSE_VOTE" }, { "openRoll", "OPEN_ROLL", "ML_OPEN_ROLL" },
 }
 
 local function paintButtons(self, board)
@@ -593,6 +594,9 @@ local function paintDetail(self, board)
 		for _, f in ipairs(SB().FlagTexts(p, board.flags)) do lines[#lines + 1] = f end
 		for _, f in ipairs(SB().FlagLines(board.flags)) do lines[#lines + 1] = f end   -- the council's (M5-4)
 		if p.autoIn then lines[#lines + 1] = L["ML_AUTO_IN"]:format(math.ceil(p.autoIn)) end
+		if p.autoHeld then lines[#lines + 1] = L["ML_AUTO_HELD"] end   -- a council vote against the proposal (M5-5)
+		local votes = SB().VoteText(board.votes)   -- the council's votes, before the ML confirms (§3.6)
+		if votes ~= "" then lines[#lines + 1] = votes end
 		sub = table.concat(lines, " ")
 	elseif sel.winner then
 		main = SB().AwardText(sel)

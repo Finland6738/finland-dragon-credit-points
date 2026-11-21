@@ -8,7 +8,8 @@
 --   lockdown changes          -> LOCKDOWN{active} (RollListener.Locked: a boss, an addon restriction, the chat lockdown)
 --   GROUP_SCANNED, ADDON_CHECK_CHANGED -> SET_RAID (App/AddonCheck.lua: who is present, who has the addon, §4.1)
 --   CHAT_MSG_SYSTEM rolls     -> ROLL (Adapters/RollListener.lua, attached to the hosted session)
---   SESSION_INPUT             -> RESPONSE (Net/Protocol.lua: the raiders' answers, always the sender's own)
+--   SESSION_INPUT             -> RESPONSE (Net/Protocol.lua: the raiders' answers, always the sender's own) and VOTE
+--                                (the council's votes, M5-5: the voter is the sender; env.isCouncil checks the council)
 --   a one-second ticker       -> TICK (round timers, the "auto" award window); never while rolls hidden by a lockdown
 --                                still wait in the RollListener buffer, so a held roll is never left out of its round
 --   the ML's commands         -> START, OPEN_ROLL, CLOSE_ROUND, ADVANCE, CONFIRM, REJECT, MODIFY, PAUSE, RESUME, END...
@@ -101,8 +102,16 @@ local function gate()
 	return ns.PermissionService and ns.PermissionService:Gate() or nil
 end
 
+-- The council's membership for the state machine's VOTE (App/CouncilService.lua: the rank or the explicit list, and
+-- present in the raid); nil where the service is not loaded (every voter counts then).
+local function isCouncil()
+	local CS = ns.CouncilService
+	if not CS then return nil end
+	return function(name) return CS:IsMember(name) == true end
+end
+
 function SC:Env()
-	return { ledger = self:Ledger(), opts = gate() }
+	return { ledger = self:Ledger(), opts = gate(), isCouncil = isCouncil() }
 end
 
 -- Adopts the saved session after a /reload, a disconnection or a guild change: hosts it, attaches the roll listener,
@@ -505,9 +514,9 @@ function SC:OnLoot(collection)
 	return self:Step(input)
 end
 
--- SESSION_INPUT from the protocol: a raider's response.
+-- SESSION_INPUT from the protocol: a raider's response, a council member's vote.
 function SC:OnInput(input)
-	if type(input) ~= "table" or input.type ~= "RESPONSE" then return end
+	if type(input) ~= "table" or (input.type ~= "RESPONSE" and input.type ~= "VOTE") then return end
 	self:Step(input)
 end
 
@@ -524,7 +533,7 @@ function SC:View()
 	local v = ns.Protocol and ns.Protocol.Session.view
 	if not v then return nil end
 	local ps = ns.PermissionService
-	if ps and not ps:Can("award.confirm") and not (ps:Can("council.member") and self:SeesVerdicts()) then return nil end
+	if ps and not ps:Can("award.confirm") and not (self:IsCouncil() and self:SeesVerdicts()) then return nil end
 	return { host = false, view = v, readOnly = true }
 end
 
@@ -547,8 +556,16 @@ function SC:SeesVerdicts()
 	if self:Current() then return true end
 	local ps = ns.PermissionService
 	local who = { council = true, officer = true }
-	if ps then who.council, who.officer = ps:Can("council.member") == true, ps:Can("award.confirm") == true end
+	if ps then who.council, who.officer = self:IsCouncil(), ps:Can("award.confirm") == true end
 	return ns.Flags.MaySee(self:Rules().council, who)
+end
+
+-- Is the player on the council (M5-5: the rules' explicit list, else council.member)? The raid is not asked: a session's
+-- view only reaches the raid's members.
+function SC:IsCouncil()
+	if ns.CouncilService then return ns.CouncilService:IsMember(nil, true) == true end
+	local ps = ns.PermissionService
+	return ps ~= nil and ps:Can("council.member") == true
 end
 
 -- The class of a raid member as the roster knows it ("WARRIOR", ...), for the colour of a name; nil when unknown.

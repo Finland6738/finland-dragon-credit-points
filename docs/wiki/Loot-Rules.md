@@ -60,7 +60,9 @@ The addon prepares each result: who, how many credits and why, in words. The mas
 - **rejects**: nothing is charged and the item goes back into the session (reopen the roll, next tier, bank or disenchant);
 - **modifies**: a different winner or cost, always **with a reason** chosen from the list below. The addon shows how it differs from the rule ("out of line") and the event is marked as an intervention in the audit.
 
-The council (guild officers in the raid) can, always with a reason that goes in the log: fix a category or cost **before** the roll opens; give an item to another candidate in a case of **obvious waste**; give it to someone who **did not roll but passed to game the system**, at full cost; assign a legendary; cancel an award; correct a member's credits by hand. Who counts as master looter, council or officer comes from the **guild ranks**, and only the **Guild Master** can change what each rank may do and the rules themselves.
+The council (guild officers in the raid, or the list of characters the guild writes in its rules) can, always with a reason that goes in the log: fix a category or cost **before** the roll opens (once the roll is open the addon refuses); give an item to another candidate in a case of **obvious waste**; give it to someone who **did not roll but passed to game the system**, at full cost; assign a legendary; cancel an award (the award stays in the log, marked cancelled, and the credits come back); correct a member's credits by hand. Without a reason nothing is written, and every intervention is listed in the season's audit (`/fdcp council audit`). Who counts as master looter, council or officer comes from the **guild ranks**, and only the **Guild Master** can change what each rank may do and the rules themselves.
+
+**The council's vote.** Off in the preset. With the award mode **council** the council votes on every proposal and the master looter closes the vote before confirming: a strict majority decides (a tie, or no vote, leaves it to the master looter). With the **council vote** turned on in the other modes the votes only inform the master looter, who sees them before confirming; in automatic mode a vote for another player stops the automatic award. Each member votes only for themselves, from their own game; the votes are written with the award. See the [[Master Looter Guide|Master-Looter-Guide]], "The council: interventions and the vote".
 
 **Council flags.** To make the obvious cases visible in time, the addon raises two flags as soon as the answers arrive: **upgrade ignored** (a raider passes on an item that is a big upgrade for their main spec) and **possible waste** (the first in line gains little or nothing, another main-spec candidate gains at least twice as much, with a big upgrade). They look only at the main spec (MS1), never change the winner by themselves and stop an automatic award until the master looter looks; acting on them is a modification with its reason. The guild's rules set whether the flags are on, the waste ratio (preset 2) and who besides the master looter sees the verdicts and the flags (preset: the council). See the [[Master Looter Guide|Master-Looter-Guide]], "Council flags".
 
@@ -213,6 +215,11 @@ The engine never writes sentences: it records short codes, and the addon turns t
 | `LEGENDARY` | A piece of a legendary chain. |
 | `MISTAKE` | A mistake by the master looter or the addon. |
 | `OTHER` | Another reason, written by the master looter. |
+| `DUPLICATE_AWARD` | The same item was awarded twice. |
+| `PENALTY` | A penalty decided by the council. |
+| `BONUS` | A bonus decided by the council. |
+
+The last three, and some of the others, are the reasons of a cancelled award or of a manual credit correction.
 
 ### Automatic phases
 
@@ -261,7 +268,7 @@ The addon reads ranks from the guild roster, by their position, never by their n
 | `NO_LEDGER` | There is no ledger to write to. |
 | `VOTE_OPEN` | The council's vote is still open. |
 | `VOTE_CLOSED` | The council's vote is closed. |
-| `NOT_COUNCIL_MODE` | Awards are not decided by council vote. |
+| `NOT_COUNCIL_MODE` | The council does not vote in this session. |
 | `NO_VOTES` | Nobody has voted. |
 | `VOTE_TIE` | The vote is tied: the master looter decides. |
 | `NOT_ASSIGNED` | This item has not been awarded yet. |
@@ -312,6 +319,12 @@ The addon reads ranks from the guild roster, by their position, never by their n
 | `REQUEST_CLOSED` | That request has already been decided. |
 | `REQUEST_PENDING` | Another request for this character is waiting for an officer. |
 | `REQUEST_LIMIT` | Too many requests are waiting for an officer. |
+| `NOT_COUNCIL` | Only a member of the loot council can do this. |
+| `NO_PROPOSAL` | There is no proposal to vote on. |
+| `BAD_CHOICE` | Name the player you vote for. |
+| `BAD_DELTA` | Enter the credits as a number other than zero (at most 1000 either way). |
+| `NO_SEASON` | No season is open. |
+| `NOT_READY` | The guild's data is not loaded yet. |
 
 ### Status of a member of the pool
 
