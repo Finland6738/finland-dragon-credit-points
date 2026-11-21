@@ -21,6 +21,12 @@ La finestra è costruita: la aprono `/fdcp`, il pulsante della minimappa (il log
 
 Quando c'è un pezzo a cui rispondere compare un **popup** a parte, con una card per ogni pezzo.
 
+## La scheda Progress
+
+Una card per raid, come sul sito: la copertina (l'immagine del raid dal Diario delle avventure del gioco quando il client ce l'ha, una generata altrimenti), la dimensione e il nome e, per ogni gilda, una barra con `uccisioni/totale`. Sotto, i boss su due colonne: il numero, il nome e, per ogni gilda, un teschio con la data della prima uccisione oppure un cerchio tratteggiato se il boss non è ancora caduto. La prima gilda è la tua. La colonna dell'altra gilda mostra solo le date che un officer ha inserito per lei: le due gilde non si scambiano mai dati. Con la rotellina del mouse si scorre quando le card non stanno nella finestra.
+
+Le tue prime uccisioni si registrano da sole: durante una serata ufficiale o, fuori da una serata, in un gruppo di gilda. Gli officer (i ranghi con il permesso `progress.edit`, di norma il Guild Master e gli officer) possono anche **inserire o correggere una data**: clicca la riga del boss, scegli la gilda, scrivi la data come `AAAA-MM-GG` (non nel futuro) e premi **Salva**. **Rimuovi la data inserita** toglie un valore messo a mano; un'uccisione registrata dall'addon non si toglie così. Per gli altri la scheda è di sola lettura. Ogni modifica è una riga dell'audit.
+
 ## Anteprime
 
 ![Scheda Roster](../specs/mockups/fdcp-roster.webp)

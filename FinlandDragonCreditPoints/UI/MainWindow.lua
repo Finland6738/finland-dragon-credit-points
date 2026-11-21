@@ -131,6 +131,13 @@ function MainWindow:Build()
 		ns.CreditsWindow:Build(f.pages.credits)
 	end
 
+	-- Progress (M3-8b): the first kills per instance and guild replace the empty page
+	if ns.ProgressWindow then
+		f.pages.progress.eyebrow:Hide()
+		f.pages.progress.empty:Hide()
+		ns.ProgressWindow:Build(f.pages.progress)
+	end
+
 	-- resize grip (bottom right)
 	local grip = CreateFrame("Button", nil, f)
 	grip:SetSize(18, 18)
@@ -159,6 +166,7 @@ function MainWindow:ShowPage(id)
 	if not f then return end
 	for pid, page in pairs(f.pages) do page:SetShown(pid == id) end
 	if id == "credits" and ns.CreditsWindow then ns.CreditsWindow:Refresh() end
+	if id == "progress" and ns.ProgressWindow then ns.ProgressWindow:Refresh() end
 end
 
 function MainWindow:SelectTab(id)

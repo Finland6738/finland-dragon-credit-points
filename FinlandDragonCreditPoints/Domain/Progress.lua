@@ -176,7 +176,7 @@ function Progress.Keys(L, own, manual)
 end
 
 -- The progress of every instance of the fixed table, for the Progress tab (M3-8b) and the export (M6-4):
---   { own, keys = { own, ... }, instances = { { instanceID, slug, name, size, total, counts = { [key] = n },
+--   { own, keys = { own, ... }, instances = { { instanceID, journalInstanceID, slug, name, size, total, counts = { [key] = n },
 --       bosses = { { index, encounterID, name, localName, first = { [key] = { date, source, id } } } } } } }
 -- `name` is the table's English name (the site's); `localName` the name in the client's language when opts.localName
 -- (function(boss, instance) -> string or nil, the controller's lookup through Compat) gives one, else the English name.
@@ -189,7 +189,7 @@ function Progress.Build(L, own, opts)
 	for _, k in ipairs(keys) do firsts[k] = Progress.FirstKills(L, k, k == own, manual) end
 	local result = { own = own, keys = keys, instances = {} }
 	for _, inst in ipairs(Instances().LIST) do
-		local rec = { instanceID = inst.instanceID, slug = inst.slug, name = inst.name, size = inst.size,
+		local rec = { instanceID = inst.instanceID, journalInstanceID = inst.journalInstanceID, slug = inst.slug, name = inst.name, size = inst.size,
 			total = #inst.bosses, counts = {}, bosses = {} }
 		if opts.localName then rec.localName = opts.localName(nil, inst) end
 		rec.localName = rec.localName or inst.name

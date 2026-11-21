@@ -495,6 +495,22 @@ function Encounter.JournalInstanceName(journalInstanceID, instanceID)
 	return v[1]
 end
 
+-- The cover of an instance from the Encounter Journal (EJ_GetInstanceInfo(journalInstanceID): the 4th value, the button
+-- image, else the 3rd, the background), a file id or a path, or nil when the client has none (the window then draws a
+-- generated cover).
+function Encounter.JournalInstanceCover(journalInstanceID)
+	if type(journalInstanceID) ~= "number" then return nil end
+	local v = readable("EJ_GetInstanceInfo", journalInstanceID)
+	if not v then return nil end
+	for _, i in ipairs({ 4, 3 }) do
+		local img = v[i]
+		if (type(img) == "number" and img > 0) or (type(img) == "string" and img ~= "") then
+			if not IsSecret(img) then return img end
+		end
+	end
+	return nil
+end
+
 ---------------------------------------------------------------------------------------------------------------------
 -- Chat restrictions and lockdown (docs/ANALISI.md §1, §11 risk 3)
 ---------------------------------------------------------------------------------------------------------------------

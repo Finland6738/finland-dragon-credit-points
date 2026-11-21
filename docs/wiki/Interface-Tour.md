@@ -14,12 +14,18 @@ The window itself is built: `/fdcp`, the minimap button (the guild logo) or the 
 |---|---|
 | **Roster** | The raid roster as on the site: one column each for tanks, healers and DPS, with free slots and trial members. Officers also see the night's lineup and bench, and who in the raid has the addon. |
 | **Credits** | The season's credits table as on the site: one column per raid night, your total and your place in the loot queue. Fewer credits means more priority. |
-| **Progress** | Every boss of every raid, with the date of your guild's first kill and the other guild's, as on the site. |
+| **Progress** | Every boss of every raid, with the date of your guild's first kill and the other guild's, as on the site: see [The Progress tab](#the-progress-tab). |
 | **Loot** | The master looter's loot session: the items, who answered, the rolls and the proposed winner. Everyone else sees it read-only. |
 | **History** | Past nights, the loot log, the audit of corrections and the exports (Discord, CSV, JSON and the community site files). |
 | **Settings** | Your preferences (theme, effects, fonts, language), the guild rules (read-only unless you are the Guild Master) and the site settings. |
 
 When a raider has a drop to answer, a separate **popup** appears, with one card per item.
+
+## The Progress tab
+
+One card per raid, as on the community site: the cover (the picture of the raid from the game's Encounter Journal when the client has it, a generated one otherwise), the size and the name, and for each guild a bar with `kills/total`. Below, the bosses in two columns: the number, the name, and for each guild a skull with the date of the first kill, or a dashed circle when the boss is not down yet. The first guild is yours. The other guild's column shows only the dates an officer entered for it: the two guilds never exchange data. Scroll with the mouse wheel when the cards do not fit.
+
+Your first kills are recorded by themselves: during an official night, or in a guild group outside one. Officers (the ranks allowed `progress.edit`, by default the Guild Master and the officers) can also **enter or correct a date**: click the boss row, pick the guild, write the date as `YYYY-MM-DD` (not in the future) and press **Save**. **Remove entered date** deletes a value entered by hand; a kill the addon recorded is never removed this way. Everyone else sees the tab read-only. Every change is a line of the audit.
 
 ## Previews
 

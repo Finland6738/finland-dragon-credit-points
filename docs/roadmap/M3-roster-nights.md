@@ -122,7 +122,7 @@
 - Analysis: §9.3 point 5; [`docs/specs/ui-style.md`](../specs/ui-style.md) §3, §6; [`docs/specs/site-export.md`](../specs/site-export.md) §3.3
 - Scope: `UI/Windows/Progress.lua`, the **Progress** tab as on the site: one card per instance of `Data/Instances.lua` (cover from `EJ_GetInstanceInfo` when the client has it, a generated cover otherwise; masked corners; size eyebrow and name in the display font), a `kills/total` bar per faction, the bosses in two columns with index, name, skull or dashed circle and the first-kill date per faction (the other faction's column shows only what an officer entered with `PROGRESS_SET`, since the two guilds never exchange data), the legend; officers with `progress.edit` add or correct a date from the boss row.
 - Done when:
-  - [ ] The tab shows the expected kills and dates for a simulated season in the mock; members cannot edit.
+  - [x] The tab shows the expected kills and dates for a simulated season in the mock; members cannot edit.
   - [ ] The tab looks like the preview `docs/specs/mockups/fdcp-progress.webp` in game. *(in game)*
 - Tests: `Tests/test_ui_progress.lua`.
 - Docs: wiki **Interface Tour** Progress section (EN + IT), CHANGELOG.

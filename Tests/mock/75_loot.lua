@@ -171,7 +171,7 @@ end
 function EJ_GetInstanceInfo(journalInstanceID)
 	local i = W.journal.instances[journalInstanceID]
 	if not i then return nil end
-	return i.name, "", "", "", "", "", 0, "", false, i.mapID
+	return i.name, "", i.bg or "", i.button or "", "", "", 0, "", false, i.mapID
 end
 function GetRaidDifficultyID() return encounter.raidDifficulty end
 function GetInstanceInfo()
