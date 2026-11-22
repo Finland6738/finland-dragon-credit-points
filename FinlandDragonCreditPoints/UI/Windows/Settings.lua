@@ -1,11 +1,12 @@
 -- SettingsWindow: the Settings tab (docs/ANALISI.md §3.9, §10, docs/specs/ui-style.md §6, M7-2): the sub-tabs Personal, Rules,
--- Permissions, Site and Season. Lua 5.1; unprotected frames.
+-- Permissions, Site, Season and About (M7-2c). Lua 5.1; unprotected frames.
 --   Personal     the player's own preferences: theme, fonts, neon effects, animations, sounds, languages, the popup's position,
 --                the personal stat weights and the wishlist. Free for everybody, nothing is shared.
 --   Rules        the guild's rules, page by page (UI/Windows/RulesForm.lua): read-only for everybody but the Guild Master.
 --   Permissions  the rank each permission needs (the Guild Master edits; the others read), plus the review of a guild rank change.
 --   Site         the guild's key on the community site (a page of the same form).
 --   Season       the season's page of M6-1b (UI/Windows/Season.lua).
+--   About        who made the addon, the licence, the links to copy and the way to support it (UI/Windows/About.lua).
 -- Every write goes through App/SettingsController.lua, which refuses anybody but the Guild Master; the window only hides what
 -- the player may not use. Every change of the rules or of the permissions while a season is open asks an explicit confirmation
 -- (this file's dialog) and stays in the ledger for the audit.
@@ -19,7 +20,7 @@ if ns.addon then ns.addon.SettingsWindow = SettingsWindow end   -- also reachabl
 local Theme, Widgets = ns.Theme, ns.Widgets
 local L = ns.L
 
-SettingsWindow.SUBTABS = { "personal", "rules", "permissions", "site", "season" }
+SettingsWindow.SUBTABS = { "personal", "rules", "permissions", "site", "season", "about" }
 SettingsWindow.RULE_PAGES = { "session", "priority", "costs", "multipliers", "members", "council", "legendary", "messages", "upgrade" }
 SettingsWindow.ROW_H = 36
 
@@ -77,7 +78,7 @@ end
 ---------------------------------------------------------------------------------------------------------------------
 -- Build
 
--- locale-key: SETTINGS_SUB_PERSONAL SETTINGS_SUB_RULES SETTINGS_SUB_PERMISSIONS SETTINGS_SUB_SITE SETTINGS_SUB_SEASON
+-- locale-key: SETTINGS_SUB_PERSONAL SETTINGS_SUB_RULES SETTINGS_SUB_PERMISSIONS SETTINGS_SUB_SITE SETTINGS_SUB_SEASON SETTINGS_SUB_ABOUT
 function SettingsWindow:Build(page)
 	if self.root then return self.root end
 	local root = CreateFrame("Frame", nil, page)
@@ -100,6 +101,7 @@ function SettingsWindow:Build(page)
 	self:BuildPermissions(root.panes.permissions)
 	self.site = ns.RulesForm.New(root.panes.site, { pages = { "site" }, host = self, list = false })
 	if ns.SeasonWindow then ns.SeasonWindow:Build(root.panes.season) end
+	if ns.AboutWindow then ns.AboutWindow:Build(root.panes.about) end
 	root.sub:Select("personal")
 	return root
 end
@@ -120,7 +122,8 @@ function SettingsWindow:Refresh()
 	elseif id == "rules" then self.rules:Refresh()
 	elseif id == "permissions" then self:RefreshPermissions()
 	elseif id == "site" then self.site:Refresh()
-	elseif id == "season" and ns.SeasonWindow then ns.SeasonWindow:Refresh() end
+	elseif id == "season" and ns.SeasonWindow then ns.SeasonWindow:Refresh()
+	elseif id == "about" and ns.AboutWindow then ns.AboutWindow:Refresh() end
 end
 
 ---------------------------------------------------------------------------------------------------------------------

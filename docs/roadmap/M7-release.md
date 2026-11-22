@@ -45,6 +45,21 @@
 - Real client: the popup chips and the line under them, the master looter's column.
 - Suggested model/effort: `sonnet` / medium
 
+### M7-2c — Info and credits
+- Branch: `step/m7-2c-info-credits`
+- Depends on: M7-2
+- Analysis: §3.9 (Settings), §10
+- Scope: owner request of 2026-11-22. An **Info** sub-tab of Settings (the last one) and `/fdcp about` tell who made the addon and for whom: conceived and made by **Finland** (the public handle, never a real name) for the Italian guild **NEBULA**, its purpose, the licence (GPL-3.0), the third-party fonts and libraries, and how to support the project. The game cannot open a web page, so the GitHub repository, the issue tracker, the community site and the Ko-fi page (the one of `.github/FUNDING.yml`) are read-only copy boxes (click, Ctrl+C); the guild's logo (`Media/logo_256.tga`) heads the page. `/fdcp about` opens the page, `/fdcp about chat` prints it. Texts through locale keys (enUS, itIT); a Credits section in `README.md` + `README.it.md` and a wiki page **About** (EN + IT) linked from Home and the sidebar.
+- Done when:
+  - [x] The Info sub-tab shows the author, the guild, the purpose, the licence, the third-party list and four copy boxes that put an edit back and select their text on focus; no personal data beyond the handle.
+  - [x] `/fdcp about` opens it and `/fdcp about chat` prints it; both languages read well.
+  - [x] README (EN + IT), wiki **About** (EN + IT), CHANGELOG.
+  - [ ] The page and the copy boxes in the game (does the box select and copy with Ctrl+C, does the logo show, does the text fit at the minimum window size). *(in game)*
+- Tests: `Tests/test_ui_about.lua`.
+- Docs: wiki **About** (EN + IT), Home and sidebar links, README (EN + IT), CHANGELOG.
+- Real client: the copy boxes and the layout of the page.
+- Suggested model/effort: `sonnet` / low
+
 ### M7-3 — Profiles and presets
 - Branch: `step/m7-3-profiles`
 - Depends on: M7-2, M6-7

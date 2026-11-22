@@ -126,7 +126,7 @@ describe("the Settings tab for the Guild Master", function()
 	it("has the sub-tabs of the spec in order and opens on Personal", function()
 		bound()
 		local root = open()
-		deepEq(SW().SUBTABS, { "personal", "rules", "permissions", "site", "season" })
+		deepEq(SW().SUBTABS, { "personal", "rules", "permissions", "site", "season", "about" })
 		eq(root.sub:Active(), "personal")
 		for id, pane in pairs(root.panes) do eq(pane:IsShown(), id == "personal", id) end
 		for _, id in ipairs(SW().SUBTABS) do

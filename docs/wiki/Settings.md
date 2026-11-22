@@ -2,7 +2,7 @@
 
 > **Built, not yet seen in the game.** The tab works in the offline tests with a simulated client; how it looks in the real game is still to be confirmed. [Italiano](Settings-it)
 
-The **Settings** tab has five sub-tabs: **Personal**, **Rules**, **Permissions**, **Site** and **Season**. Everybody sees all of them. **Only the Guild Master** (the player with the first guild rank, rank index 0) can change the guild's **rules** and **permissions**: for everybody else the controls are off, the **Save** button is not there and a note says so. Your **personal** preferences are yours and anybody can change them.
+The **Settings** tab has six sub-tabs: **Personal**, **Rules**, **Permissions**, **Site**, **Season** and **Info** (see [[About|About]]). Everybody sees all of them. **Only the Guild Master** (the player with the first guild rank, rank index 0) can change the guild's **rules** and **permissions**: for everybody else the controls are off, the **Save** button is not there and a note says so. Your **personal** preferences are yours and anybody can change them.
 
 The addon also has a small entry in the game's own settings window (**Options › AddOns › Finland Dragon Credit Points**): the neon effects, animations and sounds switches and a button that opens this tab.
 

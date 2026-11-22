@@ -46,6 +46,10 @@ Una lingua è **un file più una riga in ciascun file TOC**; nessuna modifica al
 
 Ogni giocatore sceglie la propria lingua con `/fdcp language` (serve un `/reload`); il capogilda sceglie la lingua dei testi mandati a tutti.
 
+## Crediti
+
+Ideato e realizzato da **Finland** per la gilda italiana **NEBULA**, il cui sito della community è <https://nebula-community.github.io/giochi/wow-forever/>. L'addon è libero e open source ([GPL-3.0](LICENSE), codice su <https://github.com/Finland6738/finland-dragon-credit-points>). Se aiuta la tua gilda e ti va di sostenerlo, puoi offrire un caffè su Ko-fi, <https://ko-fi.com/finland6738>; una segnalazione o un'idea nelle [issues](https://github.com/Finland6738/finland-dragon-credit-points/issues) aiuta altrettanto. La stessa pagina è in gioco (**Impostazioni › Info**, o `/fdcp about`) e nel manuale ([Crediti e info](docs/wiki/About-it.md)).
+
 ## Licenza
 
 [GNU General Public License v3.0](LICENSE). Addon amatoriale, non affiliato a Blizzard Entertainment.

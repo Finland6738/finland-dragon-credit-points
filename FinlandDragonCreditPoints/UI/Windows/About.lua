@@ -1,0 +1,139 @@
+-- AboutWindow: the Info sub-tab of Settings and `/fdcp about` (docs/ANALISI.md §3.9, docs/specs/ui-style.md §6, M7-2c).
+-- Tells who made the addon and for whom (Finland, for the Italian guild NEBULA), what it is for, the licence, the third-party
+-- fonts and libraries, and how to support the project. The game cannot open a web page, so every link is a read-only copy box
+-- (click it, Ctrl+C). Words come from locale keys; the links and names are constants of this file. Lua 5.1; unprotected frames.
+-- Not verified in the real client: the look of the page and the copy boxes (M7-2c "in game").
+local ADDON_NAME, ns = ...
+ns = ns or {}
+local AboutWindow = {}
+ns.AboutWindow = AboutWindow
+if ns.addon then ns.addon.AboutWindow = AboutWindow end   -- also reachable from tests
+
+local Theme, Widgets, Assets = ns.Theme, ns.Widgets, ns.Assets
+local L = ns.L
+
+AboutWindow.AUTHOR = "Finland"
+AboutWindow.GUILD = "NEBULA"
+AboutWindow.LICENSE = "GPL-3.0"
+-- The links, in the order of the page. `key` names the label (locale key ABOUT_LINK_<KEY>).
+AboutWindow.LINKS = {
+	{ id = "repo", url = "https://github.com/Finland6738/finland-dragon-credit-points" },
+	{ id = "issues", url = "https://github.com/Finland6738/finland-dragon-credit-points/issues" },
+	{ id = "site", url = "https://nebula-community.github.io/giochi/wow-forever/" },
+	{ id = "kofi", url = "https://ko-fi.com/finland6738" },
+}
+
+-- The lines of the page, as text: used by the window, by `/fdcp about` and by the tests.
+-- locale-key: ABOUT_MADE_BY ABOUT_PURPOSE ABOUT_GUILD ABOUT_LICENSE ABOUT_SUPPORT ABOUT_THIRD ABOUT_DISCLAIMER ABOUT_VERSION
+-- locale-key: ABOUT_LINK_REPO ABOUT_LINK_ISSUES ABOUT_LINK_SITE ABOUT_LINK_KOFI
+function AboutWindow.Lines()
+	local version = ns.Protocol and ns.Protocol.AddonVersion() or "dev"
+	return {
+		title = L["ADDON_TITLE"],
+		version = L["ABOUT_VERSION"]:format(version),
+		madeBy = L["ABOUT_MADE_BY"]:format(AboutWindow.AUTHOR, AboutWindow.GUILD),
+		purpose = L["ABOUT_PURPOSE"],
+		guild = L["ABOUT_GUILD"]:format(AboutWindow.GUILD),
+		license = L["ABOUT_LICENSE"]:format(AboutWindow.LICENSE),
+		support = L["ABOUT_SUPPORT"],
+		third = L["ABOUT_THIRD"],
+		disclaimer = L["ABOUT_DISCLAIMER"],
+	}
+end
+
+function AboutWindow:Build(pane)
+	if self.root then return self.root end
+	local card = Widgets.Card(pane, {})
+	card:SetPoint("TOPLEFT", pane, "TOPLEFT", 0, -4)
+	card:SetPoint("BOTTOMRIGHT", pane, "BOTTOMRIGHT", 0, 0)
+	self.root, self.card = card, card
+	local logo = card:CreateTexture(nil, "ARTWORK")
+	logo:SetSize(72, 72)
+	logo:SetPoint("TOPLEFT", card, "TOPLEFT", 16, -16)
+	logo:SetTexture(Assets.textures.logo_256.path)
+	card.logo = logo
+	local function text(id, token, anchor, dy)
+		local fs = Theme.NewText(card, id, token)
+		fs:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, dy or -6)
+		fs:SetPoint("RIGHT", card, "RIGHT", -16, 0)
+		fs:SetJustifyH("LEFT")
+		fs:SetJustifyV("TOP")
+		return fs
+	end
+	card.title = Theme.NewText(card, "H2", "text-1")
+	card.title:SetPoint("TOPLEFT", logo, "TOPRIGHT", 14, -6)
+	card.version = text("Small", "text-3", card.title, -4)
+	card.madeBy = text("Body", "text-1", logo, -14)
+	card.madeBy:SetPoint("TOPLEFT", logo, "BOTTOMLEFT", 0, -14)
+	card.purpose = text("Body", "text-2", card.madeBy)
+	card.guild = text("Body", "text-2", card.purpose)
+	card.support = text("Body", "text-2", card.guild, -10)
+	-- the copy boxes, two columns of two
+	card.links = {}
+	for i, link in ipairs(self.LINKS) do
+		local col, row = (i - 1) % 2, math.floor((i - 1) / 2)
+		local label = Theme.NewText(card, "Small", "text-3")
+		label:SetText(L["ABOUT_LINK_" .. link.id:upper()])
+		local box = Widgets.EditBox(card, { width = 380, height = 28 })
+		box:SetText(link.url)
+		local url = link.url
+		box.edit:SetScript("OnTextChanged", function(self, user)
+			if user and self:GetText() ~= url then self:SetText(url) end   -- a copy, not a field: an edit is put back at once
+		end)
+		box.edit:SetScript("OnEditFocusGained", function(self) self:HighlightText() end)
+		label:SetPoint("TOPLEFT", card.support, "BOTTOMLEFT", col * 400, -10 - row * 58)
+		box:SetPoint("TOPLEFT", label, "BOTTOMLEFT", 0, -4)
+		card.links[link.id] = box
+	end
+	card.license = Theme.NewText(card, "Body", "text-2")
+	card.license:SetPoint("TOPLEFT", card.support, "BOTTOMLEFT", 0, -10 - 2 * 58 - 6)
+	card.license:SetPoint("RIGHT", card, "RIGHT", -16, 0)
+	card.license:SetJustifyH("LEFT")
+	card.third = text("Small", "text-3", card.license)
+	card.disclaimer = text("Small", "text-3", card.third)
+	return card
+end
+
+function AboutWindow:Refresh()
+	local card = self.card
+	if not card then return end
+	local t = self.Lines()
+	card.title:SetText(t.title)
+	card.version:SetText(t.version)
+	card.madeBy:SetText(t.madeBy)
+	card.purpose:SetText(t.purpose)
+	card.guild:SetText(t.guild)
+	card.support:SetText(t.support)
+	card.license:SetText(t.license)
+	card.third:SetText(t.third)
+	card.disclaimer:SetText(t.disclaimer)
+end
+
+-- The page in the chat, links included (they can be selected and copied from the chat frame).
+function AboutWindow.PrintToChat()
+	local FDCP = ns.addon
+	local t = AboutWindow.Lines()
+	FDCP:Print(t.title .. " - " .. t.version)
+	FDCP:Print(t.madeBy)
+	FDCP:Print(t.guild)
+	for _, link in ipairs(AboutWindow.LINKS) do FDCP:Print(L["ABOUT_LINK_" .. link.id:upper()] .. ": " .. link.url) end
+	FDCP:Print(t.license)
+end
+
+function AboutWindow.Open()
+	if not ns.MainWindow then return AboutWindow.PrintToChat() end
+	ns.MainWindow:Open("settings")
+	if ns.SettingsWindow and ns.SettingsWindow.root then ns.SettingsWindow.root.sub:Select("about") end
+end
+
+-- /fdcp about: opens the Info page; /fdcp about chat: prints it in the chat instead.
+function AboutWindow.Command(input)
+	local _, arg = ns.addon:GetArgs(input or "", 2)
+	if arg and arg:lower() == "chat" then return AboutWindow.PrintToChat() end
+	AboutWindow.Open()
+end
+
+if ns.addon and ns.addon.commands then
+	local cmds = ns.addon.commands
+	cmds[#cmds + 1] = { name = "about", helpKey = "HELP_ABOUT", handler = function(_, input) AboutWindow.Command(input) end }
+end
