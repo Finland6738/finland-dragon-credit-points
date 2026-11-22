@@ -28,3 +28,4 @@ Premi **Chiudi la season**. La chiusura chiede **due conferme separate**: la pri
 
 - Entrambe le azioni sono eventi del registro (`SEASON_OPENED`, `SEASON_CLOSED`) con autore e data, quindi gli officer possono verificarli; le finestre degli altri officer si aggiornano quando l'evento arriva.
 - I raid sono quelli della tabella dell'addon (per ora Molten Core e Onyxia's Lair).
+- Una season chiusa si può archiviare e compattare per tenere piccoli i dati salvati: vedi [[Backup e season|Backup-and-Seasons-it]].

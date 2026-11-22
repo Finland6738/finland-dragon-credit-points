@@ -266,13 +266,50 @@ local function applyLineup(states, p)
 	end
 end
 
+-- The attendance a compaction kept for the nights of `season` (M6-7, Domain/Backup.lua): { [nightId] = { played = {[m]},
+-- benched = {[m]}, bosses = {[m] = n}, possible = {[m] = n} } }, or nil when the season was not compacted.
+function Nights.Compacted(L, season)
+	local Lg = Ledger()
+	local c = Lg.Compactions and Lg.Compactions(L)[season]
+	if not c or type(c.payload.nights) ~= "table" then return nil end
+	if c.nightsCache then return c.nightsCache end
+	local ms, out = c.payload.ms or {}, {}
+	local function names(list, set)
+		for _, i in ipairs(list or {}) do if ms[i] then set[ms[i]] = true end end
+		return set
+	end
+	local function counts(list, map)
+		list = list or {}
+		for k = 1, #list - 1, 2 do
+			local name = ms[list[k]]
+			if name and type(list[k + 1]) == "number" then map[name] = (map[name] or 0) + list[k + 1] end
+		end
+		return map
+	end
+	for _, rec in ipairs(c.payload.nights) do
+		if type(rec) == "table" and type(rec.n) == "string" then
+			out[rec.n] = { played = names(rec.p, {}), benched = names(rec.b, {}), bosses = counts(rec.bo, {}),
+				possible = counts(rec.po, {}) }
+		end
+	end
+	c.nightsCache = out
+	return out
+end
+
 -- The lineup of a night: { [member] = "RAID" | "BENCH" | "ABSENT" } for every member a LINEUP_CHANGED mentioned (a member
 -- not in it is ABSENT). opts.at = an event: only the changes before it in canonical order count (the lineup at that moment).
+-- A night of a compacted season (M6-7) gives the summary the compaction kept: who played and who sat on the bench.
 function Nights.Lineup(L, nightId, opts)
 	local Lg = Ledger()
 	local night = L.events[nightId]
 	local states = {}
 	if not night then return states end
+	local kept = Nights.Compacted(L, night.season)
+	if kept and kept[nightId] then
+		for name in pairs(kept[nightId].benched) do states[name] = "BENCH" end
+		for name in pairs(kept[nightId].played) do states[name] = "RAID" end
+		return states
+	end
 	local at = opts and opts.at
 	for _, e in ipairs(Lg.Sorted(L, function(e)
 		return e.type == "LINEUP_CHANGED" and e.season == night.season
@@ -354,8 +391,36 @@ function Nights.Attendance(L, season, opts)
 		end
 		return m
 	end
+	local kept = Nights.Compacted(L, season) or {}
 	for _, night in ipairs(Nights.List(L, season)) do
-		if opts.night == nil or opts.night == night.id then
+		local ar = kept[night.id]
+		if ar and (opts.night == nil or opts.night == night.id) then
+			-- a compacted night (M6-7): the summary the compaction kept, the kills without their lineup
+			local rec = { night = night, kills = {}, played = {}, benched = {}, compacted = true }
+			for _, kill in ipairs(Nights.Kills(L, { season = season, night = night.id })) do
+				rec.kills[#rec.kills + 1] = { kill = kill, raid = {}, bench = {}, absent = {}, compacted = true }
+			end
+			local raid, bench = {}, {}
+			for name in pairs(ar.played) do
+				rec.played[name] = true
+				raid[#raid + 1] = name
+				local m = member(name)
+				m.nights, m.played = m.nights + 1, m.played + 1
+			end
+			for name in pairs(ar.benched) do
+				if not ar.played[name] then
+					rec.benched[name] = true
+					bench[#bench + 1] = name
+					local m = member(name)
+					m.nights, m.benched = m.nights + 1, m.benched + 1
+				end
+			end
+			for name, n in pairs(ar.bosses) do member(name).bosses = member(name).bosses + n end
+			for name, n in pairs(ar.possible) do member(name).possible = member(name).possible + n end
+			sort(raid); sort(bench)
+			rec.final = { raid = raid, bench = bench, absent = {} }
+			result.nights[#result.nights + 1] = rec
+		elseif opts.night == nil or opts.night == night.id then
 			local rec = { night = night, kills = {}, played = {}, benched = {}, everBench = {} }
 			local states, evs, i = {}, lineups[night.id] or {}, 1
 			local function advance(upTo)

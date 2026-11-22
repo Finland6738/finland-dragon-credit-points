@@ -348,6 +348,8 @@ end
 --   { kind = "CONFIG", id, author, ts, preset?, confirmed?, changes = { "cost.matrix.weapon.4" ... } }  the rules' leaf paths
 --     that changed from the rules before (the defaults before the first change)
 --   { kind = "PERMISSIONS", id, author, ts }                                                              the permission table changed
+--   { kind = "COMPACTED", id, author, ts, removed }      this season was compacted (M6-7)
+--   { kind = "RESTORED", id, author, ts, added, archive } a backup (or an archive) was restored, guild-level like the config (M6-7)
 -- Configuration changes are guild-level (no season): they appear in every season's audit from the date they were written
 -- until `opts.since` (an earlier ts, default: all), so the audit says who changed the rules and when. nil and
 -- "SEASON_UNKNOWN" for a season that does not exist.
@@ -357,7 +359,13 @@ function History.Audit(L, season, opts)
 	local Lg0 = Lg()
 	local out = ns.Council.Audit(L, season)
 	local prev = ns.Rules.DefaultConfig()
-	for _, e in ipairs(Lg0.Sorted(L, function(x) return x.type == "CONFIG_CHANGED" or x.type == "PERMISSIONS_CHANGED" end)) do
+	for _, e in ipairs(Lg0.Sorted(L, function(x) return x.type == "LEDGER_COMPACTED" and x.season == season end)) do
+		local p = payloadOf(e)
+		if p then out[#out + 1] = { kind = "COMPACTED", id = e.id, author = e.author, ts = e.ts, removed = p.removed } end
+	end
+	for _, e in ipairs(Lg0.Sorted(L, function(x)
+		return x.type == "CONFIG_CHANGED" or x.type == "PERMISSIONS_CHANGED" or x.type == "LEDGER_RESTORED"
+	end)) do
 		local p = payloadOf(e)
 		if p then
 			local entry
@@ -366,6 +374,8 @@ function History.Audit(L, season, opts)
 				entry = { kind = "CONFIG", id = e.id, author = e.author, ts = e.ts, preset = p.preset, confirmed = p.confirmed,
 					changes = ns.Rules.Diff(prev, rules) }
 				prev = rules
+			elseif e.type == "LEDGER_RESTORED" then
+				entry = { kind = "RESTORED", id = e.id, author = e.author, ts = e.ts, added = p.added, archive = p.kind == "ARC" }
 			else
 				entry = { kind = "PERMISSIONS", id = e.id, author = e.author, ts = e.ts }
 			end

@@ -10,7 +10,7 @@
 --     n = { { d = date, i = instanceID }, ... }   the newest MAX_NIGHTS nights, oldest first
 --     r = { { m = member, c = class, ro = role, sp = ms1, st = status, f = faction, al = { alts }, t = total,
 --             p = { nightIndex, cost, nightIndex, cost, ... } }, ... }
---     k = events in the officer's ledger, ts = server time it was made }
+--     k = events in the officer's ledger (Ledger.Seen: compacted ones included, M6-7), ts = server time it was made }
 --
 -- `k` orders snapshots: a ledger only grows (a set union of immutable events), so the snapshot of the larger ledger is
 -- the newer one; equal `k`, the later `ts`. A kept snapshot older than STALE seconds gives way to any later one (an
@@ -83,7 +83,7 @@ function CreditSnapshot.Build(L, ts)
 			al = alts, t = row.total, p = #p > 0 and p or nil }
 	end
 	return { s = season.id, sl = season.label, so = not season.closed, up = data.updated, nn = #nights, n = n, r = r,
-		k = ns.Ledger.Count(L), ts = ts }
+		k = ns.Ledger.Seen(L), ts = ts }
 end
 
 -- A clean copy of a snapshot that came from the network: only the known fields, of the right types, within the limits.

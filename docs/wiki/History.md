@@ -2,7 +2,7 @@
 
 > **Built, not yet seen in the game.** The History tab works in the offline tests with a simulated client; how it looks in the real game is still to be confirmed. [Italiano](History-it)
 
-The **History** tab tells what happened in the guild's raid nights. Like the credits, everything is worked out from the ledger every time: nothing is stored apart, so every client with the same events shows the same history. The tab has four sub-tabs: **Nights**, **Log**, **Audit** and **Export**. All four are ready; **Export** is described in its own page, [[Export|Export]].
+The **History** tab tells what happened in the guild's raid nights. Like the credits, everything is worked out from the ledger every time: nothing is stored apart, so every client with the same events shows the same history. The tab has five sub-tabs: **Nights**, **Log**, **Audit**, **Export** and **Backup**. All five are ready; **Export** and **Backup** are described in their own pages, [[Export|Export]] and [[Backup and Seasons|Backup-and-Seasons]].
 
 ## Nights
 

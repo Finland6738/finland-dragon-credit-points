@@ -254,7 +254,7 @@ function Snapshot:OnMessage(msg, sender, dist)
 		-- a member's request: only an officer answers, whoever asks (a member may read the credits)
 		if not officer or not L then return true end
 		local theirs = type(msg.k) == "number" and msg.k or 0
-		local mine = ns.Ledger.Count(L)
+		local mine = ns.Ledger.Seen(L)
 		if #ns.Season.List(L) == 0 then return true end
 		if fromGuild then
 			-- offer only what is newer than the member's; a whispered request is answered anyway (it named this officer)
@@ -283,7 +283,7 @@ function Snapshot:OnMessage(msg, sender, dist)
 		return true
 	end
 	-- CSNAP: an officer who planned a broadcast drops it when this one is at least as new as its ledger
-	if self.sendAt and L and type(msg.k) == "number" and msg.k >= ns.Ledger.Count(L) then
+	if self.sendAt and L and type(msg.k) == "number" and msg.k >= ns.Ledger.Seen(L) then
 		self.sendAt = nil
 		self.stats.cancelled = self.stats.cancelled + 1
 	end
@@ -312,7 +312,7 @@ function Snapshot:Tick()
 	end
 	if role == "officer" then
 		local L = self:Ledger()
-		local count = L and ns.Ledger.Count(L) or 0
+		local count = L and ns.Ledger.Seen(L) or 0
 		if self.lastCount and count ~= self.lastCount then self:Plan(self.SEND_DELAY) end
 		self.lastCount = count
 		if self.sendAt and t >= self.sendAt and (not self.lastSent or t - self.lastSent >= self.SEND_GAP) then

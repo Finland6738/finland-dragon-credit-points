@@ -1,6 +1,6 @@
--- HistoryWindow: the History tab (docs/ANALISI.md §7, docs/specs/ui-style.md §6, M6-1): the sub-tabs Nights, Log, Audit and
--- Export. **Nights** is here; **Log** and **Audit** are UI/Windows/Log.lua and Audit.lua (M6-2); **Export** is UI/Windows/Export.lua (M6-3):
--- the nights of a season by week, newest first, with the instance, the bosses killed, the drops and the credits spent; the
+-- HistoryWindow: the History tab (docs/ANALISI.md §7, docs/specs/ui-style.md §6, M6-1): the sub-tabs Nights, Log, Audit,
+-- Export, and Backup. **Nights** is here; **Log** and **Audit** are UI/Windows/Log.lua and Audit.lua (M6-2); **Export** is
+-- UI/Windows/Export.lua (M6-3); **Backup** is UI/Windows/Backup.lua (M6-7). Nights: the nights of a season by week, newest first, with the instance, the bosses killed, the drops and the credits spent; the
 -- selected night opens its detail (the bosses, what dropped to whom and, for the officers only, the lineup and the bench) and
 -- from a drop the Member and Item windows open. Everything comes from Domain/History.lua; this file draws. Lua 5.1.
 -- Not verified in the real client: the tab's look in game (the owner's M6 checklist).
@@ -13,7 +13,7 @@ if ns.addon then ns.addon.HistoryWindow = HistoryWindow end   -- also reachable 
 local Theme, Widgets = ns.Theme, ns.Widgets
 local L = ns.L
 
-HistoryWindow.SUBTABS = { "nights", "log", "audit", "export" }
+HistoryWindow.SUBTABS = { "nights", "log", "audit", "export", "backup" }
 HistoryWindow.DETAIL_ROWS = 8
 HistoryWindow.DROP_ROW_H = 26
 
@@ -76,7 +76,7 @@ end
 ---------------------------------------------------------------------------------------------------------------------
 -- Build
 
--- locale-key: HISTORY_SUB_NIGHTS HISTORY_SUB_LOG HISTORY_SUB_AUDIT HISTORY_SUB_EXPORT
+-- locale-key: HISTORY_SUB_NIGHTS HISTORY_SUB_LOG HISTORY_SUB_AUDIT HISTORY_SUB_EXPORT HISTORY_SUB_BACKUP
 function HistoryWindow:Build(page)
 	if self.root then return self.root end
 	local root = CreateFrame("Frame", nil, page)
@@ -98,6 +98,7 @@ function HistoryWindow:Build(page)
 	if ns.LogWindow then ns.LogWindow:Build(root.panes.log) end
 	if ns.AuditWindow then ns.AuditWindow:Build(root.panes.audit) end
 	if ns.ExportWindow then ns.ExportWindow:Build(root.panes.export) end
+	if ns.BackupWindow then ns.BackupWindow:Build(root.panes.backup) end
 	root.sub:Select("nights")
 	self:Refresh()
 	return root
@@ -109,7 +110,8 @@ function HistoryWindow:ShowSub(id)
 	if id == "nights" then self:Refresh()
 	elseif id == "log" and ns.LogWindow then ns.LogWindow:Refresh()
 	elseif id == "audit" and ns.AuditWindow then ns.AuditWindow:Refresh()
-	elseif id == "export" and ns.ExportWindow then ns.ExportWindow:Refresh() end
+	elseif id == "export" and ns.ExportWindow then ns.ExportWindow:Refresh()
+	elseif id == "backup" and ns.BackupWindow then ns.BackupWindow:Refresh() end
 end
 
 function HistoryWindow:ActiveSub() return self.root and self.root.sub:Active() end

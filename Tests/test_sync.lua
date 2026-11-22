@@ -293,3 +293,60 @@ describe("trust", function()
 		truthy(S:Trusted(full("Corin")))
 	end)
 end)
+
+describe("the end-of-season compaction in the sync (M6-7)", function()
+	it("every officer compacts with the Guild Master, and one who was away takes the tombstones and catches up", function()
+		local net, c = guild({ "Aurel", "Bryn", "Elin" })
+		openSeason(c.Aurel)
+		net:Advance(40)
+		net:Logout("Elin")
+		local b, L = A(c.Bryn), Ldg(c.Bryn)
+		for n = 1, 2 do
+			assert(b.Nights.Open(L, { author = full("Bryn"), ts = now(c.Bryn), season = SEASON, date = "2026-01-0" .. n,
+				instanceID = 409, difficulty = "normal" }, gate(c.Bryn)))
+			assert(b.Nights.SetLineup(L, { author = full("Bryn"), ts = now(c.Bryn), season = SEASON,
+				raid = { full("Corin"), full("Dara"), full("Bryn") }, bench = { full("Elin") } }, gate(c.Bryn)))
+			assert(b.Nights.Kill(L, { author = full("Bryn"), ts = now(c.Bryn), season = SEASON, encounterID = 660 + n,
+				difficulty = 9 }, gate(c.Bryn)))
+			assert(b.Ledger.Append(L, { author = full("Bryn"), ts = now(c.Bryn), season = SEASON, type = "ITEM_AWARDED",
+				payload = { member = full("Dara"), item = 19003, cost = 1, response = "MS" } }, gate(c.Bryn)))
+			assert(b.Nights.SetLineup(L, { author = full("Bryn"), ts = now(c.Bryn), season = SEASON,
+				raid = { full("Elin") }, absent = { full("Corin") } }, gate(c.Bryn)))
+			assert(b.Nights.Close(L, { author = full("Bryn"), ts = now(c.Bryn), season = SEASON }, gate(c.Bryn)))
+			net:Advance(5)
+		end
+		net:Advance(30)
+		local a = A(c.Aurel)
+		assert(a.Season.Close(Ldg(c.Aurel), { author = full("Aurel"), ts = now(c.Aurel), season = SEASON }, gate(c.Aurel)))
+		net:Advance(30)
+		deepEq(ids(c.Bryn), ids(c.Aurel))
+		local credits = a.Ledger.Credits(Ldg(c.Aurel), SEASON)
+		local played = a.Nights.Played(Ldg(c.Aurel), SEASON)
+		assert(a.BackupService:ArchiveText(SEASON))
+		eq(assert(a.BackupService:Compact(SEASON, { confirmed = true, confirmedAgain = true })), 4)
+		net:Advance(60)
+		-- Bryn's client took the compaction: the same ledger, the same totals
+		local function lineups(cl)
+			local n = 0
+			for _, e in pairs(Ldg(cl).events) do if e.type == "LINEUP_CHANGED" then n = n + 1 end end
+			return n
+		end
+		eq(lineups(c.Aurel), 0); eq(lineups(c.Bryn), 0)
+		deepEq(ids(c.Bryn), ids(c.Aurel))
+		deepEq(Ldg(c.Bryn).gone, Ldg(c.Aurel).gone)
+		deepEq(b.Ledger.Credits(L, SEASON), credits)
+		deepEq(b.Nights.Played(L, SEASON), played)
+		-- Elin was away the whole season: the compacted seqs come as tombstones, the rest as events
+		net:Login("Elin")
+		net:Advance(240)
+		local e = A(c.Elin)
+		deepEq(ids(c.Elin), ids(c.Aurel))
+		deepEq(Ldg(c.Elin).gone, Ldg(c.Aurel).gone)
+		deepEq(e.Ledger.Heads(Ldg(c.Elin)), a.Ledger.Heads(Ldg(c.Aurel)))
+		deepEq(e.Ledger.Credits(Ldg(c.Elin), SEASON), credits)
+		deepEq(e.Nights.Played(Ldg(c.Elin), SEASON), played)
+		truthy(e.Sync:Stats().gone >= 4, "tombstones taken")
+		truthy(e.Sync:Stats().asked <= 6, "no endless requests: " .. e.Sync:Stats().asked)
+		eq(e.Sync:Stats().conflicts, 0)
+	end)
+end)

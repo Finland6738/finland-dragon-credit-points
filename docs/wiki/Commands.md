@@ -43,4 +43,6 @@ A **Sync** line (officers) describes the ledger sync with the other officers: `o
 
 A **Snapshot** line describes the read-only credits table: `officer` or `member` (`off` before the guild roster is read), the size `k` of the ledger of the table you keep, how many tables your game sent to the guild and answered by whisper (officers), how many it received, kept, found older than the one it had, ignored because the sender is not an officer, or refused as malformed.
 
+Two **Ledger size** lines describe the guild's ledger in your saved data: how many events it holds and about how many kilobytes they take, how many events were compacted and of which seasons, and the four kinds of event that take the most room (see [[Backup and Seasons|Backup-and-Seasons]]). The Sync line also counts the compacted events another officer reported as gone.
+
 `/fdcp debug` never prints player names, guild names or item names, so you can paste its output in a bug report. It checks the client again each time you run it.

@@ -1233,6 +1233,30 @@ crediti.
 di copia con il testo già selezionato. **Importazione**: configurazione (per condividere le regole con altre
 gilde) e backup completo del registro.
 
+**Come è fatto (M6-7).** `Domain/Backup.lua` (puro) e `App/BackupService.lua`; la sotto-scheda **Storico › Backup**
+(`UI/Windows/Backup.lua`); vedi [ADR 0007](adr/0007-backup-and-season-compaction.md). Tre stringhe, una riga ciascuna,
+`!FDCP:<TIPO>:1:` + Base64 di CBOR (deflate quando conviene), senza limite di lunghezza (non viaggiano come messaggi
+addon: si copiano fuori dal gioco e si incollano); spazi e a capo si ignorano. **`CFG`**: le regole in vigore senza ciò
+che è solo della gilda (l'elenco dei nomi del council e il nome della fazione sul sito), le esporta chiunque (le regole
+sono già visibili in sola lettura); le importa **solo il GM** (`config.rules`), con anteprima delle impostazioni che
+cambiano e conferma esplicita, ed è un `CONFIG_CHANGED` nell'audit; chi importa tiene i propri valori di quelle due
+voci. **`BAK`**: tutti gli eventi del registro in ordine canonico e le lapidi delle compattazioni, per gli officer
+(`view.attendance`: contiene le presenze). **Ripristino** (`season.manage`, conferma esplicita): è un **merge** attraverso
+il cancello dei permessi (come la sincronizzazione: un autore mai visto è garantito da chi ripristina), quindi aggiunge
+solo ciò che manca, non toglie e non sovrascrive niente; ripristinato in un registro vuoto dà lo stesso registro; ogni
+ripristino è un evento di gilda `LEDGER_RESTORED{kind, events, added, season?}` e compare nell'audit di ogni season.
+**`ARC`**: tutti gli eventi di una season, da generare prima della compattazione (il servizio la rifiuta,
+`ARCHIVE_FIRST`, se l'archivio non è stato generato nella sessione); la compattazione chiede poi **due conferme separate**
+ed è un evento `LEDGER_COMPACTED` nell'audit della sua season (§8.3). `/fdcp debug` stima la dimensione del registro nei
+SavedVariables (eventi, KB, lapidi e season compattate, i quattro tipi più pesanti). Scelte fatte dove il testo non
+decideva (tutte reversibili): si compattano solo le formazioni (`DROP_SEEN`, `ROSTER_CHANGED` e il resto restano: il
+registro del loot e il roster delle season passate non cambiano); la compattazione vale per la gilda intera, perché un
+registro che una parte degli officer compatta e un'altra no non converge (la decisione è del GM, con l'archivio in mano
+prima di togliere qualunque cosa); nel gioco non si annulla, l'archivio è la via per tornare ai dettagli; non si
+esportano i permessi per rango (dipendono dai ranghi della singola gilda). Non verificato in gioco: `C_EncodingUtil` su un
+registro intero (tempo e memoria di una season lunga), l'incolla di una stringa lunga nella casella, la dimensione dei
+SavedVariables dopo una season lunga.
+
 **Come è fatto (M6-1).** Le viste sono `Domain/History.lua` (pura, calcolata dal registro come i crediti, niente è memorizzato a parte) e tre finestre che la disegnano: la scheda **Storico** (`UI/Windows/History.lua`, sotto-schede Serate · Log · Audit · Esporta; *Log* e *Audit* da M6-2, *Esporta* da M6-3), `UI/Windows/Member.lua` e `UI/Windows/Item.lua`. Scelte: (1) una serata appartiene alla **settimana** (da lunedì a domenica) della sua data, indicata dal lunedì; le serate sono dalla più recente; (2) un'assegnazione appartiene alla serata come in `Domain/CreditTable.lua` (la `night` del payload, altrimenti la serata aperta in quel momento), e i crediti spesi della serata sono quelli delle assegnazioni valide a un membro; (3) un'assegnazione **annullata resta visibile** e segnata, ma non sposta crediti né conta come proprietà dell'oggetto; (4) la **formazione, la panchina e le presenze sono solo per gli ufficiali** (`view.attendance`): le funzioni li restituiscono solo con `attendance = true`, che le finestre passano solo a chi ha il permesso, quindi per un membro i campi non esistono; le assegnazioni e i crediti restano pubblici come nella tabella dei crediti; (5) la finestra **Membro** mostra gli oggetti, la curva dei crediti (inizio, ogni assegnazione e correzione, termina sul numero del registro), gli interventi del council che lo riguardano (con le frasi dell'audit) e, per gli ufficiali, le presenze; (6) la finestra **Oggetto** conta caduti, assegnati e visti (`DROP_SEEN`) e dice chi lo ha, in tutte le season. L'Esporta arriva con M6-3.
 
 **Come è fatto (M6-2).** `History.Log(L, season)` elenca tutto ciò che è caduto in una season: le assegnazioni (le stesse righe della scheda Serate, con il boss da cui è caduto l'oggetto, la risposta e il costo; una annullata resta, segnata) e i `DROP_SEEN` che nessuno ha ricevuto (`kind = "SEEN"`, destinatario «non assegnato»). `History.Audit(L, season)` rilegge `Council.Audit` (modifiche, correzioni di categoria/costo, voti, annullamenti, rettifiche, ciascuno con il suo codice di motivazione) e vi aggiunge le **modifiche di configurazione**: ogni `CONFIG_CHANGED` con autore, data, preset e l'elenco delle impostazioni cambiate rispetto alle regole precedenti (`Rules.Diff`, dai valori predefiniti la prima volta) e ogni `PERMISSIONS_CHANGED`; sono eventi di gilda, quindi compaiono nell'audit di ogni season. Entrambe sono ordinate dal più vecchio, con filtri puri (`FilterLog`, `FilterAudit`). Le finestre (`UI/Windows/Log.lua`, `Audit.lua`) disegnano una tabella con filtro (tutti · assegnati · non assegnati · annullati; tutto · consiglio · annullamenti · crediti · impostazioni) e ricerca di testo (oggetto, membro, boss; le parole della riga). Log e audit sono pubblici come i crediti. Non verificato in gioco: l'aspetto delle schede.
@@ -1377,6 +1401,18 @@ tools/ check_docs.py, build/release
   (`Heads`), gli eventi che mancano a chi ha certi segni (`Since`) e i buchi (`Gaps`). La prima uccisione per
   boss (da `ENCOUNTER_KILLED{encounterID, date}` e `PROGRESS_SET{encounterID, faction, date | clear}`, date
   `AAAA-MM-GG` scritte dall'adapter) la calcola `Domain/Progress.lua` (M3-3b, §7.1), per `progress.json`.
+- **Compattazione di fine season (M6-7).** Vedi [ADR 0007](adr/0007-backup-and-season-compaction.md).
+  `LEDGER_COMPACTED{types, removed, ms, nights}` di una season **chiusa** (permesso `season.manage`, il GM di base) toglie
+  gli eventi della season dei tipi compattabili (`Ledger.COMPACTABLE`: oggi solo `LINEUP_CHANGED`, il grosso di una
+  season lunga) da **ogni** registro che lo riceve, quello di chi compatta e, con la sincronizzazione, quelli degli altri
+  officer. Il payload conserva le **presenze** di ogni serata (`ms` i membri ordinati; per serata `n` = id della serata,
+  `p` / `b` gli indici di chi ha giocato / è stato in panchina, `bo` / `po` coppie indice, boss presenti / possibili):
+  `Nights.Attendance` e `Nights.Lineup` le leggono al posto delle formazioni, quindi rotazione, bonus/malus di panchina,
+  nuovi arrivati e viste dello Storico danno gli stessi numeri; nessun evento che sposta crediti o entra nell'audit viene
+  mai tolto. Un evento tolto lascia una **lapide** (`L.gone[autore]` = intervalli `{f, l, season}`): il suo `seq` conta
+  ancora nei "fin dove sono arrivato", un merge lo rifiuta (`compacted` nel resoconto) e una nuova scrittura di quel tipo
+  nella season risponde `SEASON_COMPACTED`. `Ledger.Seen` (eventi + lapidi) cresce soltanto e sostituisce `Count` come
+  `k` della tabella dei crediti in sola lettura (M6-6), così una compattazione non fa sembrare "più vecchio" un officer.
 - **Versioni dello schema**: migrazioni esplicite a ogni cambio (come ADR 0011 di Accord). I dati di ogni gilda stanno sotto la chiave `<reame>/<gilda>` (`db.global.guilds`), così gilde diverse non si mescolano mai; un database scritto da una versione più nuova dell'addon si apre in **sola lettura** (nessuna migrazione, nessuna scrittura).
 
 ### 8.4 Rete e fiducia
@@ -1443,7 +1479,7 @@ tools/ check_docs.py, build/release
   |---|---|---|
   | `LHEADS` | `h` = `{ [autore] = segno }` (al massimo 200 autori) | "fin dove sono arrivato": per autore il più alto `seq` senza buchi (`Ledger.Heads`) |
   | `LWANT` | `to`, `r` = `{ {a, f, l}, … }` (al massimo 20 intervalli) | "mandami questi": i `seq` da `f` a `l` dell'autore `a`, chiesti al solo officer `to` |
-  | `LEVENTS` | `e` = `{ evento, … }`, `to?`, `d?` | gli eventi (senza `id`, che è `autore:seq`), pochi per messaggio; `to` = chi li ha chiesti, `d` = ultimo messaggio della risposta; chiunque li sente li unisce (un'unione di insiemi: due volte non fa danni) |
+  | `LEVENTS` | `e` = `{ evento, … }`, `to?`, `d?`, `g?` | gli eventi (senza `id`, che è `autore:seq`), pochi per messaggio; `to` = chi li ha chiesti, `d` = ultimo messaggio della risposta, `g` = `{ {a, f, l, season}, … }` i `seq` chiesti che una compattazione ha tolto (M6-7: lapidi, presi solo per `seq` che mancano e di una season la cui compattazione è già nel registro di chi li riceve); chiunque li sente li unisce (un'unione di insiemi: due volte non fa danni) |
 
   È un **pull**: un client annuncia i suoi segni 5 secondi dopo aver letto il roster della gilda, 3 secondi dopo che il
   suo registro è cresciuto e almeno ogni 5 minuti, mai due volte in 20 secondi, mai con il registro vuoto (impara
@@ -1489,7 +1525,7 @@ tools/ check_docs.py, build/release
   della sincronizzazione fra officer); quella di chiunque altro, o sentita prima di leggere il roster, si ignora e si
   conta; ogni campo si controlla per tipo e dimensione. **Più nuova**: si tiene una tabella solo se il suo `k` è più
   grande (un registro cresce soltanto), a parità se è più recente, e una tabella tenuta da più di 7 giorni cede a
-  qualunque più recente (la compattazione di M6-7 può accorciare un registro): un officer rimasto indietro non riporta
+  qualunque più recente (dal M6-7 `k` conta anche gli eventi compattati, `Ledger.Seen`): un officer rimasto indietro non riporta
   indietro i membri. La tabella tenuta si salva con i dati della gilda (`creditSnapshot`) e sopravvive a `/reload`; la
   scheda **Crediti** (con la nota "sola lettura · inviata da …") e il popup del pezzo la leggono su ogni client che non
   è officer o il cui registro non ha season. Evento sul bus: `CREDIT_SNAPSHOT(from)`. Limite: il membro giudica il
@@ -1634,7 +1670,7 @@ più le preferenze personali: posizione dei popup, suoni, pesi delle statistiche
 | Due officer che modificano insieme | Medio | Registro a eventi con autore: niente sovrascritture, solo eventi in più |
 | Addon modificato che manda dati falsi | Basso | Roll dal server; risposte accettate solo dal mittente stesso; registro accettato solo da ranghi abilitati |
 | Cache oggetti vuota (`GetItemInfo` restituisce nil) | Basso | `ItemCache` con attesa di `ITEM_DATA_LOAD_RESULT` |
-| SavedVariables troppo grandi in una season lunga | Basso | Snapshot e compattazione del registro a fine season, archivio esportabile |
+| SavedVariables troppo grandi in una season lunga | Basso | Snapshot e compattazione del registro a fine season, archivio esportabile (M6-7: le formazioni di una season chiusa; dimensione stimata in `/fdcp debug`) |
 
 ---
 

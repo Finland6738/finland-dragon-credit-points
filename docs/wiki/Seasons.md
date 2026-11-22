@@ -28,3 +28,4 @@ Click **Close the season**. Closing asks **two separate confirmations**: the fir
 
 - Both actions are events of the ledger (`SEASON_OPENED`, `SEASON_CLOSED`) with author and date, so officers can audit them; the other officers' windows update when the event reaches them.
 - The raids are the ones of the addon's table (Molten Core and Onyxia's Lair for now).
+- A closed season can be archived and compacted to keep the saved data small: see [[Backup and Seasons|Backup-and-Seasons]].

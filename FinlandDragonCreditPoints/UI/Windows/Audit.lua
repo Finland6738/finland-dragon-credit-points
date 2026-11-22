@@ -1,7 +1,7 @@
 -- AuditWindow: History › Audit (docs/ANALISI.md §7, docs/specs/ui-style.md §6, M6-2): what the council and the Guild Master
 -- did outside the rules, with the reason and the author: awards that departed from the rule, corrections of category or
 -- cost, votes, voids, manual adjustments (Domain/Council.lua's audit) and the changes of the guild's configuration
--- (Domain/History.lua, with the settings that changed). Filter by kind and search on the words of a line. Everything comes
+-- (Domain/History.lua, with the settings that changed), the compactions and the restores (M6-7). Filter by kind and search on the words of a line. Everything comes
 -- from the local ledger. Lua 5.1. Not verified in the real client: the pane's look in game (the owner's M6 checklist).
 local ADDON_NAME, ns = ...
 ns = ns or {}
@@ -18,7 +18,7 @@ AuditWindow.KINDS = {
 	council = { MODIFY = true, CORRECT = true, VOTE = true },
 	void = { VOID = true },
 	adjust = { ADJUST = true },
-	config = { CONFIG = true, PERMISSIONS = true },
+	config = { CONFIG = true, PERMISSIONS = true, COMPACTED = true, RESTORED = true },
 }
 AuditWindow.filter, AuditWindow.search = "all", ""
 AuditWindow.CHANGES_SHOWN = 4
@@ -27,7 +27,8 @@ local function RC() return ns.RosterController end
 local function short(name) return (tostring(name or "?"):gsub("%-.*$", "")) end
 
 -- The sentence of one entry. Council entries use the council's own line (the same words as /fdcp council audit).
--- locale-key: AUDIT_CONFIG AUDIT_CONFIG_PRESET AUDIT_CONFIG_MORE AUDIT_PERMISSIONS
+-- locale-key: AUDIT_CONFIG AUDIT_CONFIG_PRESET AUDIT_CONFIG_MORE AUDIT_PERMISSIONS AUDIT_COMPACTED AUDIT_RESTORED
+-- locale-key: AUDIT_RESTORED_ARCHIVE
 function AuditWindow.Line(entry)
 	if entry.kind == "CONFIG" then
 		local shown = {}
@@ -38,6 +39,10 @@ function AuditWindow.Line(entry)
 		return short(entry.author) .. ": " .. text
 	elseif entry.kind == "PERMISSIONS" then
 		return short(entry.author) .. ": " .. L["AUDIT_PERMISSIONS"]
+	elseif entry.kind == "COMPACTED" then
+		return short(entry.author) .. ": " .. L["AUDIT_COMPACTED"]:format(entry.removed or 0)
+	elseif entry.kind == "RESTORED" then
+		return short(entry.author) .. ": " .. L[entry.archive and "AUDIT_RESTORED_ARCHIVE" or "AUDIT_RESTORED"]:format(entry.added or 0)
 	end
 	return ns.CouncilService.AuditLine(entry)
 end

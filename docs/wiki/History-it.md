@@ -2,7 +2,7 @@
 
 > **Costruito, non ancora visto in gioco.** La scheda Storico funziona nei test offline con un client simulato; come appare nel gioco vero è ancora da confermare. [English](History)
 
-La scheda **Storico** racconta cosa è successo nelle serate di raid della gilda. Come i crediti, tutto viene calcolato dal registro ogni volta: non si memorizza niente a parte, quindi ogni client con gli stessi eventi mostra lo stesso storico. La scheda ha quattro sotto-schede: **Serate**, **Registro**, **Audit** ed **Esporta**. Sono pronte tutte e quattro; **Esporta** ha la sua pagina, [[Esporta|Export-it]].
+La scheda **Storico** racconta cosa è successo nelle serate di raid della gilda. Come i crediti, tutto viene calcolato dal registro ogni volta: non si memorizza niente a parte, quindi ogni client con gli stessi eventi mostra lo stesso storico. La scheda ha cinque sotto-schede: **Serate**, **Registro**, **Audit**, **Esporta** e **Backup**. Sono pronte tutte e cinque; **Esporta** e **Backup** hanno la loro pagina, [[Esporta|Export-it]] e [[Backup e season|Backup-and-Seasons-it]].
 
 ## Serate
 

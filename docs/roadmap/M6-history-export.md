@@ -111,8 +111,10 @@ Open question 10 ([#3](https://github.com/Finland6738/finland-dragon-credit-poin
 - Analysis: §7 (import), §8.3 (snapshots), §11 (SavedVariables size)
 - Scope: configuration import / export as a string (shareable with other guilds), full ledger backup and restore, end-of-season compaction into a snapshot with an exportable archive, size estimates in `/fdcp debug`.
 - Done when:
-  - [ ] Backup → restore gives the same ledger; compaction keeps every total and the audit of the season.
-- Tests: `Tests/test_backup.lua`.
+  - [x] Backup → restore gives the same ledger; compaction keeps every total and the audit of the season.
+  - [ ] In game: the strings are copied out and pasted back, and the SavedVariables shrink after compacting a long season. *(in game)*
+- Note: built as `Domain/Backup.lua` (pure: `Config`, `ImportedRules`, `Full`, `Archive`, `Validate`, `Preview`, `Restore`, `Summary`, `Compact`, `Size`), `App/BackupService.lua` (the `!FDCP:<CFG|BAK|ARC>:1:` strings, permissions, confirmations, `/fdcp debug` size lines) and the **History › Backup** sub-tab (`UI/Windows/Backup.lua`). The configuration string leaves out the guild's own values (council names, site faction name); only the GM imports it (a gated, audited `CONFIG_CHANGED`). A restore is a merge through the trust gate (never removes or overwrites) and writes `LEDGER_RESTORED`. The compaction is a ledger event, `LEDGER_COMPACTED` of a closed season, which removes the season's `LINEUP_CHANGED` from every officer's ledger and keeps each night's attendance in its payload; removed seqs become tombstones (`L.gone`) that the heads count, merges drop and the sync passes on (`LEVENTS.g`); the archive must be generated first and two confirmations given ([ADR 0007](../adr/0007-backup-and-season-compaction.md), [`docs/ANALISI.md`](../ANALISI.md) §7 "Come è fatto (M6-7)", §8.3).
+- Tests: `Tests/test_backup.lua`, `Tests/test_sync.lua` (compaction across officers).
 - Docs: wiki **Backup and Seasons** (EN + IT), CHANGELOG.
 - Real client: SavedVariables size after a long season.
 - Suggested model/effort: `opus` / medium

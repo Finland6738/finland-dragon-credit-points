@@ -56,6 +56,7 @@ Domain\Announce.lua
 Domain\Rules.lua
 Domain\Presets.lua
 Domain\Permissions.lua
+Domain\Backup.lua
 Domain\SessionFSM.lua
 Adapters\GuildRanks.lua
 Adapters\Group.lua
@@ -73,6 +74,7 @@ App\SiteExportService.lua
 Net\Sync.lua
 Net\Snapshot.lua
 App\SeasonController.lua
+App\BackupService.lua
 App\AddonCheck.lua
 App\AddonNotice.lua
 App\Announcer.lua
@@ -102,6 +104,7 @@ UI\Windows\Item.lua
 UI\Windows\Log.lua
 UI\Windows\Audit.lua
 UI\Windows\Export.lua
+UI\Windows\Backup.lua
 UI\Windows\History.lua
 UI\Windows\Season.lua
 UI\MainWindow.lua

@@ -24,6 +24,14 @@
 -- missing. Snapshots cover exactly the events up to the heads at the time they were taken, so the events that arrive
 -- later (in any order, even older ones) are always in the tail: snapshot + tail = full ledger.
 --
+-- End-of-season compaction (M6-7, §8.3, §11): a LEDGER_COMPACTED{types, summary} of a closed season removes that season's
+-- events of the Ledger.COMPACTABLE types (the lineups: the bulk of a long season) from every ledger that holds it, the
+-- compacting one and every officer's after the sync. A removed event leaves a **tombstone** (L.gone[author] = sorted seq
+-- ranges {f, l, season}): its seq still counts in the heads, a merge refuses it again ("COMPACTED") and the sync tells a
+-- peer that asks for it that it is gone (Ledger.GoneRanges / Ledger.MarkGone). Nothing that the credits read is ever
+-- compacted, and the summary keeps the season's attendance (Nights.Attendance reads it), so the totals and the audit
+-- stay; the removed events leave the game only in the exportable archive (Domain/Backup.lua).
+--
 -- Trust (§3.9, §8.4, M2-5): Append and Merge take an optional gate, opts.accept(L, e) -> true | false, code. The
 -- gate of Domain/Permissions.lua (Permissions.Gate) accepts an event only when its author had the rank its type
 -- requires when it was written, and CONFIG_CHANGED / PERMISSIONS_CHANGED only from the Guild Master. A refused event
@@ -63,6 +71,8 @@ Ledger.TYPES = {
 	LEGENDARY_PROJECT_PAID = { v = 1 },
 	LEGENDARY_PROJECT_CLOSED = { v = 1 },
 	BANK_ITEM_SOLD = { v = 1 },               -- the gold of a guild bank item's sale (Domain/GuildBank.lua, M5-7)
+	LEDGER_COMPACTED = { v = 1 },             -- a closed season compacted (M6-7, Domain/Backup.lua)
+	LEDGER_RESTORED = { v = 1, guild = true },   -- a backup or an archive restored by hand (M6-7, Domain/Backup.lua)
 	CONFIG_CHANGED = { v = 1, guild = true },
 	PERMISSIONS_CHANGED = { v = 1, guild = true },
 }
@@ -72,6 +82,9 @@ Ledger.VOIDABLE = { ITEM_AWARDED = true, CREDITS_ADJUSTED = true }
 
 -- The targets of an ITEM_AWARDED: only "member" moves credits.
 Ledger.TARGETS = { member = true, bank = true, disenchant = true, ml = true }
+
+-- The types an end-of-season compaction removes (M6-7): none of them moves credits or enters the audit.
+Ledger.COMPACTABLE = { LINEUP_CHANGED = true }
 
 -- Payload upgrades: UPGRADES[type][v] = function(payload) -> payload of version v + 1 (a new table, the stored
 -- event is never changed). Empty while every type is at version 1; a schema change adds its step here.
@@ -281,6 +294,7 @@ function Ledger.Open(t)
 	t.heads = t.heads or {}        -- [author] = contiguous high-water mark
 	t.top = t.top or {}            -- [author] = highest seq present
 	t.snapshots = t.snapshots or {}
+	t.gone = t.gone or {}          -- [author] = { {f, l, season}, ... }: compacted seqs (M6-7)
 	return t, t.schema > Ledger.SCHEMA
 end
 
@@ -294,23 +308,152 @@ function Ledger.Count(L)
 	return n
 end
 
+---------------------------------------------------------------------------------------------------------------------
+-- Tombstones (M6-7): the seqs a compaction removed
+
+-- The range of L.gone[author] holding `seq`, or nil.
+local function goneRange(L, author, seq)
+	for _, r in ipairs(L.gone and L.gone[author] or {}) do
+		if seq >= r[1] and seq <= r[2] then return r end
+		if r[1] > seq then return nil end
+	end
+	return nil
+end
+
+-- True when seq `seq` of `author` was removed by a compaction.
+function Ledger.IsGone(L, author, seq) return goneRange(L, author, seq) ~= nil end
+
+-- Adds seq `seq` of `author` (an event of `season`) to the tombstones, merging with a neighbour of the same season.
+local function addGone(L, author, seq, season)
+	L.gone = L.gone or {}
+	local list = L.gone[author] or {}
+	L.gone[author] = list
+	local i = 1
+	while list[i] and list[i][2] < seq do i = i + 1 end
+	if list[i] and list[i][1] <= seq then return false end   -- already there
+	local prev, nxt = list[i - 1], list[i]
+	if prev and prev[2] == seq - 1 and prev[3] == season then
+		prev[2] = seq
+		if nxt and nxt[1] == seq + 1 and nxt[3] == season then
+			prev[2] = nxt[2]
+			table.remove(list, i)
+		end
+	elseif nxt and nxt[1] == seq + 1 and nxt[3] == season then
+		nxt[1] = seq
+	else
+		table.insert(list, i, { seq, seq, season })
+	end
+	if seq > (L.top[author] or 0) then L.top[author] = seq end
+	return true
+end
+
+-- The number of seqs the tombstones hold.
+function Ledger.GoneCount(L)
+	local n = 0
+	for _, list in pairs(L.gone or {}) do
+		for _, r in ipairs(list) do n = n + r[2] - r[1] + 1 end
+	end
+	return n
+end
+
+-- The ledger's "size in events": the events held plus the ones compacted. It only grows (the credits snapshot of M6-6 and
+-- the caches compare it), where Ledger.Count drops after a compaction.
+function Ledger.Seen(L) return Ledger.Count(L) + Ledger.GoneCount(L) end
+
 local function advanceHead(L, author)
 	local h = L.heads[author] or 0
-	while L.events[Ledger.MakeId(author, h + 1)] do h = h + 1 end
+	while L.events[Ledger.MakeId(author, h + 1)] or goneRange(L, author, h + 1) do h = h + 1 end
 	L.heads[author] = h
 end
 
--- Stores an event that passed the checks. Returns "ADDED", "DUPLICATE" or "CONFLICT" (same id, other content: the
--- stored one wins, nothing changes).
+-- The compactions in force: { [season] = { id, types = {[type] = true}, payload } } from the first readable
+-- LEDGER_COMPACTED of each season (canonical order). Cached per ledger until a LEDGER_COMPACTED is stored.
+local compactionCache = setmetatable({}, { __mode = "k" })
+
+function Ledger.Compactions(L)
+	local c = compactionCache[L]
+	if c then return c end
+	c = {}
+	local list = {}
+	for _, e in pairs(L.events) do
+		if e.type == "LEDGER_COMPACTED" then list[#list + 1] = e end
+	end
+	table.sort(list, function(a, b) return Ledger.Before(a, b) end)
+	for _, e in ipairs(list) do
+		if not c[e.season] and readable(e) then
+			local p = Ledger.Payload(e)
+			local types = {}
+			for _, t in ipairs(p.types) do types[t] = true end
+			c[e.season] = { id = e.id, types = types, payload = p, ts = e.ts, author = e.author }
+		end
+	end
+	compactionCache[L] = c
+	return c
+end
+
+-- True when event `e` belongs to a compacted season and type: it is never stored.
+local function compacted(L, e)
+	local c = e.season ~= nil and Ledger.Compactions(L)[e.season]
+	return c and c.types[e.type] == true or false
+end
+
+-- Removes every stored event the compactions in force cover, leaving tombstones. Returns the number removed.
+function Ledger.ApplyCompactions(L)
+	compactionCache[L] = nil
+	local n, touched = 0, {}
+	for id, e in pairs(L.events) do
+		if compacted(L, e) then
+			L.events[id] = nil
+			addGone(L, e.author, e.seq, e.season)
+			touched[e.author] = true
+			n = n + 1
+		end
+	end
+	for author in pairs(touched) do advanceHead(L, author) end
+	return n
+end
+
+-- Marks the seqs `f`..`l` of `author` as compacted in `season`, when they are missing here and a compaction of that season
+-- is in force (the sync: a peer that has the tombstones says so). A present event is never touched. Returns the count.
+function Ledger.MarkGone(L, author, f, l, season)
+	if not isName(author) or not isInt(f) or not isInt(l) or f < 1 or l < f or l - f > 100000 then return 0 end
+	if not (season ~= nil and Ledger.Compactions(L)[season]) then return 0 end
+	local n = 0
+	for s = f, l do
+		if not L.events[Ledger.MakeId(author, s)] and addGone(L, author, s, season) then n = n + 1 end
+	end
+	if n > 0 then advanceHead(L, author) end
+	return n
+end
+
+-- The tombstones of `author` inside `f`..`l`: { {f, l, season}, ... } (for a peer that asks those seqs).
+function Ledger.GoneRanges(L, author, f, l)
+	local out = {}
+	for _, r in ipairs(L.gone and L.gone[author] or {}) do
+		local a, b = math.max(r[1], f), math.min(r[2], l)
+		if a <= b then out[#out + 1] = { a, b, r[3] } end
+	end
+	return out
+end
+
+-- Stores an event that passed the checks. Returns "ADDED", "DUPLICATE", "CONFLICT" (same id, other content: the
+-- stored one wins, nothing changes) or "COMPACTED" (its season and type were compacted, or its seq is a tombstone).
 local function store(L, e)
 	local old = L.events[e.id]
 	if old then
 		if deepEqual(old, e) then return "DUPLICATE" end
 		return "CONFLICT"
 	end
+	if goneRange(L, e.author, e.seq) then return "COMPACTED" end
+	if compacted(L, e) then
+		addGone(L, e.author, e.seq, e.season)
+		advanceHead(L, e.author)
+		return "COMPACTED"
+	end
 	L.events[e.id] = copy(e)
 	if e.seq > (L.top[e.author] or 0) then L.top[e.author] = e.seq end
 	if e.seq == (L.heads[e.author] or 0) + 1 then advanceHead(L, e.author) end
+	if e.type == "LEDGER_COMPACTED" then Ledger.ApplyCompactions(L) end
 	return "ADDED"
 end
 
@@ -347,7 +490,8 @@ end
 -- Writes a new event of `author`: draft = { author, type, ts, season, payload }. The sequence is the author's next
 -- one. A void must reference an event of this ledger that is voidable and not voided yet. opts.accept is the trust
 -- gate (see the header). Returns the stored event, or nil and a code ("READ_ONLY", a Ledger.Check code,
--- "UNKNOWN_TYPE", "REF_MISSING", "REF_NOT_VOIDABLE", "ALREADY_VOIDED", or the gate's code, "PENDING" included).
+-- "UNKNOWN_TYPE", "SEASON_COMPACTED", "REF_MISSING", "REF_NOT_VOIDABLE", "ALREADY_VOIDED", or the gate's code, "PENDING"
+-- included).
 function Ledger.Append(L, draft, opts)
 	if (L.schema or 0) > Ledger.SCHEMA then return nil, "READ_ONLY" end
 	if type(draft) ~= "table" then return nil, "event" end
@@ -361,6 +505,7 @@ function Ledger.Append(L, draft, opts)
 	}
 	local ok, code = Ledger.Check(e)
 	if not ok then return nil, code end
+	if compacted(L, e) then return nil, "SEASON_COMPACTED" end
 	if e.type == "AWARD_VOIDED" then
 		local ref = L.events[e.payload.ref]
 		if not ref then return nil, "REF_MISSING" end
@@ -378,11 +523,11 @@ end
 -- Merges events from another ledger or a peer, in any order, any number of times. Invalid events are refused, an
 -- event already present changes nothing. The new events are stored in canonical order, so with a gate (opts.accept,
 -- see the header) a PERMISSIONS_CHANGED of the batch is in force for the later events of the same batch. Returns a
--- report { added, duplicate, conflict = {ids}, invalid = {codes}, refused = {{id, code}}, pending = {events} }, or
--- nil and "READ_ONLY". `pending` are the events the gate could not decide yet (the caller queues them).
+-- report { added, duplicate, compacted, conflict = {ids}, invalid = {codes}, refused = {{id, code}}, pending = {events} },
+-- or nil and "READ_ONLY". `compacted` counts the events of a compacted season and type (M6-7), dropped as tombstones. `pending` are the events the gate could not decide yet (the caller queues them).
 function Ledger.Merge(L, events, opts)
 	if (L.schema or 0) > Ledger.SCHEMA then return nil, "READ_ONLY" end
-	local report = { added = 0, duplicate = 0, conflict = {}, invalid = {}, refused = {}, pending = {} }
+	local report = { added = 0, duplicate = 0, compacted = 0, conflict = {}, invalid = {}, refused = {}, pending = {} }
 	local valid = {}
 	for _, e in pairs(events or {}) do
 		local ok, code = Ledger.Check(e)
@@ -396,13 +541,15 @@ function Ledger.Merge(L, events, opts)
 	local accept = opts and opts.accept
 	for _, e in ipairs(valid) do
 		local accepted, why = true, nil
-		if accept and not L.events[e.id] then accepted, why = accept(L, e) end
+		if accept and not L.events[e.id] and not goneRange(L, e.author, e.seq) then accepted, why = accept(L, e) end
 		if accepted then
 			local r = store(L, e)
 			if r == "ADDED" then
 				report.added = report.added + 1
 			elseif r == "DUPLICATE" then
 				report.duplicate = report.duplicate + 1
+			elseif r == "COMPACTED" then
+				report.compacted = report.compacted + 1
 			else
 				report.conflict[#report.conflict + 1] = e.id
 			end

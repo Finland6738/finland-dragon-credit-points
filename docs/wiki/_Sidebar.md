@@ -15,6 +15,7 @@
 - [[History|History]]
 - [[Export|Export]]
 - [[Seasons|Seasons]]
+- [[Backup and Seasons|Backup-and-Seasons]]
 
 **Italiano**
 - [[Home|Home-it]]
@@ -33,3 +34,4 @@
 - [[Storico|History-it]]
 - [[Esporta|Export-it]]
 - [[Season|Seasons-it]]
+- [[Backup e season|Backup-and-Seasons-it]]

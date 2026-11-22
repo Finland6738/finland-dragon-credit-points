@@ -9,8 +9,11 @@
 --   LHEADS   h = { [author] = head }   "how far I have": per author the highest seq with every seq below it present
 --                                      (Ledger.Heads), at most MAX_AUTHORS authors
 --   LWANT    to, r = { {a, f, l}, … }  "send me these": seqs f..l of author a, asked to the officer `to` only
---   LEVENTS  e = { event, … }, to?, d? the events, a few per message; `to` = the officer who asked, `d` = last message of
---                                      the answer. Everybody who hears them merges them (a set union: harmless twice)
+--   LEVENTS  e = { event, … }, to?, d?, g?  the events, a few per message; `to` = the officer who asked, `d` = last message
+--                                      of the answer, `g` = { {a, f, l, season}, … } the seqs asked that a compaction removed
+--                                      (M6-7: tombstones, nothing to send). Everybody who hears them merges them (a set union:
+--                                      harmless twice); a tombstone is taken only for a seq still missing here, of a season
+--                                      whose compaction this client already holds (Ledger.MarkGone)
 --
 -- The flow is a pull: a client announces its heads (START_DELAY after its guild roster is read, CHANGE_DELAY after its own
 -- ledger grows, at least every HEARTBEAT seconds, never twice within ANNOUNCE_GAP, never while its ledger is empty: it
@@ -67,7 +70,7 @@ Sync.SERVE_BUDGET = { 600, 300 }   -- at most 600 events served every 300 second
 
 local function newStats()
 	return { announced = 0, asked = 0, served = 0, servedEvents = 0, received = 0, added = 0, refused = 0, pending = 0,
-		conflicts = 0, untrusted = 0, dist = 0, bad = 0, overBudget = 0, timeouts = 0 }
+		conflicts = 0, untrusted = 0, dist = 0, bad = 0, overBudget = 0, timeouts = 0, gone = 0 }
 end
 
 ---------------------------------------------------------------------------------------------------------------------
@@ -162,7 +165,7 @@ end
 -- True when seq `s` of `author` needs nothing from a peer: present, refused by the gate, or waiting in the gate's queue.
 local function settled(self, L, author, s)
 	local id = Lg().MakeId(author, s)
-	if L.events[id] or self.refused[id] then return true end
+	if L.events[id] or self.refused[id] or Lg().IsGone(L, author, s) then return true end
 	local queued = PS() and PS().queued and PS().queued[L]
 	return queued ~= nil and queued[id] == true
 end
@@ -277,8 +280,9 @@ local function unwire(w)
 end
 Sync.Wire, Sync.Unwire = wire, unwire
 
--- Splits wire events into LEVENTS messages of at most MAX_PER_MSG events and MSG_BYTES of text.
-function Sync:Pack(list, to)
+-- Splits wire events into LEVENTS messages of at most MAX_PER_MSG events and MSG_BYTES of text. `gone` = tombstone ranges
+-- (M6-7), carried by the last message.
+function Sync:Pack(list, to, gone)
 	local msgs, i = {}, 1
 	while i <= #list do
 		local n = math.min(self.MAX_PER_MSG, #list - i + 1)
@@ -296,6 +300,7 @@ function Sync:Pack(list, to)
 	end
 	if #msgs == 0 then msgs[1] = { t = "LEVENTS", e = {}, to = to } end
 	msgs[#msgs].d = true
+	if gone and #gone > 0 then msgs[#msgs].g = gone end
 	return msgs
 end
 
@@ -321,7 +326,7 @@ function Sync:Serve(L, from, ranges)
 		self.stats.overBudget = self.stats.overBudget + 1
 		return false
 	end
-	local list = {}
+	local list, gone = {}, {}
 	for i, r in ipairs(ranges) do
 		if i > self.MAX_RANGES then break end
 		local a, f, l = type(r) == "table" and r[1], type(r) == "table" and r[2], type(r) == "table" and r[3]
@@ -332,10 +337,13 @@ function Sync:Serve(L, from, ranges)
 				if e then list[#list + 1] = wire(e) end
 				s = s + 1
 			end
+			for _, g in ipairs(Lg().GoneRanges(L, a, floor(f), s - 1)) do
+				if #gone < self.MAX_RANGES then gone[#gone + 1] = { a, g[1], g[2], g[3] } end
+			end
 		end
 		if #list >= left then break end
 	end
-	for _, msg in ipairs(self:Pack(list, from)) do send(msg) end
+	for _, msg in ipairs(self:Pack(list, from, gone)) do send(msg) end
 	self.served[#self.served + 1] = { at = t, n = #list }
 	self.stats.served = self.stats.served + 1
 	self.stats.servedEvents = self.stats.servedEvents + #list
@@ -350,6 +358,19 @@ local function addedPermissions(L, before, events)
 		if e.type == "PERMISSIONS_CHANGED" and L.events[e.id] and not before[e.id] then return true end
 	end
 	return false
+end
+
+-- Takes the tombstones of an LEVENTS (M6-7): only seqs missing here, of a season whose compaction this ledger holds.
+function Sync:TakeGone(L, gone)
+	local n = 0
+	for i, g in ipairs(type(gone) == "table" and gone or {}) do
+		if i > self.MAX_RANGES then break end
+		if type(g) == "table" and type(g[1]) == "string" and type(g[2]) == "number" and type(g[3]) == "number" then
+			n = n + Lg().MarkGone(L, g[1], g[2], g[3], g[4])
+		end
+	end
+	self.stats.gone = self.stats.gone + n
+	return n
 end
 
 -- Merges the events of an LEVENTS from `from` through the gate. Returns the Ledger.Merge report.
@@ -418,6 +439,7 @@ function Sync:OnMessage(msg, sender, dist)
 			return true
 		end
 		self:Take(L, from, msg.e)
+		if msg.g ~= nil then self:TakeGone(L, msg.g) end
 		local req = self.request
 		if msg.d and msg.to == me and req and req.peer == from then
 			self.request = nil
@@ -509,9 +531,9 @@ if ns.addon then
 	if ns.addon.AddDebugSection then
 		ns.addon:AddDebugSection("Sync", function()
 			local s = Sync:Stats()
-			return { ("Sync: %s, peers %d, asked %d, served %d (%d events), added %d, refused %d, conflicts %d, untrusted %d"):format(   -- nolocale (debug output)
+			return { ("Sync: %s, peers %d, asked %d, served %d (%d events), added %d, refused %d, conflicts %d, untrusted %d, gone %d"):format(   -- nolocale (debug output)
 				Sync.active and "on" or "off", s.peers, s.asked, s.served, s.servedEvents, s.added, s.refused,   -- nolocale
-				s.conflicts, s.untrusted) }
+				s.conflicts, s.untrusted, s.gone) }
 		end)
 	end
 end

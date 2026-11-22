@@ -43,4 +43,6 @@ Una riga **Sync** (officer) descrive la sincronizzazione del registro con gli al
 
 Una riga **Snapshot** descrive la tabella dei crediti in sola lettura: `officer` o `member` (`off` prima che il roster della gilda sia letto), la dimensione `k` del registro della tabella che conservi, quante tabelle il tuo gioco ha mandato alla gilda e in sussurro (officer), quante ne ha ricevute, tenute, trovate più vecchie di quella che aveva, ignorate perché il mittente non è officer, o rifiutate perché malformate.
 
+Due righe **Ledger size** descrivono il registro della gilda nei tuoi dati salvati: quanti eventi contiene e più o meno quanti kilobyte occupano, quanti eventi sono stati compattati e di quali season, e i quattro tipi di evento che occupano più spazio (vedi [[Backup e season|Backup-and-Seasons-it]]). La riga Sync conta anche gli eventi compattati che un altro officer ha segnalato come tolti.
+
 `/fdcp debug` non stampa mai nomi di giocatori, di gilda o di oggetti, quindi puoi incollarne l'output in una segnalazione di errore. Controlla di nuovo il client a ogni esecuzione.
