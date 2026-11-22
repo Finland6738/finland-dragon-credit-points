@@ -62,6 +62,7 @@ Ledger.TYPES = {
 	LEGENDARY_PROJECT_OPENED = { v = 1 },
 	LEGENDARY_PROJECT_PAID = { v = 1 },
 	LEGENDARY_PROJECT_CLOSED = { v = 1 },
+	BANK_ITEM_SOLD = { v = 1 },               -- the gold of a guild bank item's sale (Domain/GuildBank.lua, M5-7)
 	CONFIG_CHANGED = { v = 1, guild = true },
 	PERMISSIONS_CHANGED = { v = 1, guild = true },
 }

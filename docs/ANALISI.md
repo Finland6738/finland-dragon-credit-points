@@ -368,6 +368,36 @@ Un BoE si rolla come gli altri oggetti (stessa categoria, stesso costo). Se ness
 personaggio "banca" configurato, il log lo segna "Banco dell'Oste", e un officer può aggiungere poi l'oro ricavato
 dalla vendita.
 
+**Come è fatto (M5-7).** I quattro fallback c'erano già: `Domain/Priority.lua` (M2-2) li calcola, `Domain/SessionFSM.lua`
+scrive l'assegnazione e la consegna di M4-7 porta l'oggetto. Lo step aggiunge `Domain/GuildBank.lua` (puro),
+`App/BankService.lua` (la colla con season, regole e registro) e il comando `/fdcp bank`. Scelte fatte dove il testo
+sopra non decideva (tutte reversibili):
+
+- **Le quattro modalità.** `bank` (preset): proposta `BANK` al `priority.bankCharacter` a costo 0, motivo `BOE_BANK`; senza
+  personaggio banca la proposta non ha vincitore e porta il flag `NO_BANK_CHARACTER`, e il master looter sceglie (con
+  `MODIFY`, sempre verso la banca e a costo 0). `offspec`: si apre il turno off-spec come per ogni oggetto, al costo
+  off-spec. `disenchant`: proposta `DISENCHANT` a chi disincanta, a costo 0. `freeroll`: un roll libero fra chi può
+  rollare, al costo `priority.freeRollCost` (preset 0). Un BoE che qualcuno prende main-spec costa come ogni oggetto
+  della sua categoria. Un oggetto che si lega alla raccolta non prende mai il fallback BoE.
+- **"Il log lo segna banca".** La conferma scrive `ITEM_AWARDED{target = "bank", member = il personaggio banca, cost =
+  0}`: il registro e l'annuncio dicono "alla banca di gilda" (le parole sono chiavi di traduzione, `RC_KIND_BANK`). Il
+  calcolo dei crediti conta solo le assegnazioni con `target = "member"`, quindi un oggetto della banca non muove i
+  crediti di nessuno, qualunque costo porti; vale anche per un oggetto mandato in banca dal master looter (`REJECT` poi
+  `BANK`, `MODIFY` verso la banca). Il nome "Banco dell'Oste" resta il nome che la gilda dà alla banca: l'addon non lo
+  scrive nel codice (nessun testo visibile fuori dalle traduzioni) e mostra il personaggio banca configurato.
+- **L'oro della vendita.** Un evento nuovo della season, `BANK_ITEM_SOLD{ref, copper}`: `ref` è l'`ITEM_AWARDED` alla
+  banca, `copper` il prezzo in rame (un intero da 0 al tetto dell'oro del gioco). Passa dal cancello dei permessi con
+  `night.run` (gli officer nel preset, come i progetti leggendari: nessun permesso nuovo). Non muove crediti. Una
+  seconda vendita dello stesso oggetto corregge la prima (conta l'ultima in ordine canonico); un'assegnazione alla banca
+  annullata esce dall'elenco e la sua vendita non conta più; una vendita di un oggetto non della banca o annullato è
+  rifiutata (`NOT_BANK_ITEM`, `BANK_ITEM_VOIDED`, `BAD_GOLD`).
+- **Interfaccia.** Fino alla finestra del council (M5-8) il comando `/fdcp bank`: la modalità in vigore, il personaggio
+  banca, gli oggetti della banca della season con il prezzo e il totale; `sold <n> <prezzo>` registra una vendita (oro
+  `120`, `12.5`, o monete `12g 30s 5c`, anche con le lettere italiane `12o 30a 5r`). Legge la season aperta, o la più
+  recente se nessuna è aperta, perché la vendita arriva spesso dopo.
+- **Da verificare in gioco:** l'output di `/fdcp bank` nella chat; che il client dia `bindType` 2 ai BoE quando si apre il
+  cadavere; il master loot al personaggio banca in un raid vero (la stessa strada di ogni assegnazione, M4-7).
+
 ### 3.9 Permessi per rango di gilda (li decide solo il GM)
 
 Chi può fare cosa è **configurabile per rango di gilda**, e **solo il Guild Master** può cambiare questa
@@ -1282,7 +1312,7 @@ tools/ check_docs.py, build/release
 - **Registro (ledger)**: lista di eventi immutabili `{id, ts, author, season, type, payload}`. Tipi principali:
   `SEASON_OPENED`, `MEMBER_JOINED`, `MEMBER_LINKED_ALT`, `NIGHT_OPENED/CLOSED`, `LINEUP_CHANGED`, `ROSTER_CHANGED`,
   `ENCOUNTER_KILLED`, `DROP_SEEN`, `ITEM_AWARDED{cost, response, reason?}`, `AWARD_VOIDED{ref, reason}`,
-  `CREDITS_ADJUSTED{delta, reason}`, `LEGENDARY_PROJECT_*`, `CONFIG_CHANGED`.
+  `CREDITS_ADJUSTED{delta, reason}`, `LEGENDARY_PROJECT_*`, `BANK_ITEM_SOLD{ref, copper}` (M5-7), `CONFIG_CHANGED`.
   I crediti sono la somma degli eventi della season; uno snapshot periodico evita di ricalcolare tutto.
 - **Come è fatto (M2-3).** `Domain/Ledger.lua`, Lua puro. Ogni evento è `{id, author, seq, ts, season, type, v, payload}`:
   `id` = `autore:seq`, con `seq` = 1, 2, 3… per autore, quindi due officer non collidono mai e unire due registri è

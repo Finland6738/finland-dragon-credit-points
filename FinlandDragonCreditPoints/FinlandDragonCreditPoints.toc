@@ -44,6 +44,7 @@ Domain\Wishlist.lua
 Domain\Flags.lua
 Domain\Council.lua
 Domain\Legendary.lua
+Domain\GuildBank.lua
 Data\StatWeights.lua
 Domain\Progress.lua
 Domain\Notice.lua
@@ -73,6 +74,7 @@ App\SessionController.lua
 App\SessionBoard.lua
 App\CouncilService.lua
 App\LegendaryService.lua
+App\BankService.lua
 App\PopupBoard.lua
 UI\Assets.lua
 UI\Theme.lua

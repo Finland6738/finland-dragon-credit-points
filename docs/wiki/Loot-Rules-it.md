@@ -46,7 +46,18 @@ Gli oggetti sotto la soglia di loot del gruppo (di norma i verdi) non sono tracc
 
 ## Oggetti BoE
 
-Un BoE si rolla come gli altri. Se **nessuno risponde main-spec**, va alla **banca di gilda** (un personaggio scelto nelle regole), non al tier off-spec. Le regole possono mandarlo invece a off-spec, disenchant o free roll.
+Un BoE si rolla come gli altri: stessa categoria, stesso costo. Chi lo prende **main-spec** paga i suoi crediti come per ogni altro oggetto. Se **nessuno risponde main-spec** (o chi ha risposto main-spec non rolla), decide il *fallback BoE* delle regole:
+
+| Fallback | Cosa succede |
+|---|---|
+| **bank** (preset) | Va alla **banca di gilda**: lo riceve il personaggio banca scelto nelle regole, **senza costo**. Il registro lo segna *alla banca di gilda*. |
+| **offspec** | Lo rolla il tier off-spec, come ogni oggetto, al costo off-spec. |
+| **disenchant** | Lo riceve chi disincanta, scelto nelle regole, senza costo. |
+| **freeroll** | Un roll libero fra chi è nel raid; chi vince paga il costo del roll libero delle regole (0 nel preset). |
+
+Un oggetto per la banca **non costa mai crediti a nessuno**, anche quando il master looter manda in banca una proposta o dà l'oggetto della banca a un raider perché lo tenga. Se le regole non indicano un personaggio banca, la proposta non ha vincitore e il master looter sceglie chi lo riceve. Un oggetto che si lega alla raccolta non prende mai questo fallback.
+
+**L'oro della vendita.** Quando la banca vende l'oggetto, un officer registra il prezzo con `/fdcp bank sold <n> <prezzo>` (oro come `120` o `12.5`, o monete come `12o 30a 5r`): la vendita va nel registro e i crediti di nessuno cambiano. Registrarla di nuovo corregge il prezzo; se l'assegnazione alla banca viene annullata, la sua vendita non conta più. `/fdcp bank` mostra il fallback in vigore, il personaggio banca, gli oggetti della banca della season con il prezzo e il totale (vedi [[Comandi|Commands-it]]).
 
 ## Leggendari
 
@@ -347,6 +358,9 @@ L'addon legge i ranghi dal roster della gilda, per posizione e mai per nome. Dop
 | `BAD_ITEM` | L'oggetto finale non è un oggetto valido. |
 | `BAD_PIECES` | Elenca i pezzi della catena: da 1 a 40 oggetti diversi. |
 | `BAD_OUTCOME` | Un progetto finisce completato o abbandonato. |
+| `NOT_BANK_ITEM` | Quell'oggetto non è andato alla banca di gilda. |
+| `BANK_ITEM_VOIDED` | Quell'assegnazione alla banca di gilda è stata annullata. |
+| `BAD_GOLD` | Il prezzo deve essere una somma in oro, 0 o più. |
 
 ### Stato di un membro del pool
 
@@ -449,6 +463,7 @@ Come un oggetto si confronta con quello che un giocatore indossa (vedi [[Rollare
 | `LEGENDARY_PROJECT_OPENED` | Progetto leggendario aperto |
 | `LEGENDARY_PROJECT_PAID` | Pezzo leggendario pagato |
 | `LEGENDARY_PROJECT_CLOSED` | Progetto leggendario chiuso |
+| `BANK_ITEM_SOLD` | Oggetto della banca di gilda venduto |
 | `CONFIG_CHANGED` | Regole cambiate |
 | `PERMISSIONS_CHANGED` | Permessi cambiati |
 

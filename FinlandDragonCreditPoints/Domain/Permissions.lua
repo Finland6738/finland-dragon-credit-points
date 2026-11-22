@@ -79,6 +79,7 @@ Permissions.EVENT_PERMISSION = {
 	LEGENDARY_PROJECT_OPENED = "night.run",
 	LEGENDARY_PROJECT_PAID = "night.run",
 	LEGENDARY_PROJECT_CLOSED = "night.run",
+	BANK_ITEM_SOLD = "night.run",   -- the officers record the gold of a bank item's sale (M5-7)
 	AWARD_VOIDED = "credits.adjust",
 	CREDITS_ADJUSTED = "credits.adjust",
 	CONFIG_CHANGED = "config.rules",

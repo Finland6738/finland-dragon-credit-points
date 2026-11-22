@@ -46,7 +46,18 @@ Items below the group's loot threshold (green, normally) are not tracked and do 
 
 ## Bind-on-equip items
 
-A BoE is rolled like any item. If **nobody answers main-spec**, it goes to the **guild bank** (a character chosen in the rules), not to the off-spec tier. The rules can send it to off-spec, disenchant or a free roll instead.
+A BoE is rolled like any item: same category, same cost. Whoever takes it as **main-spec** pays its credits like for any other item. If **nobody answers main-spec** (or the main-spec players do not roll), the rules' *BoE fallback* decides:
+
+| Fallback | What happens |
+|---|---|
+| **bank** (preset) | It goes to the **guild bank**: the bank character chosen in the rules receives it, **at no cost**. The log marks it *to the guild bank*. |
+| **offspec** | The off-spec tier rolls for it, as for any item, at the off-spec cost. |
+| **disenchant** | The disenchanter chosen in the rules receives it, at no cost. |
+| **freeroll** | A free roll among the raid; the winner pays the rules' free roll cost (0 in the preset). |
+
+An item for the bank **never costs credits to anybody**, also when the master looter sends a proposal to the bank or gives the bank's item to a raider to hold. If the rules name no bank character, the proposal has no winner and the master looter chooses who receives it. An item that binds on pickup never takes this fallback.
+
+**The gold of the sale.** When the bank sells the item, an officer records the price with `/fdcp bank sold <n> <price>` (gold like `120` or `12.5`, or coins like `12g 30s 5c`): the sale goes in the log and nobody's credits change. Recording it again corrects the price; if the award to the bank is cancelled, its sale no longer counts. `/fdcp bank` shows the fallback in force, the bank character, the season's bank items with their price and the total (see [[Commands|Commands]]).
 
 ## Legendaries
 
@@ -347,6 +358,9 @@ The addon reads ranks from the guild roster, by their position, never by their n
 | `BAD_ITEM` | The final item is not a valid item. |
 | `BAD_PIECES` | List the chain pieces: from 1 to 40 different items. |
 | `BAD_OUTCOME` | A project ends completed or abandoned. |
+| `NOT_BANK_ITEM` | That item did not go to the guild bank. |
+| `BANK_ITEM_VOIDED` | That award to the guild bank was cancelled. |
+| `BAD_GOLD` | The price must be an amount of gold, 0 or more. |
 
 ### Status of a member of the pool
 
@@ -449,6 +463,7 @@ How an item compares with what a player wears (see [[Rolling for Loot|Rolling-fo
 | `LEGENDARY_PROJECT_OPENED` | Legendary project opened |
 | `LEGENDARY_PROJECT_PAID` | Legendary piece paid |
 | `LEGENDARY_PROJECT_CLOSED` | Legendary project closed |
+| `BANK_ITEM_SOLD` | Guild bank item sold |
 | `CONFIG_CHANGED` | Rules changed |
 | `PERMISSIONS_CHANGED` | Permissions changed |
 

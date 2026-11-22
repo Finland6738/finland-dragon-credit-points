@@ -89,10 +89,11 @@ Open question 8 ([#2](https://github.com/Finland6738/finland-dragon-credit-point
 - Analysis: §3.8
 - Scope: BoE rolled like any item; without main-spec answers `boe.fallback` = `bank` (preset) | `offspec` | `disenchant` | `freeroll`; with `bank` the item is awarded to the configured bank character and logged as the guild bank, an officer can add the gold from its sale later.
 - Done when:
-  - [ ] Every fallback mode is tested; bank awards never charge credits.
+  - [x] Every fallback mode is tested; bank awards never charge credits.
 - Tests: `Tests/test_boe.lua`.
-- Docs: Loot Rules (EN + IT), CHANGELOG.
-- Real client: nothing.
+- Docs: Loot Rules (EN + IT), Commands (EN + IT), CHANGELOG.
+- Note: the fallbacks themselves were already in `Domain/Priority.lua` (M2-2) and the bank / disenchant awards in `Domain/SessionFSM.lua` (M2-6, M4-4) and the delivery (M4-7); this step adds `Domain/GuildBank.lua` (pure: the bank items of a season folded from `ITEM_AWARDED` with target `bank`, and `BANK_ITEM_SOLD{ref, copper}`, the gold of a sale, through the `night.run` gate; the last sale of an item counts, a voided award leaves the list), `App/BankService.lua` with `/fdcp bank` (the fallback in force, the bank character, the items and `sold <n> <price>`) and `Tests/test_boe.lua` (every fallback mode in the session, the costs, the sales, the gate, and the whole path on the mock client up to master loot to the bank character).
+- Real client: nothing (the `/fdcp bank` output is for the owner's M5 checklist).
 - Suggested model/effort: `opus` / medium
 
 ### M5-8 — Council window and the M5 checklist
