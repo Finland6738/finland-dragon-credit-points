@@ -125,8 +125,9 @@ Open question 10 ([#3](https://github.com/Finland6738/finland-dragon-credit-poin
 - Analysis: §12 (M6 exit)
 - Scope: `docs/checklists/M6.md` (history views, Discord export, the three site files merged by `tools/site_export.py` and shown by the site, two officers syncing, members reading credits, backup).
 - Done when:
-  - [ ] The checklist exists and is linked from the README.
+  - [x] The checklist exists and is linked from the README.
   - [ ] The owner confirms M6 in game. *(in game)*
 - Docs: checklist, README (EN + IT), CHANGELOG.
+- Checklist: [`docs/checklists/M6.md`](../checklists/M6.md) (English, each item also in Italian; the open items of every M6 step, collected from the CHANGELOG).
 - Real client: the whole checklist.
 - Suggested model/effort: `sonnet` / low

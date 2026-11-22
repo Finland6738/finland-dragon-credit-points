@@ -32,7 +32,7 @@
 
 - Un passo della roadmap per sessione e per pull request, pubblicato da `tools/ship_step.py` quando i controlli sono verdi ([ADR 0001](docs/adr/0001-git-flow-and-automated-shipping.md)); vedi [CLAUDE.md](CLAUDE.md) e [ROADMAP.md](ROADMAP.md).
 - Controlli: `python -I -X utf8 tools/check_docs.py`.
-- La checklist di verifica in gioco di ogni milestone sta in [docs/checklists/](docs/checklists/): [M1](docs/checklists/M1.md), [M3](docs/checklists/M3.md) e [M4](docs/checklists/M4.md) per ora (ognuna con le voci aperte di ogni passo della sua milestone; quella di M4 è un boss intero, piano A e piano B).
+- La checklist di verifica in gioco di ogni milestone sta in [docs/checklists/](docs/checklists/): [M1](docs/checklists/M1.md), [M3](docs/checklists/M3.md), [M4](docs/checklists/M4.md), [M5](docs/checklists/M5.md) e [M6](docs/checklists/M6.md) per ora (ognuna con le voci aperte di ogni passo della sua milestone; quella di M4 è un boss intero, piano A e piano B).
 - Il manuale utente è in [docs/wiki/](docs/wiki/Home-it.md) in italiano e inglese e va sulla wiki di GitHub in automatico ([ADR 0002](docs/adr/0002-github-wiki-generated-from-docs-wiki.md)).
 - Le fondamenta si copiano e si adattano dal progetto gemello Azeroth Accord (stesso autore, GPL-3.0); in gioco i due addon restano indipendenti.
 
