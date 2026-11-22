@@ -217,6 +217,7 @@ def main(argv):
         b"mockFiles": lua.table_from([lua.table_from({b"path": b(f["path"]), b"name": b(f["name"])}) for f in mock_files]),
         b"testFiles": lua.table_from([lua.table_from({b"path": b(f["path"]), b"name": b(f["name"])}) for f in test_files]),
         b"events": lua.table_from({b(e): True for e in events}) if events else None,
+        b"goldenDir": b(os.path.join(HERE, "golden").replace(os.sep, "/")),
         b"filter": b(flt),
         b"verbose": verbose,
         b"readfile": read_file,

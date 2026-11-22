@@ -2,7 +2,7 @@
 
 > **Built, not yet seen in the game.** The History tab works in the offline tests with a simulated client; how it looks in the real game is still to be confirmed. [Italiano](History-it)
 
-The **History** tab tells what happened in the guild's raid nights. Like the credits, everything is worked out from the ledger every time: nothing is stored apart, so every client with the same events shows the same history. The tab has four sub-tabs: **Nights**, **Log**, **Audit** and **Export**. **Nights**, **Log** and **Audit** are ready; **Export** says it arrives in a later version.
+The **History** tab tells what happened in the guild's raid nights. Like the credits, everything is worked out from the ledger every time: nothing is stored apart, so every client with the same events shows the same history. The tab has four sub-tabs: **Nights**, **Log**, **Audit** and **Export**. All four are ready; **Export** is described in its own page, [[Export|Export]].
 
 ## Nights
 
@@ -47,6 +47,10 @@ What the council and the Guild Master did **outside the normal rules**, each ent
 - every change of the guild's **settings** (who, when, how many settings and which ones, and the preset it started from) and of the permissions.
 
 Filter by **Council**, **Cancelled**, **Credits** or **Settings**, or search the words of a line. Like the credits, the audit is open to every member.
+
+## Export
+
+The **Export** sub-tab gives the credits table of the season shown as text to paste into Discord, or as CSV or JSON. Officers only (`export.public`); it never carries the attendance. See [[Export|Export]].
 
 ## A member's history
 

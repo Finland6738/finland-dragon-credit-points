@@ -14,6 +14,7 @@
 | Know the commands | [[Commands|Commands]] |
 | Know how credits, costs, rolls and ties work | [[Loot Rules|Loot-Rules]] |
 | See what the window will look like | [[Interface Tour|Interface-Tour]] |
+| Paste the credits table into Discord, or get it as CSV or JSON | [[Export|Export]] |
 | Update the community site from the addon | [[Site Export|Site-Export]] |
 | See who in the raid lacks the addon and notify them | [[Addon Check|Addon-Check]] |
 | Manage the pool and run a raid night | [[Roster and Nights|Roster-and-Nights]] |

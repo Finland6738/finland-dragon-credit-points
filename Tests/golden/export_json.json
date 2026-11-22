@@ -1,0 +1,13 @@
+{
+  "season": "S1",
+  "label": "Season 1",
+  "updated": "2026-10-21",
+  "nights": ["2026-10-14", "2026-10-21"],
+  "credits": [
+    {"rank": 1, "member": "Édda", "class": "PRIEST", "role": "DAMAGER", "total": 0, "perNight": [0, 0]},
+    {"rank": 2, "member": "Aurel", "class": "WARRIOR", "role": "TANK", "total": 1, "perNight": [0, 1]},
+    {"rank": 3, "member": "Bryn", "class": "PALADIN", "role": "HEALER", "total": 1, "perNight": [1, 0]},
+    {"rank": 4, "member": "Dara", "class": "MAGE", "role": "DAMAGER", "total": 1.5, "perNight": [0, 0]},
+    {"rank": 5, "member": "Corin", "class": "DRUID", "role": "HEALER", "total": 3, "perNight": [3, 0]}
+  ]
+}

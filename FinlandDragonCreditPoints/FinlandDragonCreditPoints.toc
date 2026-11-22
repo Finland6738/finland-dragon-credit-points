@@ -44,6 +44,7 @@ Domain\Wishlist.lua
 Domain\Flags.lua
 Domain\Council.lua
 Domain\History.lua
+Domain\Export.lua
 Domain\Legendary.lua
 Domain\GuildBank.lua
 Data\StatWeights.lua
@@ -95,6 +96,7 @@ UI\Windows\Member.lua
 UI\Windows\Item.lua
 UI\Windows\Log.lua
 UI\Windows\Audit.lua
+UI\Windows\Export.lua
 UI\Windows\History.lua
 UI\Windows\Season.lua
 UI\MainWindow.lua

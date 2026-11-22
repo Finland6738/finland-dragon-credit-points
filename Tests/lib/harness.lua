@@ -219,6 +219,15 @@ if cfg.simPath then
 	rawset(testEnv, "Sim", loadChunk(cfg.simPath, "Tests/sim/sim.lua", simEnv)(H, T))
 end
 
+-- Golden files: Golden("export_json.json") is the content of Tests/golden/<name> (line endings as LF), for the tests that
+-- compare an exact text. The runner gives the folder; the sandbox has no io library.
+if cfg.goldenDir then
+	rawset(testEnv, "Golden", function(name)
+		local text = cfg.readfile(cfg.goldenDir .. "/" .. name)
+		return (text:gsub("\r\n", "\n"))
+	end)
+end
+
 local currentSetups = {}
 T.log = function(...)
 	local parts = { ... }

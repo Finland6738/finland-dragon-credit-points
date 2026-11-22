@@ -54,7 +54,9 @@ Open question 10 ([#3](https://github.com/Finland6738/finland-dragon-credit-poin
 - Analysis: §7 (export), §8.5 (numbers, dates, guild language)
 - Scope: `Domain/Export.lua` (credits table as Markdown ready for Discord, CSV, JSON; attendance never in public exports), a copy window with the text already selected; numbers and dates in the guild language; `export.public` permission; the copy window is the **History › Export** sub-tab, look per `ui-style.md` (preview `fdcp-site-export.webp`).
 - Done when:
-  - [ ] Exports are deterministic and match golden files in tests.
+  - [x] Exports are deterministic and match golden files in tests.
+  - [ ] In game: the copy box selects the text and Ctrl+C copies it. *(in game)*
+- Note: built as `Domain/Export.lua` (pure: `Data`, `Discord`, `Csv`, `Json`, `Build`, `Number`, `Date`) and `UI/Windows/Export.lua` (the History › Export pane). The data is the Credits tab's table of the guild's faction (rank, name without realm, class, role, total, credits spent per night), so the attendance cannot reach an export. Discord is a monospaced table in a code block, split in parts under 1900 characters; CSV uses `;` and the decimal comma when the guild language does; JSON is the language-independent machine form. The golden files are `Tests/golden/` (read through the test global `Golden`) ([`docs/ANALISI.md`](../ANALISI.md) §7, "Come è fatto (M6-3)").
 - Tests: `Tests/test_export.lua`.
 - Docs: wiki **Export** (EN + IT), CHANGELOG.
 - Real client: copying from the window.

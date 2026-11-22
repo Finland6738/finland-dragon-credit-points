@@ -2,7 +2,7 @@
 
 > **Costruito, non ancora visto in gioco.** La scheda Storico funziona nei test offline con un client simulato; come appare nel gioco vero è ancora da confermare. [English](History)
 
-La scheda **Storico** racconta cosa è successo nelle serate di raid della gilda. Come i crediti, tutto viene calcolato dal registro ogni volta: non si memorizza niente a parte, quindi ogni client con gli stessi eventi mostra lo stesso storico. La scheda ha quattro sotto-schede: **Serate**, **Registro**, **Audit** ed **Esporta**. Sono pronte **Serate**, **Registro** e **Audit**; **Esporta** dice che arriva con una versione successiva.
+La scheda **Storico** racconta cosa è successo nelle serate di raid della gilda. Come i crediti, tutto viene calcolato dal registro ogni volta: non si memorizza niente a parte, quindi ogni client con gli stessi eventi mostra lo stesso storico. La scheda ha quattro sotto-schede: **Serate**, **Registro**, **Audit** ed **Esporta**. Sono pronte tutte e quattro; **Esporta** ha la sua pagina, [[Esporta|Export-it]].
 
 ## Serate
 
@@ -47,6 +47,10 @@ Cosa hanno fatto il council e il Guild Master **fuori dalle regole normali**, og
 - ogni cambio delle **impostazioni** della gilda (chi, quando, quante impostazioni e quali, e il preset di partenza) e dei permessi.
 
 Filtra per **Consiglio**, **Annullamenti**, **Crediti** o **Impostazioni**, oppure cerca le parole di una riga. Come i crediti, l'audit è aperto a tutti i membri.
+
+## Esporta
+
+La sotto-scheda **Esporta** dà la tabella crediti della season mostrata come testo da incollare su Discord, o come CSV o JSON. Solo per gli officer (`export.public`); non porta mai le presenze. Vedi [[Esporta|Export-it]].
 
 ## Lo storico di un membro
 
