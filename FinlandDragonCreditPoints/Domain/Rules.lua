@@ -16,10 +16,12 @@
 --   site      Domain/Progress.lua { factionName }: the guild's key on the community site   §7.1 (M3-3b)
 --   notice    Domain/Notice.lua { text, outdatedText, link, whisper, minutes }: the /raid notice (no addon)  §4.1 (M3-6)
 --   announce  Domain/Announce.lua { enabled, itemText, resultText, reason }: category, cost and result in /raid  §4 (M4-8)
---   upgrade   Domain/UpgradeScore.lua { enabled, autoPass, useStats, bigThreshold, smallThreshold, ilvlBigThreshold }: the upgrade verdict of the popup  §5.1 (M5-2)
---   responses Domain/Labels.lua { labelMode }: who picks the optional label of a main-spec response  §5.1 (M7-2b)
+--   upgrade   Domain/UpgradeScore.lua { enabled, autoPass }: the upgrade badge of the popup  §5.1 (M5-2, M7-5c)
 --   penalties Domain/Absence.lua { absence, autoApply }: the credits added for a missed official night and whether
 --             they are written at the close without the officer's confirmation  §3.5, §6 (M7-5b)
+-- Retired (M7-5c, owner decision of 2026-11-22): the section `responses` (the label mode of M7-2b) and the stat-weight
+-- thresholds of `upgrade` (useStats, bigThreshold, smallThreshold, ilvlBigThreshold). Rules written before carry them:
+-- Rules.WithDefaults drops them on read, so an old CONFIG_CHANGED is still valid and the ledger is never rewritten.
 -- Rules.DefaultConfig() is the "Patto" preset (§3.1); Domain/Presets.lua builds the others from it.
 --
 -- The rules live in the ledger, never apart: CONFIG_CHANGED{rules, preset?, confirmed?} carries the whole validated
@@ -37,7 +39,9 @@ local type, pairs, ipairs, tostring, floor, sort = type, pairs, ipairs, tostring
 
 local function Ledger() return ns.Ledger end
 
-Rules.SECTIONS = { "night", "members", "season", "cost", "priority", "session", "council", "legendary", "bench", "site", "notice", "announce", "upgrade", "responses", "penalties" }
+Rules.SECTIONS = { "night", "members", "season", "cost", "priority", "session", "council", "legendary", "bench", "site", "notice", "announce", "upgrade", "penalties" }
+-- What Rules.WithDefaults drops from rules written by an older addon: a whole section (true) or some keys of a section.
+Rules.RETIRED = { responses = true }
 Rules.AWARD_MODES = { confirm = true, auto = true, council = true }
 Rules.LEGENDARY_MODES = { council = true, vote = true, roll = true, queue = true }
 Rules.BENCH_EFFECTS = { none = true, bonus = true, malus = true }
@@ -81,16 +85,25 @@ function Rules.DefaultConfig()
 		notice = ns.Notice.DefaultConfig(),
 		announce = ns.Announce.DefaultConfig(),
 		upgrade = ns.UpgradeScore.DefaultRules(),
-		responses = ns.Labels.DefaultConfig(),
 		penalties = ns.Absence.DefaultConfig(),
 	}
 end
 
+Rules.RETIRED.upgrade = ns.UpgradeScore.RETIRED_RULES
+
 -- Fills what is missing from the defaults, two levels deep: a missing section, a missing key of a section; it never
 -- goes inside a key that is present (a matrix row or a response list the guild wrote stays as written). For rules
--- written by an older version of the addon, which lack a newer section or key. Returns a new table.
+-- written by an older version of the addon, which lack a newer section or key; what was retired (Rules.RETIRED) is dropped.
+-- Returns a new table.
 function Rules.WithDefaults(config)
 	local out = copy(type(config) == "table" and config or {})
+	for name, what in pairs(Rules.RETIRED) do
+		if what == true then
+			out[name] = nil
+		elseif type(out[name]) == "table" then
+			for k in pairs(what) do out[name][k] = nil end
+		end
+	end
 	for name, section in pairs(Rules.DefaultConfig()) do
 		if type(out[name]) ~= "table" then
 			out[name] = section
@@ -177,7 +190,6 @@ function Rules.Validate(config)
 	if type(c.notice) == "table" then sub(problems, "notice", ns.Notice.ValidateConfig(c.notice)) end
 	if type(c.announce) == "table" then sub(problems, "announce", ns.Announce.ValidateConfig(c.announce)) end
 	if type(c.upgrade) == "table" then sub(problems, "upgrade", ns.UpgradeScore.ValidateRules(c.upgrade)) end
-	if type(c.responses) == "table" then sub(problems, "responses", ns.Labels.ValidateConfig(c.responses)) end
 	if type(c.penalties) == "table" then sub(problems, "penalties", ns.Absence.Validate(c.penalties)) end
 	sort(problems)
 	return #problems == 0, problems

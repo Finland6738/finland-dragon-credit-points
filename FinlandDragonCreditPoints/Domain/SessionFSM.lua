@@ -53,7 +53,6 @@ local type, pairs, ipairs, tostring, next = type, pairs, ipairs, tostring, next
 local floor, sort, huge = math.floor, table.sort, math.huge
 
 FSM.SCHEMA = 1
-FSM.MAX_NOTE = 80   -- bytes of a response's note (the protocol's limit too)
 
 FSM.STATES = { "WAITING", "COLLECTING", "ANNOUNCING", "ROLLING", "COMPUTING", "PROPOSAL", "ENDED" }
 FSM.ITEM_STATES = { "PENDING", "ROLLING", "COMPUTING", "PROPOSAL", "ASSIGNED", "DELIVERED" }
@@ -119,17 +118,8 @@ local function Ledger() return ns.Ledger end
 
 local function sessionRules(s) return s.rules.session end
 local function priorityRules(s) return s.rules.priority end
--- The rules' `upgrade` and `council` sections, frozen on the session from M5-4 (a session saved before has none: the
--- presets then).
-local function upgradeRules(s) return type(s.rules.upgrade) == "table" and s.rules.upgrade or Rules().DefaultConfig().upgrade end
+-- The rules' `council` section, frozen on the session from M5-4 (a session saved before has none: the presets then).
 local function councilRules(s) return type(s.rules.council) == "table" and s.rules.council or Rules().DefaultConfig().council end
--- The rules' `responses` section (M7-2b: who picks the label of a response), frozen on the session; the presets for a session
--- saved before.
-local function responsesRules(s)
-	local own = type(s.rules) == "table" and s.rules.responses
-	return type(own) == "table" and own or Rules().DefaultConfig().responses
-end
-
 -- The rules' `legendary` section (M5-6), frozen on the session; the presets for a session saved before.
 local function legendaryRules(s)
 	return type(s.rules.legendary) == "table" and s.rules.legendary or Rules().DefaultConfig().legendary
@@ -334,7 +324,7 @@ local function openItem(s, index, now, env, effects)
 	item.credits = copy(type(credits) == "table" and credits or {})
 	item.nights = copy(type(env.nights) == "table" and env.nights or nil)
 	item.responses, item.rounds, item.proposal, item.rule = {}, {}, nil, nil
-	item.labels, item.notes, item.verdicts, item.equipped, item.labelOrigins = nil, nil, nil, nil, nil
+	item.verdicts, item.equipped = nil, nil
 	item.discarded, item.history, item.dropped, item.votes, item.voteClosed = nil, nil, nil, nil, nil
 	item.intervention, item.autoAt, item.autoRemaining, item.flagged, item.autoHeld = nil, nil, nil, nil, nil
 	s.active = index
@@ -413,7 +403,7 @@ function FSM.Flags(s, index)
 	local decided = type(item.rule) == "table"
 	return ns.Flags.Evaluate({ responses = item.responses, verdicts = item.verdicts, main = main, players = players,
 		credits = item.credits, rolls = rolls, head = decided and item.rule.winner or nil, decided = decided },
-		upgradeRules(s), councilRules(s))
+		nil, councilRules(s))
 end
 
 local function hasBlockingFlag(flags)
@@ -821,15 +811,12 @@ function H.OPEN_ROLL(s, input, env, effects)
 	return true
 end
 
--- RESPONSE{player, response, label?, note?}: a raider's answer (MS, OS, ..., PASS), during the first round of the item
--- only, with the optional label (a code: BIS, BIG_UPGRADE ...; informative, never read by the rules, §3.3) and note
--- (at most FSM.MAX_NOTE bytes). The latest answer replaces the earlier one, label and note included; it cannot change
--- after the player rolled in that round. A label or a note that is not valid is dropped, the response still counts; a
--- pass carries neither. `verdict` ({ m, o? }: the upgrade verdicts of main-spec and off-spec, UpgradeScore.Pack) and
--- `equipped` (a list of "item:..." strings) are what the raider's client says about the piece (§5.1, M5-2): kept as given
--- for the master looter's table, a pass keeps them too (the "upgrade ignored" flag of M5-4 needs them), the rules never
--- read them. `labelOrigin` (AUTO, CHANGED or MANUAL: Domain/Labels.lua, M7-2b) says who chose the label; it is kept with a
--- label and dropped without one or when it is not one of the three (an older client sends none: the origin is unknown).
+-- RESPONSE{player, response}: a raider's answer (MS, OS, PASS), during the first round of the item only. The latest answer
+-- replaces the earlier one; it cannot change after the player rolled in that round. `verdict` ({ m, o? }: the upgrade
+-- badges of main-spec and off-spec, UpgradeScore.Pack) and `equipped` (a list of "item:..." strings) are what the raider's
+-- client says about the piece (§5.1, M5-2, M7-5c): kept as given for the master looter's table, a pass keeps them too (the
+-- "upgrade ignored" flag of M5-4 needs them), the rules never read them. The label and the note of the responses before
+-- M7-5c are gone: an input that still carries them has them ignored.
 function H.RESPONSE(s, input)
 	local item = current(s)
 	if s.state ~= "ROLLING" or not item.round.collect then return nil, "RESPONSES_CLOSED" end
@@ -844,13 +831,6 @@ function H.RESPONSE(s, input)
 		end
 	end
 	item.responses[input.player] = response
-	local label, note = input.label, input.note
-	if response == "PASS" or type(label) ~= "string" or #label > 32 or not label:find("^[A-Z][A-Z0-9_]*$") then label = nil end
-	if response == "PASS" or type(note) ~= "string" or note == "" or #note > FSM.MAX_NOTE then note = nil end
-	item.labels, item.notes = item.labels or {}, item.notes or {}
-	item.labels[input.player], item.notes[input.player] = label, note
-	item.labelOrigins = item.labelOrigins or {}
-	item.labelOrigins[input.player] = label and ns.Labels and ns.Labels.Origin(input.labelOrigin) or nil
 	local verdict, equipped = input.verdict, input.equipped
 	if type(verdict) ~= "table" or type(verdict.m) ~= "table" then verdict = nil end
 	if type(equipped) ~= "table" or #equipped == 0 then equipped = nil end
@@ -914,7 +894,7 @@ function H.REJECT(s, input, env, effects)
 	if thenWhat == "PENDING" or thenWhat == "REOPEN" then
 		item.state, item.proposal, item.rule, item.round, item.next = "PENDING", nil, nil, nil, nil
 		item.responses, item.rounds = {}, {}
-		item.labels, item.notes, item.verdicts, item.equipped, item.flagged, item.labelOrigins = nil, nil, nil, nil, nil, nil
+		item.verdicts, item.equipped, item.flagged = nil, nil, nil
 		item.skipTiers = nil
 		item.hold = true
 		s.active, s.state = nil, "ANNOUNCING"
@@ -1121,8 +1101,9 @@ FSM.INPUTS = sortedKeys(H)
 -- The public functions
 
 -- A new session, in WAITING (after ENCOUNTER_END). params = { id, season, ml, ts, encounter?, rules?, priceCtx?,
--- present?, addon? }: `rules` is the whole configuration in force (Domain/Rules.lua; the defaults when nil), frozen on
--- the session; `priceCtx` = { raidSize, difficulty, lootThreshold } for Pricing. Returns the session, or nil and a
+-- present?, addon?, band? }: `rules` is the whole configuration in force (Domain/Rules.lua; the defaults when nil), frozen on
+-- the session; `priceCtx` = { raidSize, difficulty, lootThreshold } for Pricing; `band` = the season's item-level band
+-- { min, max } (M7-5c), frozen too and sent to the raid for the upgrade badge (nil: the season has none). Returns the session, or nil and a
 -- code ("id", "season", "ml", "ts", "RULES:<code>").
 function FSM.New(params)
 	if type(params) ~= "table" then return nil, "params" end
@@ -1140,8 +1121,8 @@ function FSM.New(params)
 		id = params.id, season = params.season, ml = params.ml, createdAt = params.ts,
 		encounter = isInt(params.encounter) and params.encounter or nil,
 		rules = { session = copy(rules.session), priority = copy(rules.priority), cost = copy(rules.cost),
-			upgrade = copy(rules.upgrade), council = copy(rules.council), legendary = copy(rules.legendary),
-			responses = copy(rules.responses) },
+			upgrade = copy(rules.upgrade), council = copy(rules.council), legendary = copy(rules.legendary) },
+		band = ns.UpgradeScore and ns.UpgradeScore.Band(params.band) or nil,
 		priceCtx = copy(type(params.priceCtx) == "table" and params.priceCtx or {}),
 		raid = { present = copy(params.present), addon = copy(params.addon) },
 		state = "WAITING", paused = false, lockdown = false,
@@ -1179,12 +1160,6 @@ function FSM.Step(s, input, env)
 	end
 	settle(s, input.ts, env, effects)
 	return true, nil, effects
-end
-
--- Who picks the label of a response in this session (Domain/Labels.lua MODES, frozen from the rules when it opened).
-function FSM.LabelMode(s)
-	local mode = responsesRules(s).labelMode
-	return ns.Labels and ns.Labels.Mode(mode) or "manual"
 end
 
 -- The rolls-only-from-the-button rule of this session (M7-2d): on (true or false) and the window in seconds. A session

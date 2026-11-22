@@ -40,8 +40,6 @@ Domain\Rotation.lua
 Data\Instances.lua
 Data\Specs.lua
 Domain\UpgradeScore.lua
-Domain\WeightImport.lua
-Domain\Wishlist.lua
 Domain\Flags.lua
 Domain\Council.lua
 Domain\Absence.lua
@@ -50,11 +48,9 @@ Domain\Export.lua
 Domain\SiteExport.lua
 Domain\Legendary.lua
 Domain\GuildBank.lua
-Data\StatWeights.lua
 Domain\Progress.lua
 Domain\Notice.lua
 Domain\Announce.lua
-Domain\Labels.lua
 Domain\Rules.lua
 Domain\Presets.lua
 Domain\Profiles.lua
@@ -67,6 +63,7 @@ Adapters\Group.lua
 Adapters\Calendar.lua
 Adapters\ItemCache.lua
 Adapters\Inventory.lua
+Adapters\GearSnapshot.lua
 Adapters\LootSource.lua
 Adapters\RollListener.lua
 Adapters\MasterLoot.lua
@@ -84,7 +81,6 @@ App\AddonCheck.lua
 App\Diagnostics.lua
 App\AddonNotice.lua
 App\Announcer.lua
-App\PersonalUpgrade.lua
 App\UpgradeAdvisor.lua
 App\SessionController.lua
 App\SessionBoard.lua

@@ -22,7 +22,7 @@
 | Read the credits table and your place in the queue | [[Credits Table|Credits]] |
 | Run a loot session as the master looter | [[Master Looter Guide|Master-Looter-Guide]] |
 | Answer and roll for an item as a raider | [[Rolling for Loot|Rolling-for-Loot]] |
-| Set my own stat weights or a best-in-slot list | [[Upgrade Hints|Upgrade-Hints]] |
+| Understand the upgrade badge of the popup | [[Upgrade Hints|Upgrade-Hints]] |
 | Vote, cancel an award, correct credits or run a legendary project as the council | [[Council|Council]] |
 | Read the nights, a member's history or an item's history | [[History|History]] |
 | Change my preferences, or (Guild Master) the rules and the permissions | [[Settings|Settings]] |

@@ -66,6 +66,7 @@ end
 Permissions.EVENT_PERMISSION = {
 	SEASON_OPENED = "season.manage",
 	SEASON_CLOSED = "season.manage",
+	SEASON_BAND_SET = "season.manage",
 	MEMBER_JOINED = "roster.manage",
 	MEMBER_LINKED_ALT = "roster.manage",
 	ROSTER_CHANGED = "roster.manage",

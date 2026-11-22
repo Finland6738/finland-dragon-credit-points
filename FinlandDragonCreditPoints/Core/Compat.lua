@@ -928,6 +928,17 @@ function Item.StatDelta(link1, link2)
 	return out
 end
 
+-- The quality of an item or link (Enum.ItemQuality: 2 green, 3 blue, 4 purple...), C_Item.GetItemQualityByID first (M7-5c),
+-- the quality of C_Item.GetItemInfo as the fallback; nil when the client has not loaded the item.
+function Item.Quality(item)
+	if item == nil then return nil end
+	local v = all("C_Item.GetItemQualityByID", item)
+	local q = v and num(v[1])
+	if q then return q end
+	local info = Item.Info(item)
+	return info and info.quality or nil
+end
+
 -- true / false when the client says the item can be equipped, nil when it does not.
 function Item.IsEquippable(item)
 	if item == nil then return nil end
@@ -1207,6 +1218,7 @@ local CAPS = {
 	{ "item.C_Item.GetItemStats", "item", "C_Item.GetItemStats", note = "[verify S5c]" },
 	{ "item.C_Item.GetItemStatDelta", "item", "C_Item.GetItemStatDelta", note = "[verify S5c]" },
 	{ "item.C_Item.IsEquippableItem", "item", "C_Item.IsEquippableItem" },
+	{ "item.C_Item.GetItemQualityByID", "item", "C_Item.GetItemQualityByID" },
 	{ "item.C_Item.DoesItemContainSpec", "item", "C_Item.DoesItemContainSpec", note = "[verify S5c]" },
 	{ "item.C_Item.GetItemSpecInfo", "item", "C_Item.GetItemSpecInfo", note = "[verify S5c]" },
 	{ "item.C_Item.RequestLoadItemDataByID", "item", "C_Item.RequestLoadItemDataByID" },

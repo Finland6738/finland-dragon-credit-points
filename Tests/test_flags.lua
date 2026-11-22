@@ -7,14 +7,14 @@ local function F() return FDCP.SessionFSM end
 local function Lg() return FDCP.Ledger end
 local function SBd() return FDCP.SessionBoard end
 
--- Wire verdicts (SRESP `vd`): p is in permille (120 = +12.0%).
-local function big(p, extra)
-	local w = { v = "BIG", b = "STATS", p = p }
+-- Wire badges (SRESP `vd`, M7-5c): a tier and the item-level difference l.
+local function big(l, extra)
+	local w = { v = "MAJOR", l = l }
 	for k, v in pairs(extra or {}) do w[k] = v end
 	return w
 end
-local function small(p) return { v = "SMALL", b = "STATS", p = p } end
-local function none(p) return { v = "NONE", b = "STATS", p = p } end
+local function small(l) return { v = "MINOR", l = l } end
+local function none(l) return { v = "NONE", l = l } end
 
 local MAIN = { MS = true }
 
@@ -35,19 +35,12 @@ local function council(changes)
 	return c
 end
 
-local function upgrade(changes)
-	local c = FDCP.Rules.DefaultConfig().upgrade
-	for k, v in pairs(changes or {}) do c[k] = v end
-	return c
-end
-
 describe("upgrade ignored", function()
-	it("fires on a pass over a big main-spec upgrade", function()
+	it("fires on a pass over a major main-spec upgrade", function()
 		local list = eval({ responses = { Bryn = "PASS" }, verdicts = { Bryn = { m = big(120) } } })
 		deepEq(codes(list), { "UPGRADE_IGNORED:Bryn" })
 		eq(list[1].response, "PASS")
-		eq(list[1].pct, 0.12)
-		eq(list[1].basis, "STATS")
+		eq(list[1].ilvl, 120)
 	end)
 
 	it("fires on a player who has not answered when a verdict is known", function()
@@ -67,28 +60,15 @@ describe("upgrade ignored", function()
 		deepEq(codes(list), {})
 	end)
 
-	it("never fires below the thresholds", function()
+	it("never fires on a medium or minor upgrade, nor on an old client's BIG", function()
+		deepEq(codes(eval({ responses = { Bryn = "PASS" }, verdicts = { Bryn = { m = { v = "MEDIUM", l = 30 } } } })), {})
 		deepEq(codes(eval({ responses = { Bryn = "PASS" }, verdicts = { Bryn = { m = small(40) } } })), {})
-		-- a client that says BIG with a percentage under the guild's threshold (5%) is not believed
-		deepEq(codes(eval({ responses = { Bryn = "PASS" }, verdicts = { Bryn = { m = big(30) } } })), {})
-		-- exactly on the threshold is big
-		deepEq(codes(eval({ responses = { Bryn = "PASS" }, verdicts = { Bryn = { m = big(50) } } })), { "UPGRADE_IGNORED:Bryn" })
-		-- the guild's own threshold
-		deepEq(codes(eval({ responses = { Bryn = "PASS" }, verdicts = { Bryn = { m = big(80) } } },
-			upgrade({ bigThreshold = 0.1 }))), {})
+		deepEq(codes(eval({ responses = { Bryn = "PASS" }, verdicts = { Bryn = { m = { v = "BIG", p = 120 } } } })), {},
+			"a verdict of a client older than M7-5c is not read")
 	end)
 
-	it("uses the item-level threshold for an item-level verdict", function()
-		local vd = { m = { v = "BIG", b = "ILVL", p = 60, l = 6 } }
-		deepEq(codes(eval({ responses = { Bryn = "PASS" }, verdicts = { Bryn = vd } })), { "UPGRADE_IGNORED:Bryn" })
-		deepEq(codes(eval({ responses = { Bryn = "PASS" }, verdicts = { Bryn = vd } },
-			upgrade({ ilvlBigThreshold = 0.08 }))), {})
-		deepEq(codes(eval({ responses = { Bryn = "PASS" }, verdicts = { Bryn = vd } },
-			upgrade({ bigThreshold = 0.5 }))), { "UPGRADE_IGNORED:Bryn" }, "the stats threshold does not apply")
-	end)
-
-	it("a big upgrade without a percentage (an empty slot) stays big", function()
-		deepEq(codes(eval({ responses = { Bryn = "PASS" }, verdicts = { Bryn = { m = { v = "BIG" } } } })),
+	it("a major upgrade without an item-level difference (an empty slot) stays major", function()
+		deepEq(codes(eval({ responses = { Bryn = "PASS" }, verdicts = { Bryn = { m = { v = "MAJOR", c = "EMPTY_SLOT" } } } })),
 			{ "UPGRADE_IGNORED:Bryn" })
 	end)
 
@@ -129,8 +109,8 @@ describe("possible waste", function()
 	it("fires when the first in line has a small upgrade and another candidate a big one", function()
 		local list = eval(line(small(15), big(90)))
 		deepEq(codes(list), { "POSSIBLE_WASTE:Aurel>Corin" })
-		eq(list[1].pct, 0.015)
-		eq(list[1].otherPct, 0.09)
+		eq(list[1].ilvl, 15)
+		eq(list[1].otherIlvl, 90)
 	end)
 
 	it("fires when the first in line gains nothing", function()
@@ -140,17 +120,17 @@ describe("possible waste", function()
 	end)
 
 	it("needs the configurable ratio between the two", function()
-		deepEq(codes(eval(line(small(40), big(60)))), {}, "6% is not twice 4%")
+		deepEq(codes(eval(line(small(40), big(60)))), {}, "+60 is not twice +40")
 		deepEq(codes(eval(line(small(30), big(60)))), { "POSSIBLE_WASTE:Aurel>Corin" }, "exactly twice")
 		deepEq(codes(eval(line(small(40), big(60)), nil, council({ wasteRatio = 1.5 }))), { "POSSIBLE_WASTE:Aurel>Corin" })
 		deepEq(codes(eval(line(small(15), big(90)), nil, council({ wasteRatio = 10 }))), {})
 	end)
 
-	it("never fires below the thresholds", function()
-		deepEq(codes(eval(line(small(10), small(45)))), {}, "the other one is not big")
-		deepEq(codes(eval(line(small(10), big(45)))), {}, "a BIG under the threshold is not big")
-		deepEq(codes(eval(line(big(60), big(200)))), {}, "the first one already has a big upgrade")
-		deepEq(codes(eval(line(small(10), big(90)), upgrade({ bigThreshold = 0.1 }))), {})
+	it("never fires when the other one is not major, or the first one already is", function()
+		deepEq(codes(eval(line(small(10), small(45)))), {}, "the other one is not major")
+		deepEq(codes(eval(line(small(10), { v = "MEDIUM", l = 45 }))), {}, "a medium upgrade is not major")
+		deepEq(codes(eval(line(big(60), big(200)))), {}, "the first one already has a major upgrade")
+		deepEq(codes(eval(line({ v = "MEDIUM", l = 10 }, big(200)))), {}, "a medium upgrade is not a waste")
 	end)
 
 	it("never fires on MS2: off-spec answers and off-spec verdicts do not count", function()
@@ -160,7 +140,7 @@ describe("possible waste", function()
 		input = line(small(10), none(0))
 		input.verdicts.Corin.o = big(300)
 		deepEq(codes(eval(input)), {}, "only Corin's off-spec gains")
-		input = line({ v = "SMALL", b = "STATS", p = 10 }, big(200))
+		input = line({ v = "MINOR", l = 10 }, big(200))
 		input.verdicts.Aurel.o = big(300)
 		deepEq(codes(eval(input)), { "POSSIBLE_WASTE:Aurel>Corin" }, "Aurel's off-spec verdict is not read")
 	end)
@@ -176,7 +156,7 @@ describe("possible waste", function()
 		input.responses.Bryn, input.verdicts.Bryn, input.credits.Bryn = "MS", { m = big(150) }, 3
 		local list = eval(input)
 		deepEq(codes(list), { "POSSIBLE_WASTE:Aurel>Bryn" })
-		eq(list[1].otherPct, 0.15)
+		eq(list[1].otherIlvl, 150)
 	end)
 
 	it("follows the rules' winner once the proposal is written", function()
@@ -322,13 +302,13 @@ describe("in the session", function()
 		deepEq(codes(F().Flags(b.s, 1)), { "UPGRADE_IGNORED:Bryn" })
 		local board = b.board()
 		deepEq(codes(board.flags), { "UPGRADE_IGNORED:Bryn" })
-		eq(board.flags[1].verdict.verdict, "BIG")
-		eq(board.flags[1].verdict.pct, 0.12)
+		eq(board.flags[1].verdict.verdict, "MAJOR")
+		eq(board.flags[1].verdict.ilvlDelta, 120)
 		local rows = {}
 		for _, r in ipairs(board.candidates) do rows[r.player] = r end
 		deepEq(rows.Bryn.flags, { "UPGRADE_IGNORED" })
 		isNil(rows.Aurel.flags)
-		eq(SBd().FlagLine(board.flags[1]), FDCP.L["ML_FLAG_IGNORED_PASS"]:format("Bryn", "Big upgrade +12.0%"))
+		eq(SBd().FlagLine(board.flags[1]), FDCP.L["ML_FLAG_IGNORED_PASS"]:format("Bryn", "Major upgrade · ilvl +120"))
 	end)
 
 	it("a player who changes the pass into a main-spec answer is no longer flagged", function()
@@ -356,8 +336,8 @@ describe("in the session", function()
 		deepEq(codes(item.flagged), { "UPGRADE_IGNORED:Bryn", "POSSIBLE_WASTE:Aurel>Corin" })
 		local board = b.board()
 		deepEq(codes(board.flags), { "UPGRADE_IGNORED:Bryn", "POSSIBLE_WASTE:Aurel>Corin" })
-		eq(SBd().FlagLine(board.flags[2]), FDCP.L["ML_FLAG_WASTE"]:format("Aurel", "Small upgrade +1.0%", "Corin",
-			"Big upgrade +9.0%"))
+		eq(SBd().FlagLine(board.flags[2]), FDCP.L["ML_FLAG_WASTE"]:format("Aurel", "Minor upgrade · ilvl +10", "Corin",
+			"Major upgrade · ilvl +90"))
 		-- the strip does not say the council's codes twice
 		local plain = SBd().FlagTexts(board.proposal, board.flags)
 		falsy(has(plain, FDCP.L["RC_FLAG_UPGRADE_IGNORED"]))
@@ -522,8 +502,8 @@ describe("the words", function()
 
 	it("reads in Italian", function()
 		FDCP.Locale.SetActive("itIT")
-		local f = { code = "UPGRADE_IGNORED", player = "Bryn-Camelot", response = nil, verdict = { verdict = "BIG", pct = 0.12 } }
-		eq(SBd().FlagLine(f), "Upgrade ignorato: Bryn non ha risposto (Upgrade grande +12,0%).")
+		local f = { code = "UPGRADE_IGNORED", player = "Bryn-Camelot", response = nil, verdict = { verdict = "MAJOR", ilvlDelta = 12 } }
+		eq(SBd().FlagLine(f), "Upgrade ignorato: Bryn non ha risposto (Upgrade grande · ilvl +12).")
 		eq(SBd().FlagShort("POSSIBLE_WASTE"), "Possibile spreco")
 		FDCP.Locale.SetActive("enUS")
 	end)

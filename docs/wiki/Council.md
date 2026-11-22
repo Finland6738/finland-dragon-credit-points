@@ -26,7 +26,7 @@ The card on the left follows the item the Session tab shows (select another item
 - **Your vote:** a list with the proposed player first and then the candidates, and the **Vote** button. A member votes for **one** player and can change the vote until the master looter closes it. The line next to the title says *you voted Corin* once it is sent, or *no vote open on this item* (the guild's mode has no vote, the item has no proposal yet, or the vote is closed), or *only council members vote*;
 - **Modify** and **Correct**, only on the master looter's client: they open the same reason dialogs as the Session tab (the winner or the cost with a reason; the category or the cost before the roll opens). Another officer's window is read-only and has no such buttons.
 
-You see the card from a **read-only view** if you are not the master looter: the item, the proposal and, where the guild lets you (the council by default), the candidates, the verdicts and the flags.
+You see the card from a **read-only view** if you are not the master looter: the item, the proposal and, where the guild lets you (the council by default), the candidates, the upgrade badges and the flags.
 
 ## Cancel an award
 

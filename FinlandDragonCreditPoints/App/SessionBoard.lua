@@ -13,15 +13,14 @@
 --   active (index of the item in progress), selected (index the window shows: `selected`, else the active one, else the
 --   first item waiting, else the first),
 --   round = { kind, stage, tier, among, collect, remaining, total, expired, rolls } | nil   (the selected item's open round),
---   candidates = { { player, name, class, credits, response, label, labelOrigin (AUTO | CHANGED | MANUAL | nil: who chose the label, M7-2b), note, tier, roll, flag = { group, code }, proposed,
---                    inRound, upgrade, upgradeMS, upgradeOS, equipped } }   (label = the declared label code, note = the
---                    player's note, safe to draw: M4-6; upgrade = the verdict the player's client sent for the spec of the
---                    answer, upgradeMS / upgradeOS = both, each { verdict, usable, code, basis, pct, ilvlDelta } as
---                    UpgradeScore.Unpack gives it, nil without one; equipped = the worn pieces' item strings: M5-2;
+--   candidates = { { player, name, class, credits, response, tier, roll, flag = { group, code }, proposed,
+--                    inRound, upgrade, upgradeMS, upgradeOS, equipped } }   (upgrade = the badge the player's client sent
+--                    for the spec of the answer, upgradeMS / upgradeOS = both, each { verdict, usable, code, ilvlDelta } as
+--                    UpgradeScore.Unpack gives it (M7-5c tiers), nil without one; equipped = the worn pieces' item strings;
 --                    flags = the council flag codes that name the player, M5-4)
 --                 (host; on another client only when it may see the verdicts, env.verdicts: then from the responses the
 --                 raid channel carried, without credits nor rolls),
---   flags = { { code, player, other?, response?, pct?, otherPct?, basis?, verdict?, otherVerdict? } }   the council's
+--   flags = { { code, player, other?, response?, ilvl?, otherIlvl?, verdict?, otherVerdict? } }   the council's
 --                 flags of the selected item (Domain/Flags.lua, M5-4): live while the item is rolled, the ones written with
 --                 the proposal afterwards; verdict / otherVerdict = the main-spec verdicts of player / other (Unpack).
 --                 Empty where the verdicts may not be seen.
@@ -138,8 +137,8 @@ function SB.FlagTexts(p, detailed)
 end
 
 -- The sentence of one council flag (M5-4), with the names and the verdicts:
--- "Upgrade ignored: Bryn passed on it (Big upgrade +12.0%)."
--- "Possible waste: Aurel is first in line (Small upgrade +1.5%), Corin has more to gain (Big upgrade +9.0%)."
+-- "Upgrade ignored: Bryn passed on it (Major upgrade · ilvl +26)."
+-- "Possible waste: Aurel is first in line (Minor upgrade · ilvl +3), Corin has more to gain (Major upgrade · empty slot)."
 -- locale-key: ML_FLAG_IGNORED_PASS ML_FLAG_IGNORED_SILENT ML_FLAG_WASTE
 function SB.FlagLine(f)
 	if type(f) ~= "table" then return "" end
@@ -356,12 +355,6 @@ local function hasRolled(item, player)
 	return seen(item.round)
 end
 
--- A player's note as text that is safe to draw: no escape sequences ("|" is doubled), no control characters.
-function SB.SafeNote(text)
-	if type(text) ~= "string" or text == "" then return nil end
-	return (text:gsub("%c", " "):gsub("|", "||"))
-end
-
 local function hostCandidates(s, item, proposal, env, byPlayer)
 	if type(item.credits) ~= "table" then return {} end   -- the roll has not opened: nothing frozen yet
 	local priority = s.rules and s.rules.priority or {}
@@ -396,8 +389,6 @@ local function hostCandidates(s, item, proposal, env, byPlayer)
 		local upOS = verdicts and verdicts.o and U and U.Unpack(verdicts.o) or nil
 		local row = { player = p, name = short(p), class = env.classOf and env.classOf(p) or nil,
 			credits = item.credits[p] or 0, response = response, tier = response and tiers[response] or nil,
-			label = item.labels and item.labels[p] or nil, note = SB.SafeNote(item.notes and item.notes[p]),
-				labelOrigin = item.labels and item.labels[p] and item.labelOrigins and item.labelOrigins[p] or nil,
 			roll = rollOf(item, p, rollMin, rollMax), proposed = proposal ~= nil and proposal.winner == p,
 			inRound = among == nil or among[p] == true, upgradeMS = upMS, upgradeOS = upOS,
 			upgrade = response == "OS" and (upOS or upMS) or upMS,
@@ -525,7 +516,7 @@ local function mainResponses(priority)
 end
 
 -- The candidates of the view (M5-4, a client that may see the verdicts): who answered the selected item, with the
--- response, label, note and verdicts the raid channel carried. No credits and no rolls: they stay on the master
+-- response and the badges the raid channel carried. No credits and no rolls: they stay on the master
 -- looter's client. The flags: "upgrade ignored" always, "possible waste" once the proposal names the first in line.
 local function viewCandidates(v, env, sel, b)
 	local answers = type(v.responses) == "table" and v.responses[sel] or nil
@@ -555,7 +546,7 @@ local function viewCandidates(v, env, sel, b)
 			local upMS = vd and U and U.Unpack(vd.m) or nil
 			local upOS = vd and vd.o and U and U.Unpack(vd.o) or nil
 			rows[#rows + 1] = { player = name, name = short(name), class = env.classOf and env.classOf(name) or nil,
-				response = a.rs, tier = tiers[a.rs], label = a.lb, labelOrigin = a.lb and a.lo or nil, note = SB.SafeNote(a.n),
+				response = a.rs, tier = tiers[a.rs],
 				proposed = p ~= nil and p.winner == name, inRound = true, upgradeMS = upMS, upgradeOS = upOS,
 				upgrade = a.rs == "OS" and (upOS or upMS) or upMS, equipped = a.eq, flags = byPlayer[name] }
 		end

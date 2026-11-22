@@ -26,7 +26,7 @@ La scheda a sinistra segue il pezzo che mostra la scheda Sessione (seleziona lì
 - **Il tuo voto:** una lista con il giocatore proposto per primo e poi i candidati, e il pulsante **Vota**. Un membro vota **un** giocatore e può cambiare voto finché il master looter non lo chiude. La riga accanto al titolo dice *hai votato Corin* quando è partito, oppure *nessun voto aperto su questo pezzo* (la modalità della gilda non prevede il voto, il pezzo non ha ancora una proposta o il voto è chiuso), oppure *votano solo i membri del council*;
 - **Modifica** e **Correggi**, solo sul client del master looter: aprono le stesse finestre con il motivo della scheda Sessione (il vincitore o il costo con un motivo; la categoria o il costo prima che il roll si apra). La finestra di un altro officer è in sola lettura e non ha questi pulsanti.
 
-Se non sei il master looter vedi la scheda da una **vista in sola lettura**: il pezzo, la proposta e, dove la gilda te lo permette (di base il council), i candidati, i verdetti e le segnalazioni.
+Se non sei il master looter vedi la scheda da una **vista in sola lettura**: il pezzo, la proposta e, dove la gilda te lo permette (di base il council), i candidati, i badge di upgrade e le segnalazioni.
 
 ## Annullare un'assegnazione
 

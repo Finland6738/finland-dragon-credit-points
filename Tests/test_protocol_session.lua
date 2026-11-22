@@ -63,8 +63,8 @@ describe("session messages on one client", function()
 		receive("SOPEN", fields, sender)
 	end
 
-	it("speaks protocol 6 (and still understands 2): the presence check plus the session messages", function()
-		eq(P().VERSION, 6)
+	it("speaks protocol 7 (and still understands 2): the presence check plus the session messages", function()
+		eq(P().VERSION, 7)
 		eq(P().MIN, 2)
 		for _, t in ipairs(S().TYPES) do truthy(Codec().SCHEMA[t], t .. " is registered") end
 		eq(#S().TYPES, 12)   -- SRINT, the roll intent of M7-2d, carries no roll value
@@ -148,14 +148,14 @@ describe("session messages on one client", function()
 		isNil(S().view)
 	end)
 
-	it("the whispered state gives back the player's own answer with its label and note", function()
+	it("the whispered state gives back the player's own answer (an old master looter's label and note are ignored)", function()
 		raid({ "Bryn" })
 		Mock.Advance(3)
 		receive("SSTATE", { s = "S1-1", q = 3, ml = full("Bryn"), rt = { MS = 1, OS = 2 }, a = 1,
 			it = { { id = 19003, st = "ROLLING" } }, rd = { i = 1, r = 1, k = "ROLL", g = "TIER", tr = 1, cl = true },
 			my = { rs = "MS", lb = "BIS", n = "set ring" } }, full("Bryn"), "WHISPER")
 		local a = S():MyAnswer(1)
-		deepEq(a, { rs = "MS", lb = "BIS", n = "set ring" })
+		deepEq(a, { rs = "MS" })
 		eq(S().view.mine[1], "MS")
 		deepEq(S().view.tiers, { MS = 1, OS = 2 })
 		isNil(S():MyAnswer(2))
@@ -164,17 +164,17 @@ describe("session messages on one client", function()
 		receive("SSTATE", { s = "S1-1", q = 3, ml = full("Bryn"), a = 1, it = { { id = 19003 } },
 			rd = { i = 1, r = 1, k = "ROLL", cl = true }, my = { rs = "OS", lb = "nonsense", n = string.rep("x", 200) } },
 			full("Bryn"), "WHISPER")
-		deepEq(S():MyAnswer(1), { rs = "OS" }, "a damaged label or a long note is dropped, the answer stays")
+		deepEq(S():MyAnswer(1), { rs = "OS" }, "a damaged label or a long note is ignored, the answer stays")
 	end)
 
-	it("the master looter's state carries each player's own label and note", function()
+	it("the master looter's state carries each player's own answer only", function()
 		local s = { id = "S1-1", ml = full("Aurel"), encounter = 601, state = "ROLLING", active = 1, rules = FDCP.Rules.DefaultConfig(),
 			net = { seq = 4, rounds = { 2 }, open = true }, items = { { itemID = 19003, category = "armor", costs = { MS = 1 },
 				state = "ROLLING", round = { kind = "ROLL", stage = "TIER", tier = 1, collect = true, rolls = {} },
 				responses = { [full("Bryn")] = "MS", [full("Corin")] = "OS" }, labels = { [full("Bryn")] = "BIS" },
 				notes = { [full("Bryn")] = "mine" } } } }
 		local msg = S().StateFor(s, full("Bryn"))
-		deepEq(msg.my, { rs = "MS", lb = "BIS", n = "mine" })
+		deepEq(msg.my, { rs = "MS" }, "a session saved before M7-5c still holds labels and notes: they are not sent")
 		deepEq(msg.rt, { MS = 1, OS = 2 })
 		deepEq(S().StateFor(s, full("Corin")).my, { rs = "OS" })
 		isNil(S().StateFor(s, full("Dara")).my)
@@ -182,13 +182,12 @@ describe("session messages on one client", function()
 
 	it("a response is always the sender's own: one naming another player is forged", function()
 		local r = S().ReadResponse({ s = "S1-1", i = 1, r = 1, rs = "MS", lb = "BIS", n = "big one" }, full("Bryn"))
-		deepEq(r, { s = "S1-1", i = 1, r = 1, rs = "MS", lb = "BIS", n = "big one" })
+		deepEq(r, { s = "S1-1", i = 1, r = 1, rs = "MS" }, "an old client's label and note are ignored")
 		local _, code = S().ReadResponse({ s = "S1-1", i = 1, r = 1, rs = "MS", p = full("Corin") }, full("Bryn"))
 		eq(code, "FORGED")
 		truthy(S().ReadResponse({ s = "S1-1", i = 1, r = 1, rs = "MS", p = "Bryn" }, full("Bryn")), "naming yourself is fine")
 		local bad = {
 			{ s = "S1-1", i = 1, r = 1, rs = "ms" }, { s = "S1-1", i = 0, r = 1, rs = "MS" },
-			{ s = "S1-1", i = 1, r = 1, rs = "MS", lb = "bis" }, { s = "S1-1", i = 1, r = 1, rs = "MS", n = string.rep("x", 81) },
 			{ i = 1, r = 1, rs = "MS" },
 		}
 		for _, m in ipairs(bad) do
@@ -318,111 +317,65 @@ describe("session messages on one client", function()
 		eq(code, "RESPONSES_CLOSED")
 		receive("SROLL", { s = "S1-1", q = 2, i = 1, r = 1, k = "ROLL", cl = true }, full("Bryn"))
 		_, code = S():Respond("ms") eq(code, "BAD_RESPONSE")
-		_, code = S():Respond("MS", "bis") eq(code, "BAD_LABEL")
-		_, code = S():Respond("MS", nil, string.rep("x", 81)) eq(code, "BAD_NOTE")
 		truthy(S():Respond("OS"))
-		truthy(S():Respond("MS", "BIS", "two-hander upgrade"))
+		truthy(S():Respond("MS", { vd = { m = { v = "MEDIUM", l = 13 } }, eq = { "item:19100" } }))
 		Mock.Advance(2)
 		eq(count(sentMessages(Mock), "SRESP"), 1, "the latest answer waiting wins")
 		local sent = sentMessages(Mock)
 		local m = sent[#sent].msg
-		eq(m.rs, "MS"); eq(m.lb, "BIS"); eq(m.n, "two-hander upgrade"); eq(m.r, 1); isNil(m.p)
+		eq(m.rs, "MS"); eq(m.r, 1); isNil(m.p)
+		isNil(m.lb); isNil(m.lo); isNil(m.n)
+		deepEq(m.vd, { m = { v = "MEDIUM", l = 13 } }); deepEq(m.eq, { "item:19100" })
 		eq(S():OpenRound().mine, "MS")
 	end)
 
-	-- M7-2b: who picks the label of a response, and who chose the one that was sent (optional fields of protocol 5)
-	it("announces who picks the label (the guild's rule), and the view keeps it", function()
+	-- M7-5c: the season's item-level band travels with the session (`ib`); the label mode of M7-2b (`lm`) is gone
+	it("announces the season's item-level band, and the view keeps it", function()
 		local rules = FDCP.Rules.DefaultConfig()
-		local s = { id = "S1-1", ml = full("Aurel"), encounter = 601, state = "ANNOUNCING", rules = rules, items = {
-			{ itemID = 19003, category = "armor", costs = { MS = 1 }, state = "PENDING" } } }
-		eq(S().MessageFor(s, { type = "ANNOUNCE_ITEMS" }).lm, "suggest", "the default of the rules")
-		rules.responses.labelMode = "auto"
-		eq(S().MessageFor(s, { type = "ANNOUNCE_ITEMS" }).lm, "auto")
-		eq(S().StateFor(s, full("Bryn")).lm, "auto", "a late joiner gets it with the state")
-		s.rules = nil
-		s.rules = { session = rules.session, priority = rules.priority, cost = rules.cost }
-		eq(S().MessageFor(s, { type = "ANNOUNCE_ITEMS" }).lm, "suggest", "a session saved before M7-2b: the default of the rules")
+		local s = { id = "S1-1", ml = full("Aurel"), encounter = 601, state = "ANNOUNCING", rules = rules, band = { min = 200, max = 226 },
+			items = { { itemID = 19003, category = "armor", costs = { MS = 1 }, state = "PENDING" } } }
+		local msg = S().MessageFor(s, { type = "ANNOUNCE_ITEMS" })
+		deepEq(msg.ib, { min = 200, max = 226 })
+		isNil(msg.lm, "no label mode any more")
+		deepEq(S().StateFor(s, full("Bryn")).ib, { min = 200, max = 226 }, "a late joiner gets it with the state")
+		s.band = nil
+		isNil(S().MessageFor(s, { type = "ANNOUNCE_ITEMS" }).ib, "a season without a band says none")
+		raid({ "Bryn" })
+		Mock.Advance(3)
+		open(full("Bryn"), 1, { ib = { min = 200, max = 226 } })
+		deepEq(S().view.band, { min = 200, max = 226 })
+		open(full("Bryn"), 2, { ib = { min = 210, max = 230 } })   -- a correction may say it again
+		deepEq(S().view.band, { min = 210, max = 230 })
+		open(full("Bryn"), 3)
+		deepEq(S().view.band, { min = 210, max = 230 }, "a message without it keeps what was said")
+	end)
+
+	it("an older master looter's label mode is ignored, and a damaged band is left out", function()
 		raid({ "Bryn" })
 		Mock.Advance(3)
 		open(full("Bryn"), 1, { lm = "auto" })
-		eq(S().view.labelMode, "auto")
-		open(full("Bryn"), 2, { lm = "manual" })   -- a correction may say it again
-		eq(S().view.labelMode, "manual")
-		open(full("Bryn"), 3)
-		eq(S().view.labelMode, "manual", "a message without it keeps what was said")
-	end)
-
-	it("an older master looter says no mode, and a mode nobody knows is left out", function()
-		raid({ "Bryn" })
-		Mock.Advance(3)
-		open(full("Bryn"), 1)
-		isNil(S().view.labelMode)
-		S():Reset()
-		raid({ "Bryn" })
-		open(full("Bryn"), 1, { lm = "random" })
 		truthy(S().view, "the session still opens")
-		isNil(S().view.labelMode)
+		isNil(S().view.labelMode); isNil(S().view.band)
 		S():Reset()
 		raid({ "Bryn" })
-		open(full("Bryn"), 1, { lm = 7 })
-		truthy(S().view); isNil(S().view.labelMode)
-	end)
-
-	it("a response carries who chose the label, only with a label, and only one of the three codes", function()
-		local r = S().ReadResponse({ s = "S1-1", i = 1, r = 1, rs = "MS", lb = "BIS", lo = "AUTO" }, full("Bryn"))
-		eq(r.lb, "BIS"); eq(r.lo, "AUTO")
-		r = S().ReadResponse({ s = "S1-1", i = 1, r = 1, rs = "MS", lb = "BIS", lo = "CHANGED" }, full("Bryn"))
-		eq(r.lo, "CHANGED")
-		r = S().ReadResponse({ s = "S1-1", i = 1, r = 1, rs = "MS", lb = "BIS" }, full("Bryn"))
-		isNil(r.lo, "an older client says nothing")
-		r = S().ReadResponse({ s = "S1-1", i = 1, r = 1, rs = "MS", lo = "AUTO" }, full("Bryn"))
-		isNil(r.lb); isNil(r.lo, "an origin without a label means nothing")
-		r = S().ReadResponse({ s = "S1-1", i = 1, r = 1, rs = "MS", lb = "BIS", lo = "robot" }, full("Bryn"))
-		eq(r.lb, "BIS", "the answer counts"); isNil(r.lo, "an origin nobody knows is dropped")
-		r = S().ReadResponse({ s = "S1-1", i = 1, r = 1, rs = "MS", lb = "BIS", lo = 5 }, full("Bryn"))
-		eq(r.lb, "BIS"); isNil(r.lo)
-	end)
-
-	it("Respond sends the origin with a label and not without one", function()
+		open(full("Bryn"), 1, { ib = { min = 230, max = 200 } })
+		truthy(S().view); isNil(S().view.band)
+		S():Reset()
 		raid({ "Bryn" })
-		Mock.Advance(3)
-		open(full("Bryn"), 1)
-		receive("SROLL", { s = "S1-1", q = 2, i = 1, r = 1, k = "ROLL", cl = true }, full("Bryn"))
-		truthy(S():Respond("MS", "BIS", nil, nil, "AUTO"))
-		Mock.Advance(2)
-		local sent = sentMessages(Mock)
-		local m = sent[#sent].msg
-		eq(m.lb, "BIS"); eq(m.lo, "AUTO")
-		deepEq(S():MyAnswer(1), { rs = "MS", lb = "BIS", lo = "AUTO" })
-		truthy(S():Respond("MS", nil, nil, nil, "AUTO"))
-		Mock.Advance(2)
-		sent = sentMessages(Mock)
-		m = sent[#sent].msg
-		isNil(m.lb); isNil(m.lo, "no label, no origin")
-		truthy(S():Respond("MS", "BIS", nil, nil, "robot"))
-		Mock.Advance(2)
-		sent = sentMessages(Mock)
-		isNil(sent[#sent].msg.lo, "an unknown origin is not sent")
-		truthy(S():Respond("MS", "BIS"))
-		Mock.Advance(2)
-		sent = sentMessages(Mock)
-		isNil(sent[#sent].msg.lo, "a client that sets no origin sends none")
+		open(full("Bryn"), 1, { ib = "200-226" })
+		truthy(S().view); isNil(S().view.band)
 	end)
 
-	it("the whispered state gives back the origin of the player's own label", function()
-		raid({ "Bryn" })
-		Mock.Advance(3)
-		receive("SSTATE", { s = "S1-1", q = 3, ml = full("Bryn"), rt = { MS = 1, OS = 2 }, lm = "suggest", a = 1,
-			it = { { id = 19003, st = "ROLLING" } }, rd = { i = 1, r = 1, k = "ROLL", g = "TIER", tr = 1, cl = true },
-			my = { rs = "MS", lb = "BIS", lo = "CHANGED", n = "set ring" } }, full("Bryn"), "WHISPER")
-		deepEq(S():MyAnswer(1), { rs = "MS", lb = "BIS", lo = "CHANGED", n = "set ring" })
-		eq(S().view.labelMode, "suggest")
-		local s = { id = "S1-1", ml = full("Aurel"), encounter = 601, state = "ROLLING", active = 1, rules = FDCP.Rules.DefaultConfig(),
-			net = { seq = 4, rounds = { 2 }, open = true }, items = { { itemID = 19003, category = "armor", costs = { MS = 1 },
-				state = "ROLLING", round = { kind = "ROLL", stage = "TIER", tier = 1, collect = true, rolls = {} },
-				responses = { [full("Bryn")] = "MS" }, labels = { [full("Bryn")] = "BIS" },
-				labelOrigins = { [full("Bryn")] = "AUTO" } } } }
-		deepEq(S().StateFor(s, full("Bryn")).my, { rs = "MS", lb = "BIS", lo = "AUTO" })
+	it("an old client's response with a label, an origin and a note counts, without them", function()
+		local r = S().ReadResponse({ s = "S1-1", i = 1, r = 1, rs = "MS", lb = "BIS", lo = "AUTO", n = "set ring" }, full("Bryn"))
+		eq(r.rs, "MS"); isNil(r.lb); isNil(r.lo); isNil(r.n)
+		r = S().ReadResponse({ s = "S1-1", i = 1, r = 1, rs = "MS", lb = "bis", n = string.rep("x", 200) }, full("Bryn"))
+		truthy(r, "even a damaged label or note no longer refuses it")
+	end)
+
+	it("the protocol version says the three-button popup", function()
+		eq(FDCP.Protocol.VERSION, 7)
+		eq(FDCP.Protocol.MIN, 2, "older clients are still understood")
 	end)
 end)
 
@@ -522,7 +475,7 @@ describe("simulated session", function()
 		local round = c.Bryn.addon().Protocol.Session:OpenRound()
 		eq(round.item, 1); truthy(round.collect)
 		truthy(round.remaining > 25 and round.remaining <= 30, "the timer arrived in server time")
-		truthy(c.Bryn.addon().Protocol.Session:Respond("MS", "BIS", "ring of the set"))
+		truthy(c.Bryn.addon().Protocol.Session:Respond("MS", { vd = { m = { v = "MAJOR", c = "EMPTY_SLOT" } } }))
 		truthy(c.Corin.addon().Protocol.Session:Respond("OS"))
 		truthy(c.Dara.addon().Protocol.Session:Respond("PASS"))
 		truthy(c.Aurel.addon().Protocol.Session:Respond("OS"), "the master looter answers like everybody")
@@ -533,7 +486,8 @@ describe("simulated session", function()
 		eq(#h.inputs, 4)
 		for _, input in ipairs(h.inputs) do eq(input.type, "RESPONSE", "nothing from the network becomes a roll") end
 		local corinSees = view(c.Corin).responses[1][full("Bryn")]
-		eq(corinSees.rs, "MS"); eq(corinSees.lb, "BIS"); eq(corinSees.n, "ring of the set")
+		eq(corinSees.rs, "MS"); deepEq(corinSees.vd, { m = { v = "MAJOR", c = "EMPTY_SLOT" } })
+		isNil(corinSees.lb); isNil(corinSees.n)
 		-- the rolls come from the chat (M4-3); here the controller hands them over
 		h.step({ type = "ROLL", player = full("Bryn"), value = 61, min = 1, max = 100 })
 		h.ml("CLOSE_ROUND")
@@ -595,7 +549,7 @@ describe("simulated session", function()
 
 	it("a raider who reloads mid-round gets the state back by whisper, with their own answer", function()
 		local net, c, h = started()
-		truthy(c.Bryn.addon().Protocol.Session:Respond("MS", "BIG_UPGRADE"))
+		truthy(c.Bryn.addon().Protocol.Session:Respond("MS"))
 		net:Advance(2)
 		local before = view(c.Bryn).q
 		net:Reload("Bryn")

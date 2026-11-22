@@ -20,8 +20,6 @@ Only for you: nothing here is shared with the guild.
 | **Language** | `auto` (the game's) or another language; it needs `/reload`. |
 | **Language of messages for everyone** | The language of what the addon writes in `/raid`. |
 | **Loot popup › Reset position** | Puts the popup back at the centre, at its starting width. |
-| **My own stat weights** | Turns your imported weights on or off (import them with `/fdcp weights`, see [[Upgrade Hints|Upgrade-Hints]]). |
-| **Wishlist › Clear** | Empties your best-in-slot list, after a confirmation. |
 
 ## Profiles
 
@@ -44,24 +42,16 @@ Your **profiles** keep your own settings (theme, fonts, effects, animations, sou
 A list of pages on the left, the fields of the page on a card:
 
 - **Night and session**: whether an officer must open the night, who confirms an award (the master looter, automatic after a pause, or the council), the automatic steps, the seconds of a roll round.
-- **Priority**: who goes first (fewest credits, fewest credits per night, highest roll), the tie-breaks, the rerolls in a row, whether the addon is required, which responses are allowed, **who sets the label of a main-spec answer** (see below), what happens to an item nobody wants or a BoE.
+- **Priority**: who goes first (fewest credits, fewest credits per night, highest roll), the tie-breaks, the rerolls in a row, whether the addon is required, whether the off-spec answer is allowed, what happens to an item nobody wants or a BoE.
 - **Costs**: the cost of each category and quality, in a grid (*Council* in the legendary column means the council sets the cost; type the word to put it back).
 - **Multipliers**: the cost factor of each response, of the raid size and of the difficulty.
 - **Members and credits**: main characters only, how late joiners start (fewest credits of the pool in the guild's preset, average, median, zero, fixed), the rounding, the credits a season starts with, and the **absence penalty** (credits added for a missed night, 1 in the preset, 0 turns it off) with the switch that writes it at the close without an officer's confirmation (off in the preset).
-- **Loot council**: whether its members must be in the raid, the vote, the flags for wasteful requests, who sees the verdicts, and the list of council names (empty: whoever has the rank).
+- **Loot council**: whether its members must be in the raid, the vote, the flags for wasteful requests, who sees the upgrade badges, and the list of council names (empty: whoever has the rank).
 - **Legendaries and bench**: how a legendary is awarded, the cost of a chain piece, and what the bench earns.
 - **Messages in /raid**: the wording of the notice for players without the addon and of the item and result lines (placeholders `{names}`, `{link}`, `{addon}`).
-- **Upgrade verdict**: how the popup says whether an item is an upgrade ([[Upgrade Hints|Upgrade-Hints]]).
+- **Upgrade badge**: whether the popup shows the upgrade badge, and whether an item the player cannot use comes with Pass preselected. The badge itself follows a fixed rule ([[Upgrade Hints|Upgrade-Hints]]); the season's item-level band it uses is set in **Season** ([[Seasons|Seasons]]).
 
-**Label of a main-spec response** (Priority page). The popup lets a player add an optional label to a Main-spec answer (BiS, Big upgrade, Small upgrade, Situational); it only informs the master looter and the council. This rule says who picks it:
-
-| Choice | What happens |
-|---|---|
-| **Suggested (editable)** (the default) | The addon fills the label in from what it knows (BiS if the item is on the player's own best-in-slot list, otherwise Big or Small upgrade from the main-spec verdict, otherwise nothing) and the player may change or clear it. |
-| **Automatic (locked)** | The addon sets the label the same way and the player cannot change it. |
-| **Chosen by the player** | Nothing is filled in; the player picks, as before. |
-
-The master looter's window shows, next to the label, whether it is *auto* (the addon's) or *changed* (the player picked another one). The mode is read when a loot session opens, so a change applies from the next session; guilds that wrote their rules before this setting existed get *Suggested*. Only the Guild Master can change it, like every rule. See [[Rolling for Loot|Rolling-for-Loot]] and the [[Master Looter Guide|Master-Looter-Guide]].
+The label of a main-spec response and its rule (M7-2b) and the personal stat weights and wishlist are gone: the popup has three buttons and the addon computes the upgrade badge. Rules written before keep working: the retired settings are ignored.
 
 Everyone sees the values. The Guild Master edits them: a label turns amber while its value differs from the rules in force, and the line at the bottom counts the changes not saved yet. A number that is not valid is marked at once and never reaches the draft. **Save** checks the whole configuration (if something is not valid it opens the page and names the field), then writes **one** change to the guild's ledger; **Discard changes** brings the form back to the rules in force.
 

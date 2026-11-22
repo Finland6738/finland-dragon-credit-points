@@ -15,7 +15,7 @@ ns.modules = ns.modules or {}
 local Reasons = {}
 ns.Reasons, ns.modules.Reasons = Reasons, Reasons
 
-Reasons.GROUPS = { "REASON", "FLAG", "DISCARD", "SOURCE", "JOIN", "CORRECTION", "ABSENCE", "AUTO", "RANKS", "DELIVERY", "REFUSAL", "STATUS", "RESPONSE", "LABEL", "LABEL_ORIGIN", "VERDICT", "UPGRADE", "IMPORT", "KIND", "REJECT", "STATE", "EVENT", "OUTCOME", "PRESET" }
+Reasons.GROUPS = { "REASON", "FLAG", "DISCARD", "SOURCE", "JOIN", "CORRECTION", "ABSENCE", "AUTO", "RANKS", "DELIVERY", "REFUSAL", "STATUS", "RESPONSE", "VERDICT", "UPGRADE", "KIND", "REJECT", "STATE", "EVENT", "OUTCOME", "PRESET" }
 
 -- KEYS[group][code] = locale key.
 Reasons.KEYS = {
@@ -241,25 +241,16 @@ Reasons.KEYS = {
 		TMOG = "RC_RESPONSE_TMOG",
 		PASS = "RC_RESPONSE_PASS",
 	},
-	LABEL = {
-		BIS = "RC_LABEL_BIS",
-		BIG_UPGRADE = "RC_LABEL_BIG_UPGRADE",
-		SMALL_UPGRADE = "RC_LABEL_SMALL_UPGRADE",
-		SITUATIONAL = "RC_LABEL_SITUATIONAL",
-	},
-	LABEL_ORIGIN = {   -- who chose the label of a response (Domain/Labels.lua, M7-2b)
-		AUTO = "RC_LABEL_ORIGIN_AUTO",
-		CHANGED = "RC_LABEL_ORIGIN_CHANGED",
-		MANUAL = "RC_LABEL_ORIGIN_MANUAL",
-	},
-	VERDICT = {   -- the upgrade verdict of an item for a player (Domain/UpgradeScore.lua); UNUSABLE = the character cannot use it
-		BIG = "RC_VERDICT_BIG",
-		SMALL = "RC_VERDICT_SMALL",
+	VERDICT = {   -- the upgrade badge of an item for a player (Domain/UpgradeScore.lua, M7-5c); UNUSABLE = the character cannot use it
+		MAJOR = "RC_VERDICT_MAJOR",
+		MEDIUM = "RC_VERDICT_MEDIUM",
+		MINOR = "RC_VERDICT_MINOR",
 		NONE = "RC_VERDICT_NONE",
 		NOT_COMPARABLE = "RC_VERDICT_NOT_COMPARABLE",
 		UNUSABLE = "RC_VERDICT_UNUSABLE",
 	},
-	UPGRADE = {   -- why an item cannot be used or compared (the `code` of an UpgradeScore result)
+	UPGRADE = {   -- why an item cannot be used or compared, and what the badge was read against (the codes and notes of an
+		-- UpgradeScore result)
 		ARMOR_TYPE = "RC_UPGRADE_ARMOR_TYPE",
 		WEAPON_TYPE = "RC_UPGRADE_WEAPON_TYPE",
 		DUAL_WIELD = "RC_UPGRADE_DUAL_WIELD",
@@ -268,17 +259,12 @@ Reasons.KEYS = {
 		UNKNOWN_CLASS = "RC_UPGRADE_UNKNOWN_CLASS",
 		NOT_EQUIPPABLE = "RC_UPGRADE_NOT_EQUIPPABLE",
 		COSMETIC = "RC_UPGRADE_COSMETIC",
-		EFFECT_TRINKET = "RC_UPGRADE_EFFECT_TRINKET",
-		EFFECT_TRINKETS = "RC_UPGRADE_EFFECT_TRINKETS",
 		TWO_HAND_EQUIPPED = "RC_UPGRADE_TWO_HAND_EQUIPPED",
 		NO_ITEM_LEVEL = "RC_UPGRADE_NO_ITEM_LEVEL",
-	},
-	IMPORT = {   -- why a stat-weight string was refused (Domain/WeightImport.lua)
-		EMPTY = "RC_IMPORT_EMPTY",
-		TOO_LONG = "RC_IMPORT_TOO_LONG",
-		BAD_FORMAT = "RC_IMPORT_BAD_FORMAT",
-		BAD_VALUE = "RC_IMPORT_BAD_VALUE",
-		NO_STATS = "RC_IMPORT_NO_STATS",
+		NO_QUALITY = "RC_UPGRADE_NO_QUALITY",
+		EMPTY_SLOT = "RC_UPGRADE_EMPTY_SLOT",
+		OLD_SEASON = "RC_UPGRADE_OLD_SEASON",
+		ITEM_OLD_SEASON = "RC_UPGRADE_ITEM_OLD_SEASON",
 	},
 	KIND = {
 		AWARD = "RC_KIND_AWARD",
@@ -308,6 +294,7 @@ Reasons.KEYS = {
 	EVENT = {
 		SEASON_OPENED = "RC_EVENT_SEASON_OPENED",
 		SEASON_CLOSED = "RC_EVENT_SEASON_CLOSED",
+		SEASON_BAND_SET = "RC_EVENT_SEASON_BAND_SET",
 		MEMBER_JOINED = "RC_EVENT_MEMBER_JOINED",
 		MEMBER_LINKED_ALT = "RC_EVENT_MEMBER_LINKED_ALT",
 		NIGHT_OPENED = "RC_EVENT_NIGHT_OPENED",

@@ -35,7 +35,7 @@ Items below the group's loot threshold (green, normally) are not tracked and do 
 - **Main-spec (MS)**: you need it for your main spec. It is asked first and costs the full price.
 - **Off-spec (OS)**: asked **only if nobody answered main-spec**. It costs **0 credits**.
 - **Pass**: you do not roll.
-- Transmog is available as a third tier, switched off in the preset.
+- Transmog is available as a third tier, switched off in the preset; the popup has no button for it (only Pass, Roll Main-spec and Roll Off-spec).
 - Only a `/roll` of **1-100**, **the first one of the round**, made by a character in the raid **with the addon active**, counts. Anything else is set aside and shown to the master looter with its reason.
 - The roll must come from the **Roll button of the popup** (rule *Rolls count only from the popup's Roll button*, on by default): a `/roll` typed by hand is set aside as `NOT_FROM_BUTTON` and does not use up the player's turn. The button tells the master looter's addon about the click just before the game's roll; the roll itself is still the game's. A player whose addon is older than this rule rolls as before until they update.
 - Whoever does not have the addon cannot answer or win (the master looter is told before the first roll).
@@ -86,7 +86,7 @@ The council (guild officers in the raid, or the list of characters the guild wri
 
 **The council's vote.** Off in the preset. With the award mode **council** the council votes on every proposal and the master looter closes the vote before confirming: a strict majority decides (a tie, or no vote, leaves it to the master looter). With the **council vote** turned on in the other modes the votes only inform the master looter, who sees them before confirming; in automatic mode a vote for another player stops the automatic award. Each member votes only for themselves, from their own game; the votes are written with the award. See the [[Master Looter Guide|Master-Looter-Guide]], "The council: interventions and the vote".
 
-**Council flags.** To make the obvious cases visible in time, the addon raises two flags as soon as the answers arrive: **upgrade ignored** (a raider passes on an item that is a big upgrade for their main spec) and **possible waste** (the first in line gains little or nothing, another main-spec candidate gains at least twice as much, with a big upgrade). They look only at the main spec (MS1), never change the winner by themselves and stop an automatic award until the master looter looks; acting on them is a modification with its reason. The guild's rules set whether the flags are on, the waste ratio (preset 2) and who besides the master looter sees the verdicts and the flags (preset: the council). See the [[Master Looter Guide|Master-Looter-Guide]], "Council flags".
+**Council flags.** To make the obvious cases visible in time, the addon raises two flags as soon as the answers arrive: **upgrade ignored** (a raider passes on an item that is a major upgrade for their main spec) and **possible waste** (the first in line has a minor upgrade or none, another main-spec candidate a major one). They look only at the main spec (MS1), never change the winner by themselves and stop an automatic award until the master looter looks; acting on them is a modification with its reason. The guild's rules set whether the flags are on, the waste ratio (preset 2) and who besides the master looter sees the upgrade badges and the flags (preset: the council). See the [[Master Looter Guide|Master-Looter-Guide]], "Council flags".
 
 ## How a loot session runs
 
@@ -192,7 +192,7 @@ The engine never writes sentences: it records short codes, and the addon turns t
 | `OUT_OF_ORDER` | Out of line: the winner is not the one the rules chose. |
 | `COST_CHANGED` | The cost is not the one the rules chose. |
 | `ML_DECIDED` | The rules had no winner or no cost: the master looter decided. |
-| `UPGRADE_IGNORED` | Upgrade ignored: someone passed on a big upgrade for their main spec. |
+| `UPGRADE_IGNORED` | Upgrade ignored: someone passed on a major upgrade for their main spec. |
 | `POSSIBLE_WASTE` | Possible waste: the first in line gains little, another candidate a lot. |
 | `NO_BUILDER` | Legendary piece: the project has no builder. Choose who gets it. |
 | `BUILDER_ABSENT` | Legendary piece: the builder is not in the raid. Choose who gets it. |
@@ -404,14 +404,15 @@ The addon reads ranks from the guild roster, by their position, never by their n
 | `TMOG` | Transmog |
 | `PASS` | Pass |
 
-### Upgrade verdicts
+### Upgrade badge
 
-How an item compares with what a player wears (see [[Rolling for Loot|Rolling-for-Loot]]).
+How an item compares with what a player wore during the boss fight (see [[Upgrade Hints|Upgrade-Hints]]).
 
 | Code | Sentence |
 |---|---|
-| `BIG` | Big upgrade |
-| `SMALL` | Small upgrade |
+| `MAJOR` | Major upgrade |
+| `MEDIUM` | Medium upgrade |
+| `MINOR` | Minor upgrade |
 | `NONE` | No upgrade |
 | `NOT_COMPARABLE` | Not comparable |
 | `UNUSABLE` | Not usable |
@@ -428,10 +429,12 @@ How an item compares with what a player wears (see [[Rolling for Loot|Rolling-fo
 | `UNKNOWN_CLASS` | The addon does not know your class. |
 | `NOT_EQUIPPABLE` | This is not a piece of equipment: the addon cannot compare it. |
 | `COSMETIC` | A shirt or a tabard: there is nothing to compare. |
-| `EFFECT_TRINKET` | A trinket with a use effect: the stats cannot tell its worth. |
-| `EFFECT_TRINKETS` | Both your trinkets have a use effect: the addon keeps them. |
 | `TWO_HAND_EQUIPPED` | You wear a two-handed weapon: this item goes in the other hand. |
 | `NO_ITEM_LEVEL` | The game gave no item level for this item. |
+| `NO_QUALITY` | The game has not loaded the item's quality yet: the badge comes when it has. |
+| `EMPTY_SLOT` | Nothing is worn in that slot. |
+| `OLD_SEASON` | Your piece is an epic of an older season: it counts like a rare one. |
+| `ITEM_OLD_SEASON` | This item is an epic of an older season: it counts like a rare one. |
 
 ### What a proposal does with the item
 
@@ -473,6 +476,7 @@ How an item compares with what a player wears (see [[Rolling for Loot|Rolling-fo
 |---|---|
 | `SEASON_OPENED` | Season opened |
 | `SEASON_CLOSED` | Season closed |
+| `SEASON_BAND_SET` | Season item-level band |
 | `MEMBER_JOINED` | Member joined the pool |
 | `MEMBER_LINKED_ALT` | Alt linked to a main |
 | `NIGHT_OPENED` | Night opened |

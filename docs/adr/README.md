@@ -15,3 +15,4 @@ They record *why* the project is built a certain way. A decision that changes is
 | [0005](0005-officer-ledger-sync.md) | Officer ledger sync: pull by heads, gate per event, vouching for unknown authors | accepted |
 | [0006](0006-read-only-credits-snapshot.md) | Read-only credits for members: an officer's snapshot, newest ledger wins | accepted |
 | [0007](0007-backup-and-season-compaction.md) | Backup by merge, guild-wide season compaction with tombstones | accepted |
+| [0008](0008-automatic-upgrade-badge.md) | An automatic upgrade badge by quality tier, against the gear of the fight | accepted |

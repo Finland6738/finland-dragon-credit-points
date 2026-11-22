@@ -1,8 +1,8 @@
 # Rollare per il loot
 
-> **Costruito, non ancora visto in gioco.** Il popup funziona nei test offline con un raid simulato; come appare in un raid vero, il tooltip del pezzo con il confronto, il roll dal pulsante e i verdetti di upgrade sui pezzi veri del raid sono ancora da confermare in gioco. [English](Rolling-for-Loot)
+> **Costruito, non ancora visto in gioco.** Il popup funziona nei test offline con un raid simulato; come appare in un raid vero, il tooltip del pezzo con il confronto, il roll dai pulsanti e il badge di upgrade sui pezzi veri del raid sono ancora da confermare in gioco. [English](Rolling-for-Loot)
 
-Questa pagina è per **ogni raider**. Quando il master looter apre il roll di un pezzo, l'addon ti mostra una finestra piccola, il **popup del pezzo**. Rispondi lì, rolli da lì, e sparisce quando il round si chiude. Non devi mai scrivere `/roll` a mano.
+Questa pagina è per **ogni raider**. Quando il master looter apre il roll di un pezzo, l'addon ti mostra una finestra piccola, il **popup del pezzo**. Scegli con **tre pulsanti**, e il popup sparisce quando il round si chiude. Non devi mai scrivere `/roll` a mano.
 
 Ti serve l'addon attivo: solo i raider con l'addon possono rispondere e rollare, e un `/roll` scritto da chi non ce l'ha viene messo da parte (vedi [[Controllo dell'addon|Addon-Check-it]]).
 
@@ -12,84 +12,68 @@ Ti serve l'addon attivo: solo i raider con l'addon possono rispondere e rollare,
 
 Dall'alto in basso:
 
-- **La riga del titolo.** *ROLL APERTO · nome del boss* (o *REROLL*, o *ROLL LIBERO*, vedi sotto) e a destra il **timer** in minuti e secondi. Diventa ambra negli ultimi cinque secondi e dice *In pausa* quando il master looter mette in pausa. La crocetta nasconde la card per questo round.
-- **Il pezzo.** L'icona e il nome nel colore della qualità e sotto lo slot, il tipo (stoffa, piastre, spada a una mano...) e il livello dell'oggetto. **Passa il mouse sull'icona o sul nome** per vedere il tooltip del gioco per il pezzo, con il confronto con quello che indossi.
-- **Il chip del costo**, per esempio *ARMA · 2 CREDITI*: la categoria che la tabella della gilda ha dato al pezzo e quanto paghi se lo vinci con la risposta che hai scelto (prima di rispondere, il costo pieno). *COUNCIL* vuol dire che il costo lo decide il council. Accanto, quando il tuo client conosce la tabella dei crediti della gilda, **i tuoi crediti e il tuo posto stimato in fila**: *I tuoi crediti 2 · fila ~3ª*. Il posto è "1 + i membri del raid con meno crediti"; è una stima, perché una parità la decide il roll.
-- **Il verdetto di upgrade**, una riga per ognuna delle tue spec: *Main-spec · Upgrade grande +7,4% · ilvl +6*. Vedi [È un upgrade?](#è-un-upgrade) sotto.
-- **La tua risposta:** **Main-spec**, **Off-spec** o **Passo**. Clicca e parte subito. Puoi cambiare idea finché non rolli.
-- **Un'etichetta, facoltativa**, per una risposta main-spec: **BiS**, **Upgrade grande**, **Upgrade piccolo** o **Situazionale**. Informa solo il master looter e il council; non cambia mai chi vince. Off-spec e Passo non hanno etichetta. Chi la sceglie è una regola della gilda (**Impostazioni › Regole › Priorità**), e una riga sotto i chip dice quale:
-  - **Suggerita** (il modo consueto): l'addon compila l'etichetta prima che tu risponda e parte con la tua risposta Main-spec. Sceglie **BiS** se il pezzo è nella tua lista best in slot ([[Suggerimenti di upgrade|Upgrade-Hints-it]]), altrimenti **Upgrade grande** o **Upgrade piccolo** dal verdetto main-spec del popup; senza upgrade, niente. Puoi cliccarne un'altra (o la stessa di nuovo per toglierla); se la togli, l'addon non la rimette. Se clicchi un'etichetta prima di rispondere, risponde main-spec al posto tuo.
-  - **Automatica**: l'addon imposta l'etichetta nello stesso modo e i chip sono bloccati; tu scegli solo la risposta.
-  - **Scelta dal giocatore**: non viene compilato nulla; clicca un'etichetta per metterla, clicca di nuovo per toglierla.
+- **La riga del titolo.** *ROLL APERTO · nome del boss* (oppure *REROLL*, o *ROLL LIBERO*, vedi sotto), e a destra il **timer** in minuti e secondi. Diventa ambra negli ultimi cinque secondi e dice *In pausa* mentre il master looter mette in pausa. La crocetta nasconde la card per questo round.
+- **Il pezzo.** Icona e nome nel colore della sua qualità, e sotto lo slot, il tipo (stoffa, piastre, spada a una mano...) e l'item level. **Passa sopra l'icona o il nome** per vedere il tooltip del gioco, con il confronto con quello che indossi.
+- **Il chip del costo**, per esempio *ARMA · 2 CREDITI*: la categoria che la tabella della gilda ha dato al pezzo e quanto paghi se lo vinci con la risposta scelta (prima di rispondere, il costo pieno). *COUNCIL* vuol dire che il costo lo decide il council. Accanto, quando questo client conosce la tabella dei crediti della gilda, **i tuoi crediti e il tuo posto stimato in fila**: *I tuoi crediti 2 · fila ~3ª*. Il posto è "1 + i membri del raid con meno crediti"; è una stima, perché una parità la decide il roll.
+- **Il badge di upgrade**, per esempio *Upgrade medio · ilvl +13*: lo calcola il tuo addon, vedi [È un upgrade?](#è-un-upgrade) sotto.
+- **La barra del timer**, che si svuota col passare del tempo, e **la riga di aiuto**.
+- **Tre pulsanti: Passo, Tira Main-spec, Tira Off-spec.** È tutto quello che scegli.
 
-  Il master looter vede chi ha scelto l'etichetta: *auto* se è dell'addon, *cambiata* se ne hai scelta un'altra.
-- **Una nota, facoltativa.** Al massimo 80 caratteri (qualche parola in meno se usi le lettere accentate). Parte quando esci dalla casella, premi Invio o premi **Tira**.
-- **La barra del timer**, che si svuota con il passare del tempo.
-- **La riga di aiuto** e il pulsante **Tira**.
+Il popup è una finestra a sé: **trascinalo da una card qualsiasi** per spostarlo, e trascina la maniglia sottile sul bordo destro per allargarlo. Posizione e larghezza sono ricordate per ogni personaggio.
 
-Il popup è una finestra a sé: **trascinalo da una qualunque card** per spostarlo e trascina la maniglia sottile sul bordo destro per allargarlo. Posizione e larghezza si ricordano per ogni personaggio.
+## I tre pulsanti
+
+- **Tira Main-spec** manda la risposta *main-spec* **e tira con lo stesso clic**: l'addon dice al master looter "questo giocatore ha cliccato", poi chiede al gioco `/roll 1-100`. Il roll è del gioco e nessuno può sceglierlo. Il pulsante poi dice *Tirato* e tutti i pulsanti si bloccano: tiri **una volta** per round, e dopo il roll la risposta non cambia più.
+- **Tira Off-spec** manda la risposta *off-spec*. L'off-spec tira solo se nessuno chiede il pezzo per la propria main-spec, quindi nel primo round il clic **manda solo la risposta** e la riga di aiuto dice *Tiri solo se nessuno chiede il pezzo prima di te: premi lo stesso pulsante quando tocca a te*. Se si apre il round off-spec, compare un nuovo popup e **Tira Off-spec** tira.
+- **Passo** manda un passo e non tira. Finché non hai tirato puoi ancora cambiare idea e premere un pulsante di tiro.
+
+Se non rispondi affatto, le regole lo contano come un passo. **Non ci sono più etichetta e nota**: quanto il pezzo ti migliora lo dice l'addon al master looter.
 
 ## È un upgrade?
 
-Sotto il chip del costo il popup ti dice come il pezzo si confronta con quello che indossi, **una volta per la main-spec e una per l'off-spec** (le spec che hai dichiarato alla gilda; se non ne hai dichiarate, la spec che giochi ora conta come main-spec e non c'è la riga dell'off-spec). È un indizio per te, calcolato dal **tuo addon** con il tuo equipaggiamento: nessuno deve chiedertelo in chat.
+Il badge sotto il chip del costo ti dice come il pezzo si confronta con quello che **indossavi durante lo scontro col boss** in quello slot. Lo calcola il tuo addon; nessuno deve chiedertelo in chat, e **non cambia mai chi vince**.
 
-| Vedi | Significa |
+| Vedi | Vuol dire |
 |---|---|
-| **Upgrade grande** (verde) | Almeno +5% sulle statistiche di quella spec (la gilda può cambiare la soglia). |
-| **Upgrade piccolo** | Migliore, ma di meno. |
-| **Nessun upgrade** | Non migliore di quello che indossi in quello slot, o uguale. |
-| **Non confrontabile** | L'addon non sa confrontarlo: un token, un trinket con effetto d'uso, un'arma che non si accorda con quello che indossi. |
-| **Non usabile** (ambra) | La tua classe non può usarlo: tipo di armatura o di arma, due armi, un pezzo per altre classi o per un'altra specializzazione. |
+| **Upgrade grande** (verde) | Lì indossi un pezzo **verde o inferiore**, o **niente** (*Upgrade grande · slot vuoto*). |
+| **Upgrade medio** | Lì indossi un pezzo **blu**, o un **viola di una season precedente**. |
+| **Upgrade piccolo** | Lì indossi un **viola di questa season**. |
+| **Nessun upgrade** | Il pezzo è peggiore di quello che indossi (item level più basso), o dello stesso livello senza niente di meglio. |
+| **Non confrontabile** | L'addon non può confrontarlo: un token, una mano sinistra mentre indossi un'arma a due mani, o un pezzo che il gioco non ha ancora caricato. |
+| **Non usabile** (ambra) | La tua classe non può usarlo: tipo di armatura o di arma, doppia arma, un pezzo per altre classi o per un'altra specializzazione. |
 
-Dopo il verdetto ci sono la percentuale (`+7,4%`, la differenza delle statistiche pesate) e la differenza di item level (`ilvl +6`). **Uno slot vuoto è sempre un upgrade grande**, senza percentuale. **Passa il mouse sulla riga** per vedere il perché, su cosa si è fatto il confronto (le statistiche della tua spec, o solo l'item level quando il gioco non dà le statistiche), i pezzi che indossi con cui è stato confrontato e un promemoria che l'indizio è un'approssimazione.
+Il badge mostra sempre anche la **differenza di item level**: *Upgrade medio · ilvl +13*. Passa sopra il badge per vedere le tue due spec, i pezzi con cui è stato confrontato, se ha usato l'equipaggiamento dello scontro, e la regola. Anelli e trinket si confrontano col peggiore dei tuoi due; un'arma a due mani con mano destra più mano sinistra. La regola completa è in [[Suggerimenti di upgrade|Upgrade-Hints-it]].
 
-Come si calcola: il pezzo si confronta con quello che indossi nel suo slot (anelli e trinket con il peggiore dei due, un'arma a due mani con mano principale più mano secondaria, un'arma a una mano con la mano peggiore solo se usi due armi). Ogni statistica ha un peso per la tua spec; il punteggio è la somma di peso × valore e l'upgrade è `(nuovo − indossato) / indossato`. I pesi sono quelli predefiniti dell'addon per ogni specializzazione; puoi impostare i tuoi e tenere una lista best-in-slot che il popup ti ricorda: vedi [[Suggerimenti di upgrade|Upgrade-Hints-it]].
+**Un pezzo che non puoi usare.** Quando l'addon è sicuro che nessuna tua spec può usarlo, **Passo è preselezionato** e la riga di aiuto lo dice. **Non parte nulla da solo**: non rispondere vale comunque come passo. Se non sei d'accordo premi un pulsante di tiro; premendo Passo il passo parte. Il Guild Master può spegnere la preselezione.
 
-**Un pezzo che non puoi usare.** Quando l'addon è sicuro che nessuna tua spec può usare il pezzo, **Passo è preselezionato** e la riga di aiuto lo dice. **Non viene mandato nulla da solo**: non rispondere vale comunque come passo. Se non sei d'accordo, scegli un'altra risposta; un clic su Passo lo manda. Il Guild Master può spegnere la preselezione.
-
-**Cosa riceve il master looter.** Ogni risposta che mandi, passo compreso, porta al master looter i verdetti e i pezzi che indossi (la colonna *Upgrade* della sua tabella). Oltre al master looter lo vede solo il council (la gilda può scegliere tutti gli officer, o il solo master looter). Un **passo su un upgrade grande per la tua main-spec** viene segnalato (*Upgrade ignorato*), e così un pezzo main-spec che andrebbe a chi ci guadagna poco mentre tu ci guadagni molto (*Possibile spreco*): vedi la [[Guida del master looter|Master-Looter-Guide-it]], "Segnalazioni del council". Informa il council; non cambia mai chi vince.
-
-### I limiti dell'indizio
-
-- È un'**approssimazione**: proc, effetti d'uso, bonus di set e limiti delle statistiche non sono contati, e i pesi predefiniti non sono una guida al pezzo migliore per la tua build.
-- Il confronto parte dal **pezzo stesso**: livello e statistiche sono quelli dell'oggetto base, non di una variante con bonus.
-- Un **token** per un'altra classe è *non confrontabile*, non *non usabile*; un trinket con effetto d'uso che indossi può essere trattato come quello da sostituire.
-- Se il gioco non dà le statistiche di un pezzo, il confronto ripiega sul **solo item level**, e il tooltip lo dice.
-- Se Forever dà le statistiche dei pezzi raid come l'addon si aspetta è ancora da verificare in gioco.
-
-Le soglie della gilda (cosa conta come grande, la modalità solo item level, la preselezione e un interruttore per spegnere i verdetti) sono la **sezione `upgrade` delle regole**, impostata dal Guild Master insieme al resto delle regole ([[Regole del loot|Loot-Rules-it]]).
+**Cosa riceve il master looter.** Ogni risposta che mandi, passo compreso, porta il badge e i pezzi che indossavi al master looter (la colonna *Upgrade* della sua tabella). Oltre al master looter lo vede solo il council (la gilda può scegliere tutti gli officer, o il solo master looter). Un **passo su un upgrade grande per la tua main spec** viene segnalato (*Upgrade ignorato*), e così un pezzo main-spec che andrebbe a chi ha un upgrade piccolo mentre tu ne hai uno grande (*Possibile spreco*): vedi la [[Guida del master looter|Master-Looter-Guide-it]], "Segnalazioni del council".
 
 ## Come va un roll
 
-1. **Rispondi.** Scegli Main-spec, Off-spec o Passo (e un'etichetta o una nota se vuoi).
-2. **Tira.** Premi **Tira**: l'addon prima dice al master looter "questo giocatore ha cliccato Tira", poi chiede al gioco `/roll 1-100`. Il roll è del gioco e nessuno può sceglierlo. Il pulsante dice poi *Tirato* e la tua risposta si blocca: dopo aver rollato non puoi più cambiarla. Rolli **una volta** per round; un secondo roll non conta.
-3. **Aspetta.** Il round si chiude da solo allo scadere del timer, o quando tutti hanno risposto e rollato. Il popup si chiude con lui e la finestra del master looter mostra la proposta.
+1. **Scegli.** Premi **Tira Main-spec**, **Tira Off-spec** o **Passo**. Una risposta main-spec tira subito.
+2. **Aspetta.** Il round si chiude da solo allo scadere del timer, o quando tutti hanno risposto e tirato. Il popup si chiude con lui, e la finestra del master looter mostra la proposta.
 
-**Passo** non richiede un roll. Se non rispondi affatto, per le regole è come un passo.
+### Si tira solo con i pulsanti
 
-### Rolla solo con il pulsante
+Di norma la gilda conta **solo i roll fatti con i pulsanti di tiro del popup**, una volta per pezzo. Un `/roll` scritto a mano **non conta**, anche con l'addon: il master looter lo vede messo da parte come *Scritto a mano: conta solo il pulsante Roll del popup*, e il tuo addon te lo dice in chat: *Usa i pulsanti di tiro del popup del loot: i roll scritti a mano non contano.* Un roll scritto a mano non ti fa perdere il turno: premi poi il pulsante di tiro e quel roll conta. Un secondo roll dopo quello contato è un doppione e non conta. Anche gli spareggi fra pari si fanno col pulsante.
 
-Di norma la gilda conta **solo i roll fatti con il pulsante Tira del popup**, una volta per pezzo. Un `/roll` scritto a mano **non** conta, nemmeno con l'addon: il master looter lo vede messo da parte come *Scritto a mano: conta solo il pulsante Roll del popup*, e il tuo addon te lo dice in chat: *Usa il pulsante Roll del popup del loot: i roll scritti a mano non contano.* Un roll scritto a mano non consuma il tuo turno: clicca **Tira** dopo e quel roll conta. Un secondo roll dopo quello contato è un doppione e non conta. Anche i reroll fra i pari si fanno con il pulsante.
+Perché: il gioco non distingue un `/roll` scritto dal roll del pulsante, quindi il pulsante manda un piccolo messaggio "ho cliccato" subito prima del roll. Non porta nessun numero: il roll resta del gioco. Dopo un boss il messaggio può aspettare qualche secondo dietro il blocco della chat del gioco; l'addon del master looter lo aspetta. Il Guild Master può spegnere la regola (*I roll contano solo dal pulsante Roll del popup*, nelle regole della sessione), e allora un `/roll 1-100` scritto conta come prima.
 
-Perché: il gioco non distingue un `/roll` scritto da quello del pulsante, quindi il pulsante manda un piccolo messaggio "ho cliccato" subito prima del roll. Non porta nessun numero: il roll resta quello del gioco. Dopo un boss il messaggio può aspettare qualche secondo dietro il lockdown della chat; l'addon del master looter lo aspetta. Il Guild Master può spegnere la regola (*I roll contano solo dal pulsante Roll del popup*, nelle regole della sessione), e allora un `/roll 1-100` scritto conta come prima.
+### Chi tira e quando
 
-### Chi rolla e quando
+- Le risposte **Main-spec** tirano nel primo round. Se nessuno risponde main-spec, il **round off-spec** si apre da solo: se hai risposto Off-spec compare un nuovo popup e **Tira Off-spec** tira; se hai risposto Main-spec o Passo non vedi nulla.
+- Se due giocatori sono **pari** di crediti e tirano, si apre uno **spareggio** solo fra loro: il popup dice *REROLL*, lo vedono solo i pari, e tira il pulsante della tua risposta.
+- Se nessuno voleva il pezzo e la gilda usa il **roll libero**, il popup dice *ROLL LIBERO* e chiunque può tirare con uno dei due pulsanti di tiro.
 
-- Le risposte **main-spec** rollano nel primo round. Se nessuno risponde main-spec, il **round off-spec** si apre da solo: se hai risposto Off-spec compare un nuovo popup con il solo **Tira**; se hai risposto Main-spec o Passo non vedi nulla.
-- Se due giocatori sono **pari** per crediti e roll, si apre un **reroll** solo fra loro: il popup dice *REROLL* e lo vedono solo i pari.
-- Se nessuno voleva il pezzo e la gilda usa un **roll libero**, il popup dice *ROLL LIBERO* e può rollare chiunque.
-
-La riga di aiuto sotto la barra ti dice cosa fare adesso: *Scegli la risposta, poi tira*; *Il roll parte dal gioco: /roll 1-100*; *Tiri solo se nessuno chiede il pezzo prima di te* (hai risposto un tier più basso); *Siete pari: tira ancora*; *Tirato. Il master looter ha il tuo roll*.
+La riga di aiuto sotto la barra ti dice cosa fare ora: *Passa, oppure tira per main-spec o off-spec: un clic risponde e tira*; *Il roll parte dal gioco: /roll 1-100*; *Tiri solo se nessuno chiede il pezzo prima di te*; *Siete pari: tira ancora*; *Tirato. Il master looter ha il tuo roll*.
 
 ## Se qualcosa va storto
 
-- *Non è stato possibile inviare la tua risposta.* L'addon non è riuscito a consegnare la risposta al canale del raid; clicca di nuovo la risposta.
-- *Il gioco non ha lasciato tirare all'addon: scrivi subito /roll 1-100.* Il client ha rifiutato il roll dal pulsante; scrivi tu il comando subito: il tuo clic l'ha già detto al master looter, quindi un roll scritto entro pochi secondi (la finestra della gilda, 10 secondi di norma) conta uguale.
-- **Hai ricaricato l'interfaccia o sei entrato durante un roll.** L'addon del master looter ti rimanda il popup con la tua risposta, l'etichetta e la nota com'erano.
-- **Sei entrato nel raid dopo l'apertura del roll.** Vedi il popup, ma il raid di un pezzo si fissa quando si apre il suo roll: la tua risposta non conta per quel pezzo, solo dal successivo.
+- *Non è stato possibile inviare la tua risposta.* L'addon non è riuscito a consegnare la risposta al canale del raid e non ha tirato nulla; premi di nuovo il pulsante.
+- *Il gioco non ha lasciato tirare all'addon: scrivi subito /roll 1-100.* La risposta è partita, ma il client ha rifiutato il roll dal pulsante; premi di nuovo il pulsante o scrivi tu il comando subito: il tuo clic ha già avvisato il master looter, quindi un roll scritto entro pochi secondi (la finestra della gilda, 10 secondi di norma) conta lo stesso.
+- **Hai ricaricato l'interfaccia o fatto login durante un roll.** L'addon del master looter ti rimanda il popup con la tua risposta com'era. L'equipaggiamento dello scontro col boss resta anche dopo il ricaricamento.
+- **Sei entrato nel raid dopo l'apertura del roll.** Vedi il popup, ma il raid di un pezzo è fissato quando si apre il suo roll: la tua risposta non conta per quel pezzo, solo dal successivo.
 
 ## Cosa vede il master looter
 
-La tua risposta, l'etichetta e la nota, accanto ai tuoi crediti, nella tabella dei candidati della [[Guida del master looter|Master-Looter-Guide-it]]. Viaggiano sul canale addon del raid come ogni messaggio della sessione di loot; gli addon degli altri giocatori non li mostrano. Nessuno può rispondere a nome tuo: l'addon del master looter prende il giocatore dal mittente del messaggio, mai da quello che il messaggio dice.
-
-I verdetti di upgrade che hai visto nel popup partono anche con la tua risposta (vedi [È un upgrade?](#è-un-upgrade)); il master looter li vede nella colonna *Upgrade* della tabella.
+La tua risposta e il tuo badge di upgrade, accanto ai tuoi crediti, nella tabella dei candidati della [[Guida del master looter|Master-Looter-Guide-it]]. Viaggiano sul canale addon del raid come ogni messaggio della sessione di loot; gli addon degli altri giocatori non li mostrano. Nessuno può rispondere a nome tuo: l'addon del master looter prende il giocatore dal mittente del messaggio, mai da quello che il messaggio dice.

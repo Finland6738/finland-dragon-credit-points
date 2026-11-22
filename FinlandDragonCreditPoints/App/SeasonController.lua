@@ -8,7 +8,10 @@
 -- * The late-join rule belongs to the guild's rules (CONFIG_CHANGED, `members.lateJoin.method`): when the Guild Master picks
 --   another one while opening, it is written with Rules.Change just before the season (audited like any rule change).
 --
--- Bus events: "SEASON_OPENED"(season record), "SEASON_CLOSED"(season record).
+-- * The item-level band of a season (M7-5c: SEASON_BAND_SET, the upgrade badge's "older season" line) is set when the
+--   season opens (optional) or later with SetBand, also with an explicit confirmation.
+--
+-- Bus events: "SEASON_OPENED"(season record), "SEASON_CLOSED"(season record), "SEASON_BAND_SET"(season record).
 -- Not verified in the real client: the window and the permission-based visibility (M6-1b "in game").
 local ADDON_NAME, ns = ...
 ns = ns or {}
@@ -61,10 +64,11 @@ local function writer(self)
 	return L, me
 end
 
--- Opens a season. args = { confirmed, label?, instances = { { id, size } }, startCredits?, lateJoin? = method }.
+-- Opens a season. args = { confirmed, label?, instances = { { id, size } }, startCredits?, lateJoin? = method,
+-- band? = { min, max } }.
 -- Returns the season record, or nil and a code: "CONFIRM_REQUIRED", "NOT_READY", "PENDING", "NOT_IN_GUILD", "RANK_TOO_LOW",
 -- "NOT_GM", "SEASON_ALREADY_OPEN", "NO_INSTANCES", "NOT_IN_TABLE", "SIZE", "START_CREDITS", "LATE_JOIN",
--- "RULES:<field>" (the late-join rule was refused) or a Ledger code.
+-- "RULES:<field>" (the late-join rule was refused), "BAND" or a Ledger code.
 function SeasonController:Open(args)
 	args = args or {}
 	local L, me = writer(self)
@@ -82,6 +86,11 @@ function SeasonController:Open(args)
 	local start = args.startCredits
 	if start == nil then start = rules.season.startCredits end
 	if type(start) ~= "number" or start ~= start or start < 0 then return nil, "START_CREDITS" end
+	local band
+	if args.band ~= nil then
+		band = ns.UpgradeScore.Band(args.band)
+		if not band then return nil, "BAND" end
+	end
 	local label = args.label
 	if type(label) == "string" then label = label:match("^%s*(.-)%s*$") end
 	if label == "" then label = nil end
@@ -98,6 +107,11 @@ function SeasonController:Open(args)
 	local event, why = ns.Season.Open(L, { author = me, ts = ns.Compat.ServerTime(), season = self:NextId(), label = label,
 		instances = pack, startCredits = start }, nil, gate())
 	if not event then return nil, why end
+	if band then
+		local _, bandWhy = ns.Season.SetBand(L, { author = me, ts = ns.Compat.ServerTime(), season = event.season, min = band.min,
+			max = band.max }, gate())
+		if bandWhy then log("warn", "SEASON_BAND_REFUSED", bandWhy) end
+	end
 	local season = ns.Season.Get(L, event.season)
 	log("info", "SEASON_OPENED", #pack)
 	emit("SEASON_OPENED", season)
@@ -121,6 +135,24 @@ function SeasonController:Close(args)
 	log("info", "SEASON_CLOSED")
 	emit("SEASON_CLOSED", closed)
 	return closed
+end
+
+-- Sets the item-level band of the open season (M7-5c). args = { confirmed, min, max }. Returns the season record, or nil and
+-- a code: "CONFIRM_REQUIRED", "NOT_READY", a permission code, "NO_SEASON", "BAND", "UNCHANGED" or a Ledger code.
+function SeasonController:SetBand(args)
+	args = args or {}
+	local L, me = writer(self)
+	if not L then return nil, me end
+	if args.confirmed ~= true then return nil, "CONFIRM_REQUIRED" end
+	local s = ns.Season.Current(L)
+	if not s then return nil, "NO_SEASON" end
+	local event, why = ns.Season.SetBand(L, { author = me, ts = ns.Compat.ServerTime(), season = s.id, min = args.min,
+		max = args.max }, gate())
+	if not event then return nil, why end
+	local season = ns.Season.Get(L, s.id)
+	log("info", "SEASON_BAND_SET", season.band.min, season.band.max)
+	emit("SEASON_BAND_SET", season)
+	return season
 end
 
 if ns.addon then ns.addon.SeasonController = SeasonController end   -- also reachable from tests

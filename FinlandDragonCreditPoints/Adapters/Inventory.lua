@@ -1,24 +1,24 @@
--- Inventory: what the player wears and what an item is worth against it, read from the game for Domain/UpgradeScore.lua
--- (docs/ANALISI.md §5.1, M5-2). Lua 5.1. Everything goes through Core/Compat.lua (Compat.Item: GetInventoryItemLink,
--- C_Item.GetItemInfo / GetItemInfoInstant, GetDetailedItemLevelInfo, GetItemStats, GetItemStatDelta, IsEquippableItem,
+-- Inventory: what the player wears and what an item is, read from the game for Domain/UpgradeScore.lua (docs/ANALISI.md
+-- §5.1, M5-2, M7-5c). Lua 5.1. Everything goes through Core/Compat.lua (Compat.Item: GetInventoryItemLink,
+-- C_Item.GetItemInfo / GetItemInfoInstant, GetDetailedItemLevelInfo, GetItemQualityByID, IsEquippableItem,
 -- DoesItemContainSpec, GetItemSpecInfo; Compat.Player, Compat.Spec); the names were checked against the Forever API dump.
 -- The domain gets plain tables, never a game object, and a secret value never reaches it (Compat reads them as nil).
+-- Since M7-5c the stats are not read any more: the upgrade badge compares the quality and the item level only.
 --
 -- A piece (the shape UpgradeScore.Evaluate takes):
---   { itemID, link ("item:..." without the hyperlink markup), equipLoc, classID, subclassID, level, stats = { [client key]
---     = n } | nil (unknown), specs = { specID, ... } | nil (nil: not restricted, or the client does not say) }
--- Not known from the API and left out: the class restriction of a token and the use / proc effect of a trinket (they are
--- in the tooltip text only), hence the limits of §5.3.
+--   { itemID, link ("item:..." without the hyperlink markup), equipLoc, classID, subclassID, quality (nil while the client
+--     has not loaded the item), level, specs = { specID, ... } | nil (nil: not restricted, or the client does not say) }
+-- Not known from the API and left out: the class restriction of a token (it is in the tooltip text only), hence §5.3.
 --
 -- Inventory.Ref(x)                the item string "item:..." of a link, an id or an item string, and the id; nil, nil if none
 -- Inventory.Piece(x, opts)        a piece of an item (a link, an id or an item string), nil and a code ("UNKNOWN",
 --                                 "NOT_LOADED") when the client has no data. opts.classID / opts.classFile: the character,
 --                                 to read the spec list with DoesItemContainSpec when GetItemSpecInfo says nothing;
 --                                 opts.unloaded = accept an item whose full data is not loaded; opts.noSpecs = skip the spec list.
--- Inventory.Equipped()            { [slot] = piece } of the player's inventory slots (INVSLOT_*; shirt and tabard are not
---                                 compared), and the list of the item strings in slot order
--- Inventory.Fill(piece, equipped) fills a missing stats table of the piece or of an equipped piece from
---                                 C_Item.GetItemStatDelta (the difference is reliable even when one table is not)
+-- Inventory.Links()               { [slot] = full link } of the player's inventory slots (INVSLOT_*; shirt and tabard are not
+--                                 compared): what the gear snapshot keeps (Adapters/GearSnapshot.lua)
+-- Inventory.FromLinks(links)      { [slot] = piece } of such a table, and the list of the item strings in slot order
+-- Inventory.Equipped()            the same for what the player wears now
 -- Inventory.Player()              { class = "WARRIOR", classID, spec = the active specID | nil }
 local ADDON_NAME, ns = ...
 ns = ns or {}
@@ -26,7 +26,7 @@ ns.modules = ns.modules or {}
 local Inventory = {}
 ns.Inventory, ns.modules.Inventory = Inventory, Inventory
 
-local type, tonumber, pairs, ipairs = type, tonumber, pairs, ipairs
+local type, tonumber, ipairs = type, tonumber, ipairs
 
 -- The inventory slots compared (UpgradeScore.SLOT): everything but the shirt (4) and the tabard (19).
 Inventory.SLOTS = { 1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 }
@@ -74,55 +74,41 @@ function Inventory.Piece(x, opts)
 	local equipLoc = entry.equipLoc
 	if equipLoc and equipLoc ~= "" and Item.IsEquippable(ref) == false then equipLoc = "" end
 	local piece = { itemID = id, link = ref, equipLoc = equipLoc, classID = entry.classID, subclassID = entry.subclassID,
-		level = Item.Level(arg) or entry.level, stats = Item.Stats(arg) }
+		quality = Item.Quality(arg) or entry.quality, level = Item.Level(arg) or entry.level }
 	if equipLoc and equipLoc ~= "" and not (opts and opts.noSpecs) then piece.specs = specsOf(ref, opts) end
 	return piece
 end
 
--- The worn pieces by slot, and their item strings in slot order.
-function Inventory.Equipped()
-	local equipped, links = {}, {}
+-- The full links of the worn pieces by slot (what a snapshot keeps: the item level and the quality are read from them).
+function Inventory.Links()
+	local out = {}
 	for _, slot in ipairs(Inventory.SLOTS) do
 		local link = C().Item.EquippedLink(slot)
-		if link then
+		if link then out[slot] = link end
+	end
+	return out
+end
+
+-- The pieces of a { [slot] = link } table, and their item strings in slot order.
+function Inventory.FromLinks(links)
+	local equipped, refs = {}, {}
+	for _, slot in ipairs(Inventory.SLOTS) do
+		local link = type(links) == "table" and links[slot] or nil
+		if type(link) == "string" then
 			local piece = Inventory.Piece(link, { unloaded = true, noSpecs = true })
 			if piece then
 				piece.slot = slot
 				equipped[slot] = piece
-				links[#links + 1] = piece.link
+				refs[#refs + 1] = piece.link
 			end
 		end
 	end
-	return equipped, links
+	return equipped, refs
 end
 
-local function plus(a, b, sign)
-	local out = {}
-	for k, v in pairs(a) do out[k] = v end
-	for k, v in pairs(b) do out[k] = (out[k] or 0) + sign * v end
-	return out
-end
-
--- Completes what GetItemStats left unknown, from GetItemStatDelta(worn, new) = new - worn: a worn piece without stats gets
--- new - delta, a new piece without stats gets worn + delta. Only pieces whose stats are nil are touched. Returns the
--- number of tables filled.
-function Inventory.Fill(piece, equipped)
-	local filled = 0
-	local Item = C().Item
-	for _, worn in pairs(equipped or {}) do
-		if (piece.stats == nil) ~= (worn.stats == nil) then   -- one side is unknown, the other known
-			local delta = Item.StatDelta(worn.link, piece.link)
-			if delta then
-				if worn.stats == nil then
-					worn.stats = plus(piece.stats, delta, -1)
-				else
-					piece.stats = plus(worn.stats, delta, 1)
-				end
-				filled = filled + 1
-			end
-		end
-	end
-	return filled
+-- The worn pieces by slot, and their item strings in slot order.
+function Inventory.Equipped()
+	return Inventory.FromLinks(Inventory.Links())
 end
 
 -- The character: its class (file name and id) and the specID it plays now.

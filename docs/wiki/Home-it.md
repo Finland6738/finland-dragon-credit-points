@@ -21,7 +21,7 @@
 | Leggere la tabella dei crediti e il tuo posto in fila | [[Tabella crediti|Credits-it]] |
 | Condurre una sessione di loot da master looter | [[Guida del master looter|Master-Looter-Guide-it]] |
 | Rispondere e rollare per un pezzo da raider | [[Rollare per il loot|Rolling-for-Loot-it]] |
-| Impostare i miei pesi o una lista best-in-slot | [[Suggerimenti di upgrade|Upgrade-Hints-it]] |
+| Capire il badge di upgrade del popup | [[Suggerimenti di upgrade|Upgrade-Hints-it]] |
 | Votare, annullare un'assegnazione, correggere i crediti o seguire un progetto leggendario come council | [[Council|Council-it]] |
 | Leggere le serate, lo storico di un membro o di un oggetto | [[Storico|History-it]] |
 | Cambiare le mie preferenze o (Guild Master) le regole e i permessi | [[Impostazioni|Settings-it]] |

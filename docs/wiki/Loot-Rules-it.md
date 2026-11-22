@@ -35,7 +35,7 @@ Gli oggetti sotto la soglia di loot del gruppo (di norma i verdi) non sono tracc
 - **Main-spec (MS)**: ti serve per la tua spec principale. Si chiede per primo e costa il prezzo pieno.
 - **Off-spec (OS)**: si chiede **solo se nessuno ha risposto main-spec**. Costa **0 crediti**.
 - **Passo**: non rolli.
-- Il transmog è disponibile come terzo tier, spento nel preset.
+- Il transmog è disponibile come terzo tier, spento nel preset; il popup non ha un pulsante per lui (solo Passo, Tira Main-spec e Tira Off-spec).
 - Conta solo un `/roll` **1-100**, **il primo del round**, fatto da un personaggio nel raid **con l'addon attivo**. Tutto il resto viene messo da parte e mostrato al master looter con il suo motivo.
 - Il roll deve venire dal **pulsante Tira del popup** (regola *I roll contano solo dal pulsante Roll del popup*, accesa di norma): un `/roll` scritto a mano viene messo da parte come `NOT_FROM_BUTTON` e non consuma il turno del giocatore. Il pulsante avvisa l'addon del master looter del clic subito prima del roll del gioco; il roll resta quello del gioco. Chi ha un addon più vecchio di questa regola rolla come prima finché non aggiorna.
 - Chi non ha l'addon non può rispondere né vincere (il master looter lo sa prima del primo roll).
@@ -86,7 +86,7 @@ Il council (gli officer della gilda presenti nel raid, o la lista di personaggi 
 
 **Il voto del council.** Spento nel preset. Con la modalità di assegnazione **council** il council vota su ogni proposta e il master looter chiude il voto prima di confermare: decide la maggioranza stretta (parità, o nessun voto, lasciano la decisione al master looter). Con il **voto del council** acceso nelle altre modalità i voti informano soltanto il master looter, che li vede prima di confermare; in modalità automatica un voto per un altro giocatore ferma l'assegnazione automatica. Ognuno vota solo per sé, dal proprio gioco; i voti finiscono scritti con l'assegnazione. Vedi la [[Guida del master looter|Master-Looter-Guide-it]], "Il council: interventi e voto".
 
-**Segnalazioni del council.** Per rendere visibili in tempo i casi evidenti, l'addon alza due segnalazioni appena arrivano le risposte: **upgrade ignorato** (un raider passa su un pezzo che per la sua main-spec è un upgrade grande) e **possibile spreco** (il primo in fila ci guadagna poco o nulla, un altro candidato main-spec almeno il doppio, con un upgrade grande). Guardano solo la main-spec (MS1), non cambiano mai il vincitore da sole e fermano l'assegnazione automatica finché il master looter non guarda; intervenire è una modifica con il suo motivo. Le regole della gilda dicono se le segnalazioni sono accese, il rapporto dello spreco (preset 2) e chi oltre al master looter vede verdetti e segnalazioni (preset: il council). Vedi la [[Guida del master looter|Master-Looter-Guide-it]], "Segnalazioni del council".
+**Segnalazioni del council.** Per rendere visibili in tempo i casi evidenti, l'addon alza due segnalazioni appena arrivano le risposte: **upgrade ignorato** (un raider passa su un pezzo che per la sua main-spec è un upgrade grande) e **possibile spreco** (il primo in fila ha un upgrade piccolo o nessuno, un altro candidato main-spec uno grande). Guardano solo la main-spec (MS1), non cambiano mai il vincitore da sole e fermano l'assegnazione automatica finché il master looter non guarda; intervenire è una modifica con il suo motivo. Le regole della gilda dicono se le segnalazioni sono accese, il rapporto dello spreco (preset 2) e chi oltre al master looter vede badge e segnalazioni (preset: il council). Vedi la [[Guida del master looter|Master-Looter-Guide-it]], "Segnalazioni del council".
 
 ## Come si svolge una sessione di loot
 
@@ -404,14 +404,15 @@ L'addon legge i ranghi dal roster della gilda, per posizione e mai per nome. Dop
 | `TMOG` | Transmog |
 | `PASS` | Passo |
 
-### Verdetti di upgrade
+### Badge di upgrade
 
-Come un oggetto si confronta con quello che un giocatore indossa (vedi [[Rollare per il loot|Rolling-for-Loot-it]]).
+Come un oggetto si confronta con quello che un giocatore indossava durante lo scontro col boss (vedi [[Suggerimenti di upgrade|Upgrade-Hints-it]]).
 
 | Code | Frase |
 |---|---|
-| `BIG` | Upgrade grande |
-| `SMALL` | Upgrade piccolo |
+| `MAJOR` | Upgrade grande |
+| `MEDIUM` | Upgrade medio |
+| `MINOR` | Upgrade piccolo |
 | `NONE` | Nessun upgrade |
 | `NOT_COMPARABLE` | Non confrontabile |
 | `UNUSABLE` | Non usabile |
@@ -428,10 +429,12 @@ Come un oggetto si confronta con quello che un giocatore indossa (vedi [[Rollare
 | `UNKNOWN_CLASS` | L'addon non conosce la tua classe. |
 | `NOT_EQUIPPABLE` | Non è un pezzo di equipaggiamento: l'addon non può confrontarlo. |
 | `COSMETIC` | Una camicia o un tabard: non c'è nulla da confrontare. |
-| `EFFECT_TRINKET` | Un trinket con effetto d'uso: le statistiche non ne dicono il valore. |
-| `EFFECT_TRINKETS` | Hai due trinket con effetto d'uso: l'addon li tiene entrambi. |
 | `TWO_HAND_EQUIPPED` | Indossi un'arma a due mani: questo oggetto va nell'altra mano. |
 | `NO_ITEM_LEVEL` | Il gioco non ha dato il livello di questo oggetto. |
+| `NO_QUALITY` | Il gioco non ha ancora caricato la qualità dell'oggetto: il badge arriva appena la carica. |
+| `EMPTY_SLOT` | Non indossi niente in quello slot. |
+| `OLD_SEASON` | Il tuo pezzo è un epico di una season precedente: conta come un raro. |
+| `ITEM_OLD_SEASON` | Questo oggetto è un epico di una season precedente: conta come un raro. |
 
 ### Cosa fa una proposta con l'oggetto
 
@@ -473,6 +476,7 @@ Come un oggetto si confronta con quello che un giocatore indossa (vedi [[Rollare
 |---|---|
 | `SEASON_OPENED` | Season aperta |
 | `SEASON_CLOSED` | Season chiusa |
+| `SEASON_BAND_SET` | Fascia di item level della season |
 | `MEMBER_JOINED` | Membro entrato nel pool |
 | `MEMBER_LINKED_ALT` | Alt collegato a un main |
 | `NIGHT_OPENED` | Serata aperta |

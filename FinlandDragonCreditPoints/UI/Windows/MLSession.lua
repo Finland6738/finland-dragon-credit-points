@@ -1,6 +1,6 @@
 -- MLSession: the Loot > Session sub-tab, the master looter's window (docs/ANALISI.md §4, §9.3 point 3, docs/specs/ui-style.md §3,
 -- §6, preview fdcp-loot-session.webp, M4-5). On the left the session's items with their state; on the right the selected
--- item: its category and cost, the round's timer, the candidates (credits, response, roll, notes), the proposal (who, how
+-- item: its category and cost, the round's timer, the candidates (credits, response, upgrade badge, roll, notes), the proposal (who, how
 -- much, why: written by the addon) and the buttons. The addon writes the proposal; the master looter confirms it, rejects
 -- it or modifies it, and a modification needs a reason (a code from Domain/Reasons.lua, never typed text).
 --
@@ -121,9 +121,6 @@ end
 
 local COLUMN_TOKENS = { MS = "accent-text", OS = "text-2", TMOG = "text-2", PASS = "text-3" }
 
--- locale-key: ML_LABEL_TAG_AUTO ML_LABEL_TAG_CHANGED
-MLSession.LABEL_TAGS = { AUTO = "ML_LABEL_TAG_AUTO", CHANGED = "ML_LABEL_TAG_CHANGED" }
-
 -- The columns of the candidates' table.
 -- locale-key: ML_COL_CANDIDATE ML_COL_CREDITS ML_COL_RESPONSE ML_COL_UPGRADE ML_COL_ROLL ML_COL_NOTES ML_NOTE_PROPOSED ML_NOTE_WAITING
 local function candidateColumns()
@@ -136,7 +133,6 @@ local function candidateColumns()
 			local f = SB().FlagShort(code)
 			text = text ~= "" and (text .. " · " .. f) or f
 		end
-		if d.note then text = text ~= "" and (text .. " · " .. d.note) or d.note end   -- the player's own note (M4-6)
 		return text
 	end
 	return {
@@ -148,20 +144,14 @@ local function candidateColumns()
 			end },
 		{ id = "credits", title = L["ML_COL_CREDITS"], width = 76, align = "CENTER", mono = true,
 			text = function(d) return d.credits or "·" end, value = function(d) return d.credits or -1 end },
-		{ id = "response", title = L["ML_COL_RESPONSE"], width = 224,
+		{ id = "response", title = L["ML_COL_RESPONSE"], width = 150,
 			text = function(d)
 				if not d.response then return "·" end
-				local text = ns.Reasons.Text("RESPONSE", d.response)
-				if d.label then   -- the declared label (M4-6) and who chose it (M7-2b: auto / changed; a plain choice has no tag)
-					text = text .. " · " .. ns.Reasons.Text("LABEL", d.label)
-					local tag = MLSession.LABEL_TAGS[d.labelOrigin]
-					if tag then text = text .. " (" .. L[tag] .. ")" end
-				end
-				return text
+				return ns.Reasons.Text("RESPONSE", d.response)
 			end,
 			token = function(d) return COLUMN_TOKENS[d.response] or "text-3" end,
 			value = function(d) return d.tier or 99 end },
-		{ id = "upgrade", title = L["ML_COL_UPGRADE"], width = 190,   -- the verdict the player's client sent (M5-2)
+		{ id = "upgrade", title = L["ML_COL_UPGRADE"], width = 230,   -- the badge the player's client sent (M7-5c)
 			text = function(d)
 				if not d.upgrade then return "·" end
 				return ns.UpgradeAdvisor.Text(d.upgrade)
@@ -174,8 +164,8 @@ local function candidateColumns()
 			value = function(d)
 				local u = d.upgrade
 				if not u then return 99 end
-				if u.usable == false then return 5 end
-				return ({ BIG = 1, SMALL = 2, NONE = 3, NOT_COMPARABLE = 4 })[u.verdict] or 6
+				if u.usable == false then return 6 end
+				return ns.UpgradeAdvisor.ORDER[u.verdict] or 7
 			end },
 		{ id = "roll", title = L["ML_COL_ROLL"], width = 60, align = "RIGHT", mono = true,
 			text = function(d) return d.roll or "—" end, value = function(d) return d.roll or -1 end },
@@ -187,19 +177,13 @@ local function candidateColumns()
 	}
 end
 
--- The tooltip of a candidate's row: who chose the label (M7-2b), the verdict for each spec the player's client sent, what is
--- worn, the limits (M5-2).
+-- The tooltip of a candidate's row: the badge for each spec the player's client sent, what is worn, how the badge is read
+-- (M7-5c).
 function MLSession:ShowCandidateTip(row)
 	local d, tip, A = row.data, GameTooltip, ns.UpgradeAdvisor
-	local origin = d and d.label and d.labelOrigin
-	if not d or not tip or not (d.upgradeMS or origin) then return end
+	if not d or not tip or not d.upgradeMS then return end
 	tip:SetOwner(row, "ANCHOR_RIGHT")
 	tip:SetText(d.name)
-	if origin then
-		local words = ns.Reasons.Text("LABEL", d.label) .. " · " .. ns.Reasons.Text("LABEL_ORIGIN", origin)
-		tip:AddLine(L["ML_LABEL_TIP"]:format(words), 1, 1, 1, true)
-	end
-	if not d.upgradeMS then tip:Show() return end
 	local lines = A.Lines(d.upgradeMS, "MS")
 	for _, line in ipairs(lines) do tip:AddLine(line, 1, 1, 1, true) end
 	if d.upgradeOS then
@@ -207,7 +191,7 @@ function MLSession:ShowCandidateTip(row)
 	end
 	local names = A.EquippedNames(d.equipped)
 	if #names > 0 then tip:AddLine(L["UPG_EQUIPPED"]:format(table.concat(names, ", ")), 0.8, 0.8, 0.8, true) end
-	tip:AddLine(L["UPG_LIMITS"], 0.6, 0.6, 0.6, true)
+	tip:AddLine(L["UPG_RULE"], 0.6, 0.6, 0.6, true)
 	tip:Show()
 end
 

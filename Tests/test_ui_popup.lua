@@ -1,5 +1,5 @@
--- The player's item popup (M4-6): App/PopupBoard.lua (what the player may do now) and UI/Windows/MemberLootPopup.lua (the
--- card: item, chip, segmented response, label chips, note, timer bar, Roll). It is driven through the real protocol
+-- The player's item popup (M4-6, M7-5c): App/PopupBoard.lua (what the player may do now) and UI/Windows/MemberLootPopup.lua
+-- (the card: item, chip, upgrade badge, timer bar, and the three buttons Pass, Roll Main-spec, Roll Off-spec). It is driven through the real protocol
 -- (Net/Protocol.lua's view), on one client and on the network simulator, where a master looter receives the answers
 -- (docs/ANALISI.md §5.1, §6, docs/specs/ui-style.md §3).
 local function PS() return FDCP.Protocol.Session end
@@ -47,7 +47,6 @@ local function count(list, t)
 end
 
 local function card() return P().cards[1] end
-local function seg() return card().data.seg end
 
 ---------------------------------------------------------------------------------------------------------------------
 -- The board: plain data, no frames
@@ -84,7 +83,8 @@ describe("the board", function()
 		v.tiers = nil
 		v.items[1].cs = { OS = 0, MS = 1, TMOG = 0 }
 		local c = build(v)
-		eq(c.offered[1].code, "MS"); eq(c.offered[2].code, "OS"); eq(c.offered[3].code, "TMOG")
+		eq(c.offered[1].code, "MS"); eq(c.offered[2].code, "OS")
+		eq(#c.offered, 2, "only main-spec and off-spec have a button (M7-5c): a transmog response has none")
 	end)
 
 	it("shows the cost of the response the player picked, and 'council' when there is none", function()
@@ -99,16 +99,31 @@ describe("the board", function()
 		truthy(build(v).council)
 	end)
 
-	it("offers the label chips only in the round that collects responses, enabled for main-spec or no answer", function()
+	it("gives three buttons: Pass, then the roll buttons of the responses on offer (M7-5c)", function()
 		local v = view()
 		local c = build(v)
-		deepEq(c.labels, { "BIS", "BIG_UPGRADE", "SMALL_UPGRADE", "SITUATIONAL" })
-		truthy(c.labelsOn)
+		local function shape(card)
+			local out = {}
+			for _, b in ipairs(card.buttons) do
+				out[#out + 1] = b.code .. (b.roll and ":roll" or "") .. (b.enabled and ":on" or ":off") .. (b.selected and ":sel" or "")
+			end
+			return table.concat(out, " ")
+		end
+		eq(shape(c), "PASS:on MS:roll:on OS:roll:on")
 		v.responses[1] = { [ME] = { rs = "OS" } }
-		falsy(build(v).labelsOn, "off-spec carries no label")
-		v.responses[1] = { [ME] = { rs = "MS", lb = "BIS" } }
-		c = build(v)
-		truthy(c.labelsOn); eq(c.label, "BIS")
+		eq(shape(build(v)), "PASS:on MS:roll:on OS:roll:on:sel", "the answer may still change")
+		eq(shape(build(v, { rolled = function() return true end })), "PASS:off MS:roll:off OS:roll:off:sel", "rolled: locked")
+		-- the off-spec turn: only the off-spec button rolls
+		v.round = { i = 1, r = 2, k = "ROLL", g = "TIER", tr = 2, deadline = 130 }
+		eq(shape(build(v)), "PASS:off MS:roll:off OS:roll:on:sel")
+		-- a master looter that offers main-spec only
+		v = view({ tiers = { MS = 1 } })
+		v.items[1].cs = { MS = 1 }
+		eq(shape(build(v)), "PASS:on MS:roll:on")
+		-- an item the player cannot use: Pass shows preselected
+		v = view()
+		eq(shape(build(v, { upgrade = function() return { ms = { verdict = "NONE", usable = false }, autoPass = true } end })),
+			"PASS:on:sel MS:roll:on OS:roll:on")
 	end)
 
 	it("says whether the player rolls: the first round needs a main-spec answer, the next tier its own", function()
@@ -131,7 +146,7 @@ describe("the board", function()
 		isNil(build(v), "nor does main-spec in the off-spec round")
 		v.responses[1] = { [ME] = { rs = "OS" } }
 		c = build(v)
-		truthy(c.canRoll); falsy(c.canAnswer); falsy(c.collect); eq(c.hint, "TURN"); falsy(c.labels)
+		truthy(c.canRoll); falsy(c.canAnswer); falsy(c.collect); eq(c.hint, "TURN")
 	end)
 
 	it("a reroll is for the tied only, a free roll for everybody", function()
@@ -169,23 +184,10 @@ describe("the board", function()
 	it("the answer being typed wins over what the session knows, for its own round only", function()
 		local v = view()
 		v.responses[1] = { [ME] = { rs = "MS" } }
-		local c = build(v, { draft = { key = "S1-1:1:1", rs = "OS", n = "later" } })
-		eq(c.response, "OS"); eq(c.note, "later")
+		local c = build(v, { draft = { key = "S1-1:1:1", rs = "OS" } })
+		eq(c.response, "OS"); isNil(c.note); isNil(c.label)
 		c = build(v, { draft = { key = "S1-1:1:9", rs = "OS" } })
 		eq(c.response, "MS")
-	end)
-
-	it("clips a note to 80 bytes without cutting a character in two", function()
-		eq(PB().ClipNote("  "), "  ")
-		isNil(PB().ClipNote(""))
-		isNil(PB().ClipNote(nil))
-		eq(PB().ClipNote("two\nlines"), "two lines")
-		eq(#PB().ClipNote(string.rep("x", 200)), 80)
-		local s = PB().ClipNote(string.rep("x", 79) .. "è")   -- the accent needs two bytes: 81 in all
-		eq(s, string.rep("x", 79))
-		s = PB().ClipNote(string.rep("è", 60))
-		eq(#s, 80)
-		eq(s, string.rep("è", 40))
 	end)
 end)
 
@@ -320,205 +322,132 @@ describe("the card", function()
 		eq(card().name:GetText(), "Late Item")
 	end)
 
-	it("offers Main-spec, Off-spec and Pass, in that order, with nothing selected", function()
+	local function button(code) return card().buttons[code] end
+
+	it("offers Pass, Roll Main-spec and Roll Off-spec, in that order, with nothing selected", function()
 		open()
 		roll()
-		local s = seg()
-		deepEq(s.order, { "MS", "OS", "PASS" })
-		eq(s.buttons.MS.label:GetText(), "Main-spec")
-		eq(s.buttons.OS.label:GetText(), "Off-spec")
-		eq(s.buttons.PASS.label:GetText(), "Pass")
-		isNil(s:Active())
-		truthy(s.enabled ~= false)
+		local codes = {}
+		for _, b in ipairs(card().data.buttons) do codes[#codes + 1] = b.code end
+		deepEq(codes, { "PASS", "MS", "OS" })
+		eq(button("PASS").label:GetText(), "Pass")
+		eq(button("MS").label:GetText(), "Roll Main-spec")
+		eq(button("OS").label:GetText(), "Roll Off-spec")
+		for _, code in ipairs({ "PASS", "MS", "OS" }) do
+			truthy(button(code):IsShown()); truthy(button(code):IsEnabled()); falsy(button(code).selected)
+		end
+		local x1 = select(4, button("PASS"):GetPoint(1))
+		local x2 = select(4, button("MS"):GetPoint(1))
+		local x3 = select(4, button("OS"):GetPoint(1))
+		truthy(x1 < x2 and x2 < x3, "side by side, Pass first")
+		isNil(card().chips); isNil(card().note); isNil(card().rollButton); isNil(card().wish)
 	end)
 
-	it("sends the answer at once, and again when it changes: the latest one wins", function()
+	it("Roll Main-spec answers and rolls in one click: the answer, the intent, then RandomRoll(1, 100)", function()
 		open()
 		roll()
-		seg().buttons.OS:Click()
+		button("MS"):Click()
 		local m = lastAnswer()
-		eq(m.rs, "OS"); isNil(m.lb); isNil(m.p, "a member only ever sends their own answer")
+		eq(m.rs, "MS"); isNil(m.p, "a member only ever sends their own answer"); isNil(m.lb); isNil(m.n)
 		eq(m.i, 1); eq(m.r, 1)
-		eq(PS():MyAnswer(1).rs, "OS")
-		seg().buttons.MS:Click()
-		Mock.Advance(2)
-		eq(lastOf(sent(), "SRESP").rs, "MS")
-		eq(seg():Active(), "MS")
-		eq(card().hint:GetText(), L("POPUP_HINT_ROLL"):format(1, 100))
-	end)
-
-	it("a label answers main-spec by itself, toggles off, and goes away with off-spec or pass", function()
-		open()
-		roll()
-		local chip = card().chips.BIS
-		truthy(chip:IsEnabled())
-		chip:Click()
-		local m = lastAnswer()
-		eq(m.rs, "MS"); eq(m.lb, "BIS")
-		truthy(card().chips.BIS:IsSelected())
-		eq(seg():Active(), "MS")
-		card().chips.BIG_UPGRADE:Click()
-		eq(lastAnswer().lb, "BIG_UPGRADE")
-		falsy(card().chips.BIS:IsSelected())
-		card().chips.BIG_UPGRADE:Click()
-		isNil(lastAnswer().lb, "clicking the chosen label again clears it")
-		card().chips.SMALL_UPGRADE:Click()
-		eq(lastAnswer().lb, "SMALL_UPGRADE")
-		seg().buttons.OS:Click()
-		m = lastAnswer()
-		eq(m.rs, "OS"); isNil(m.lb)
-		falsy(card().chips.SMALL_UPGRADE:IsEnabled(), "no label for off-spec")
-		card().chips.SMALL_UPGRADE:Click()
-		eq(lastAnswer().rs, "OS", "a disabled chip does nothing")
-		seg().buttons.MS:Click()
-		card().chips.SITUATIONAL:Click()
-		seg().buttons.PASS:Click()
-		m = lastAnswer()
-		eq(m.rs, "PASS"); isNil(m.lb)
-	end)
-
-	it("the labels read the same in English and in Italian", function()
-		open()
-		roll()
-		eq(card().chips.BIG_UPGRADE.label:GetText(), "Big upgrade")
-		eq(FDCP.Reasons.Text("LABEL", "BIG_UPGRADE"), "Big upgrade")
-		FDCP.Locale.SetActive("itIT")
-		eq(FDCP.Reasons.Text("LABEL", "BIG_UPGRADE"), "Upgrade grande")
-		eq(FDCP.Reasons.Text("LABEL", "SMALL_UPGRADE"), "Upgrade piccolo")
-		eq(FDCP.Reasons.Text("LABEL", "SITUATIONAL"), "Situazionale")
-	end)
-
-	it("sends the note when the box loses the keyboard, with the answer; a note alone waits for an answer", function()
-		open()
-		roll()
-		local note = card().note
-		note.edit:SetFocus()
-		Mock.TypeInto(note.edit, "two-hander, big upgrade")
-		note.edit:ClearFocus()
-		Mock.Advance(2)
-		isNil(lastOf(sent(), "SRESP"), "no answer yet: the note waits")
-		seg().buttons.MS:Click()
-		local m = lastAnswer()
-		eq(m.rs, "MS"); eq(m.n, "two-hander, big upgrade")
-		eq(PS():MyAnswer(1).n, "two-hander, big upgrade")
-		note.edit:SetFocus()
-		Mock.TypeInto(note.edit, "changed my mind")
-		note.edit:ClearFocus()
-		m = lastAnswer()
-		eq(m.n, "changed my mind"); eq(m.rs, "MS")
-	end)
-
-	it("never sends a note longer than 80 bytes", function()
-		open()
-		roll()
-		seg().buttons.MS:Click()
-		local note = card().note
-		note.edit:SetFocus()
-		Mock.TypeInto(note.edit, string.rep("è", 60))
-		note.edit:ClearFocus()
-		local m = lastAnswer()
-		eq(#m.n, 80)
-		eq(m.n, string.rep("è", 40))
-	end)
-
-	it("keeps the typed note while other players' answers arrive", function()
-		open()
-		roll()
-		seg().buttons.MS:Click()
-		local note = card().note
-		note.edit:SetFocus()
-		Mock.TypeInto(note.edit, "typing")
-		Mock.chat.Receive("FDCP1", Codec():Encode("SRESP", { s = "S1-1", i = 1, r = 1, rs = "MS" }), "RAID", full("Corin"))
-		eq(note.edit:GetText(), "typing")
-	end)
-
-	it("Roll waits for an answer, then calls RandomRoll(1, 100) once, and locks the answer", function()
-		open()
-		roll()
-		falsy(card().rollButton:IsEnabled())
-		falsy(P():Roll())
-		eq(#Mock.loot.rolls, 0)
-		seg().buttons.MS:Click()
-		truthy(card().rollButton:IsEnabled())
-		eq(card().rollButton.label:GetText(), "Roll")
-		card().rollButton:Click()
+		eq(count(sent(), "SRINT"), 1, "the roll intent of M7-2d")
 		eq(#Mock.loot.rolls, 1)
 		deepEq(Mock.loot.rolls[1], { lo = 1, hi = 100 })
-		eq(card().rollButton.label:GetText(), "Rolled")
-		falsy(card().rollButton:IsEnabled())
+		eq(PS():MyAnswer(1).rs, "MS")
+		eq(button("MS").label:GetText(), "Rolled")
+		truthy(button("MS").selected)
+		for _, code in ipairs({ "PASS", "MS", "OS" }) do falsy(button(code):IsEnabled(), code .. " is locked") end
 		eq(card().hint:GetText(), L("POPUP_HINT_ROLLED"))
-		card().rollButton:Click()
+		button("MS"):Click()
 		eq(#Mock.loot.rolls, 1, "a second click does not roll again")
-		falsy(seg().enabled)
-		seg().buttons.OS:Click()
-		eq(seg():Active(), "MS", "the answer is locked once the player rolled")
-		falsy(card().chips.BIS:IsEnabled())
-		falsy(P():Choose("OS"))
+		falsy(P():Choose("OS"), "the answer is locked once the player rolled")
+		falsy(P():Press("OS"))
 	end)
 
-	it("the note typed before Roll goes with the answer", function()
+	it("Pass answers without rolling; the player may still change it into a roll", function()
 		open()
 		roll()
-		seg().buttons.MS:Click()
-		local note = card().note
-		note.edit:SetFocus()
-		Mock.TypeInto(note.edit, "ring for my set")
-		card().rollButton:Click()   -- the box never lost the keyboard
-		Mock.Advance(2)
-		eq(lastOf(sent(), "SRESP").n, "ring for my set")
+		button("PASS"):Click()
+		local m = lastAnswer()
+		eq(m.rs, "PASS")
+		eq(#Mock.loot.rolls, 0)
+		truthy(button("PASS").selected)
+		eq(card().hint:GetText(), L("POPUP_HINT_PASSED"))
+		truthy(button("MS"):IsEnabled())
+		button("MS"):Click()
+		eq(lastAnswer().rs, "MS", "the latest answer wins")
 		eq(#Mock.loot.rolls, 1)
 	end)
 
-	it("says so when the game does not let the addon roll", function()
+	it("Roll Off-spec in the main-spec round sends the answer and rolls when the off-spec turn comes", function()
 		open()
 		roll()
-		seg().buttons.MS:Click()
-		local real = _G.RandomRoll
-		_G.RandomRoll = nil
-		local ok = P():Roll()
-		_G.RandomRoll = real
-		falsy(ok)
-		eq(card().hint:GetText(), L("POPUP_ERR_ROLL"):format(1, 100))
-		truthy(card().rollButton:IsEnabled(), "the player may try again")
-	end)
-
-	it("says so when the answer cannot be sent, and the next click tries again", function()
-		open()
-		roll()
-		local real = PS().Respond
-		PS().Respond = function() return nil, "BUSY" end
-		local ok, code = P():Choose("MS")
-		PS().Respond = real
-		falsy(ok); eq(code, "BUSY")
-		eq(card().hint:GetText(), L("POPUP_ERR_SEND"))
-		truthy(P():Choose("MS"))
-		eq(card().hint:GetText(), L("POPUP_HINT_ROLL"):format(1, 100))
-	end)
-
-	it("the next tier's round is a roll-only card for who answered that tier; the others see no card", function()
-		open()
-		roll()
-		seg().buttons.OS:Click()
+		button("OS"):Click()
+		eq(lastAnswer().rs, "OS")
+		eq(#Mock.loot.rolls, 0, "the main-spec tier rolls first")
+		eq(card().hint:GetText(), L("POPUP_HINT_LATER"))
+		truthy(button("OS").selected)
+		local ok, code = P():Press("OS")
+		truthy(ok); eq(code, "LATER", "pressing it again still does not roll")
+		eq(#Mock.loot.rolls, 0)
 		control("SCLOSE", { i = 1, r = 1 })
 		falsy(P():IsShown(), "the popup closes with the round")
 		control("SROLL", { i = 1, r = 2, k = "ROLL", g = "TIER", tr = 2, de = FDCP.Compat.ServerTime() + 30 })
 		truthy(P():IsShown())
 		falsy(card().data.collect)
-		eq(card().eyebrow:GetText(), "ROLL OPEN · LUCIFRON")
-		eq(seg():Active(), "OS", "the answer shows, locked")
-		falsy(seg().enabled)
-		falsy(card().note:IsShown())
-		falsy(card().chips.BIS:IsShown())
 		eq(card().hint:GetText(), L("POPUP_HINT_TURN"))
-		truthy(card().rollButton:IsEnabled())
-		card().rollButton:Click()
+		truthy(button("OS"):IsEnabled()); falsy(button("MS"):IsEnabled()); falsy(button("PASS"):IsEnabled())
+		button("OS"):Click()
+		eq(#Mock.loot.rolls, 1)
+		eq(count(sent(), "SRESP"), 1, "a roll-only round sends no answer")
+	end)
+
+	it("a main-spec answer in a round that only collects shows the same flow from the session's state", function()
+		open()
+		roll()
+		local real = PS().Respond
+		local calls = 0
+		PS().Respond = function(...) calls = calls + 1; return real(...) end
+		button("MS"):Click()
+		PS().Respond = real
+		eq(calls, 1, "one answer per click")
+	end)
+
+	it("says so when the game does not let the addon roll, and the button tries again", function()
+		open()
+		roll()
+		local real = _G.RandomRoll
+		_G.RandomRoll = nil
+		local ok = P():Press("MS")
+		_G.RandomRoll = real
+		falsy(ok)
+		eq(lastAnswer().rs, "MS", "the answer went")
+		eq(card().hint:GetText(), L("POPUP_ERR_ROLL"):format(1, 100))
+		truthy(button("MS"):IsEnabled(), "the player may try again")
+		button("MS"):Click()
 		eq(#Mock.loot.rolls, 1)
 	end)
 
-	it("closes when the round closes, and a reroll or a free roll opens a card only for who takes part", function()
+	it("says so when the answer cannot be sent, rolls nothing, and the next click tries again", function()
 		open()
 		roll()
-		seg().buttons.MS:Click()
+		local real = PS().Respond
+		PS().Respond = function() return nil, "BUSY" end
+		local ok, code = P():Press("MS")
+		PS().Respond = real
+		falsy(ok); eq(code, "BUSY")
+		eq(#Mock.loot.rolls, 0)
+		eq(card().hint:GetText(), L("POPUP_ERR_SEND"))
+		truthy(P():Press("MS"))
+		eq(#Mock.loot.rolls, 1)
+	end)
+
+	it("a reroll or a free roll opens a card only for who takes part, and the button only rolls", function()
+		open()
+		roll()
+		button("MS"):Click()
+		eq(#Mock.loot.rolls, 1)
+		eq(lastAnswer().rs, "MS")
 		control("SCLOSE", { i = 1, r = 1 })
 		falsy(P():IsShown())
 		control("SROLL", { i = 1, r = 2, k = "REROLL", g = "TIER", tr = 1, am = { ML, full("Corin") },
@@ -530,14 +459,19 @@ describe("the card", function()
 		truthy(P():IsShown())
 		eq(card().eyebrow:GetText(), "REROLL · LUCIFRON")
 		eq(card().hint:GetText(), L("POPUP_HINT_REROLL"))
-		card().rollButton:Click()
-		eq(#Mock.loot.rolls, 1)
+		falsy(button("PASS"):IsEnabled(), "no answer in a reroll")
+		button("MS"):Click()
+		eq(#Mock.loot.rolls, 2)
 		control("SCLOSE", { i = 1, r = 3 })
 		control("SROLL", { i = 1, r = 4, k = "ROLL", g = "FREE_ROLL", de = FDCP.Compat.ServerTime() + 30 })
 		truthy(P():IsShown())
 		eq(card().eyebrow:GetText(), "FREE ROLL · LUCIFRON")
 		eq(card().hint:GetText(), L("POPUP_HINT_FREE"))
-		truthy(card().rollButton:IsEnabled(), "a new round: the player may roll again")
+		truthy(button("MS"):IsEnabled(), "a new round: the player may roll again")
+		button("OS"):Click()
+		eq(#Mock.loot.rolls, 3, "in a free roll either button rolls")
+		Mock.Advance(2)
+		eq(count(sent(), "SRESP"), 1, "only the first round took an answer")
 	end)
 
 	it("closes when the session ends or the player leaves the raid", function()
@@ -593,7 +527,9 @@ describe("the card", function()
 	it("follows an older master looter's session that does not say the tiers", function()
 		open(false)
 		roll()
-		deepEq(seg().order, { "MS", "OS", "PASS" })
+		local codes = {}
+		for _, b in ipairs(card().data.buttons) do codes[#codes + 1] = b.code end
+		deepEq(codes, { "PASS", "MS", "OS" })
 	end)
 
 	it("every visible text of the card comes from the locale: Italian", function()
@@ -601,13 +537,12 @@ describe("the card", function()
 		open()
 		roll()
 		eq(card().eyebrow:GetText(), "ROLL APERTO · LUCIFRON")
-		eq(card().rollButton.label:GetText(), "Tira")
 		eq(card().hint:GetText(), L("POPUP_HINT_CHOOSE"))
-		eq(card().hint:GetText(), "Scegli la risposta, poi tira.")
+		eq(card().hint:GetText(), "Passa, oppure tira per main-spec o off-spec: un clic risponde e tira.")
 		eq(card().badge.label:GetText(), "GIOIELLO · 1 CREDITO")
-		eq(seg().buttons.PASS.label:GetText(), "Passo")
-		eq(card().chips.BIG_UPGRADE.label:GetText(), "Upgrade grande")
-		eq(card().noteCaption:GetText(), "Nota")
+		eq(button("PASS").label:GetText(), "Passo")
+		eq(button("MS").label:GetText(), "Tira Main-spec")
+		eq(button("OS").label:GetText(), "Tira Off-spec")
 	end)
 
 	it("uses the display fonts and no secure template", function()
@@ -760,23 +695,25 @@ describe("the master looter hears the popups", function()
 		eq(card1(c.Bryn).badge.label:GetText(), "JEWELRY · 1 CREDIT")
 	end)
 
-	it("every answer, label and note reaches the master looter as that player's own", function()
+	it("every answer reaches the master looter as that player's own, and a roll button rolls in the game", function()
 		local net, c, h = started()
-		card1(c.Bryn).chips.SITUATIONAL:Click()   -- the addon may have suggested another: this is the player's pick
-		card1(c.Bryn).note.edit:SetFocus()
-		c.Bryn.Mock.TypeInto(card1(c.Bryn).note.edit, "my set ring")
-		card1(c.Bryn).note.edit:ClearFocus()
-		card1(c.Corin).data.seg.buttons.OS:Click()
-		popup(c.Dara):Choose("PASS")
+		card1(c.Bryn).buttons.MS:Click()
+		card1(c.Corin).buttons.OS:Click()
+		card1(c.Dara).buttons.PASS:Click()
 		popup(c.Aurel):Choose("MS")
 		net:Advance(3)
 		local item = h.s.items[1]
-		eq(item.responses[full("Bryn")], "MS"); eq(item.labels[full("Bryn")], "SITUATIONAL"); eq(item.notes[full("Bryn")], "my set ring")
-		truthy(item.labelOrigins[full("Bryn")], "and who chose it")
-		eq(item.responses[full("Corin")], "OS"); isNil(item.labels[full("Corin")])
-		eq(item.responses[full("Dara")], "PASS"); isNil(item.notes[full("Dara")])
-		eq(item.responses[full("Aurel")], "MS")
+		eq(item.responses[full("Bryn")], "MS"); eq(item.responses[full("Corin")], "OS")
+		eq(item.responses[full("Dara")], "PASS"); eq(item.responses[full("Aurel")], "MS")
+		isNil(item.labels); isNil(item.notes)
+		eq(#c.Bryn.Mock.loot.rolls, 1)
+		deepEq(c.Bryn.Mock.loot.rolls[1], { lo = 1, hi = 100 })
+		eq(#c.Corin.Mock.loot.rolls, 0, "off-spec waits for its tier")
+		eq(#c.Dara.Mock.loot.rolls, 0)
 		eq(#h.refused, 0, tostring(h.refused[1]))
+		-- the master looter's client reads the roll from the chat (M4-3); here the roll message is handed over by hand
+		h.step({ type = "ROLL", player = full("Bryn"), value = 50, min = 1, max = 100 })
+		eq(#h.s.items[1].round.rolls, 1)
 	end)
 
 	it("a client cannot answer for another player: a forged answer is refused and counted", function()
@@ -788,7 +725,7 @@ describe("the master looter hears the popups", function()
 		eq(h.s.items[1].responses[full("Dara")], before)
 		eq(c.Aurel.addon().Protocol.Session.stats.forged, 1)
 		-- the popup itself never names a player
-		card1(c.Bryn).data.seg.buttons.MS:Click()
+		popup(c.Bryn):Press("MS")
 		net:Advance(2)
 		local found
 		for _, e in ipairs(c.Bryn.Mock.chat.SentWithPrefix("FDCP1")) do
@@ -800,44 +737,36 @@ describe("the master looter hears the popups", function()
 		truthy(found); isNil(found.p)
 	end)
 
-	it("the roll button rolls in the game, one roll per client", function()
+	it("an old client's answer with a label and a note is heard, without them", function()
 		local net, c, h = started()
-		popup(c.Bryn):Choose("MS")
-		card1(c.Bryn).rollButton:Click()
-		eq(#c.Bryn.Mock.loot.rolls, 1)
-		deepEq(c.Bryn.Mock.loot.rolls[1], { lo = 1, hi = 100 })
-		eq(#c.Corin.Mock.loot.rolls, 0)
-		-- the master looter's client reads the roll from the chat (M4-3); here the roll message is handed over by hand
-		h.step({ type = "ROLL", player = full("Bryn"), value = 50, min = 1, max = 100 })
-		eq(#h.s.items[1].round.rolls, 1)
+		c.Aurel.Mock.chat.Receive("FDCP1", c.Aurel.addon().Codec:Encode("SRESP", { s = "S1-1", i = 1, r = 1, rs = "MS",
+			lb = "BIS", lo = "AUTO", n = "my set ring", vd = { m = { v = "BIG", b = "STATS", p = 117, l = 6 } } }), "RAID", full("Dara"))
+		local item = h.s.items[1]
+		eq(item.responses[full("Dara")], "MS")
+		isNil(item.labels); isNil(item.notes)
+		isNil(item.verdicts[full("Dara")], "its stat-weight verdict is not a badge")
 	end)
 
 	it("the popups close on every client when the round closes", function()
 		local net, c, h = started()
-		popup(c.Bryn):Choose("MS")
+		popup(c.Bryn):Press("MS")
 		h.step({ type = "ROLL", player = full("Bryn"), value = 50, min = 1, max = 100 })
 		h.ml("CLOSE_ROUND")
 		net:Advance(3)
 		for _, n in ipairs(NAMES) do falsy(popup(c[n]):IsShown(), n .. " popup closed") end
 	end)
 
-	it("a player who reloads gets the card back with their answer, label and note", function()
+	it("a player who reloads gets the card back with their answer", function()
 		local net, c, h = started()
-		popup(c.Bryn):SetLabel("BIS")
+		popup(c.Bryn):Press("OS")
 		net:Advance(3)
-		card1(c.Bryn).note.edit:SetFocus()
-		c.Bryn.Mock.TypeInto(card1(c.Bryn).note.edit, "set bonus")
-		card1(c.Bryn).note.edit:ClearFocus()
-		net:Advance(3)
-		eq(h.s.items[1].notes[full("Bryn")], "set bonus")
+		eq(h.s.items[1].responses[full("Bryn")], "OS")
 		net:Reload("Bryn")
 		net:Advance(6)
 		truthy(popup(c.Bryn):IsShown(), "the master looter whispered the state")
 		local card = card1(c.Bryn)
-		eq(card.data.response, "MS"); eq(card.data.label, "BIS"); eq(card.data.note, "set bonus")
-		eq(card.data.seg:Active(), "MS")
-		truthy(card.chips.BIS:IsSelected())
-		eq(card.note:GetText(), "set bonus")
+		eq(card.data.response, "OS")
+		truthy(card.buttons.OS.selected)
 	end)
 
 	it("a late joiner sees the open round and may answer it", function()
@@ -853,17 +782,20 @@ describe("the master looter hears the popups", function()
 end)
 
 ---------------------------------------------------------------------------------------------------------------------
--- The upgrade verdicts in the card (M5-2)
+-- The upgrade badge in the card (M7-5c)
 
-local STR, STA = "ITEM_MOD_STRENGTH_SHORT", "ITEM_MOD_STAMINA_SHORT"
 local function hlink(id, name) return "|cffa335ee|Hitem:" .. id .. "::::::::70:::::|h[" .. name .. "]|h|r" end
 local VERDICT_ITEMS = {
-	{ id = 19100, link = hlink(19100, "Old Helm"), name = "Old Helm", quality = 4, equipLoc = "INVTYPE_HEAD", classID = 4,
-		subclassID = 4, type = "Armor", subType = "Plate", level = 64, stats = { [STR] = 90, [STA] = 40 } },
+	{ id = 19100, link = hlink(19100, "Old Helm"), name = "Old Helm", quality = 3, equipLoc = "INVTYPE_HEAD", classID = 4,
+		subclassID = 4, type = "Armor", subType = "Plate", level = 200 },
 	{ id = 19101, link = hlink(19101, "Helm of Embers"), name = "Helm of Embers", quality = 4, equipLoc = "INVTYPE_HEAD",
-		classID = 4, subclassID = 4, type = "Armor", subType = "Plate", level = 70, stats = { [STR] = 100, [STA] = 50 } },
+		classID = 4, subclassID = 4, type = "Armor", subType = "Plate", level = 226 },
 	{ id = 19120, link = hlink(19120, "Wand of Sparks"), name = "Wand of Sparks", quality = 4, equipLoc = "INVTYPE_RANGEDRIGHT",
-		classID = 2, subclassID = 19, type = "Weapon", subType = "Wands", level = 70, stats = { ITEM_MOD_SPELL_POWER_SHORT = 20 } },
+		classID = 2, subclassID = 19, type = "Weapon", subType = "Wands", level = 226 },
+	{ id = 19102, link = hlink(19102, "Better Helm"), name = "Better Helm", quality = 4, equipLoc = "INVTYPE_HEAD",
+		classID = 4, subclassID = 4, type = "Armor", subType = "Plate", level = 230 },
+	{ id = 19103, link = hlink(19103, "Ancient Helm"), name = "Ancient Helm", quality = 4, equipLoc = "INVTYPE_HEAD",
+		classID = 4, subclassID = 4, type = "Armor", subType = "Plate", level = 187 },
 }
 local function verdictItems(M)
 	for _, def in ipairs(VERDICT_ITEMS) do M.items.Add(def) end
@@ -871,7 +803,7 @@ local function verdictItems(M)
 	_G.INVTYPE_HEAD, _G.INVTYPE_RANGEDRIGHT = "Head", "Ranged"
 end
 
-describe("the upgrade verdicts in the card", function()
+describe("the upgrade badge in the card", function()
 	before_boot(function(M)
 		M.player.name, M.player.realm = "Bryn", REALM
 		verdictItems(M)
@@ -882,146 +814,163 @@ describe("the upgrade verdicts in the card", function()
 		Mock.Advance(3)
 	end
 	local function receive(t, fields) return Mock.chat.Receive("FDCP1", Codec():Encode(t, fields), "RAID", ML) end
-	local function open(itemID)
+	local function open(itemID, band)
 		raid()
-		receive("SOPEN", { s = "S1-1", q = 1, ml = ML, e = 663, rt = { MS = 1, OS = 2 },
+		receive("SOPEN", { s = "S1-1", q = 1, ml = ML, e = 663, rt = { MS = 1, OS = 2 }, ib = band,
 			it = { { id = itemID, ca = "armor", cs = { MS = 1, OS = 0 } } } })
 		receive("SROLL", { s = "S1-1", q = 2, i = 1, r = 1, k = "ROLL", g = "TIER", tr = 1, cl = true,
 			de = FDCP.Compat.ServerTime() + 30 })
 	end
+	local function button(code) return card().buttons[code] end
 
-	-- the player's declared specs and the guild's rules come from a ledger bound to the client
-	local function declare(ms1, ms2, rules)
-		local Lg, Sn, R = FDCP.Ledger, FDCP.Season, FDCP.Roster
+	-- the guild's rules come from a ledger bound to the client
+	local function rules(r)
+		local Lg, Sn = FDCP.Ledger, FDCP.Season
 		Mock.guild.Set({ name = "Keepers", ranks = { [0] = "Guild Master", "Officer" }, myRank = 1, members = {
 			{ name = "Aurel", rank = 0 }, { name = "Bryn", rank = 1 } } })
 		local L1 = Lg.New()
 		assert(Sn.Open(L1, { author = ML, ts = 1, season = "S1", instances = { { id = 409, size = 40 } } }))
-		assert(R.Join(L1, { author = ML, ts = 2, season = "S1", member = full("Bryn"), faction = "Horde", ms1 = ms1, ms2 = ms2 }))
-		if rules then assert(FDCP.Rules.Change(L1, { author = ML, ts = 3, rules = rules, confirmed = true })) end
+		assert(FDCP.Rules.Change(L1, { author = ML, ts = 3, rules = r, confirmed = true }))
 		FDCP.NightController:Bind(L1)
 		FDCP.UpgradeAdvisor.Reset()
 	end
 
-	it("shows how much of an upgrade the item is for the main-spec, in the player's words", function()
+	it("shows the tier and the item-level difference: purple over the worn blue helm is a medium upgrade", function()
 		open(19101)
-		local v = card().verdicts
-		truthy(v.ms:IsShown())
-		eq(v.ms.label:GetText(), "Main-spec · Big upgrade +11.7% · ilvl +6")
-		falsy(v.os:IsShown(), "no declared off-spec: no second line")
-		eq(card().data.upgrade.ms.verdict, "BIG")
+		truthy(card().verdict:IsShown())
+		eq(card().verdict.label:GetText(), "Medium upgrade · ilvl +26")
+		eq(card().data.upgrade.ms.verdict, "MEDIUM")
+		isNil(card().verdicts, "one badge, no line per spec")
 	end)
 
-	it("speaks Italian with the decimal comma", function()
+	it("speaks Italian", function()
 		FDCP.Locale.SetActive("itIT")
 		open(19101)
-		eq(card().verdicts.ms.label:GetText(), "Main-spec · Upgrade grande +11,7% · ilvl +6")
+		eq(card().verdict.label:GetText(), "Upgrade medio · ilvl +26")
 	end)
 
-	it("the tooltip says the verdict, what it was compared on, what is worn and the limits", function()
+	it("the tooltip says the badge, what is worn, which gear it was compared with and the rule", function()
 		open(19101)
-		Mock.RunScript(card().verdicts.ms, "OnEnter")
+		Mock.RunScript(card().verdict, "OnEnter")
 		truthy(GameTooltip:IsShown())
+		eq(GameTooltip:GetText(), "Main-spec: Medium upgrade · ilvl +26")
 		local lines = GameTooltip._lines
-		eq(lines[1], L("UPG_BASIS_STATS"))
-		contains(lines[2], "Old Helm")
-		eq(lines[3], L("UPG_LIMITS"))
-		Mock.RunScript(card().verdicts.ms, "OnLeave")
+		contains(lines[1], "Old Helm")
+		eq(lines[2], L("UPG_FROM_CURRENT"))
+		eq(lines[3], L("UPG_RULE"))
+		Mock.RunScript(card().verdict, "OnLeave")
 		falsy(GameTooltip:IsShown())
 	end)
 
 	it("an item the character cannot use comes with Pass preselected, and nothing is sent by itself", function()
 		open(19120)
-		eq(card().verdicts.ms.label:GetText(), "Main-spec · Not usable")
+		eq(card().verdict.label:GetText(), "Not usable")
 		eq(card().data.preselect, "PASS")
 		eq(card().data.hint, "UNUSABLE")
 		eq(card().hint:GetText(), L("POPUP_HINT_UNUSABLE"))
-		isNil(seg():Active(), "a preselection is not an answer")
-		eq(card().data.response, nil)
-		falsy(card().data.canRoll, "no answer, no roll")
+		truthy(button("PASS").selected, "Pass shows selected")
+		eq(card().data.response, nil, "a preselection is not an answer")
 		Mock.Advance(2)
 		eq(count(sentMessages(Mock), "SRESP"), 0)
 	end)
 
-	it("clicking the preselected Pass sends it, with the verdict", function()
+	it("clicking the preselected Pass sends it, with the badge", function()
 		open(19120)
-		seg().buttons.PASS:Click()
+		button("PASS"):Click()
 		Mock.Advance(2)
 		local m = lastOf(sentMessages(Mock), "SRESP")
 		truthy(m); eq(m.rs, "PASS")
 		deepEq(m.vd, { m = { v = "NONE", u = false, c = "WEAPON_TYPE" } })
+		eq(#Mock.loot.rolls, 0)
 	end)
 
-	it("the player may answer main-spec on an item that was preselected as Pass", function()
+	it("the player may still roll main-spec on an item that was preselected as Pass", function()
 		open(19120)
-		seg().buttons.MS:Click()
+		button("MS"):Click()
 		Mock.Advance(2)
 		eq(lastOf(sentMessages(Mock), "SRESP").rs, "MS")
-		eq(card().data.hint, "ROLL")
+		eq(#Mock.loot.rolls, 1)
 		eq(card().data.preselect, nil, "an answer is given")
 	end)
 
-	it("every answer carries the verdicts and the worn pieces to the master looter", function()
+	it("every answer carries the badge and the worn pieces to the master looter", function()
 		open(19101)
-		seg().buttons.MS:Click()
+		button("OS"):Click()
 		Mock.Advance(2)
 		local m = lastOf(sentMessages(Mock), "SRESP")
-		deepEq(m.vd, { m = { v = "BIG", b = "STATS", p = 117, l = 6 } })
+		deepEq(m.vd, { m = { v = "MEDIUM", l = 26 } })
 		deepEq(m.eq, { "item:19100::::::::70:::::" })
-		-- a label sent later carries them again
-		P():SetLabel("BIS")
-		Mock.Advance(2)
-		m = lastOf(sentMessages(Mock), "SRESP")
-		eq(m.lb, "BIS")
-		eq(m.vd.m.v, "BIG")
+		isNil(m.lb); isNil(m.lo); isNil(m.n)
 	end)
 
-	it("the window does not wait for an item whose data is not loaded, and shows the verdict when it arrives", function()
+	it("the window does not wait for an item whose data is not loaded, and shows the badge when it arrives", function()
 		Mock.items.Add{ id = 19160, link = hlink(19160, "Late Helm"), name = "Late Helm", quality = 4, equipLoc = "INVTYPE_HEAD",
-			classID = 4, subclassID = 4, level = 70, stats = { [STR] = 100 }, cached = false }
+			classID = 4, subclassID = 4, level = 226, cached = false }
 		open(19160)
-		falsy(card().verdicts.ms:IsShown(), "no data yet")
+		falsy(card().verdict:IsShown(), "no data yet")
 		Mock.Advance(1)
-		truthy(card().verdicts.ms:IsShown())
+		truthy(card().verdict:IsShown())
+		eq(card().verdict.label:GetText(), "Medium upgrade · ilvl +26")
 	end)
 
-	it("redraws when the player puts a better piece on", function()
+	it("outside a fight it follows the gear worn now: a better piece put on means no upgrade", function()
 		open(19101)
-		eq(card().data.upgrade.ms.verdict, "BIG")
-		Mock.items.Add{ id = 19102, link = hlink(19102, "Better Helm"), name = "Better Helm", quality = 4, equipLoc = "INVTYPE_HEAD",
-			classID = 4, subclassID = 4, level = 72, stats = { [STR] = 130, [STA] = 50 } }
+		eq(card().data.upgrade.ms.verdict, "MEDIUM")
 		Mock.items.equipped[1] = hlink(19102, "Better Helm")
 		Mock.Fire("PLAYER_EQUIPMENT_CHANGED", 1, false)
 		eq(card().data.upgrade.ms.verdict, "NONE")
-		eq(card().verdicts.ms.label:GetText(), "Main-spec · No upgrade -22.2% · ilvl -2")
+		eq(card().verdict.label:GetText(), "No upgrade · ilvl -4")
 	end)
 
-	it("shows no verdict when the guild's rules turn them off", function()
-		local rules = FDCP.Rules.DefaultConfig()
-		rules.upgrade.enabled = false
-		declare(72, nil, rules)
+	it("after a boss fight it keeps the gear of the fight: taking the helm off does not make a bigger upgrade", function()
+		Mock.Fire("ENCOUNTER_START", 663, "Lucifron", 9, 40)
+		Mock.Fire("ENCOUNTER_END", 663, "Lucifron", 9, 40, 1)
+		Mock.items.equipped[1] = nil
+		Mock.Fire("PLAYER_EQUIPMENT_CHANGED", 1, true)
 		open(19101)
-		falsy(card().verdicts.ms:IsShown())
+		eq(card().verdict.label:GetText(), "Medium upgrade · ilvl +26")
+		truthy(card().data.upgrade.snapshot)
+		Mock.RunScript(card().verdict, "OnEnter")
+		eq(GameTooltip._lines[2], L("UPG_FROM_SNAPSHOT"))
+		Mock.RunScript(card().verdict, "OnLeave")
+		button("MS"):Click()
+		Mock.Advance(2)
+		deepEq(lastOf(sentMessages(Mock), "SRESP").eq, { "item:19100::::::::70:::::" }, "the master looter sees the helm of the fight")
+	end)
+
+	it("the season's band of the session makes an older purple count as a blue", function()
+		Mock.items.equipped[1] = hlink(19103, "Ancient Helm")
+		open(19101)
+		eq(card().verdict.label:GetText(), "Minor upgrade · ilvl +39", "no band: every purple is this season's")
+		FDCP.Protocol.Session:Reset()
+		FDCP.UpgradeAdvisor.Reset()
+		open(19101, { min = 200, max = 226 })
+		eq(card().verdict.label:GetText(), "Medium upgrade · ilvl +39")
+		Mock.RunScript(card().verdict, "OnEnter")
+		eq(GameTooltip._lines[1], L("RC_UPGRADE_OLD_SEASON"))
+	end)
+
+	it("an empty slot is a major upgrade", function()
+		Mock.items.equipped[1] = nil
+		open(19101)
+		eq(card().verdict.label:GetText(), "Major upgrade · empty slot")
+	end)
+
+	it("shows no badge when the guild's rules turn it off", function()
+		local r = FDCP.Rules.DefaultConfig()
+		r.upgrade.enabled = false
+		rules(r)
+		open(19101)
+		falsy(card().verdict:IsShown())
 		isNil(card().data.upgrade)
-		seg().buttons.MS:Click()
+		button("OS"):Click()
 		Mock.Advance(2)
 		local m = lastOf(sentMessages(Mock), "SRESP")
 		isNil(m.vd); isNil(m.eq)
 	end)
-
-	it("the two specs get a line each when the player declared an off-spec", function()
-		declare(72, 73)
-		open(19101)
-		truthy(card().verdicts.ms:IsShown()); truthy(card().verdicts.os:IsShown())
-		eq(card().verdicts.ms.label:GetText(), "Main-spec · Big upgrade +11.7% · ilvl +6")
-		eq(card().verdicts.os.label:GetText():find("Off-spec", 1, true), 1)
-		local msY = select(5, card().verdicts.ms:GetPoint(1))
-		local osY = select(5, card().verdicts.os:GetPoint(1))
-		truthy(osY < msY, "the off-spec line is under the main-spec one")
-	end)
 end)
 
-describe("the master looter sees the verdicts of the raid", function()
+describe("the master looter sees the badges of the raid", function()
 	local NAMES = { "Aurel", "Bryn", "Corin" }
 	local function popup(c) return c.addon().MemberLootPopup end
 
@@ -1030,11 +979,7 @@ describe("the master looter sees the verdicts of the raid", function()
 		local c = {}
 		for _, n in ipairs(NAMES) do c[n] = net:Client(n, { setup = verdictItems }) end
 		-- Corin wears a better helm than the one on offer
-		c.Corin.Mock.items.Add{ id = 19102, link = hlink(19102, "Better Helm"), name = "Better Helm", quality = 4,
-			equipLoc = "INVTYPE_HEAD", classID = 4, subclassID = 4, level = 72, stats = { [STR] = 130, [STA] = 50 } }
 		c.Corin.Mock.items.equipped = { [1] = hlink(19102, "Better Helm") }
-		c.Aurel.Mock.items.Add{ id = 19102, link = hlink(19102, "Better Helm"), name = "Better Helm", quality = 4,
-			equipLoc = "INVTYPE_HEAD", classID = 4, subclassID = 4, level = 72, stats = { [STR] = 130, [STA] = 50 }, cached = false }
 		net:Raid(NAMES)
 		net:Advance(3)
 		local h = host(c.Aurel, NAMES)
@@ -1046,20 +991,19 @@ describe("the master looter sees the verdicts of the raid", function()
 		return net, c, h
 	end
 
-	it("each answer brings the player's own verdict and worn piece, passes included", function()
+	it("each answer brings the player's own badge and worn piece, passes included", function()
 		local net, c, h = started()
 		popup(c.Bryn):Choose("MS")
 		popup(c.Corin):Choose("PASS")
 		popup(c.Aurel):Choose("OS")
 		net:Advance(3)
 		local item = h.s.items[1]
-		eq(item.verdicts[full("Bryn")].m.v, "BIG")
-		eq(item.verdicts[full("Bryn")].m.p, 117)
+		deepEq(item.verdicts[full("Bryn")].m, { v = "MEDIUM", l = 26 })
 		deepEq(item.equipped[full("Bryn")], { "item:19100::::::::70:::::" })
-		eq(item.verdicts[full("Corin")].m.v, "NONE", "Corin wears a better helm and passes: the verdict still comes")
-		eq(item.verdicts[full("Corin")].m.l, -2)
+		eq(item.verdicts[full("Corin")].m.v, "NONE", "Corin wears a better helm and passes: the badge still comes")
+		eq(item.verdicts[full("Corin")].m.l, -4)
 		deepEq(item.equipped[full("Corin")], { "item:19102::::::::70:::::" })
-		eq(item.verdicts[full("Aurel")].m.v, "BIG")
+		eq(item.verdicts[full("Aurel")].m.v, "MEDIUM")
 		eq(#h.refused, 0, tostring(h.refused[1]))
 	end)
 
@@ -1072,169 +1016,18 @@ describe("the master looter sees the verdicts of the raid", function()
 		local board = A.SessionBoard.Build({ host = true, session = h.s }, { now = A.Compat.Now() })
 		local by = {}
 		for _, row in ipairs(board.candidates) do by[row.player] = row end
-		eq(A.UpgradeAdvisor.Text(by[full("Bryn")].upgrade), "Big upgrade +11.7% · ilvl +6")
-		eq(A.UpgradeAdvisor.Text(by[full("Corin")].upgrade), "No upgrade -22.2% · ilvl -2")
-		deepEq(A.UpgradeAdvisor.EquippedNames(by[full("Corin")].equipped), {}, "the master looter's client has not loaded it yet: asked")
+		eq(A.UpgradeAdvisor.Text(by[full("Bryn")].upgrade), "Medium upgrade · ilvl +26")
+		eq(A.UpgradeAdvisor.Text(by[full("Corin")].upgrade), "No upgrade · ilvl -4")
+		A.UpgradeAdvisor.EquippedNames(by[full("Corin")].equipped)   -- asked for when the master looter's client lacks it
 		net:Advance(1)
 		deepEq(A.UpgradeAdvisor.EquippedNames(by[full("Corin")].equipped), { "Better Helm" })
 	end)
 
-	it("a client of protocol 2 that sends no verdict is heard all the same", function()
+	it("a client of protocol 2 that sends no badge is heard all the same", function()
 		local net, c, h = started()
 		c.Aurel.Mock.chat.Receive("FDCP1", c.Aurel.addon().Codec:Encode("SRESP", { s = "S1-1", i = 1, r = 1, rs = "MS" }),
 			"RAID", full("Corin"))
 		eq(h.s.items[1].responses[full("Corin")], "MS")
 		isNil(h.s.items[1].verdicts[full("Corin")])
-	end)
-end)
-
----------------------------------------------------------------------------------------------------------------------
--- Who picks the label (M7-2b): the guild's rule responses.labelMode, as the master looter's SOPEN carries it
-
-describe("the label of a main-spec answer follows the guild's mode", function()
-	before_boot(function(M)
-		M.player.name, M.player.realm = "Bryn", REALM
-		verdictItems(M)
-	end)
-
-	local function raid()
-		Mock.group.Set{ raid = true, members = { { name = "Aurel" }, { name = "Corin" } } }
-		Mock.Advance(3)
-	end
-	local function receive(t, fields) return Mock.chat.Receive("FDCP1", Codec():Encode(t, fields), "RAID", ML) end
-	-- `mode` nil = a master looter of protocol 4 or less, which says nothing
-	local function open(itemID, mode)
-		raid()
-		receive("SOPEN", { s = "S1-1", q = 1, ml = ML, e = 663, rt = { MS = 1, OS = 2 }, lm = mode,
-			it = { { id = itemID, ca = "armor", cs = { MS = 1, OS = 0 } } } })
-		receive("SROLL", { s = "S1-1", q = 2, i = 1, r = 1, k = "ROLL", g = "TIER", tr = 1, cl = true,
-			de = FDCP.Compat.ServerTime() + 30 })
-	end
-	local function lastAnswer()
-		Mock.Advance(2)
-		return lastOf(sentMessages(Mock), "SRESP")
-	end
-	local BIG, WAND = 19101, 19120   -- a big upgrade for the player, an item the character cannot use
-
-	it("auto: the addon sets the label from the verdict, the chips are locked and the hint says so", function()
-		open(BIG, "auto")
-		local c = card()
-		eq(c.data.labelMode, "auto"); eq(c.data.label, "BIG_UPGRADE"); eq(c.data.labelOrigin, "AUTO")
-		truthy(c.chips.BIG_UPGRADE:IsSelected())
-		for _, chip in pairs(c.chips) do falsy(chip:IsEnabled()) end
-		truthy(c.labelHint:IsShown()); eq(c.labelHint:GetText(), L("POPUP_LABEL_AUTO"))
-		c.chips.BIS:Click()
-		isNil(lastAnswer(), "a locked chip sends nothing")
-		seg().buttons.MS:Click()
-		local m = lastAnswer()
-		eq(m.rs, "MS"); eq(m.lb, "BIG_UPGRADE"); eq(m.lo, "AUTO")
-		seg().buttons.OS:Click()
-		m = lastAnswer()
-		eq(m.rs, "OS"); isNil(m.lb); isNil(m.lo)
-		falsy(card().chips.BIG_UPGRADE:IsSelected(), "off-spec carries no label")
-		seg().buttons.MS:Click()
-		m = lastAnswer()
-		eq(m.lb, "BIG_UPGRADE"); eq(m.lo, "AUTO", "main-spec again: the addon's label comes back")
-	end)
-
-	it("auto: an item on the wishlist is BiS, and one with nothing to say has no label", function()
-		FDCP.PersonalUpgrade.WishAdd(BIG)
-		open(BIG, "auto")
-		eq(card().data.label, "BIS")
-		seg().buttons.MS:Click()
-		eq(lastAnswer().lb, "BIS")
-	end)
-
-	it("auto: an item with no verdict to speak of is answered without a label", function()
-		open(WAND, "auto")
-		isNil(card().data.label)
-		truthy(card().labelHint:IsShown(), "the player still learns why the chips are locked")
-		seg().buttons.MS:Click()
-		local m = lastAnswer()
-		eq(m.rs, "MS"); isNil(m.lb); isNil(m.lo)
-	end)
-
-	it("suggest: the label is filled in beforehand and goes with the main-spec answer as the addon's", function()
-		open(BIG, "suggest")
-		local c = card()
-		eq(c.data.label, "BIG_UPGRADE"); truthy(c.chips.BIG_UPGRADE:IsSelected())
-		for _, chip in pairs(c.chips) do truthy(chip:IsEnabled()) end
-		eq(c.labelHint:GetText(), L("POPUP_LABEL_SUGGEST"))
-		Mock.Advance(2)
-		isNil(lastOf(sentMessages(Mock), "SRESP"), "a suggestion is not an answer: nothing is sent by itself")
-		seg().buttons.MS:Click()
-		local m = lastAnswer()
-		eq(m.rs, "MS"); eq(m.lb, "BIG_UPGRADE"); eq(m.lo, "AUTO")
-	end)
-
-	it("suggest: another label is a change, the same one is not, clearing it is final", function()
-		open(BIG, "suggest")
-		card().chips.SITUATIONAL:Click()
-		local m = lastAnswer()
-		eq(m.rs, "MS"); eq(m.lb, "SITUATIONAL"); eq(m.lo, "CHANGED")
-		truthy(card().chips.SITUATIONAL:IsSelected()); falsy(card().chips.BIG_UPGRADE:IsSelected())
-		card().chips.BIG_UPGRADE:Click()
-		m = lastAnswer()
-		eq(m.lb, "BIG_UPGRADE"); eq(m.lo, "AUTO", "the player picked what the addon had suggested")
-		card().chips.BIG_UPGRADE:Click()
-		m = lastAnswer()
-		isNil(m.lb); isNil(m.lo)
-		falsy(card().chips.BIG_UPGRADE:IsSelected(), "taken off: the suggestion does not come back by itself")
-		seg().buttons.OS:Click()
-		seg().buttons.MS:Click()
-		m = lastAnswer()
-		eq(m.rs, "MS"); isNil(m.lb, "the player took the label off, and says no again")
-	end)
-
-	it("suggest: back to main-spec from off-spec brings the suggestion back if the player never touched it", function()
-		open(BIG, "suggest")
-		seg().buttons.OS:Click()
-		isNil(lastAnswer().lb)
-		seg().buttons.MS:Click()
-		local m = lastAnswer()
-		eq(m.lb, "BIG_UPGRADE"); eq(m.lo, "AUTO")
-	end)
-
-	it("suggest: with nothing to suggest the player's own pick is a plain choice", function()
-		open(WAND, "suggest")
-		isNil(card().data.label)
-		falsy(card().labelHint:IsShown())
-		card().chips.BIS:Click()
-		local m = lastAnswer()
-		eq(m.lb, "BIS"); eq(m.lo, "MANUAL")
-	end)
-
-	local function playersOwn(mode)
-		open(BIG, mode)
-		local c = card()
-		isNil(c.data.label); falsy(c.labelHint:IsShown())
-		for _, chip in pairs(c.chips) do truthy(chip:IsEnabled()) end
-		c.chips.SITUATIONAL:Click()
-		local m = lastAnswer()
-		eq(m.rs, "MS"); eq(m.lb, "SITUATIONAL"); eq(m.lo, "MANUAL")
-	end
-
-	it("manual: as before, the player's own", function() playersOwn("manual") end)
-
-	it("a master looter that says nothing (protocol 4 or less) leaves the label to the player too", function() playersOwn(nil) end)
-
-	it("a player who reloads gets the card back with the label and who chose it", function()
-		open(BIG, "suggest")
-		card().chips.SITUATIONAL:Click()
-		Mock.Advance(2)
-		local v = FDCP.Protocol.Session.view
-		eq(v.labelMode, "suggest")
-		local mine = FDCP.Protocol.Session:MyAnswer(1)
-		eq(mine.lb, "SITUATIONAL"); eq(mine.lo, "CHANGED")
-		P().draft = nil
-		P():Refresh()
-		eq(card().data.label, "SITUATIONAL"); eq(card().data.labelOrigin, "CHANGED")
-	end)
-
-	it("speaks Italian", function()
-		FDCP.Locale.SetActive("itIT")
-		open(BIG, "auto")
-		eq(card().labelHint:GetText(), "L'addon imposta questa etichetta dal tuo equipaggiamento e dalla tua lista BiS.")
-		eq(card().chips.BIG_UPGRADE.label:GetText(), "Upgrade grande")
 	end)
 end)

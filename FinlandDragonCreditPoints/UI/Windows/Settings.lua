@@ -193,42 +193,14 @@ function SettingsWindow:BuildPersonal(pane)
 		say(ok, code, L["LANGUAGE_SET"]:format(id == "auto" and L["LANGUAGE_AUTO"] or id))
 	end)
 	choice("guildLanguage", X2, Y + 40, "PERSONAL_GUILD_LANGUAGE", languages, function(id) say(SC():SetPersonal("guildLanguage", id)) end)
-	-- the popup, the weights and the wishlist
+	-- the popup (M7-5c: the personal stat weights and the wishlist are gone)
 	label(X2, Y + 84, "PERSONAL_POPUP")
 	c.popup = Widgets.Button(card, { text = L["PERSONAL_POPUP_RESET"], style = "secondary", width = 170, height = 28,
 		onClick = function() SC():ResetPopup(); say(true, nil, L["PERSONAL_POPUP_DONE"]) end })
 	c.popup:SetPoint("TOPLEFT", card, "TOPLEFT", X2 + 250, -(Y + 80))
-	label(X2, Y + 124, "PERSONAL_WEIGHTS")
-	c.weights = Widgets.Switch(card, { onChange = function(on)
-		local ok, code = ns.PersonalUpgrade.SetEnabled(on)
-		say(ok, code)
-		if not ok then self:RefreshPersonal() end
-	end })
-	c.weights:SetPoint("TOPLEFT", card, "TOPLEFT", X2 + 250, -(Y + 120))
-	card.weightsHint = Theme.NewText(card, "Small", "text-3")
-	card.weightsHint:SetPoint("TOPLEFT", card, "TOPLEFT", X2, -(Y + 150))
-	card.weightsHint:SetText(L["PERSONAL_WEIGHTS_HINT"])
-	label(X2, Y + 184, "PERSONAL_WISHLIST")
-	card.wishCount = Theme.NewText(card, "Body", "text-1")
-	card.wishCount:SetPoint("TOPLEFT", card, "TOPLEFT", X2 + 250, -(Y + 184))
-	c.wishClear = Widgets.Button(card, { text = L["PERSONAL_WISHLIST_CLEAR"], style = "ghost", width = 120, height = 28,
-		onClick = function() SettingsWindow:OnClearWishlist() end })
-	c.wishClear:SetPoint("LEFT", card.wishCount, "RIGHT", 12, 0)
 end
 
--- locale-key: PERSONAL_POPUP_DONE PERSONAL_WEIGHTS_HINT PERSONAL_WISHLIST_COUNT PERSONAL_WISHLIST_CLEARED
--- locale-key: PERSONAL_CLEAR_TITLE PERSONAL_CLEAR_BODY
-function SettingsWindow:OnClearWishlist()
-	local n = #ns.PersonalUpgrade.WishList()
-	if n == 0 then return end
-	self:Confirm({ title = L["PERSONAL_CLEAR_TITLE"], body = L["PERSONAL_CLEAR_BODY"]:format(n), confirm = L["PERSONAL_WISHLIST_CLEAR"],
-		onConfirm = function()
-			ns.PersonalUpgrade.WishClear()
-			self:PersonalMessage(L["PERSONAL_WISHLIST_CLEARED"])
-			self:RefreshPersonal()
-		end })
-end
-
+-- locale-key: PERSONAL_POPUP_DONE
 function SettingsWindow:PersonalMessage(text, isError)
 	local card = self.root and self.root.panes.personal.card
 	if not card then return end
@@ -244,10 +216,6 @@ function SettingsWindow:RefreshPersonal()
 	for _, name in ipairs({ "effects", "animations", "sounds" }) do c[name]:SetOn(Config:Get(name) == true, true) end
 	c.language:Select(Config:GetLanguage(), true)
 	c.guildLanguage:Select(Config:Get("guildLanguage"), true)
-	c.weights:SetOn(ns.PersonalUpgrade.Enabled(), true)
-	local n = #ns.PersonalUpgrade.WishList()
-	pane.card.wishCount:SetText(L["PERSONAL_WISHLIST_COUNT"]:format(n))
-	c.wishClear:SetEnabled(n > 0)
 end
 
 ---------------------------------------------------------------------------------------------------------------------

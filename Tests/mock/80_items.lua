@@ -1,6 +1,6 @@
 -- Mock client, part 9: items, stats and specializations (M1-3).
 --
--- Imitates: C_Item.{GetItemInfo, GetItemInfoInstant, GetDetailedItemLevelInfo, GetItemStats, GetItemStatDelta,
+-- Imitates: C_Item.{GetItemInfo, GetItemInfoInstant, GetDetailedItemLevelInfo, GetItemQualityByID, GetItemStats, GetItemStatDelta,
 -- IsEquippableItem, DoesItemContainSpec, GetItemSpecInfo, RequestLoadItemDataByID}, GetInventoryItemLink,
 -- C_SpecializationInfo.{GetSpecialization, GetSpecializationInfo, GetInspectSpecialization}, GetNumSpecializations,
 -- GetSpecializationRole, the event GET_ITEM_INFO_RECEIVED.
@@ -56,6 +56,13 @@ function C_Item.GetDetailedItemLevelInfo(item)
 	local d = lookup(item)
 	if not d then return nil end
 	return d.level or 100, false, d.baseLevel or d.level or 100
+end
+
+-- M7-5c: the quality of a loaded item (nil until it is), as the dump's C_Item.GetItemQualityByID.
+function C_Item.GetItemQualityByID(item)
+	local d = lookup(item)
+	if not d or not d.cached then return nil end
+	return d.quality or 4
 end
 
 function C_Item.GetItemStats(link)

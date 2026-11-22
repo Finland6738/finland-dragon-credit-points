@@ -31,6 +31,8 @@
 - Suggested model/effort: `sonnet` / high
 
 ### M7-2b — Automatic response labels
+> **Superseded by [M7-5c](#m7-5c--three-button-popup-and-automatic-upgrade-badge)** (owner decision of 2026-11-22): the labels, the rule `responses.labelMode` and the label's origin are removed; the popup has three buttons and the addon computes the upgrade badge. The history below is kept as it was shipped.
+
 - Branch: `step/m7-2b-auto-labels`
 - Depends on: M7-2, M5-2, M5-3, M4-6
 - Analysis: §5.1 ("Come è fatto (M7-2b)"), §8.4 (protocol 5), §10
@@ -126,6 +128,21 @@
 - Tests: `Tests/test_absence.lua`; `Tests/test_rules.lua`, `Tests/test_season_window.lua` (the preset's new rule).
 - Docs: analysis §3.1, §3.5, §6; wiki **Loot Rules**, **Roster and Nights**, **Master Looter Guide**, **Settings**, **Seasons**, **Credits** (EN + IT); README; CHANGELOG.
 - Real client: the calendar sign-ups read at the close; GUILD addon messages from a member to the officer running the night.
+- Suggested model/effort: `opus` / high
+
+### M7-5c — Three-button popup and automatic upgrade badge
+- Branch: `step/m7-5c-upgrade-badge`
+- Depends on: M7-2d, M5-2, M5-4, M6-1b, M4-6
+- Analysis: §5.1 ("Come è fatto (M7-5c)"), §5.2, §8.4 (protocol 7), §13 (question 8 resolved)
+- Scope: owner decisions of 2026-11-22. **Popup:** the player only chooses with three buttons, **Pass**, **Roll Main-spec** and **Roll Off-spec**; a roll button sends the response and rolls in one click (the roll intent of M7-2d first, then `RandomRoll`), once per round; in a round that does not collect responses (a lower tier's turn, a reroll, a free roll) it only rolls. **Removed** (code, rules, locale keys, tests, docs, protocol fields): the player-chosen labels and M7-2b's `responses.labelMode`; the response note; the personal stat weights and the Pawn-like import (M5-3, `Domain/WeightImport.lua`, `/fdcp weights`); the BiS wishlist (`Domain/Wishlist.lua`, `/fdcp wish`); the stat-weight scoring of M5-1 / M5-2 (`Data/StatWeights.lua`, the weighted score and its thresholds). Kept: the proficiency and usability checks, the slot pairing (rings and trinkets against the worse, a two-hander against main hand + off hand). **Automatic upgrade badge**, computed by the player's addon from the item against the piece worn in that slot **during the fight** (a gear snapshot taken at `ENCOUNTER_START`, at `ENCOUNTER_END` when the start was missed; M7-5d reads the same snapshot): purple over purple of the same season → **minor**; over blue → **medium**; over green or lower, or an empty slot → **major**; a purple of an **older season** (its item level under the current season's band) counts one step below, like a blue; always with the **item-level difference** ("Medium upgrade · ilvl +13"); worse → "No upgrade", unusable → "Not usable". Each season gets an **item-level band** the Guild Master sets in the Season window (`SEASON_BAND_SET`), frozen on the session and sent to the raid (`ib`). The badge shows in the popup and in the master looter's / council's window; it never changes the winner. Protocol 7: SRESP without `lb` / `lo` / `n`, SOPEN / SSTATE without `lm` and with `ib`; an older client's fields are read and ignored. Rules written before keep validating (the retired keys are dropped on read). Issue #2 closed by the decision.
+- Done when:
+  - [x] Every tier case (same-season purple, blue, green, empty slot, an older season's purple, worse, unusable), rings and trinkets, two-hand vs main hand + off hand, the band and the item-level difference (offline tests).
+  - [x] The snapshot of the fight is used instead of the gear worn when the item is rolled; the three buttons answer and roll in one click; an old client's label, note and BIG / SMALL verdict are ignored and its response still counts.
+  - [x] The Season window sets the band with a confirmation; the master looter's Upgrade column, its sort and the council flags read the tiers; the removed features leave no code, rule, locale key or command behind (`tools/check_locale.py` clean).
+  - [ ] In the game: the three buttons in a raid (one click answers and rolls), `GetItemQualityByID` and the item level of worn pieces, the snapshot at `ENCOUNTER_START` (also after a `/reload` during the fight), the Season window's band fields. *(in game)*
+- Tests: `Tests/test_upgrade_score.lua` (rewritten), `Tests/test_inventory.lua` (adapter, snapshot, advisor, wire), `Tests/test_ui_popup.lua`, `Tests/test_flags.lua`, `Tests/test_protocol_session.lua`, `Tests/test_session_fsm.lua`, `Tests/test_ui_ml_session.lua`, `Tests/test_season.lua`, `Tests/test_season_window.lua`, `Tests/test_ui_settings.lua`, `Tests/test_sim_boss.lua`; `Tests/test_labels.lua` and `Tests/test_weights_import.lua` removed.
+- Docs: analysis §5, §8.4, §13; issue #2 commented and closed; wiki **Rolling for Loot** (rewritten), **Upgrade Hints** (rewritten: the badge), **Master Looter Guide**, **Settings**, **Seasons**, **Loot Rules** (EN + IT); README (EN + IT); CHANGELOG.
+- Real client: the quality and item level of worn links, `ENCOUNTER_START` and the snapshot, the popup's buttons.
 - Suggested model/effort: `opus` / high
 
 ### M7-6 — Packaging and the release workflow

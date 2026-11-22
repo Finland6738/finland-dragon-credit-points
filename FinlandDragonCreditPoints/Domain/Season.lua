@@ -8,6 +8,11 @@
 -- with (the "Patto" preset: 0, everyone starts again each season); it is written in SEASON_OPENED, so changing the
 -- configuration later never changes an open season.
 --
+-- SEASON_BAND_SET{min, max} (M7-5c) gives the season its item-level band: the item levels of its epic items, which the
+-- Guild Master sets in the Season window. The upgrade badge (Domain/UpgradeScore.lua) counts a worn epic under the current
+-- season's `min` as an older season's. The latest SEASON_BAND_SET of a season in canonical order is the one that counts;
+-- a season without one has no band (every epic then counts as the current season's).
+--
 -- One season is open at a time: Season.Open refuses while another is open and never reuses an id. Two officers who
 -- open seasons concurrently (merged later) cannot be prevented offline: the first SEASON_OPENED of an id in canonical
 -- order is the one that counts, and Season.Current is the newest opened season that is not closed.
@@ -35,7 +40,8 @@ local function copyInstances(list)
 	return out
 end
 
--- Every season of the ledger: { [id] = { id, label, instances, startCredits, openedAt, opened, closedAt, closed } }.
+-- Every season of the ledger: { [id] = { id, label, instances, startCredits, openedAt, opened, closedAt, closed,
+-- band = { min, max } | nil } }.
 -- `opened` / `closed` are the ids of the events that count (the first of each in canonical order).
 function Season.All(L)
 	local out = {}
@@ -54,6 +60,12 @@ function Season.All(L)
 	for _, e in ipairs(Lg.Sorted(L, function(e) return e.type == "SEASON_CLOSED" end)) do
 		local s = out[e.season]
 		if s and not s.closed and Lg.Readable(e) then s.closedAt, s.closed = e.ts, e.id end
+	end
+	-- The band: the latest SEASON_BAND_SET of each season (canonical order).
+	for _, e in ipairs(Lg.Sorted(L, function(e) return e.type == "SEASON_BAND_SET" end)) do
+		local s = out[e.season]
+		local p = s and Lg.Readable(e) and Lg.Payload(e)
+		if p then s.band, s.bandEvent = { min = p.min, max = p.max }, e.id end
 	end
 	return out
 end
@@ -113,6 +125,19 @@ function Season.Close(L, draft, opts)
 	if s.closed then return nil, "SEASON_CLOSED" end
 	return Ledger().Append(L, { author = draft.author, ts = draft.ts, season = draft.season, type = "SEASON_CLOSED",
 		payload = {} }, opts)
+end
+
+-- Sets the item-level band of a season (open or closed: the band only informs the upgrade badge). draft = { author, ts,
+-- season, min, max }. Returns the event, or nil and "SEASON_UNKNOWN", "BAND", "UNCHANGED" or a Ledger.Append code.
+function Season.SetBand(L, draft, opts)
+	if type(draft) ~= "table" then return nil, "event" end
+	local s = Season.Get(L, draft.season)
+	if not s then return nil, "SEASON_UNKNOWN" end
+	local band = ns.UpgradeScore and ns.UpgradeScore.Band({ min = draft.min, max = draft.max }) or nil
+	if not band then return nil, "BAND" end
+	if s.band and s.band.min == band.min and s.band.max == band.max then return nil, "UNCHANGED" end
+	return Ledger().Append(L, { author = draft.author, ts = draft.ts, season = draft.season, type = "SEASON_BAND_SET",
+		payload = { min = band.min, max = band.max } }, opts)
 end
 
 -- The size of an instance of the season's pack, or nil when the instance is not in the pack.

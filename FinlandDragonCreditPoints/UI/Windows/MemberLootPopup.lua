@@ -1,27 +1,22 @@
 -- MemberLootPopup: the player's item popup (docs/ANALISI.md §5.1, §6, docs/specs/ui-style.md §3, §6, preview
--- fdcp-roll-popup.webp, M4-6). One card per open round, stackable: icon and name in the quality colour, the slot, the
+-- fdcp-roll-popup.webp, M4-6, M7-5c). One card per open round, stackable: icon and name in the quality colour, the slot, the
 -- game's own tooltip (with the comparison) on hover, the chip "Weapon · 2 credits", the player's credits and estimated
--- place in the queue, the segmented control Main-spec / Off-spec / Pass, the optional label (BiS, big upgrade, small
--- upgrade, situational), a note, the timer bar and the Roll button, which calls the game's RandomRoll(1, 100). The
--- popup is a window of its own (not a tab): it opens when a round asks this player something and closes when the round
--- closes. Position and width are remembered per character.
+-- place in the queue, the upgrade badge, the timer bar and three buttons. The popup is a window of its own (not a tab): it
+-- opens when a round asks this player something and closes when the round closes. Position and width are remembered per
+-- character.
+--
+-- M7-5c (owner decision of 2026-11-22): the player only chooses with three buttons, Pass, Roll Main-spec and Roll
+-- Off-spec. A roll button sends the response and rolls in one click (the roll intent first, M7-2d, then the game's
+-- RandomRoll(1, 100)); in a round that does not collect responses (a reroll, a lower tier's turn, a free roll) it only
+-- rolls. Everything else is the addon's: there is no label and no note any more, and the upgrade badge ("Medium upgrade ·
+-- ilvl +13") is computed from the gear the player wore during the fight (App/UpgradeAdvisor.lua) and goes to the master
+-- looter with the answer. An item the character cannot use comes with Pass preselected (nothing is sent by itself).
 --
 -- It draws what App/PopupBoard.lua gives (the session as this client sees it: Net/Protocol.lua's view) and sends the
 -- player's answer back through Protocol.Session:Respond, which only ever sends the player's own response (the master
 -- looter takes the name from the sender, §8.4). The roll is the game's: the addon never writes a roll value; the master
--- looter's client reads it from the chat (Adapters/RollListener.lua). Lua 5.1; unprotected frames.
--- M5-2: under the chip, one line per spec says whether the item is an upgrade ("Main-spec · Big upgrade +7.4% · ilvl +6",
--- "Off-spec · ..."), with a tooltip (why, on what basis, what is worn, the limits); an item the character cannot use
--- comes with Pass preselected (nothing is sent by itself); every answer carries the verdicts and the worn pieces to the
--- master looter (App/UpgradeAdvisor.lua).
--- M5-3: an item on the player's own best-in-slot list (/fdcp wish) carries a badge saying so, above the verdicts; the
--- player's own stat weights (/fdcp weights) feed the verdicts and the tooltip says so.
--- M7-2b: the label of a main-spec answer follows the guild's mode (rule responses.labelMode): "auto" = the addon sets it from the
--- player's best-in-slot list and the verdict and the chips are locked; "suggest" = the same, filled in beforehand and the
--- player may change or clear it; "manual" = the player's own. The answer carries who chose the label (AUTO, CHANGED, MANUAL).
--- M7-2d: a click on Roll first sends the roll intent (Protocol.Session:RollIntent, SRINT: item, round, nonce, no value)
--- and then calls RandomRoll; with the rule session.buttonRollsOnly the master looter counts a roll only with its intent
--- (Adapters/RollListener.lua). The button still works once per round, rerolls included.
+-- looter's client reads it from the chat (Adapters/RollListener.lua). With the rule session.buttonRollsOnly the master
+-- looter counts a roll only with its intent. A button rolls once per round, rerolls included. Lua 5.1; unprotected frames.
 -- Not verified in the real client: how it looks in a raid, the tooltip comparison, RandomRoll from a click.
 local ADDON_NAME, ns = ...
 ns = ns or {}
@@ -45,8 +40,10 @@ Popup.HINTS = {
 	ROLLED = "POPUP_HINT_ROLLED", REROLL = "POPUP_HINT_REROLL", FREE = "POPUP_HINT_FREE", TURN = "POPUP_HINT_TURN",
 }
 
--- locale-key: POPUP_LABEL_AUTO POPUP_LABEL_SUGGEST
-Popup.LABEL_HINTS = { AUTO = "POPUP_LABEL_AUTO", SUGGEST = "POPUP_LABEL_SUGGEST" }
+-- The words of the buttons (M7-5c): Pass is the response's own word.
+-- locale-key: POPUP_ROLL_MS POPUP_ROLL_OS
+Popup.BUTTON_KEYS = { MS = "POPUP_ROLL_MS", OS = "POPUP_ROLL_OS" }
+Popup.BUTTON_ORDER = { "PASS", "MS", "OS" }
 
 local function PS() return ns.Protocol and ns.Protocol.Session end
 local function me() return ns.GuildRanks and ns.GuildRanks.Me() or nil end
@@ -141,9 +138,9 @@ end
 ---------------------------------------------------------------------------------------------------------------------
 -- Build
 
-local ROW_ITEM, ROW_BADGE, ROW_SEG, ROW_LABELS, ROW_NOTE, ROW_BAR = 40, 24, 32, 26, 28, 4
-local ROW_LABEL_HINT = 16
+local ROW_ITEM, ROW_BADGE, ROW_BUTTONS, ROW_BAR, ROW_HINT = 40, 24, 32, 4, 16
 local ROW_VERDICT = 24
+local BUTTON_GAP = 8
 local PAD = 16
 
 local function buildCard(self, parent)
@@ -204,75 +201,28 @@ local function buildCard(self, parent)
 	c.credits = Theme.NewText(c, "Small", "text-2")
 	c.credits:SetJustifyH("RIGHT")
 
-	-- the reminder of the player's own best-in-slot list
-	c.wish = Widgets.Badge(c, "", "ok")
-	c.wish:EnableMouse(true)
-	c.wish:SetScript("OnEnter", function(b)
-		if GameTooltip then
-			GameTooltip:SetOwner(b, "ANCHOR_TOP")
-			GameTooltip:SetText(L["WISH_BADGE"])
-			GameTooltip:AddLine(L["WISH_TIP"], 1, 1, 1, true)
-			GameTooltip:Show()
-		end
-	end)
-	c.wish:SetScript("OnLeave", function() if GameTooltip then GameTooltip:Hide() end end)
-	c.wish:Hide()
-
-	-- the upgrade verdicts, one badge per spec (main-spec, off-spec); the tooltip says why and what is worn
-	c.verdicts = {}
-	for _, which in ipairs({ "ms", "os" }) do
-		local v = Widgets.Badge(c, "", "neutral")
-		v.which = which
-		v:EnableMouse(true)
-		v:SetScript("OnEnter", function(b) Popup:ShowVerdictTip(b, c.data, which) end)
-		v:SetScript("OnLeave", function() if GameTooltip then GameTooltip:Hide() end end)
-		v:Hide()
-		c.verdicts[which] = v
-	end
-
-	c.segs = {}
-	c.chips = {}
-	for _, code in ipairs(PB.LABELS) do
-		local chip = Widgets.Chip(c, { text = ns.Reasons.Text("LABEL", code), font = "Small", pad = 20, height = ROW_LABELS,
-			onClick = function() Popup:SetLabel(code) end })
-		chip.code = code
-		c.chips[code] = chip
-	end
-	c.labelHint = Theme.NewText(c, "Small", "text-3")   -- says who sets the label (M7-2b)
-	c.labelHint:SetJustifyH("LEFT")
-	c.labelHint:SetWordWrap(true)
-	c.noteCaption = Theme.NewText(c, "Small", "text-3")
-	c.noteCaption:SetText(L["POPUP_NOTE"])
-	c.note = Widgets.EditBox(c, { width = 200, height = ROW_NOTE, maxLetters = PB.MAX_NOTE,
-		onChange = function(text, user) if user then Popup:OnNoteTyped(text) end end })
-	c.note.edit:HookScript("OnEditFocusLost", function() Popup:CommitNote() end)
+	-- the upgrade badge (M7-5c); the tooltip says how it was read and what is worn
+	c.verdict = Widgets.Badge(c, "", "neutral")
+	c.verdict:EnableMouse(true)
+	c.verdict:SetScript("OnEnter", function(b) Popup:ShowVerdictTip(b, c.data) end)
+	c.verdict:SetScript("OnLeave", function() if GameTooltip then GameTooltip:Hide() end end)
+	c.verdict:Hide()
 
 	c.bar = Widgets.ThinBar(c, { height = ROW_BAR })
 	c.hint = Theme.NewText(c, "Small", "text-3")
 	c.hint:SetJustifyH("LEFT")
 	c.hint:SetWordWrap(true)
-	c.rollButton = Widgets.Button(c, { text = L["POPUP_ROLL"], style = "primary", width = 104, height = 32,
-		onClick = function() Popup:Roll() end })
-	return c
-end
-
--- The segmented control of a card for these responses (built once per set of responses, Pass last).
-local function segmentFor(self, card, offered)
-	local codes = {}
-	for _, o in ipairs(offered) do codes[#codes + 1] = o.code end
-	codes[#codes + 1] = "PASS"
-	local sig = table.concat(codes, ",")
-	local seg = card.segs[sig]
-	if not seg then
-		local items = {}
-		for _, code in ipairs(codes) do items[#items + 1] = { id = code, text = ns.Reasons.Text("RESPONSE", code) } end
-		seg = Widgets.Segmented(card, items, function(code)
-			if not card.syncing then Popup:Choose(code) end
-		end)
-		seg:Hide()
-		card.segs[sig] = seg
+	-- the three buttons: Pass, Roll Main-spec, Roll Off-spec
+	c.buttons = {}
+	for _, code in ipairs(Popup.BUTTON_ORDER) do
+		local text = Popup.BUTTON_KEYS[code] and L[Popup.BUTTON_KEYS[code]] or ns.Reasons.Text("RESPONSE", code)
+		local b = Widgets.Button(c, { text = text, style = "secondary", width = 110, height = ROW_BUTTONS,
+			onClick = function() Popup:Press(code) end })
+		b.code = code
+		b:Hide()
+		c.buttons[code] = b
 	end
-	return seg
+	return c
 end
 
 -- Builds the popup frame once (hidden).
@@ -335,20 +285,22 @@ function Popup:ShowTooltip(owner, itemID)
 	if _G.GameTooltip_ShowCompareItem then pcall(_G.GameTooltip_ShowCompareItem, tip) end
 end
 
--- The tooltip of a verdict badge: the verdict and why, what it was compared on, the worn pieces, the limits.
-function Popup:ShowVerdictTip(owner, d, which)
+-- The tooltip of the upgrade badge: the badge for each spec and why, what it was compared with, how it is read.
+function Popup:ShowVerdictTip(owner, d)
 	local tip, A = GameTooltip, ns.UpgradeAdvisor
 	local advice = d and d.upgrade
-	local u = advice and advice[which]
-	if not tip or not u or not A then return end
+	if not tip or not advice or not advice.ms or not A then return end
 	tip:SetOwner(owner, "ANCHOR_TOP")
-	local lines = A.Lines(u, which == "os" and "OS" or "MS")
+	local lines = A.Lines(advice.ms, "MS")
 	tip:SetText(lines[1])
 	for i = 2, #lines do tip:AddLine(lines[i], 1, 1, 1, true) end
-	if advice.personal and advice.personal[which] then tip:AddLine(L["UPG_BASIS_PERSONAL"], 1, 1, 1, true) end
+	if advice.os then
+		for _, line in ipairs(A.Lines(advice.os, "OS")) do tip:AddLine(line, 1, 1, 1, true) end
+	end
 	local names = A.EquippedNames(advice.equipped)
 	if #names > 0 then tip:AddLine(L["UPG_EQUIPPED"]:format(table.concat(names, ", ")), 0.8, 0.8, 0.8, true) end
-	tip:AddLine(L["UPG_LIMITS"], 0.6, 0.6, 0.6, true)
+	tip:AddLine(L[advice.snapshot and "UPG_FROM_SNAPSHOT" or "UPG_FROM_CURRENT"], 0.8, 0.8, 0.8, true)
+	tip:AddLine(L["UPG_RULE"], 0.6, 0.6, 0.6, true)
 	tip:Show()
 end
 
@@ -380,71 +332,13 @@ local function layoutCard(self, c, d, top)
 	c.credits:SetWidth(self.width - 2 * PAD - c.badge:GetWidth() - 8)
 	y = y + ROW_BADGE + 12
 
-	if d.wish then
-		c.wish:ClearAllPoints()
-		c.wish:SetPoint("TOPLEFT", c, "TOPLEFT", PAD, -y + 6)
-		c.wish:Show()
-		y = y + ROW_VERDICT + 2
+	if d.badge then
+		c.verdict:ClearAllPoints()
+		c.verdict:SetPoint("TOPLEFT", c, "TOPLEFT", PAD, -y + 6)
+		c.verdict:Show()
+		y = y + ROW_VERDICT + 6
 	else
-		c.wish:Hide()
-	end
-	for _, which in ipairs({ "ms", "os" }) do
-		local v = c.verdicts[which]
-		if d.upgrade and d.upgrade[which] then
-			v:ClearAllPoints()
-			v:SetPoint("TOPLEFT", c, "TOPLEFT", PAD, -y + 6)
-			v:Show()
-			y = y + ROW_VERDICT + 2
-		else
-			v:Hide()
-		end
-	end
-
-	local seg = d.seg
-	for _, other in pairs(c.segs) do if other ~= seg then other:Hide() end end
-	if seg then
-		seg:ClearAllPoints()
-		seg:SetPoint("TOPLEFT", c, "TOPLEFT", PAD, -y)
-		seg:Show()
-		y = y + ROW_SEG + 8
-	end
-
-	local x = PAD
-	for _, code in ipairs(PB.LABELS) do
-		local chip = c.chips[code]
-		if d.labels then
-			chip:ClearAllPoints()
-			chip:SetPoint("TOPLEFT", c, "TOPLEFT", x, -y)
-			chip:Show()
-			x = x + chip:GetWidth() + 6
-		else
-			chip:Hide()
-		end
-	end
-	if d.labels then y = y + ROW_LABELS + 8 end
-	if d.labels and d.labelHint then
-		c.labelHint:ClearAllPoints()
-		c.labelHint:SetPoint("TOPLEFT", c, "TOPLEFT", PAD, -y + 4)
-		c.labelHint:SetWidth(self.width - 2 * PAD)
-		c.labelHint:SetText(L[Popup.LABEL_HINTS[d.labelHint]])
-		c.labelHint:Show()
-		y = y + ROW_LABEL_HINT + 4
-	else
-		c.labelHint:Hide()
-	end
-
-	if d.collect then
-		c.noteCaption:ClearAllPoints()
-		c.noteCaption:SetPoint("TOPLEFT", c, "TOPLEFT", PAD, -y - 7)
-		c.note:ClearAllPoints()
-		c.note:SetPoint("TOPLEFT", c, "TOPLEFT", PAD + 44, -y)
-		c.note:SetWidth(self.width - 2 * PAD - 44)
-		c.noteCaption:Show()
-		c.note:Show()
-		y = y + ROW_NOTE + 10
-	else
-		c.noteCaption:Hide()
-		c.note:Hide()
+		c.verdict:Hide()
 	end
 
 	c.bar:ClearAllPoints()
@@ -453,12 +347,25 @@ local function layoutCard(self, c, d, top)
 	c.bar:SetWidth(self.width - 2 * PAD)
 	y = y + ROW_BAR + 12
 
-	c.rollButton:ClearAllPoints()
-	c.rollButton:SetPoint("TOPRIGHT", c, "TOPRIGHT", -PAD, -y)
 	c.hint:ClearAllPoints()
-	c.hint:SetPoint("TOPLEFT", c, "TOPLEFT", PAD, -y + 1)
-	c.hint:SetWidth(self.width - 2 * PAD - 104 - 12)
-	y = y + 32 + 14
+	c.hint:SetPoint("TOPLEFT", c, "TOPLEFT", PAD, -y)
+	c.hint:SetWidth(self.width - 2 * PAD)
+	y = y + ROW_HINT + 10
+
+	-- the buttons share the width: Pass, then the roll buttons the session offers
+	local shown = {}
+	for _, code in ipairs(Popup.BUTTON_ORDER) do
+		if d.buttonsByCode and d.buttonsByCode[code] then shown[#shown + 1] = c.buttons[code] else c.buttons[code]:Hide() end
+	end
+	local n = #shown
+	local w = n > 0 and math.floor((self.width - 2 * PAD - (n - 1) * BUTTON_GAP) / n) or 0
+	for i, b in ipairs(shown) do
+		b:ClearAllPoints()
+		b:SetPoint("TOPLEFT", c, "TOPLEFT", PAD + (i - 1) * (w + BUTTON_GAP), -y)
+		b:SetWidth(w)
+		b:Show()
+	end
+	y = y + ROW_BUTTONS + 14
 	c:SetHeight(y)
 	return y
 end
@@ -516,42 +423,27 @@ local function applyCard(self, c, d, top)
 	end
 	c.credits:SetText(standing)
 
-	c.wish:SetBadge(L["WISH_BADGE"]:upper(), "ok")
-	-- the upgrade verdicts (M5-2)
+	-- the upgrade badge (M7-5c)
 	local A = ns.UpgradeAdvisor
-	for _, which in ipairs({ "ms", "os" }) do
-		local u = d.upgrade and d.upgrade[which]
-		if u and A then
-			c.verdicts[which]:SetBadge(ns.Reasons.Text("RESPONSE", which == "os" and "OS" or "MS") .. " · " .. A.Text(u), A.Tone(u))
-		end
-	end
-
-	-- the response selector: shown while the round collects responses, or locked when the player answered
-	d.seg = nil
-	if d.collect or d.response ~= nil then
-		local seg = segmentFor(self, c, d.offered)
-		d.seg = seg
-		c.syncing = true
-		if d.response and seg.buttons[d.response] then seg:Select(d.response)
-		elseif d.preselect and seg.buttons[d.preselect] then
-			seg:Select(d.preselect)
-			seg.active = nil   -- a preselection is not an answer: clicking Pass sends it
-		else seg:Clear() end
-		c.syncing = false
-		seg:SetEnabled(d.canAnswer)
-	end
-	for code, chip in pairs(c.chips) do
-		chip:SetSelected(d.label == code)
-		chip:SetEnabled(d.labelsOn == true)
-	end
-	if d.collect and not c.note.edit:HasFocus() and c.note:GetText() ~= (d.note or "") then c.note:SetText(d.note or "") end
-	c.note.edit:SetEnabled(d.canAnswer)
+	local u = A and A.Badge(d.upgrade) or nil
+	d.badge = u ~= nil
+	if u then c.verdict:SetBadge(A.Text(u), A.Tone(u)) end
 
 	c.hint:SetText(self.err == d.key and L["POPUP_ERR_SEND"] or self.rollErr == d.key
 		and L["POPUP_ERR_ROLL"]:format(d.rollMin, d.rollMax) or hintText(d))
-	c.rollButton:SetLabel(d.rolled and L["POPUP_ROLLED"] or L["POPUP_ROLL"])
-	c.rollButton:SetEnabled(d.canRoll)
-	c.rollButton:SetAlpha(d.canRoll and 1 or 0.45)
+	d.buttonsByCode = {}
+	for _, spec in ipairs(d.buttons or {}) do
+		d.buttonsByCode[spec.code] = spec
+		local b = c.buttons[spec.code]
+		if b then
+			local text = Popup.BUTTON_KEYS[spec.code] and L[Popup.BUTTON_KEYS[spec.code]] or ns.Reasons.Text("RESPONSE", spec.code)
+			if spec.roll and spec.selected and d.rolled then text = L["POPUP_ROLLED"] end
+			b:SetLabel(text)
+			b:SetEnabled(spec.enabled)
+			b.selected = spec.selected
+			if b.ring then Theme.Tint(b.ring, spec.selected and "neon" or "border") end
+		end
+	end
 
 	-- the neon element: the top card only
 	Theme.GlowShow(c.glow, top)
@@ -579,7 +471,7 @@ end
 ---------------------------------------------------------------------------------------------------------------------
 -- Board and state
 
-Popup.draft = nil        -- { key, rs, lb, n }: the player's answer to the round `key`, ahead of what the session knows
+Popup.draft = nil        -- { key, rs }: the player's answer to the round `key`, ahead of what the session knows
 Popup.rolled = {}        -- [key] = true: the player rolled in this round
 Popup.dismissed = {}     -- [key] = true: the player hid this round's card
 Popup.totals = {}        -- [key] = the longest time left seen (the timer bar's full length)
@@ -598,10 +490,6 @@ local function boardEnv(self)
 		upgrade = function(itemID)
 			local A = ns.UpgradeAdvisor
 			return A and (A.For(itemID)) or nil
-		end,
-		wish = function(itemID)
-			local PU = ns.PersonalUpgrade
-			return PU ~= nil and PU.Has(itemID)
 		end,
 	}
 end
@@ -675,79 +563,38 @@ end
 ---------------------------------------------------------------------------------------------------------------------
 -- The player's actions
 
--- The answer being built for the card: a draft of this round, started from what the session knows.
-local function draftOf(self, card)
-	if not self.draft or self.draft.key ~= card.key then
-		self.draft = { key = card.key, rs = card.response, lb = card.label, lo = card.labelOrigin, n = card.note }
-	end
-	return self.draft
-end
-
--- Sends the draft (the whole answer, again: the master looter keeps the latest). Returns true, or false and a code.
-function Popup:Send(card)
-	local d = self.draft
-	if not d or d.key ~= card.key or not d.rs then return false, "NO_RESPONSE" end
+-- Sends a response for the card (the master looter keeps the latest) with the badges and the worn pieces. Returns true, or
+-- false and a code.
+function Popup:Send(card, code)
 	local ps = PS()
 	if not ps then return false, "NO_SESSION" end
-	PB.Settle(card, d)   -- the label and who chose it, by the guild's mode (M7-2b)
-	local ok, code = ps:Respond(d.rs, d.lb, PB.ClipNote(d.n), card.upgrade and card.upgrade.wire or nil, d.lo)
+	self.draft = { key = card.key, rs = code }
+	local ok, why = ps:Respond(code, card.upgrade and card.upgrade.wire or nil)
 	if not ok then
 		self.err = card.key
 		self:Refresh()
-		return false, code
+		return false, why
 	end
 	self.err = nil
 	self:Refresh()
 	return true
 end
 
--- Main-spec, Off-spec, Pass (or any response on offer): sent at once. Pass and a lesser tier drop the label.
+-- Pass, or a response on offer without rolling (tests and the Pass button). Returns true, or false and a code.
 function Popup:Choose(code)
 	local card = self:Current()
 	if not card or not card.canAnswer then return false, "LOCKED" end
 	local ok = code == "PASS"
 	for _, o in ipairs(card.offered) do if o.code == code then ok = true end end
 	if not ok then return false, "BAD_RESPONSE" end
-	local d = draftOf(self, card)
-	d.rs = code   -- a lesser tier or a pass drops the label, and the main-spec gets it back: PB.Settle, in Send
-	return self:Send(card)
+	if card.response == code then return true end
+	return self:Send(card, code)
 end
 
--- A label chip: it toggles; with no response yet it also answers with the best tier (the label belongs to it).
-function Popup:SetLabel(code)
-	local card = self:Current()
-	if not card or not card.canAnswer or not card.labelsOn then return false, "LOCKED" end
-	local d = draftOf(self, card)
-	PB.Pick(card, d, code)
-	if d.rs == nil then d.rs = card.main end
-	return self:Send(card)
-end
-
--- The note box was typed in: kept until the box loses the keyboard (or Enter, or Roll).
-function Popup:OnNoteTyped(text)
-	local card = self:Current()
-	if not card or not card.canAnswer then return end
-	draftOf(self, card).n = text
-end
-
--- The note is sent with the answer; with no response yet it waits for one.
-function Popup:CommitNote()
-	local card = self:Current()
-	if not card or not card.canAnswer then return false, "LOCKED" end
-	local box = self.cards[1] and self.cards[1].note
-	local d = draftOf(self, card)
-	if box then d.n = box:GetText() end
-	if not d.rs then return false, "NO_RESPONSE" end
-	if PB.ClipNote(d.n) == card.note then return false, "NOTHING" end
-	return self:Send(card)
-end
-
--- Roll: the game's own RandomRoll(1, 100), once per round. The note typed so far goes with the answer first.
+-- Roll: the game's own RandomRoll(1, 100), once per round.
 function Popup:Roll()
 	local card = self:Current()
 	if not card or not card.canRoll then return false, "LOCKED" end
-	if card.canAnswer then self:CommitNote() end
-	card = self:Current()
 	-- M7-2d: the intent goes first (it waits out a lockdown in the queue like every message); the roll follows at once.
 	-- A refused intent does not stop the roll: the master looter then discards it as NOT_FROM_BUTTON if the rule is on.
 	if ns.Protocol and ns.Protocol.Session then ns.Protocol.Session:RollIntent() end
@@ -761,6 +608,26 @@ function Popup:Roll()
 	self.rolled[card.key] = true
 	self:Refresh()
 	return true
+end
+
+-- A click on one of the three buttons (M7-5c). Pass answers. Roll Main-spec / Roll Off-spec answer with that response
+-- while the round collects the responses and roll in the same click when the player rolls in this round; a response whose
+-- tier rolls later stays sent (the button rolls when its turn comes). Returns true, or false and a code.
+function Popup:Press(code)
+	local card = self:Current()
+	if not card then return false, "LOCKED" end
+	local spec
+	for _, b in ipairs(card.buttons or {}) do if b.code == code then spec = b end end
+	if not spec or not spec.enabled then return false, "LOCKED" end
+	if code == "PASS" then return self:Choose("PASS") end
+	if card.canAnswer and card.response ~= code then
+		local ok, why = self:Choose(code)
+		if not ok then return false, why end
+		card = self:Current()
+		if not card then return true end
+	end
+	if not card.canRoll then return true, "LATER" end
+	return self:Roll()
 end
 
 -- Hides this round's card (nothing is sent: no answer is a pass to the rules, §3.4).

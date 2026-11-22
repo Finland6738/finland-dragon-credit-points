@@ -381,3 +381,50 @@ describe("late joiners", function()
 		eq(M().Round(1.25, "round", 1), 1.3)
 	end)
 end)
+
+describe("the item-level band of a season (M7-5c)", function()
+	it("is set with SEASON_BAND_SET, the latest one counts, and a season without one has none", function()
+		local L = Lg().New()
+		assert(open(L))
+		isNil(Sn().Get(L, "S1").band)
+		assert(Sn().SetBand(L, { author = OFFICER, ts = 2, season = "S1", min = 200, max = 226 }))
+		deepEq(Sn().Get(L, "S1").band, { min = 200, max = 226 })
+		deepEq(Sn().Current(L).band, { min = 200, max = 226 })
+		assert(Sn().SetBand(L, { author = OFFICER, ts = 3, season = "S1", min = 205, max = 230 }))
+		deepEq(Sn().Get(L, "S1").band, { min = 205, max = 230 })
+	end)
+
+	it("refuses a bad band, an unknown season and a band that changes nothing", function()
+		local L = Lg().New()
+		assert(open(L))
+		local function why(min, max, season)
+			local e, code = Sn().SetBand(L, { author = OFFICER, ts = 2, season = season or "S1", min = min, max = max })
+			isNil(e)
+			return code
+		end
+		eq(why(230, 200), "BAND")
+		eq(why(0, 200), "BAND")
+		eq(why(200.5, 226), "BAND")
+		eq(why(200, 2001), "BAND")
+		eq(why(nil, 226), "BAND")
+		eq(why(200, 226, "S9"), "SEASON_UNKNOWN")
+		assert(Sn().SetBand(L, { author = OFFICER, ts = 2, season = "S1", min = 200, max = 226 }))
+		eq(why(200, 226), "UNCHANGED")
+	end)
+
+	it("the payload check refuses a damaged band from the sync, and an older addon only keeps it", function()
+		local e = { id = OFFICER .. ":9", author = OFFICER, seq = 9, ts = 5, season = "S1", type = "SEASON_BAND_SET", v = 1,
+			payload = { min = 226, max = 200 } }
+		local ok, code = Lg().Check(e)
+		falsy(ok); eq(code, "payload:max")
+		e.payload = { min = 200, max = 226 }
+		truthy(Lg().Check(e))
+		e.season = nil
+		falsy(Lg().Check(e), "a band belongs to a season")
+	end)
+
+	it("only who manages seasons may write it (the permission gate)", function()
+		eq(FDCP.Permissions.EVENT_PERMISSION.SEASON_BAND_SET, "season.manage")
+	end)
+end)
+

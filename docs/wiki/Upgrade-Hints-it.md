@@ -1,45 +1,39 @@
 # Suggerimenti di upgrade
 
-> **Costruito, non ancora visto in gioco.** Tutto funziona nei test offline; come appare e come si usa in un raid vero è ancora da confermare. [English](Upgrade-Hints)
+> **Costruito, non ancora visto in gioco.** Tutto funziona nei test offline; se il gioco dà qualità e item level dei pezzi indossati come previsto, e l'istantanea dell'equipaggiamento all'inizio di uno scontro col boss, sono ancora da confermare. [English](Upgrade-Hints)
 
-Il popup ti dice se un pezzo è un upgrade ([[Rollare per il loot|Rolling-for-Loot-it]], "È un upgrade?"). Due impostazioni **personali e facoltative** regolano quel suggerimento per te. Appartengono solo al tuo personaggio: non vanno mai alla gilda, non si scrivono mai nel registro e non cambiano mai chi vince un pezzo.
+Il popup mostra un **badge di upgrade** per ogni pezzo in palio ([[Rollare per il loot|Rolling-for-Loot-it]], "È un upgrade?"). Lo calcola l'addon da solo, allo stesso modo per tutti: non c'è nulla da impostare, nessun peso delle statistiche da importare e nessuna lista da tenere. **Informa** te, il master looter e il council; **non cambia mai chi vince**.
 
-## I tuoi pesi delle statistiche
+## La regola
 
-Il suggerimento pesa ogni statistica del pezzo per la tua specializzazione. L'addon ha pesi predefiniti per ogni spec; se preferisci i tuoi, importali.
+Il pezzo si confronta con quello che indossavi **in quello slot durante lo scontro col boss**:
 
-**Import.** `/fdcp weights import <spec> <stringa>`
-
-- `<spec>` è l'id di una specializzazione (per esempio `72`), oppure `ms` / `os` per la tua main-spec e off-spec dichiarate.
-- `<stringa>` è un elenco di coppie `Statistica=peso`, anche dentro l'intestazione tipo Pawn: `( Pawn: v1: "La mia Fury": Strength=1, CritRating=0.85, HasteRating=0.6 )`. Va bene anche la forma nuda `Strength=1, CritRating=0.85`, con maiuscole o minuscole, e vanno bene i codici brevi dell'addon (`STR=1, CRIT=0.85`). Il separatore decimale è il punto.
-- Le statistiche che l'addon sa pesare sono: Strength, Agility, Stamina, Intellect, Spirit, Ap, Rap, SpellDamage, Healing, CritRating, HitRating, HasteRating, ExpertiseRating, ArmorPenetration, MasteryRating, Versatility, Mp5, Dps, Armor, DefenseRating, DodgeRating, ParryRating, BlockRating, BlockValue. Gli altri nomi della stringa (castoni, gemme) si elencano come ignorati; l'import si rifiuta solo se nessuno è noto.
-- Un import **sostituisce l'intera riga** di quella spec e **accende i pesi personali**.
-
-**Una stringa non valida viene rifiutata con un messaggio e non cambia nulla.** L'addon indica il pezzo sbagliato: una stringa vuota, troppo lunga (oltre 2000 caratteri), un pezzo che non è `Statistica=numero`, un numero che non è un decimale semplice (niente `0x10`, `1e3`, `inf`) o oltre ±1000, oppure nessuna statistica che l'addon conosce.
-
-| Comando | Cosa fa |
+| Indossavi | Un pezzo viola di questa season è |
 |---|---|
-| `/fdcp weights` | Dice se i pesi personali sono accesi, per quali spec li hai impostati e come si usa. |
-| `/fdcp weights show <spec>` | Stampa i pesi di quella spec come stringa: i tuoi se li hai impostati, altrimenti quelli predefiniti. Puoi condividerla. |
-| `/fdcp weights off` / `on` | Torna ai pesi predefiniti / usa di nuovo i tuoi. Non si perde nulla. |
-| `/fdcp weights reset <spec>` oppure `reset all` | Toglie i tuoi pesi per quella spec, o per tutte. |
+| un **viola di questa season** | **Upgrade piccolo** |
+| un **blu**, o un **viola di una season precedente** | **Upgrade medio** |
+| un **verde o inferiore**, o **niente** | **Upgrade grande** |
 
-Quando si usano i tuoi pesi, il tooltip della riga del verdetto lo dice, e il verdetto che la tua risposta porta al master looter è quello calcolato con loro. I pesi predefiniti restano la regola finché non importi qualcosa. Non è stato chiesto al Guild Master di approvare i pesi personali; il suggerimento informa soltanto, e decide il council.
+- Il badge mostra sempre la **differenza di item level**: *Upgrade piccolo · ilvl +13*. Uno slot vuoto dice *Upgrade grande · slot vuoto*.
+- Un pezzo **peggiore** del tuo (item level più basso, o stesso livello senza niente di meglio) è **Nessun upgrade**. Un pezzo che la tua classe non può usare è **Non usabile**, e Passo viene preselezionato per te.
+- Un leggendario conta come un viola. Un pezzo blu si legge allo stesso modo, un gradino sotto: su un verde è un upgrade medio, su un blu piccolo.
+- **Anelli e trinket** si confrontano col peggiore dei tuoi due (prima uno vuoto, poi il colore più basso, poi l'item level più basso). Un'**arma a due mani** si confronta con mano destra più mano sinistra (il colore più basso dei due, l'item level medio). Un'arma a una mano si confronta con la mano peggiore solo se usi due armi.
 
-## La tua lista best-in-slot
+## Raid nuovi: la fascia di item level della season
 
-Segna i pezzi che consideri best in slot e il popup te lo ricorda quando uno è in palio.
+Quando una nuova season porta raid nuovi, i viola della season scorsa non sono più quelli di prima. Ogni season ha una **fascia di item level**, gli item level dei suoi pezzi epici, che il Guild Master imposta in **Impostazioni › Season** ([[Season|Seasons-it]]). Un viola che indossi **sotto la fascia** conta come un viola di una season precedente, un gradino sotto, come un blu: un viola nuovo su di lui è un upgrade **medio**, non piccolo. Senza fascia ogni viola conta come di questa season.
 
-| Comando | Cosa fa |
-|---|---|
-| `/fdcp wish add <oggetto> ...` | Aggiunge uno o più pezzi: clic con Maiusc su un link nella riga, oppure scrivi l'id. |
-| `/fdcp wish remove <oggetto> ...` | Li toglie. |
-| `/fdcp wish` oppure `/fdcp wish list` | Elenca i tuoi pezzi. |
-| `/fdcp wish clear` | Svuota la lista. |
+## L'equipaggiamento dello scontro
 
-Un pezzo della tua lista mostra il badge **Nella tua lista BiS** sopra le righe del verdetto (passandoci sopra, ricorda che lo vedi solo tu). La lista è salvata per personaggio, sopravvive a `/reload`, contiene fino a 300 pezzi ed è solo un promemoria: non manda nulla e non cambia nulla per gli altri. Per dire al council che una risposta è per un pezzo best in slot, usa l'etichetta **BiS** del popup ([[Rollare per il loot|Rolling-for-Loot-it]]).
+L'addon fa un'istantanea del tuo equipaggiamento quando lo scontro col boss **inizia** (se hai ricaricato durante lo scontro, quando finisce) e confronta con quella il loot di quel boss, per al massimo un'ora. Togliersi un pezzo dopo il kill non fa sembrare un pezzo un upgrade più grande. Fuori da uno scontro (per esempio un roll di prova) confronta con quello che indossi ora; il tooltip del badge dice quale.
 
-## Cosa non c'è
+## Tolto
 
-- **Nessuna BiS list di gilda** e nessun peso condiviso: se la gilda le vuole è ancora una domanda aperta con il Guild Master.
-- Il suggerimento resta un'approssimazione (proc, effetti d'uso, bonus di set e limiti non entrano nel punteggio), qualunque siano i pesi.
+Le versioni precedenti avevano pesi delle statistiche personali con import tipo Pawn (`/fdcp weights`), una wishlist best in slot (`/fdcp wish`), e etichette e nota nel popup. Il Guild Master ha deciso di sostituirli con questo badge: non ci sono più, e i comandi non esistono più.
+
+## Limiti
+
+- Il badge legge **colore e item level**, non le statistiche: due viola di questa season con statistiche diverse per la tua spec sono entrambi un upgrade piccolo se il nuovo ha un item level più alto.
+- Il pezzo in palio si legge dal suo id, quindi il suo item level è quello base; i pezzi che indossi si leggono dai loro link, con i loro aggiornamenti.
+- Un token per un'altra classe risulta *non confrontabile*, non *non usabile*.
+- Il badge viene dal tuo addon: un client modificato potrebbe mentire. Informa il council, che decide.

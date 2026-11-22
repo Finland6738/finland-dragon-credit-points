@@ -4,9 +4,11 @@
 
 **Exit criterion:** in a simulated session the council sees the flags before closing the round, intervenes with a reason and every intervention lands in the audit; legendaries go to the project's builder.
 
-Open question 8 ([#2](https://github.com/Finland6738/finland-dragon-credit-points/issues/2)) is still open: until the owner decides, M5 builds the reversible default (item level + editable default weights per spec; a Pawn-like import that is optional and off; no guild-wide BiS lists).
+Open question 8 ([#2](https://github.com/Finland6738/finland-dragon-credit-points/issues/2)) was open while M5 was built, so M5 built the reversible default (item level + editable default weights per spec; a Pawn-like import that is optional and off; no guild-wide BiS lists). **The owner resolved it on 2026-11-22 ([M7-5c](M7-release.md#m7-5c--three-button-popup-and-automatic-upgrade-badge)):** no stat weights at all; the upgrade badge is the quality tier against the gear worn during the fight, with the item-level difference. The stat-weight score of M5-1 / M5-2 and the whole of M5-3 are superseded; the history below is kept as it was shipped.
 
 ### M5-1 — Upgrade score
+> The weighted stat score and its thresholds are **superseded by [M7-5c](M7-release.md#m7-5c--three-button-popup-and-automatic-upgrade-badge)** (the quality tiers); the proficiency table and the slot comparison stay.
+
 - Branch: `step/m5-1-upgrade-score`
 - Depends on: M2-1
 - Analysis: §5.1 (can use, compare against, how much, verdict), §5.3
@@ -33,6 +35,8 @@ Open question 8 ([#2](https://github.com/Finland6738/finland-dragon-credit-point
 - Suggested model/effort: `sonnet` / medium
 
 ### M5-3 — Weight import and wishlist
+> **Superseded by [M7-5c](M7-release.md#m7-5c--three-button-popup-and-automatic-upgrade-badge)** (owner decision of 2026-11-22): the personal weights, the Pawn-like import (`/fdcp weights`) and the wishlist (`/fdcp wish`) are removed.
+
 - Branch: `step/m5-3-weights-wishlist`
 - Depends on: M5-2
 - Analysis: §5.1 points 3 and 5, §13 question 8

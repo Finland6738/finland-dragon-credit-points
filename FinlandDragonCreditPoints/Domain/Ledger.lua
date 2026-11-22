@@ -55,6 +55,7 @@ Ledger.DECIMALS = 2         -- credits are rounded to this many places, as Prici
 Ledger.TYPES = {
 	SEASON_OPENED = { v = 1 },
 	SEASON_CLOSED = { v = 1 },
+	SEASON_BAND_SET = { v = 1 },              -- the season's item-level band for the upgrade badge (Domain/Season.lua, M7-5c)
 	MEMBER_JOINED = { v = 1 },
 	MEMBER_LINKED_ALT = { v = 1 },
 	NIGHT_OPENED = { v = 1 },
@@ -198,6 +199,13 @@ CHECKS.SEASON_OPENED = function(p)
 		seen[inst.id] = true
 	end
 	if not isNum(p.startCredits) or p.startCredits < 0 then return "startCredits" end
+end
+
+-- SEASON_BAND_SET{min, max}: the item levels of the season's epic items (M7-5c), whole numbers, min <= max. An epic worn
+-- under `min` counts as an older season's in the upgrade badge (Domain/UpgradeScore.lua).
+CHECKS.SEASON_BAND_SET = function(p)
+	if not isInt(p.min) or p.min < 1 or p.min > 2000 then return "min" end
+	if not isInt(p.max) or p.max < p.min or p.max > 2000 then return "max" end
 end
 
 CHECKS.ITEM_AWARDED = function(p)

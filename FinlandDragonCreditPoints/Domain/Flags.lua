@@ -2,16 +2,16 @@
 -- the game and never writes a sentence; it returns codes and the players they are about (Domain/Reasons.lua group FLAG
 -- and the ML_FLAG_* locale keys give the words).
 --
---   UPGRADE_IGNORED  a raider with the addon passes (or has not answered yet) on an item that is a *big* upgrade for
---                    their main spec (MS1): "passa per tenersi i crediti bassi in attesa del BiS".
---   POSSIBLE_WASTE   the first in line of the full-cost tier (MS) has a small upgrade or none, another candidate of the
---                    same tier has a big one, at least `wasteRatio` times larger: "spreco palese".
+--   UPGRADE_IGNORED  a raider with the addon passes (or has not answered yet) on an item that is a *major* upgrade for
+--                    their main spec: "passa per tenersi i crediti bassi in attesa del BiS".
+--   POSSIBLE_WASTE   the first in line of the full-cost tier (MS) has a minor upgrade or none, another candidate of the
+--                    same tier has a major one: "spreco palese". When both carry an item-level gain, the other's must be at
+--                    least `wasteRatio` times the first's.
 --
--- Both look only at the main-spec verdict (`m` of the SRESP `vd`, §6: MS1 weights), never at the off-spec one. A verdict
--- is the one the raider's client computed (UpgradeScore, M5-2); "big" is checked again against the guild's thresholds
--- (rules section `upgrade`), so a verdict that says BIG with a percentage below the threshold does not raise a flag. A
--- piece the player cannot use never counts. Flags inform the master looter and the council: they never change the
--- winner, the cost or the order (§3.6: the council acts with a reason, M5-5).
+-- Both look only at the main-spec badge (`m` of the SRESP `vd`), never at the off-spec one. A badge is the one the
+-- raider's client computed (Domain/UpgradeScore.lua: the quality tiers of M7-5c against the gear of the fight). A piece
+-- the player cannot use never counts. Flags inform the master looter and the council: they never change the winner, the
+-- cost or the order (§3.6: the council acts with a reason, M5-5).
 --
 -- The settings live in the rules' `council` section (Domain/Rules.lua): `flags` (false: no flag at all), `wasteRatio`
 -- (preset 2) and `verdicts`, who sees the verdicts and the flags besides the master looter: "council" (preset: whoever
@@ -54,45 +54,23 @@ end
 
 local function U() return ns.UpgradeScore end
 
--- The thresholds of the rules' `upgrade` section (the presets for what is missing).
-local function thresholds(upgrade)
-	local d = U().DefaultConfig()
-	upgrade = type(upgrade) == "table" and upgrade or {}
-	local function pick(k)
-		local v = upgrade[k]
-		if isNum(v) then return v end
-		return d[k]
-	end
-	return { big = pick("bigThreshold"), small = pick("smallThreshold"), ilvl = pick("ilvlBigThreshold") }
-end
-
--- The main-spec verdict of a player's `vd` as UpgradeScore.Unpack gives it, or nil (none, damaged, not usable).
+-- The main-spec verdict of a player's `vd` as UpgradeScore.Unpack gives it, or nil (none, damaged, not usable, or the
+-- BIG / SMALL of a client older than M7-5c).
 local function mainVerdict(vd)
 	if type(vd) ~= "table" then return nil end
 	local r = U().Unpack(vd.m)
 	if not r or r.usable == false then return nil end
-	if r.pct ~= nil and not isNum(r.pct) then return nil end
+	if r.ilvlDelta ~= nil and not isNum(r.ilvlDelta) then return nil end
 	return r
 end
 Flags.MainVerdict = mainVerdict
 
--- A big upgrade by the guild's thresholds: the verdict says BIG and, when it carries a percentage, the percentage
--- reaches the threshold of its basis (item level or stats). A BIG without percentage (an empty slot, or a worn piece
--- that scores 0) stays big.
-local function isBig(r, t)
-	if not r or r.verdict ~= "BIG" then return false end
-	if r.pct == nil then return true end
-	return r.pct >= (r.basis == "ILVL" and t.ilvl or t.big)
-end
-Flags.IsBig = function(r, upgrade) return isBig(r, thresholds(upgrade)) end
+-- A major upgrade.
+local function isBig(r) return r ~= nil and r.verdict == "MAJOR" end
+Flags.IsBig = isBig
 
--- A small upgrade or none: below the big threshold of its basis.
-local function isLow(r, t)
-	if not r then return false end
-	if r.verdict ~= "SMALL" and r.verdict ~= "NONE" then return false end
-	if r.pct ~= nil and r.pct >= (r.basis == "ILVL" and t.ilvl or t.big) then return false end
-	return true
-end
+-- A minor upgrade or none.
+local function isLow(r) return r ~= nil and (r.verdict == "MINOR" or r.verdict == "NONE") end
 
 ---------------------------------------------------------------------------------------------------------------------
 -- The line
@@ -135,16 +113,15 @@ end
 --   credits, rolls, head          for the line (Flags.Line); `decided` = true when the rules have already chosen
 --                                 (`head` is then the rules' winner, or nil / outside the line when the item went
 --                                 elsewhere: no waste is said then),
--- }, upgrade = the rules' `upgrade` section (thresholds), council = the rules' `council` section.
--- Returns a list of { code, player, other?, response?, pct?, otherPct?, basis? }: UPGRADE_IGNORED by player name, then
+-- }, council = the rules' `council` section (the second argument, the `upgrade` section, is not read since M7-5c).
+-- Returns a list of { code, player, other?, response?, ilvl?, otherIlvl? }: UPGRADE_IGNORED by player name, then
 -- POSSIBLE_WASTE. Empty when `council.flags` is false.
-function Flags.Evaluate(input, upgrade, council)
+function Flags.Evaluate(input, _, council)
 	local out = {}
 	if type(input) ~= "table" then return out end
 	council = type(council) == "table" and council or Flags.DefaultConfig()
 	if council.flags == false then return out end
 	local ratio = isNum(council.wasteRatio) and council.wasteRatio or Flags.DefaultConfig().wasteRatio
-	local t = thresholds(upgrade)
 	local responses = type(input.responses) == "table" and input.responses or {}
 	local verdicts = type(input.verdicts) == "table" and input.verdicts or {}
 	local players = type(input.players) == "table" and input.players or nil
@@ -155,9 +132,8 @@ function Flags.Evaluate(input, upgrade, council)
 		local response = responses[p]
 		if type(p) == "string" and (players == nil or players[p]) and (response == nil or response == "PASS") then
 			local r = mainVerdict(vd)
-			if isBig(r, t) then
-				ignored[#ignored + 1] = { code = "UPGRADE_IGNORED", player = p, response = response, pct = r.pct,
-					basis = r.basis }
+			if isBig(r) then
+				ignored[#ignored + 1] = { code = "UPGRADE_IGNORED", player = p, response = response, ilvl = r.ilvlDelta }
 			end
 		end
 	end
@@ -170,24 +146,25 @@ function Flags.Evaluate(input, upgrade, council)
 	local first = line[1]
 	if first and input.decided and first ~= input.head then first = nil end
 	local low = first and mainVerdict(verdicts[first]) or nil
-	if first and isLow(low, t) then
+	if first and isLow(low) then
 		local best, bestR
 		for i = 2, #line do
 			local p = line[i]
 			local r = mainVerdict(verdicts[p])
-			if isBig(r, t) then
-				local enough = low.pct == nil or low.pct <= 0 or r.pct == nil or r.pct >= ratio * low.pct
+			if isBig(r) then
+				local mine, theirs = low.ilvlDelta, r.ilvlDelta
+				local enough = mine == nil or mine <= 0 or theirs == nil or theirs >= ratio * mine
 				if enough then
 					local better = best == nil
-						or (r.pct or huge) > (bestR.pct or huge)
-						or ((r.pct or huge) == (bestR.pct or huge) and p < best)
+						or (theirs or huge) > (bestR.ilvlDelta or huge)
+						or ((theirs or huge) == (bestR.ilvlDelta or huge) and p < best)
 					if better then best, bestR = p, r end
 				end
 			end
 		end
 		if best then
-			out[#out + 1] = { code = "POSSIBLE_WASTE", player = first, other = best, pct = low.pct, otherPct = bestR.pct,
-				basis = bestR.basis }
+			out[#out + 1] = { code = "POSSIBLE_WASTE", player = first, other = best, ilvl = low.ilvlDelta,
+				otherIlvl = bestR.ilvlDelta }
 		end
 	end
 	return out

@@ -40,7 +40,6 @@ local LATE_METHODS = { opt("average", "SEASON_METHOD_AVERAGE"), opt("median", "S
 local ROUNDINGS = { opt("floor", "RULEOPT_FLOOR"), opt("round", "RULEOPT_ROUND"), opt("ceil", "RULEOPT_CEIL") }
 local VERDICTS = { opt("ml", "RULEOPT_VIS_ML"), opt("council", "RULEOPT_VIS_COUNCIL"), opt("officers", "RULEOPT_VIS_OFFICERS") }
 local LEGENDARY = { opt("council", "RULEOPT_COUNCIL"), opt("vote", "RULEOPT_VOTE"), opt("roll", "RULEOPT_ROLL"), opt("queue", "RULEOPT_QUEUE") }
-local LABEL_MODES = { opt("auto", "RULEOPT_LABEL_AUTO"), opt("suggest", "RULEOPT_LABEL_SUGGEST"), opt("manual", "RULEOPT_LABEL_MANUAL") }
 local BENCH = { opt("none", "RULEOPT_NONE"), opt("bonus", "RULEOPT_BONUS"), opt("malus", "RULEOPT_MALUS") }
 
 ---------------------------------------------------------------------------------------------------------------------
@@ -78,8 +77,6 @@ add("priority", { "priority", "tieBreak" }, "choice", { "RULEF_TIE_BREAK" }, { o
 add("priority", { "priority", "maxRerolls" }, "int", { "RULEF_MAX_REROLLS" }, { min = 1, max = 20 })
 add("priority", { "priority", "requireAddon" }, "bool", { "RULEF_REQUIRE_ADDON" })
 add("priority", { "priority", "responses", "OS", "enabled" }, "bool", { "RULEF_RESPONSE_ENABLED", "RC_RESPONSE_OS" }, { enabledByDefault = true })
-add("priority", { "priority", "responses", "TMOG", "enabled" }, "bool", { "RULEF_RESPONSE_ENABLED", "RC_RESPONSE_TMOG" }, { enabledByDefault = true })
-add("priority", { "responses", "labelMode" }, "choice", { "RULEF_LABEL_MODE" }, { options = LABEL_MODES })
 add("priority", { "priority", "fallback" }, "choice", { "RULEF_FALLBACK" }, { options = FALLBACKS })
 add("priority", { "priority", "boeFallback" }, "choice", { "RULEF_BOE_FALLBACK" }, { options = BOE_FALLBACKS })
 add("priority", { "priority", "freeRollCost" }, "number", { "RULEF_FREE_ROLL_COST" }, { min = 0, max = 100 })
@@ -145,13 +142,9 @@ add("messages", { "announce", "itemText" }, "text", { "RULEF_ANNOUNCE_ITEM_TEXT"
 add("messages", { "announce", "resultText" }, "text", { "RULEF_ANNOUNCE_RESULT_TEXT" }, { wide = true, max = 200 })
 add("messages", { "announce", "reason" }, "bool", { "RULEF_ANNOUNCE_REASON" })
 
--- upgrade: the verdict of the popup (§5.1)
+-- upgrade: the badge of the popup (§5.1; M7-5c: the stat-weight thresholds are gone, the rule is fixed)
 add("upgrade", { "upgrade", "enabled" }, "bool", { "RULEF_UPGRADE_ENABLED" })
 add("upgrade", { "upgrade", "autoPass" }, "bool", { "RULEF_UPGRADE_AUTO_PASS" })
-add("upgrade", { "upgrade", "useStats" }, "bool", { "RULEF_UPGRADE_USE_STATS" })
-add("upgrade", { "upgrade", "bigThreshold" }, "number", { "RULEF_UPGRADE_BIG" }, { min = 0, max = 10 })
-add("upgrade", { "upgrade", "smallThreshold" }, "number", { "RULEF_UPGRADE_SMALL" }, { min = 0, max = 10 })
-add("upgrade", { "upgrade", "ilvlBigThreshold" }, "number", { "RULEF_UPGRADE_ILVL" }, { min = 0, max = 10 })
 
 -- site: the guild's key on the community site (§7.1)
 add("site", { "site", "factionName" }, "text", { "RULEF_SITE_FACTION" }, { wide = true, max = 40 })

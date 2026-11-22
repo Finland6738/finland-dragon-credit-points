@@ -3,6 +3,8 @@
 -- holder of `season.manage` (the Guild Master by default) also gets the buttons: open a season from a pack of instances, a
 -- raid size each, the late-join rule and the start credits, and close it. Both ask for an explicit confirmation (closing a
 -- second, separate one); nothing happens without it. Reads and writes through App/SeasonController.lua. Lua 5.1.
+-- M7-5c: the season's item-level band (the item levels of its epic items: an epic worn under it counts as an older
+-- season's in the upgrade badge) is shown on the card, can be given when the season opens and changed while it is open.
 local ADDON_NAME, ns = ...
 ns = ns or {}
 local SeasonWindow = {}
@@ -25,7 +27,7 @@ end
 -- locale-key: SEASON_ERR_CONFIRM_REQUIRED SEASON_ERR_NOT_READY SEASON_ERR_PENDING SEASON_ERR_NOT_IN_GUILD
 -- locale-key: SEASON_ERR_RANK_TOO_LOW SEASON_ERR_NOT_GM SEASON_ERR_SEASON_ALREADY_OPEN SEASON_ERR_NO_INSTANCES
 -- locale-key: SEASON_ERR_NOT_IN_TABLE SEASON_ERR_SIZE SEASON_ERR_START_CREDITS SEASON_ERR_LATE_JOIN SEASON_ERR_NO_SEASON
--- locale-key: SEASON_ERR_NIGHT_OPEN SEASON_ERR_READ_ONLY SEASON_ERR_UNCHANGED
+-- locale-key: SEASON_ERR_NIGHT_OPEN SEASON_ERR_READ_ONLY SEASON_ERR_UNCHANGED SEASON_ERR_BAND
 function SeasonWindow.ErrorText(code)
 	local key = "SEASON_ERR_" .. tostring(code)
 	if L[key] ~= key then return L[key] end
@@ -44,6 +46,22 @@ function SeasonWindow.PackText(season)
 	return table.concat(parts, " · ")
 end
 
+-- "Item-level band: 200–226", or that the season has none.
+-- locale-key: SEASON_BAND SEASON_BAND_NONE
+function SeasonWindow.BandText(season)
+	local band = season and season.band
+	if not band then return L["SEASON_BAND_NONE"] end
+	return L["SEASON_BAND"]:format(band.min, band.max)
+end
+
+-- Two edit boxes as a band: { min, max }, nil when both are empty, or false when they do not make a band.
+function SeasonWindow.ReadBand(minText, maxText)
+	minText, maxText = minText or "", maxText or ""
+	if minText == "" and maxText == "" then return nil end
+	local band = ns.UpgradeScore.Band({ min = tonumber(minText), max = tonumber(maxText) })
+	return band or false
+end
+
 ---------------------------------------------------------------------------------------------------------------------
 -- Build
 
@@ -52,6 +70,16 @@ local function field(parent, labelKey, x, y)
 	t:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
 	t:SetText(L[labelKey])
 	return t
+end
+
+-- Two small edit boxes for an item-level band, under a caption at (x, y).
+local function bandFields(parent, x, y)
+	field(parent, "SEASON_FIELD_BAND", x, y)
+	local lo = Widgets.EditBox(parent, { width = 70, maxLetters = 4 })
+	lo:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y - 18)
+	local hi = Widgets.EditBox(parent, { width = 70, maxLetters = 4 })
+	hi:SetPoint("TOPLEFT", parent, "TOPLEFT", x + 84, y - 18)
+	return lo, hi
 end
 
 function SeasonWindow:Build(page)
@@ -63,7 +91,7 @@ function SeasonWindow:Build(page)
 	root.eyebrow = Theme.NewText(root, "Eyebrow", "accent-text")
 	root.eyebrow:SetPoint("TOPLEFT", root, "TOPLEFT", 0, -12)
 	root.eyebrow:SetText(L["SEASON_TITLE"]:upper())
-	root.card = Widgets.Card(root, { height = 150 })
+	root.card = Widgets.Card(root, { height = 176 })
 	root.card:SetPoint("TOPLEFT", root.eyebrow, "BOTTOMLEFT", 0, -10)
 	root.card:SetPoint("RIGHT", root, "RIGHT", 0, 0)
 	local c = root.card
@@ -77,6 +105,8 @@ function SeasonWindow:Build(page)
 	root.rule:SetPoint("TOPLEFT", c, "TOPLEFT", 16, -80)
 	root.start = Theme.NewText(c, "Body", "text-2")
 	root.start:SetPoint("TOPLEFT", c, "TOPLEFT", 16, -104)
+	root.band = Theme.NewText(c, "Body", "text-2")
+	root.band:SetPoint("TOPLEFT", c, "TOPLEFT", 16, -128)
 	root.message = Theme.NewText(root, "Small", "text-2")
 	root.message:SetPoint("TOPLEFT", root.card, "BOTTOMLEFT", 0, -8)
 
@@ -94,6 +124,7 @@ function SeasonWindow:Build(page)
 	field(f, "SEASON_FIELD_START", 260, -40)
 	f.startEdit = Widgets.EditBox(f, { width = 90, maxLetters = 6 })
 	f.startEdit:SetPoint("TOPLEFT", f, "TOPLEFT", 260, -58)
+	f.bandMin, f.bandMax = bandFields(f, 380, -40)
 	field(f, "SEASON_FIELD_PACK", 16, -96)
 	f.rows = {}
 	for i, inst in ipairs(ns.Instances and ns.Instances.LIST or {}) do
@@ -120,8 +151,21 @@ function SeasonWindow:Build(page)
 	f.open:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -16, 16)
 	f:SetHeight(-rowsEnd + 130)
 
+	-- the band of the open season (M7-5c)
+	root.bandForm = Widgets.Card(root, { height = 96 })
+	root.bandForm:SetPoint("TOPLEFT", root.message, "BOTTOMLEFT", 0, -8)
+	root.bandForm:SetPoint("RIGHT", root, "RIGHT", 0, 0)
+	local bf = root.bandForm
+	bf.bandMin, bf.bandMax = bandFields(bf, 16, -14)
+	bf.hint = Theme.NewText(bf, "Small", "text-3")
+	bf.hint:SetPoint("TOPLEFT", bf, "TOPLEFT", 16, -66)
+	bf.hint:SetText(L["SEASON_BAND_HINT"])
+	bf.save = Widgets.Button(bf, { text = L["SEASON_BAND_SAVE"], style = "secondary", width = 170,
+		onClick = function() SeasonWindow:OnSetBand() end })
+	bf.save:SetPoint("TOPRIGHT", bf, "TOPRIGHT", -16, -28)
+
 	root.close = Widgets.Button(root, { text = L["SEASON_CLOSE"], style = "secondary", width = 170, onClick = function() SeasonWindow:OnClose() end })
-	root.close:SetPoint("TOPLEFT", root.message, "BOTTOMLEFT", 0, -8)
+	root.close:SetPoint("TOPLEFT", root.bandForm, "BOTTOMLEFT", 0, -8)
 	return root
 end
 
@@ -166,7 +210,8 @@ function SeasonWindow:FormArgs()
 	local start
 	if text == "" then start = nil else start = tonumber(text) end
 	if text ~= "" and (start == nil or start < 0 or start ~= math.floor(start)) then start = -1 end
-	return { label = f.label:GetText(), instances = instances, startCredits = start, lateJoin = self.method }
+	return { label = f.label:GetText(), instances = instances, startCredits = start, lateJoin = self.method,
+		band = SeasonWindow.ReadBand(f.bandMin:GetText(), f.bandMax:GetText()) }
 end
 
 -- "Open": checks the form and shows the summary to confirm; nothing is written yet.
@@ -176,6 +221,7 @@ function SeasonWindow:OnOpen()
 	local args = self:FormArgs()
 	if #args.instances == 0 then self:SetMessage(self.ErrorText("NO_INSTANCES"), true); return end
 	if args.startCredits and args.startCredits < 0 then self:SetMessage(self.ErrorText("START_CREDITS"), true); return end
+	if args.band == false then self:SetMessage(self.ErrorText("BAND"), true); return end
 	local rules = SC():Rules()
 	local pack = self.PackText({ instances = args.instances })
 	local label = args.label ~= "" and args.label or SC():NextId()
@@ -184,6 +230,24 @@ function SeasonWindow:OnOpen()
 	d.title:SetText(L["SEASON_CONFIRM_OPEN_TITLE"])
 	d.body:SetText(L["SEASON_CONFIRM_OPEN_BODY"]:format(label, pack, self.MethodName(args.lateJoin or rules.members.lateJoin.method),
 		args.startCredits or rules.season.startCredits))
+	d.confirm:SetLabel(L["SEASON_CONFIRM"])
+	d:Open()
+end
+
+-- "Save band": checks the two fields and asks for the confirmation (M7-5c).
+-- locale-key: SEASON_CONFIRM_BAND_TITLE SEASON_CONFIRM_BAND_BODY SEASON_BAND_DONE
+function SeasonWindow:OnSetBand()
+	if not self.root then return end
+	if SC():CanManage() ~= true then self:SetMessage(self.ErrorText("RANK_TOO_LOW"), true); return end
+	local s = SC():Current()
+	if not s then self:SetMessage(self.ErrorText("NO_SEASON"), true); return end
+	local bf = self.root.bandForm
+	local band = SeasonWindow.ReadBand(bf.bandMin:GetText(), bf.bandMax:GetText())
+	if not band then self:SetMessage(self.ErrorText("BAND"), true); return end
+	local d = self:Dialog()
+	self.pending = { kind = "band", band = band }
+	d.title:SetText(L["SEASON_CONFIRM_BAND_TITLE"])
+	d.body:SetText(L["SEASON_CONFIRM_BAND_BODY"]:format(s.label or s.id, band.min, band.max))
 	d.confirm:SetLabel(L["SEASON_CONFIRM"])
 	d:Open()
 end
@@ -221,7 +285,10 @@ function SeasonWindow:OnConfirm()
 	end
 	self.pending = nil
 	d:Close()
-	if p.kind == "open" then
+	if p.kind == "band" then
+		local s, code = SC():SetBand({ confirmed = true, min = p.band.min, max = p.band.max })
+		if s then self:SetMessage(L["SEASON_BAND_DONE"]) else self:SetMessage(self.ErrorText(code), true) end
+	elseif p.kind == "open" then
 		p.args.confirmed = true
 		local s, code = SC():Open(p.args)
 		if s then self:SetMessage(L["SEASON_OPENED"]) else self:SetMessage(self.ErrorText(code), true) end
@@ -247,17 +314,25 @@ function SeasonWindow:Refresh()
 		root.state:SetBadge(L["SEASON_STATE_OPEN"], "ok")
 		root.pack:SetText(L["SEASON_PACK"]:format(self.PackText(s)))
 		root.start:SetText(L["SEASON_START"]:format(s.startCredits or 0))
+		root.band:SetText(self.BandText(s))
 	else
 		root.name:SetText(L[ledger and "SEASON_NONE" or "SEASON_NOT_READY"])
 		root.state:SetBadge(L["SEASON_STATE_NONE"], "neutral")
 		root.pack:SetText("")
 		root.start:SetText("")
+		root.band:SetText("")
 	end
 	root.rule:SetText(L["SEASON_RULE"]:format(self.MethodName(rules.members.lateJoin.method)))
 	-- the buttons exist only for who may manage seasons
 	local f = root.form
 	f:SetShown(can and ledger ~= nil and s == nil)
 	root.close:SetShown(can and s ~= nil)
+	local bf = root.bandForm
+	bf:SetShown(can and s ~= nil)
+	if bf:IsShown() and s.band and bf.bandMin:GetText() == "" and bf.bandMax:GetText() == "" then
+		bf.bandMin:SetText(tostring(s.band.min))
+		bf.bandMax:SetText(tostring(s.band.max))
+	end
 	if f:IsShown() then
 		if not self.method then self.method = rules.members.lateJoin.method end
 		f.method:Select(self.method)
@@ -266,7 +341,7 @@ function SeasonWindow:Refresh()
 end
 
 if ns.Bus then
-	for _, ev in ipairs({ "SEASON_OPENED", "SEASON_CLOSED" }) do
+	for _, ev in ipairs({ "SEASON_OPENED", "SEASON_CLOSED", "SEASON_BAND_SET" }) do
 		ns.Bus:On(ev, function() SeasonWindow:Refresh() end, SeasonWindow)
 	end
 end

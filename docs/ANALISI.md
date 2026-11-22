@@ -169,9 +169,9 @@ Lista modificabile; ogni voce ha nome, colore, icona, tier, moltiplicatore di co
 
 | Risposta | Tier | Costo | Note |
 |---|---|---|---|
-| Main-spec | 1 | × 1 | con etichetta facoltativa: *BiS*, *Upgrade grande*, *Upgrade piccolo*, *Situazionale* (informativa, non cambia la priorità) |
+| Main-spec | 1 | × 1 | pulsante *Tira Main-spec*; il badge di upgrade lo calcola l'addon (§5.1, M7-5c), informativo, non cambia la priorità (l'etichetta facoltativa di M4-6 / M7-2b è stata tolta) |
 | Off-spec | 2 | × 0 | si apre solo se nessuno risponde al tier 1 |
-| Transmog / greed | 3 | × 0 | facoltativo, disattivato nel preset |
+| Transmog / greed | 3 | × 0 | facoltativo, disattivato nel preset; da M7-5c il popup non ha un pulsante per questa risposta |
 | Passo | - | - | |
 
 Le etichette servono al council e al rilevamento dei "furbi" (§5), non all'algoritmo.
@@ -756,6 +756,8 @@ Scelte fatte dove il testo non decideva (tutte modificabili):
   la finestra impila fino a `PopupBoard.MAX_CARDS` card se la bacheca ne dà di più. Nel primo round (`cl`: raccoglie le
   risposte) la card c'è sempre; nei round successivi solo per chi rolla: il tier successivo per chi ha risposto quel tier, il
   reroll per i pari (`am`), il roll libero per tutti. Gli altri non vedono nulla: il popup "si chiude" per loro.
+- *(Da M7-5c il popup ha tre pulsanti, Passo / Tira Main-spec / Tira Off-spec, e niente più etichetta né nota: §5.1. I punti
+  sotto su etichetta, nota e segmento sono la storia di M4-6.)*
 - **La risposta parte subito**, intera (risposta, etichetta, nota), a ogni cambiamento: la coda tiene l'ultima in attesa
   (`key = "SRESP"`), il ML ne tiene una per giocatore. L'etichetta (BiS, upgrade grande, upgrade piccolo, situazionale: §3.3)
   vale per la risposta del tier migliore (main-spec) e la sceglie da sola se manca; con off-spec o passo si toglie. La nota
@@ -1000,246 +1002,164 @@ preset; il GM può riattivare il roll a mano con `ms`/`os` in chat per altre gil
 
 ### 5.1 Lato giocatore (popup del pezzo)
 
-Per ogni pezzo in palio, il client del giocatore calcola da solo, con i propri dati:
+**Decisione del proprietario del 2026-11-22 (M7-5c).** Il giocatore sceglie solo con **tre pulsanti: Passo, Tira Main-spec,
+Tira Off-spec**; tutto il resto lo fa l'addon. Niente etichette scelte dal giocatore, niente nota, niente pesi delle
+statistiche né import tipo Pawn, niente wishlist BiS: il badge di upgrade lo calcola l'addon con una regola fissa. Questo
+risolve la domanda 8 (§13, [issue #2](https://github.com/Finland6738/finland-dragon-credit-points/issues/2)).
+
+Per ogni pezzo in palio il client del giocatore calcola da solo, con i propri dati:
 
 1. **Può usarlo?** Classe, tipo di armatura e arma (tabella delle competenze per classe), `IsEquippableItem`,
-   `DoesItemContainSpec`. Se non può, il popup lo propone già su "Passo" (auto-pass configurabile).
-2. **Contro cosa si confronta**: slot da `equipLoc`; anelli e trinket contro il peggiore dei due; armi con la
-   logica due mani / mano destra + sinistra.
-3. **Quanto migliora**:
-   - differenza di item level (`C_Item.GetDetailedItemLevelInfo`);
-   - differenza di statistiche (`C_Item.GetItemStatDelta`) pesata con i **pesi della spec dichiarata**:
-     `punteggio = Σ peso(stat) × valore`; `upgrade % = (nuovo − indossato) / indossato`;
-   - pesi predefiniti per classe/spec, modificabili, importabili da stringa (formato tipo Pawn).
-4. **Verdetto**: *Upgrade grande* (≥ soglia, preset 5%), *Upgrade piccolo* (> 0), *Nessun upgrade*, *Non
-   confrontabile* (es. trinket con effetto d'uso). Le soglie sono configurabili.
-5. **Wishlist / BiS** (facoltativa): il giocatore segna i pezzi che considera BiS; il popup lo ricorda.
+   `DoesItemContainSpec`. Se non può, il popup lo propone già su "Passo" (auto-pass configurabile) e il badge dice
+   *Non usabile*.
+2. **Contro cosa si confronta**: slot da `equipLoc`; anelli e trinket contro il peggiore dei due; armi con la logica due
+   mani / mano destra + sinistra. Il pezzo indossato è quello **dello scontro col boss** (snapshot, sotto), non quello che
+   il giocatore indossa quando il pezzo viene tirato.
+3. **Quanto migliora: il badge a fasce.**
+   - viola (epico) su viola della **stessa season** → **Upgrade piccolo**;
+   - il giocatore ha un **blu** (raro) e tira un viola → **Upgrade medio**;
+   - il giocatore ha un **verde o meno**, o lo slot è **vuoto** → **Upgrade grande**;
+   - **raid nuovi**: un viola di una **season precedente** vale un gradino in meno, come un blu, quindi un viola nuovo su un
+     viola vecchio è **medio**. Ogni season ha una **fascia di item level** che il GM imposta nella finestra Season (M6-1b):
+     un viola indossato con item level sotto il minimo della fascia della season corrente è "di una season precedente";
+   - il badge mostra sempre anche la **differenza di item level** (*"Upgrade medio · ilvl +13"*);
+   - pezzo peggiore → *Nessun upgrade*; pezzo non usabile → *Non usabile*.
+4. **Il badge informa e basta.** Lo vede il giocatore nel popup e il ML / il council nella finestra della sessione; non
+   cambia mai il vincitore (§3.3).
 
-Il popup mostra: icona e nome nel colore della qualità, slot, tooltip con confronto, chip "Arma · 2 crediti",
-chip del verdetto ("Upgrade +7,4% · ilvl +6" in verde), i propri crediti e la posizione in fila stimata,
-i pulsanti di risposta, un campo nota e la barra del timer. Il popup senza il verdetto esiste dal passo M4-6 (§4, "Come è
-fatto (M4-6)"); il chip del verdetto è di M5-2 ("Come è fatto (M5-2)", sotto).
+Il popup mostra: icona e nome nel colore della qualità, slot, tooltip con confronto, chip "Arma · 2 crediti", il badge di
+upgrade, i propri crediti e la posizione in fila stimata, la barra del timer e i tre pulsanti. Il popup senza il verdetto
+esiste dal passo M4-6 (§4, "Come è fatto (M4-6)").
 
-**Come è fatto (M5-1).** Il punteggio è `Domain/UpgradeScore.lua`, puro: non chiama mai il gioco. L'adapter
-dell'inventario (M5-2) gli passa il pezzo, i pezzi indossati per slot (`INVSLOT_*`) e la spec dichiarata come tabelle
-semplici; il risultato sono solo codici e numeri (verdetto, `usable`, codice, base `STATS` / `ILVL`, `pct`, delta di
-item level, punteggi, slot confrontati, note), le parole arrivano con il chip di M5-2. I pesi stanno in un file di dati,
-`Data/StatWeights.lua`, che si aggancia al punteggio come `Data/Specs.lua` al roster. Scelte fatte dove il testo non
-decideva (tutte modificabili):
+**Come è fatto (M7-5c).**
 
-- **Competenze.** Tabella per le nove classi (tipi di armatura, scudi, libram / idoli / totem, tipi di arma, bacchette,
-  doppia arma), modificabile dalla configurazione (`proficiency`). La doppia arma dello sciamano vale solo per
-  Enhancement (263). Mantelli (sono "stoffa"), anelli, collane, trinket e oggetti tenuti in mano vanno bene a tutti; una
-  sottoclasse che la tabella non conosce non viene mai rifiutata. Le restrizioni di classe e di spec del pezzo (se
-  l'adapter le conosce, `DoesItemContainSpec`) vengono prima: un token per un'altra classe è *non usabile*, un token per
-  la propria classe è solo *non confrontabile* (`usable` assente), così il popup non lo passa da solo.
-- **Non usabile = Nessun upgrade** con `usable = false` e il codice (`ARMOR_TYPE`, `WEAPON_TYPE`, `DUAL_WIELD`,
-  `CLASS_RESTRICTED`, `SPEC_RESTRICTED`): è il dato da cui M5-2 preseleziona *Passo*.
-- **Coppie (anelli, trinket).** Prima lo stesso oggetto già indossato (si confronta con sé stesso), poi uno slot vuoto
-  (sempre *Upgrade grande*, senza percentuale), poi il peggiore dei due (per punteggio, o per item level nel ripiego).
-  Un trinket indossato con effetto d'uso non è mai "il peggiore" (lo si tiene); se lo sono entrambi, *Non confrontabile*.
-  Un trinket nuovo con effetto d'uso è *Non confrontabile*; su un altro slot l'effetto si ignora con una nota.
-- **Armi.** Due mani contro mano destra + sinistra: statistiche sommate, item level medio dei due. Una mano contro la
-  peggiore delle due mani solo se il personaggio sta già usando due armi (un'arma nella sinistra) e la classe/spec può;
-  altrimenti contro la destra. Una mano contro una due mani indossata: il pezzo da solo (nota `REPLACES_TWO_HAND`, di
-  solito *Nessun upgrade*). Sinistra, scudo o oggetto in mano con una due mani indossata: *Non confrontabile*.
-- **Punteggio.** `punteggio = Σ peso × valore` con i pesi del personaggio o, senza, quelli predefiniti della spec; le
-  chiavi del client (`ITEM_MOD_STRENGTH_SHORT`, `RESISTANCE0_NAME`, …) diventano codici brevi (`STR`, `ARMOR`, `DPS`…);
-  le statistiche senza peso si elencano (`unscored`). Se l'indossato vale 0 e il nuovo più di 0: *Upgrade grande*
-  (`FROM_ZERO`).
-- **Soglie.** `bigThreshold` 5%, `smallThreshold` 0 (piccolo se strettamente sopra), `ilvlBigThreshold` 5% per il
-  confronto sul solo item level. Validate da `ValidateConfig`; le soglie stanno nella sezione `upgrade` delle regole (M5-2).
-- **Ripiego sul solo item level (piano B di S5).** Quando `useStats` è spento (per tutti), quando le statistiche di una
-  delle due parti sono sconosciute (`nil`, diverso da `{}`), quando la spec non ha pesi o quando nessuna delle due parti
-  ha una statistica pesata; ogni caso lascia una nota (`STATS_OFF`, `NO_STATS`, `NO_WEIGHTS`, `NO_WEIGHTED_STATS`).
-  Senza item level: *Non confrontabile* (`NO_ITEM_LEVEL`).
-- **Pesi predefiniti** (default reversibile della domanda 8, §13): una riga per ogni spec di `Data/Specs.lua`, statistica
-  principale = 1,0, DPS dell'arma per melee e cacciatori (non per il druido feral). Sono un'approssimazione (§5.3); i
-  pesi personali e l'import facoltativo di M5-3 (sotto) sostituiscono una riga intera. Restano da verificare in gioco (S5) le
-  chiavi delle statistiche di Forever.
+- **La regola (`Domain/UpgradeScore.lua`, puro).** Ogni pezzo ha un *grado*: 3 = viola (o meglio, leggendario incluso) della
+  season corrente; 2 = blu, oppure viola di una season precedente (item level sotto `fascia.min`); 1 = verde o meno; 0 = slot
+  vuoto. Il *passo* è il grado del pezzo tirato meno quello indossato: 2 o più = **grande**, 1 = **medio**, 0 o meno =
+  **piccolo**. Prima del passo si guarda l'item level: più basso dell'indossato, o uguale senza un passo in su, è *Nessun
+  upgrade*. Senza fascia (il GM non l'ha impostata) ogni viola conta come della season corrente. Senza qualità nota (il client
+  non ha ancora caricato il pezzo) il badge è *Non confrontabile* (`NO_QUALITY`) e il popup lo ricalcola quando il pezzo
+  arriva; senza item level un passo in su si dice lo stesso, uno stesso grado è *Non confrontabile* (`NO_ITEM_LEVEL`). Il
+  risultato sono solo codici e numeri (`verdict` = `MAJOR` | `MEDIUM` | `MINOR` | `NONE` | `NOT_COMPARABLE`, `usable`, `code`,
+  `ilvlDelta`, gradi, slot, note `OLD_SEASON` / `ITEM_OLD_SEASON` / `EMPTY_SLOT`); le parole stanno nei gruppi `VERDICT` e
+  `UPGRADE` di `Domain/Reasons.lua`.
+- **Competenze, coppie, armi** (da M5-1, invariate). Tabella per le nove classi (tipi di armatura, scudi, libram / idoli /
+  totem, tipi di arma, bacchette, doppia arma solo per lo sciamano Enhancement), modificabile; le restrizioni di classe e di
+  spec del pezzo vengono prima (un token per un'altra classe è *non usabile*, uno per la propria è *non confrontabile*, così il
+  popup non lo passa da solo). Anelli e trinket: prima lo stesso oggetto già indossato, poi uno slot vuoto (*grande*), poi il
+  peggiore dei due (grado più basso, poi item level più basso). Due mani contro mano destra + sinistra: il grado più basso dei
+  due, l'item level medio; una mano contro la peggiore delle due mani solo se il personaggio usa già due armi; sinistra, scudo o
+  oggetto in mano con una due mani indossata: *non confrontabile*. Camicia e tabard non si confrontano.
+- **Lo snapshot dello scontro (`Adapters/GearSnapshot.lua`).** A `ENCOUNTER_START` l'addon tiene i link dei pezzi indossati
+  per slot (`GetInventoryItemLink`, attraverso `Core/Compat.lua`), l'id del boss e l'ora del server, anche in
+  `FinlandDragonCreditPointsCharDB.gearSnapshot` (un `/reload` fra il kill e il roll non lo perde). Un client che si è perso
+  l'inizio (un `/reload` o una disconnessione durante lo scontro) lo prende a `ENCOUNTER_END`; un id del boss nascosto si
+  completa alla fine. Il badge usa lo snapshot se è di meno di un'ora (`MAX_AGE`) e, quando entrambi gli id sono noti, dello
+  stesso boss della sessione; altrimenti l'equipaggiamento di adesso (il tooltip dice quale). Togliersi un pezzo dopo il kill
+  non rende un pezzo un upgrade più grande; M7-5d legge lo stesso snapshot contro i furbi.
+- **L'adapter (`Adapters/Inventory.lua`).** Legge qualità (`C_Item.GetItemQualityByID`, nuova in `Core/Compat.lua`, ripiego
+  sulla qualità di `GetItemInfo`), item level (`GetDetailedItemLevelInfo`, con gli aggiornamenti del link indossato), slot,
+  classe e sottoclasse, le spec per cui è fatto (`GetItemSpecInfo`, altrimenti `DoesItemContainSpec`). Le statistiche non si
+  leggono più. Nomi controllati nel dump di Forever.
+- **Il consulente (`App/UpgradeAdvisor.lua`).** Mette insieme regole (sezione `upgrade`: ora solo `enabled` e `autoPass`), la
+  fascia (quella che la sessione del ML porta, `ib`; altrimenti la season aperta del registro di questo client), le spec
+  dichiarate (MS1 / MS2: il badge si calcola per entrambe, ma la regola non dipende dalla spec, cambia solo l'usabilità) e lo
+  snapshot. Il popup mostra un badge solo: quello della main-spec, o quello dell'off-spec quando solo l'off-spec può usare il
+  pezzo; il tooltip dice entrambi, i pezzi indossati, se il confronto è con lo scontro o con l'equipaggiamento di adesso, e la
+  regola. Tutto si ricalcola quando cambiano equipaggiamento, spec, snapshot, fascia, registro o regole.
+- **I tre pulsanti (`App/PopupBoard.lua`, `UI/Windows/MemberLootPopup.lua`).** *Passo* risponde. *Tira Main-spec* / *Tira
+  Off-spec*, mentre il round raccoglie le risposte, mandano la risposta **e tirano con lo stesso clic** (prima l'intento di
+  M7-2d, poi `RandomRoll(1, 100)`), una volta per round; se il tier della risposta tira dopo (Off-spec mentre tira la
+  Main-spec), la risposta resta mandata e il pulsante tira quando arriva il suo turno. In un round che non raccoglie risposte (il
+  turno di un tier più basso, uno spareggio, un tiro libero) il pulsante tira e basta. Un pezzo non usabile mostra Passo
+  preselezionato senza mandare nulla. Solo MS e OS hanno un pulsante: una risposta *Transmog* abilitata dalle regole non è più
+  offerta dal popup (scelta fatta, reversibile; la riga della regola è tolta dalla finestra Impostazioni).
+- **Rete (protocollo 7).** `SRESP` non porta più `lb`, `lo`, `n`; `SOPEN` / `SSTATE` non portano più `lm` e portano
+  `ib = { min, max }`, la fascia congelata sulla sessione all'apertura (`SessionFSM.New{ band }`). Il badge in `vd` è
+  `{ v, u?, c?, l? }` con `v` una fascia. Un client vecchio è capito: i suoi `lb`, `lo`, `n`, `lm` si leggono e si ignorano (anche
+  se danneggiati non fanno più rifiutare la risposta), e i suoi verdetti `BIG` / `SMALL` con `b` e `p` non sono una fascia, quindi
+  la sua risposta conta senza badge. `pv` = 7, `pm` = 2.
+- **Regole vecchie.** Le regole scritte prima di M7-5c portano `upgrade.useStats`, `bigThreshold`, `smallThreshold`,
+  `ilvlBigThreshold` e la sezione `responses` (M7-2b): `Rules.WithDefaults` li toglie alla lettura (`Rules.RETIRED`), quindi un
+  `CONFIG_CHANGED` vecchio resta valido e il registro non si riscrive mai.
+- **La fascia nel registro.** `SEASON_BAND_SET{min, max}` (permesso `season.manage`, interi 1–2000, `min ≤ max`) sulla season;
+  conta l'ultimo in ordine canonico. Il GM la dà aprendo la season o la cambia mentre è aperta, sempre con conferma (finestra
+  Season). Un addon vecchio tiene l'evento per la sincronizzazione e non lo legge.
 
-**Come è fatto (M5-2).** Tre pezzi, ognuno con un solo compito:
+Scelte fatte dove il testo non decideva (tutte modificabili): "stessa season" vuol dire item level **dal minimo della fascia in
+su** (sopra il massimo è ancora la season corrente); un leggendario conta come un viola; un pezzo blu tirato su un verde è
+*medio*, su un blu *piccolo* (la stessa regola dei passi); lo snapshot dura un'ora; il popup mostra un badge, il tooltip
+entrambe le spec. **Da verificare in gioco:** che `GetItemQualityByID` e `GetDetailedItemLevelInfo` rispondano per i link
+indossati, che `ENCOUNTER_START` arrivi (anche dopo un `/reload` a metà scontro), i tre pulsanti in un raid vero.
 
-- **`Adapters/Inventory.lua`** legge il gioco, sempre attraverso `Core/Compat.lua` (nomi controllati nel dump di Forever):
-  i pezzi indossati per slot (`GetInventoryItemLink`; camicia e tabard non si confrontano), i dati di un oggetto
-  (`C_Item.GetItemInfo` / `GetItemInfoInstant`, livello da `GetDetailedItemLevelInfo`, statistiche da `GetItemStats`,
-  `IsEquippableItem`) e le spec per cui è fatto (`GetItemSpecInfo`, altrimenti `DoesItemContainSpec` su ogni spec della
-  classe). Se `GetItemStats` non dà nulla da una parte, `GetItemStatDelta(indossato, nuovo)` completa l'altra
-  (`nuovo − delta`, `indossato + delta`); un valore segreto si legge come "nessuna statistica". Al dominio arrivano
-  tabelle semplici. Non si possono leggere dall'API, e restano fuori: la restrizione di classe di un token e l'effetto
-  d'uso di un trinket (solo nel testo del tooltip): vedi i limiti, §5.3.
-- **`App/UpgradeAdvisor.lua`** mette insieme regole, spec dichiarate e gioco. Le soglie sono la nuova sezione `upgrade`
-  delle regole (`enabled`, `autoPass`, `useStats`, `bigThreshold`, `smallThreshold`, `ilvlBigThreshold`; letta dal
-  registro come le altre, riempita coi predefiniti per le regole scritte prima di M5-2), quindi tutto il raid usa gli stessi
-  numeri. Il verdetto si calcola **due volte**: coi pesi della **MS1** dichiarata (*Main-spec*) e, se c'è, della **MS2**
-  (*Off-spec*); senza dichiarazione la spec che il personaggio gioca ora fa da main-spec e l'off-spec non c'è (una spec
-  dichiarata di un'altra classe si ignora). Il risultato (`For(itemID)`) si tiene finché non cambiano equipaggiamento
-  (`PLAYER_EQUIPMENT_CHANGED`), spec (`PLAYER_SPECIALIZATION_CHANGED`), registro o regole; un oggetto i cui dati non sono
-  ancora caricati non si tiene e il popup lo richiede e si ridisegna. Senza classe nota non si dice nulla.
-- **Il popup** mostra sotto il chip del costo una riga per spec, *"Main-spec · Upgrade grande +7,4% · ilvl +6"* (verde per
-  grande, accento per piccolo, neutro per nessuno e non confrontabile, ambra per non usabile; la virgola decimale dalla
-  lingua), con un tooltip che dice il perché (per un pezzo non usabile il codice, es. "La tua classe non può indossare
-  questo tipo di armatura"), su cosa si è confrontato (statistiche o solo item level), cosa si indossa e il limite
-  ("un'approssimazione"). Le parole passano da `Reasons` (nuovi gruppi `VERDICT` e `UPGRADE`) e dalle chiavi `UPG_*`.
-- **Pezzo non usabile → Passo preselezionato.** Se *ogni* verdetto calcolato dice `usable = false` e le regole lo chiedono
-  (`autoPass`, acceso), il popup mostra Passo selezionato con la riga di aiuto che lo dice, **senza mandare nulla**: nessuna
-  risposta vale passo per le regole (§3.4), il giocatore può scegliere un'altra risposta, e un clic su Passo lo manda
-  davvero. Un pezzo non confrontabile (un token) non fa mai passare da solo.
-- **Rete (protocollo 3).** `SRESP` porta `vd` ed `eq` (tabella in §8.4) a ogni invio, anche per un passo: il flag
-  *Upgrade ignorato* di M5-4 ne ha bisogno. `Session.ReadResponse` controlla i campi uno per uno e **scarta** quello
-  danneggiato senza rifiutare la risposta (come per etichetta e nota); `eq` è solo testo `item:…`, mai un hyperlink.
-  `pv` sale a 3 e `pm` resta 2: un client della 2 è capito e capisce, "versione vecchia ma compatibile" come sempre. Il
-  `SESSION_INPUT` porta `verdict` ed `equipped`, la macchina a stati li tiene per giocatore (`item.verdicts`,
-  `item.equipped`; la risposta più recente sostituisce, si azzerano alla riapertura; le regole non li leggono mai).
-- **Lato ML.** La bacheca dei candidati dà a ogni riga `upgrade` (il verdetto della spec della risposta: l'off-spec per
-  *Off-spec*, altrimenti la main-spec), `upgradeMS`, `upgradeOS` ed `equipped`; la tabella ha una colonna **Upgrade**
-  (ordinabile: grandi prima) e il tooltip della riga mostra i due verdetti e i pezzi indossati. Le segnalazioni e la
-  visibilità ai soli council sono di M5-4 (§5.2, "Come è fatto (M5-4)").
-
-Scelte fatte dove il testo non decideva (tutte modificabili): il confronto usa **l'id dell'oggetto** (livello e statistiche
-dell'oggetto base: il `SOPEN` non porta il link con i bonus, quindi un drop con livello diverso dal base non si vede); il
-verdetto si manda **anche con un passo**; i pezzi indossati nominati sono quelli degli slot confrontati (al massimo 4);
-`autoPass` è una regola di gilda, non una preferenza personale. Da verificare in gioco (S5): che `GetItemStats` e
-`GetItemStatDelta` rispondano per l'equipaggiamento raid, che `GetItemSpecInfo` elenchi le spec come si presume (se elencasse
-solo le spec "da loot" un pezzo valido potrebbe risultare *non usabile per la spec*: è solo una preselezione), e il
-livello di un pezzo indossato con aggiornamenti.
-
-**Come è fatto (M5-3).** Pesi personali, import e wishlist, tutto del giocatore e tutto facoltativo:
-
-- **Dove vivono.** In `FinlandDragonCreditPointsCharDB.upgrade` (`personal`, `weights[specID]`, `wish[itemID]`): mai nel registro
-  della gilda, mai nei dati condivisi, mai spediti; riletti e puliti a ogni sessione (una riga o un id danneggiato si scarta).
-  Nulla è salvato finché il giocatore non importa o non segna un pezzo; i pesi predefiniti di M5-1 restano il default
-  (reversibile, domanda 8 ancora aperta, [issue #2](https://github.com/Finland6738/finland-dragon-credit-points/issues/2)).
-- **Import (`Domain/WeightImport.lua`, puro).** Stringa di formato tipo Pawn: `( Pawn: v1: "Nome": Strength=1, CritRating=0.85 )`,
-  oppure la forma nuda `Strength=1, Agility=0.5`, oppure i codici brevi dell'addon (`STR=1, CRIT=0.85`); nomi senza distinzione
-  di maiuscole, qualche sinonimo (`AttackPower`, `SpellPower`), i campi `Class`, `Spec`, `Alpha`, `Beta` si saltano. Le
-  statistiche che il punteggio non conosce (castoni, gemme) non sono un errore: si elencano come ignorate; **si rifiuta** la
-  stringa vuota o troppo lunga (2000 caratteri), un pezzo che non è `Stat=numero`, un numero che non è un decimale semplice
-  (niente esadecimali, esponenti, `inf`, `nan`, oltre ±1000) e una stringa senza nessuna statistica nota. Il rifiuto ha un
-  codice (`EMPTY`, `TOO_LONG`, `BAD_FORMAT`, `BAD_VALUE`, `NO_STATS`, gruppo `IMPORT` di `Reasons`) e il pezzo colpevole, e non
-  cambia nulla. `Format` riscrive la stringa in ordine fisso (`/fdcp weights show`). Formato e nomi sono quelli pubblici; non c'è
-  codice di altri addon.
-- **Comandi.** `/fdcp weights [on | off | import <spec> <stringa> | show <spec> | reset <spec | all>]`, con `<spec>` id numerico
-  o `ms` / `os` (le spec dichiarate). Importare sostituisce **la riga intera** di quella spec e accende i pesi personali
-  (l'import è un atto esplicito del giocatore); `off` li spegne senza perderli, `reset` li toglie.
-- **Nel verdetto.** `UpgradeAdvisor.For` passa al punteggio la riga personale della MS1 / MS2 quando i pesi personali sono accesi
-  (`advice.personal`), il tooltip del popup lo dice, e il verdetto che va al master looter è quello calcolato con i pesi
-  personali: informa il council, non cambia il vincitore. Le regole di gilda non lo vietano (scelta fatta, reversibile: una
-  regola `upgrade.personalWeights` si aggiunge senza toccare il resto se il GM la vuole).
-- **Wishlist (`Domain/Wishlist.lua`, puro).** `/fdcp wish [list | add <oggetto> | remove <oggetto> | clear]` con link (clic con
-  Maiusc) o id, anche più d'uno; al massimo 300 pezzi. Un pezzo in lista porta nel popup il badge **Nella tua lista BiS** sopra
-  le righe del verdetto, con un tooltip; il popup segue la lista mentre è aperto. È un promemoria: non manda nulla e non
-  cambia nulla per gli altri. Nessuna BiS list di gilda (solo se l'issue #2 la chiede).
-- **Da verificare in gioco.** Come sta la riga del badge nel popup in un raid vero, che il link incollato con Maiusc-clic nella
-  riga di comando arrivi com'è previsto, e che i nomi delle statistiche delle stringhe Pawn vere corrispondano.
-
-**Come è fatto (M7-2b).** L'etichetta di una risposta main-spec (BiS, upgrade grande, upgrade piccolo, situazionale: §3.3) la sceglieva
-il giocatore a mano; ora la sceglie, a seconda di una regola del Guild Master, l'addon con i dati che ha già:
-
-- **La regola `responses.labelMode`** (nuova sezione `responses` delle regole, `Domain/Labels.lua`, puro): `auto` (l'addon imposta
-  l'etichetta e il giocatore non può cambiarla), `suggest` (**il predefinito**: l'addon la compila prima della risposta e il giocatore
-  può cambiarla o toglierla) e `manual` (la sceglie il giocatore, come prima di M7-2b). La valida `Rules.Validate`
-  (`responses.labelMode`), `Rules.WithDefaults` la riempie con `suggest` per le regole scritte prima, e si modifica dalla pagina
-  **Priorità** della finestra Impostazioni (M7-2), solo dal Guild Master e con la stessa conferma a season aperta. È congelata sulla
-  sessione all'apertura (`session.rules.responses`) come le altre sezioni: una modifica vale dalla sessione dopo.
-- **Cosa suggerisce l'addon** (`Labels.Suggest`): il pezzo è nella lista best in slot del giocatore (M5-3) → **BiS**; altrimenti il
-  verdetto **main-spec** (MS1, M5-2) è *grande* → **Upgrade grande**, *piccolo* → **Upgrade piccolo**; nessun upgrade, non
-  confrontabile, non usabile o nessun verdetto → **nessuna etichetta**. *Situazionale* non si suggerisce mai: è un giudizio del
-  giocatore. Il verdetto è quello che il popup già mostra (con i pesi personali, se accesi).
-- **Il popup** (`App/PopupBoard.lua`, `UI/Windows/MemberLootPopup.lua`). La carta dà `labelMode`, `suggestion`, `label`,
-  `labelOrigin` e `labelHint`. In `suggest`, prima di una risposta il chip suggerito è già selezionato (non si manda nulla: una
-  proposta non è una risposta) e parte con la risposta Main-spec; il giocatore può sceglierne un'altra o togliere la stessa, e
-  **se la toglie l'addon non la rimette** (`cleared` nella bozza); tornando da Off-spec a Main-spec senza averla toccata, la
-  proposta torna. In `auto` i chip sono bloccati (`labelsOn = false`) e l'etichetta è sempre quella dell'addon, ricalcolata a ogni
-  invio (`PB.Settle`); la risposta resta del giocatore. Una riga piccola sotto i chip dice chi decide (*«L'addon imposta questa
-  etichetta…»* / *«Etichetta suggerita dall'addon…»*). Con off-spec, passo o altro tier l'etichetta si toglie, come prima.
-- **Chi l'ha scelta (`lo`).** `AUTO` = quella dell'addon (anche se il giocatore ha cliccato la stessa), `CHANGED` = l'addon ne
-  suggeriva una e il giocatore ne ha scelta un'altra, `MANUAL` = non c'era un suggerimento (o la modalità è `manual`). Senza
-  etichetta non c'è origine. Il gruppo `LABEL_ORIGIN` di `Domain/Reasons.lua` dà le parole (*«Impostata dall'addon»*, *«Suggerita
-  dall'addon, cambiata dal giocatore»*, *«Scelta dal giocatore»*).
-- **Rete (protocollo 5).** `SOPEN` e `SSTATE` portano `lm`, `SRESP` e il `my` di `SSTATE` portano `lo` (tabella in §8.4). Sono campi
-  **facoltativi**: `pv` sale a 5 e `pm` resta 2, quindi un client del 2–4 continua a seguire la sessione e a essere capito. Un ML
-  vecchio non manda `lm` e il popup lascia l'etichetta al giocatore (come prima); un client vecchio non manda `lo` e la tabella del
-  ML non mostra nessuna origine. Un `lm` o un `lo` che non è uno dei valori noti si scarta senza rifiutare il messaggio. La
-  macchina a stati tiene `item.labelOrigins[giocatore]` accanto a `item.labels` (stesso ciclo di vita: la risposta più recente
-  sostituisce, si azzera alla riapertura, sopravvive a `/reload`).
-- **Lato ML.** La colonna **Risposta** dice *«Main-spec · Upgrade grande (auto)»* o *«… Situazionale (cambiata)»*; un'etichetta
-  scelta dal giocatore o di un client vecchio non ha sigla; il tooltip della riga dice l'origine a parole. Il candidato della
-  bacheca ha `labelOrigin`. L'origine **informa** e non cambia mai la proposta, come l'etichetta (§3.3).
-
-Scelte fatte dove il testo non decideva (tutte modificabili): `suggest` è il predefinito (lo ha chiesto il proprietario); la regola
-sta nella pagina **Priorità** (con le risposte ammesse) e non in una pagina sua; il verdetto che decide è solo quello della
-main-spec (§6); `auto` non è imposto dal ML (un client manomesso potrebbe mandare un'altra etichetta: l'etichetta è solo
-un'informazione, §3.3). **Da verificare in gioco:** la riga sotto i chip nel popup vero, i chip bloccati, la colonna più larga
-nella finestra del ML.
+**Storia (superata da M7-5c).** M5-1 / M5-2 calcolavano un punteggio pesato sulle statistiche (`Data/StatWeights.lua`, pesi
+predefiniti per spec, soglie *grande* / *piccolo* in percentuale, ripiego sul solo item level), M5-3 aggiungeva pesi personali
+importati da stringa tipo Pawn (`Domain/WeightImport.lua`, `/fdcp weights`) e la wishlist BiS (`Domain/Wishlist.lua`,
+`/fdcp wish`), M4-6 e M7-2b davano al giocatore un'etichetta (BiS, upgrade grande / piccolo, situazionale, con la regola
+`responses.labelMode` e l'origine `lo`) e una nota. Tutto questo è stato **tolto** dal codice, dalle regole, dalle chiavi di
+traduzione, dai test e dal protocollo: lo si trova nella storia git e nelle voci di `CHANGELOG.md` di quei passi.
 
 ### 5.2 Lato master looter / council
 
-Ogni risposta arriva al ML con: risposta, etichetta dichiarata, verdetto calcolato, `upgrade %`, item level e link
-dei pezzi indossati. La tabella dei candidati mostra crediti, roll, risposta, delta e due segnalazioni:
+Ogni risposta arriva al ML con: risposta, badge calcolato (per main-spec e off-spec), differenza di item level e link dei
+pezzi indossati. La tabella dei candidati mostra crediti, roll, risposta, badge e due segnalazioni:
 
 | Segnalazione | Quando |
 |---|---|
 | **Upgrade ignorato** | Un giocatore con l'addon passa (o non risponde) su un pezzo che per lui è un *Upgrade grande*. È il caso "passa per tenersi i crediti bassi in attesa del BiS". |
-| **Possibile spreco** | Il primo in fila ha un upgrade piccolo, un altro candidato ha un upgrade grande (rapporto configurabile). È il caso "spreco palese". |
+| **Possibile spreco** | Il primo in fila ha un upgrade piccolo o nessuno, un altro candidato ha un upgrade grande (rapporto configurabile sulla differenza di item level). È il caso "spreco palese". |
 
 Le segnalazioni **non cambiano mai il vincitore da sole**: aprono l'azione del council (§3.6). Il regolamento dice
 che i casi evidenti "si dicono prima del roll": per questo il ML vede le segnalazioni *Upgrade ignorato* appena
 arrivano le risposte, prima di chiudere il round.
 
-**Come è fatto (M5-4).** Le due segnalazioni sono `Domain/Flags.lua`, puro: riceve risposte, verdetti, chi può rollare e
-la fila, e restituisce codici (`UPGRADE_IGNORED`, `POSSIBLE_WASTE`) con i giocatori che nominano, mai frasi.
+**Come è fatto (M5-4, con le fasce di M7-5c).** Le due segnalazioni sono `Domain/Flags.lua`, puro: riceve risposte, badge, chi
+può rollare e la fila, e restituisce codici (`UPGRADE_IGNORED`, `POSSIBLE_WASTE`) con i giocatori che nominano, mai frasi.
 
-- **Solo la MS1 (§6).** Si legge solo il verdetto `m` dell'`SRESP` (pesi della MS1), mai `o`. *Grande* si ricontrolla con le
-  soglie della gilda (sezione `upgrade`: `bigThreshold`, o `ilvlBigThreshold` per un confronto sul solo item level): un client
-  che dice BIG con una percentuale sotto soglia non fa scattare nulla; un BIG senza percentuale (slot vuoto, indossato che vale
-  0) resta grande. Un pezzo non usabile (`u = false`) e un verdetto danneggiato non contano mai.
+- **Solo la MS1 (§6).** Si legge solo il badge `m` dell'`SRESP`, mai `o`. *Grande* è la fascia `MAJOR`; un pezzo non usabile
+  (`u = false`), un badge danneggiato o il `BIG` / `SMALL` di un client più vecchio di M7-5c non contano mai.
 - **Upgrade ignorato.** Un giocatore che può rollare il pezzo (presente e, con `requireAddon`, con l'addon: §4.1) che **passa**,
-  o che non ha risposto ma di cui si conosce un verdetto, su un *Upgrade grande* della MS1. Oggi un verdetto arriva solo con una
-  risposta, quindi chi non risponde mai non è segnalabile: il caso "non risponde" scatta solo se il client ha già mandato un
-  verdetto (resta pronto per un client che lo mandi prima). Rispondere *Off-spec* o *Transmog* non è un passo e non lo fa
+  o che non ha risposto ma di cui si conosce un badge, su un *Upgrade grande*. Rispondere *Off-spec* non è un passo e non lo fa
   scattare (scelta fatta, reversibile).
 - **Possibile spreco.** La fila sono le risposte del tier a costo pieno (MS nel preset). Il primo in fila ha un upgrade
-  *piccolo* **o nessuno** (scelta fatta: chi non ci guadagna nulla è lo spreco più evidente) e un altro candidato della stessa
-  fila ha un *Upgrade grande* almeno `council.wasteRatio` volte maggiore (preset 2; se il primo è a 0 o sotto basta il grande).
-  Si nomina chi ci guadagna di più. Prima della proposta la fila è quella dei crediti congelati e del primo roll valido (poi il
-  nome); scritta la proposta, il primo è il vincitore della regola (`item.rule.winner`): se il pezzo è andato al tier
-  off-spec, alla banca, al disenchant o al ML non c'è spreco da dire. Un primo *non confrontabile* non fa scattare nulla.
+  *piccolo* **o nessuno** e un altro candidato della stessa fila ha un *Upgrade grande*; quando entrambi portano una differenza di
+  item level positiva, quella dell'altro deve essere almeno `council.wasteRatio` volte la prima (preset 2; da M7-5c il rapporto è
+  sull'item level, prima era sulla percentuale pesata). Si nomina chi ci guadagna di più (differenza di item level più alta; uno
+  slot vuoto vale più di tutto). Un *Upgrade medio* non è né spreco né grande. Prima della proposta la fila è quella dei crediti
+  congelati e del primo roll valido (poi il nome); scritta la proposta, il primo è il vincitore della regola: se il pezzo è
+  andato al tier off-spec, alla banca, al disenchant o al ML non c'è spreco da dire. Un primo *non confrontabile* non fa
+  scattare nulla.
 - **Nella sessione.** `SessionFSM.Flags(s, i)` le calcola dal pezzo; la bacheca le mostra **appena arrivano le risposte**, prima
-  di chiudere il round (§5.2), e le tiene con la proposta. Alla proposta i codici si aggiungono a `proposal.flags` (quindi
-  arrivano nell'`ITEM_AWARDED` e nell'`SPROP`) e i dettagli restano sul pezzo (`item.flagged`); un rifiuto che rimette il pezzo
-  in attesa li dimentica. **Non cambiano mai il vincitore, il costo o la fila**: non sono `INFO_FLAGS`, quindi un'assegnazione
-  `auto` aspetta il ML (scelta fatta, reversibile: basta aggiungerle a `FSM.INFO_FLAGS`). Intervenire è un `MODIFY` con il
-  motivo (`OBVIOUS_WASTE`, `PASSED_TO_GAME`), e la segnalazione resta nell'audit. La sessione congela anche le sezioni `upgrade`
-  e `council` delle regole; una sessione salvata prima usa i preset.
+  di chiudere il round, e le tiene con la proposta. Alla proposta i codici si aggiungono a `proposal.flags` (quindi arrivano
+  nell'`ITEM_AWARDED` e nell'`SPROP`) e i dettagli restano sul pezzo (`item.flagged`); un rifiuto che rimette il pezzo in attesa
+  li dimentica. **Non cambiano mai il vincitore, il costo o la fila**: un'assegnazione `auto` aspetta il ML. Intervenire è un
+  `MODIFY` con il motivo (`OBVIOUS_WASTE`, `PASSED_TO_GAME`), e la segnalazione resta nell'audit.
 - **Regole.** Nella sezione `council`: `flags` (acceso), `wasteRatio` (2, fra 1 e 100), `verdicts` = `council` (preset) |
-  `officers` | `ml`: chi vede verdetti e segnalazioni oltre al ML, che li vede sempre. Le regole scritte prima ricevono i
-  preset (`Rules.WithDefaults`).
+  `officers` | `ml`: chi vede badge e segnalazioni oltre al ML, che li vede sempre.
 - **Visibilità.** Il ML vede tutto. Su un altro client la finestra in sola lettura mostra candidati, colonna Upgrade e
-  segnalazioni solo se `Flags.MaySee` lo permette (`SessionController:SeesVerdicts`): `council` = chi ha `council.member` (che da
-  ora apre la finestra in sola lettura anche senza `award.confirm`), `officers` = chi ha `award.confirm`, `ml` = nessuno. La
-  presenza nel raid richiesta da `council.requirePresent` è implicita: la vista di una sessione arriva solo ai membri del raid.
-  Sulla vista non viaggiano crediti né roll, quindi lì lo spreco si dice solo dopo la proposta. Gli altri vedono i soli codici
-  della proposta, senza nomi. **Limite dichiarato:** l'`SRESP` viaggia sul canale `RAID` (M5-2), quindi la visibilità è della
-  finestra, non dei dati: un client modificato potrebbe leggerli.
-- **Parole.** Gruppo `FLAG` di `Reasons` (`RC_FLAG_UPGRADE_IGNORED`, `RC_FLAG_POSSIBLE_WASTE`) per i codici, e le frasi con nomi e
-  verdetti `ML_FLAG_IGNORED_PASS`, `ML_FLAG_IGNORED_SILENT`, `ML_FLAG_WASTE`, `ML_FLAG_SHORT_*` (colonna Note), inglese e italiano.
-- **Da verificare in gioco:** come stanno le righe delle segnalazioni nella striscia della finestra in un raid vero (lunghezza,
-  a capo), e la finestra in sola lettura di un membro del council che non è officer. Nient'altro è nuovo per il client.
+  segnalazioni solo se `Flags.MaySee` lo permette: `council` = chi ha `council.member`, `officers` = chi ha `award.confirm`,
+  `ml` = nessuno. Sulla vista non viaggiano crediti né roll, quindi lì lo spreco si dice solo dopo la proposta. **Limite
+  dichiarato:** l'`SRESP` viaggia sul canale `RAID`, quindi la visibilità è della finestra, non dei dati.
+- **La colonna Upgrade (M7-5c).** Dice il badge della spec della risposta (*"Upgrade medio · ilvl +13"*, *"Upgrade grande ·
+  slot vuoto"*), si ordina grande → medio → piccolo → nessuno → non usabile → niente, e il tooltip della riga dice i due badge, i
+  pezzi indossati e la regola. La colonna Risposta dice solo la risposta (niente più etichetta).
+- **Parole.** Gruppo `FLAG` di `Reasons` per i codici, e le frasi con nomi e badge `ML_FLAG_IGNORED_PASS`,
+  `ML_FLAG_IGNORED_SILENT`, `ML_FLAG_WASTE`, `ML_FLAG_SHORT_*` (colonna Note), inglese e italiano.
+- **Da verificare in gioco:** come stanno le righe delle segnalazioni nella striscia della finestra in un raid vero, e la
+  finestra in sola lettura di un membro del council che non è officer.
 
 ### 5.3 Limiti da dichiarare al raid
 
-- I pesi sono un'approssimazione: proc, effetti d'uso, bonus di set e tenuta non entrano nel punteggio.
+- Il badge guarda **qualità e item level**, non le statistiche: un pezzo dello stesso grado con statistiche peggiori per la
+  propria spec è comunque *piccolo* se ha un item level più alto. È una scelta del proprietario: semplice e uguale per tutti.
+- La fascia di item level la imposta il GM: senza fascia ogni viola conta come della season corrente.
 - Chi non ha l'addon non rolla (§4.1), quindi ogni candidato manda sempre i propri dati di confronto.
-- Se Forever applica bonus "contestuali" all'equipaggiamento raid (vedi proposta di design), le statistiche lette
-  dal tooltip possono non coincidere con quelle reali in raid: da verificare in M0.
-- Il verdetto calcolato è visibile solo al council (configurabile), per non trasformarlo in una discussione in chat. Dal
-  M5-2 il giocatore lo vede anche nel proprio popup (decisione del proprietario: i giocatori vedono se un pezzo è un
-  upgrade); la visibilità agli altri nella tabella dei candidati resta quella del ML e dei council.
-- Il confronto parte dall'**id** dell'oggetto: il livello e le statistiche sono quelli dell'oggetto base, non di una
-  variante con bonus (il `SOPEN` non porta il link); la classe richiesta da un token e l'effetto d'uso di un trinket non
-  si leggono dall'API (un token per un'altra classe è *non confrontabile*, non *non usabile*; un trinket con effetto
-  d'uso indossato può risultare "il peggiore").
+- Il badge è visibile solo al council (configurabile) nella tabella dei candidati, per non trasformarlo in una discussione
+  in chat; il giocatore lo vede nel proprio popup.
+- Il confronto parte dall'**id** dell'oggetto tirato: livello e qualità sono quelli dell'oggetto base (il `SOPEN` non porta il
+  link); la classe richiesta da un token non si legge dall'API (un token per un'altra classe è *non confrontabile*, non *non
+  usabile*). Il pezzo indossato invece si legge dal suo link, con gli aggiornamenti.
+- Lo snapshot è del client del giocatore: un client modificato potrebbe mentire. M7-5d lavora proprio su questo.
 
 ---
 
@@ -1573,9 +1493,9 @@ tools/ check_docs.py, build/release
 
   | Tipo | Canale | Campi | Significato |
   |---|---|---|---|
-  | `SOPEN` | `RAID` | `q`, `ml`, `e?`, `rt?`, `lm?`, `it` = `{ {id, ca, cs, co?}, … }` | sessione aperta: oggetti con categoria e costi per risposta (`cs`); `rt` = le risposte offerte con il loro tier (`{ MS = 1, OS = 2 }`, M4-6); `lm` = chi sceglie l'etichetta di una risposta (`auto`, `suggest` o `manual`, la regola della gilda, M7-2b); rimandato dopo una correzione |
+  | `SOPEN` | `RAID` | `q`, `ml`, `e?`, `rt?`, `ib?`, `bo?`, `it` = `{ {id, ca, cs, co?}, … }` | sessione aperta: oggetti con categoria e costi per risposta (`cs`); `rt` = le risposte offerte con il loro tier (`{ MS = 1, OS = 2 }`, M4-6); `ib` = la fascia di item level della season `{ min, max }` per il badge di upgrade (M7-5c, protocollo 7; il `lm` di M7-2b non c'è più e quello di un ML vecchio si ignora); `bo` = i roll contano solo dal pulsante (M7-2d); rimandato dopo una correzione |
   | `SROLL` | `RAID` | `q`, `i`, `r`, `k`, `g?`, `tr?`, `am?`, `cl?`, `de?`, `rm?` | round `r` del pezzo `i` aperto: tipo, fase, tier, fra chi (reroll), `cl` = raccoglie le risposte, `de` = scadenza in ora del server (`rm` = secondi rimasti, in pausa) |
-  | `SRESP` | `RAID` | `i`, `r`, `rs`, `lb?`, `lo?`, `n?`, `vd?`, `eq?` | la risposta di un membro `{risposta, etichetta, nota}` (nota al massimo 80 byte): sempre la propria; il popup (M4-6) la rimanda intera a ogni cambiamento. Da M5-2 porta anche `vd = { m, o? }` (i verdetti per main-spec e off-spec, ognuno `{ v, u?, c?, b?, p?, l? }`) ed `eq` (al massimo quattro stringhe `item:…` dei pezzi indossati usati nel confronto); campi facoltativi, un client più vecchio non li manda e il ML non ne ha bisogno per far contare la risposta. Da M7-2b `lo` (`AUTO`, `CHANGED` o `MANUAL`) dice chi ha scelto l'etichetta, e viaggia solo con un'etichetta |
+  | `SRESP` | `RAID` | `i`, `r`, `rs`, `vd?`, `eq?` | la risposta di un membro (MS, OS, PASS): sempre la propria; il popup la rimanda quando cambia. `vd = { m, o? }` = i badge per main-spec e off-spec, ognuno `{ v, u?, c?, l? }` con `v` una fascia (`MAJOR`, `MEDIUM`, `MINOR`, `NONE`, `NOT_COMPARABLE`, M7-5c) ed `eq` (al massimo quattro stringhe `item:…` dei pezzi indossati usati nel confronto, quelli dello scontro); campi facoltativi, un client più vecchio non li manda e la risposta conta lo stesso. I `lb`, `lo`, `n` e i verdetti `BIG` / `SMALL` (con `b`, `p`) di un client più vecchio di M7-5c si leggono e si ignorano |
   | `SCLOSE` | `RAID` | `q`, `i`, `r` | round chiuso |
   | `SPROP` | `RAID` | `q`, `i`, `k`, `tg`, `w?`, `c?`, `rs?`, `tr?`, `rc?`, `f?`, `m?` | la proposta: a chi, quanto, perché (codici di motivo e segnalazioni); `m` = modificata dal ML |
   | `SRESULT` | `RAID` | `q`, `i`, `o`, `w?`, `c?`, `tg?`, `x?` | `AWARDED` (vincitore, costo, destinatario), `REJECTED` (`x` = cosa succede dopo) o `DELIVERED` |
@@ -1583,7 +1503,7 @@ tools/ check_docs.py, build/release
   | `SEND` | `RAID` | `q` | sessione chiusa |
   | `SSYNCQ` | `WHISPER` (o `RAID`) | `s?` | "mandami la sessione": dopo un buco nella sequenza, al ML |
   | `SRINT` | `RAID` | `i`, `r`, `n` | l'intento di roll (M7-2d, protocollo 6): il mittente ha cliccato "Rolla" per il round `r` del pezzo `i` e il roll del gioco segue; `n` = nonce del clic. Nessun valore di roll |
-  | `SSTATE` | `WHISPER` | `q`, `ml`, `e?`, `rt?`, `it` (+ `st`, `w`, `pc`, `tg`), `a?`, `rd?`, `pr?`, `pz?`, `en?`, `my?` | tutta la vista per un membro: il pezzo attivo, il suo round e la proposta, pausa, fine, la sua risposta (`my` = `{ rs, lb?, n? }`) |
+  | `SSTATE` | `WHISPER` | `q`, `ml`, `e?`, `rt?`, `ib?`, `bo?`, `it` (+ `st`, `w`, `pc`, `tg`), `a?`, `rd?`, `pr?`, `pz?`, `en?`, `my?` | tutta la vista per un membro: il pezzo attivo, il suo round e la proposta, pausa, fine, la sua risposta (`my` = `{ rs }`; da M7-5c niente più etichetta e nota) |
 
   Regole: **ogni risposta è del mittente** (il ML prende il giocatore dal mittente che dà il client, mai da un campo; una
   risposta che nomina un altro giocatore, `p`, è rifiutata come falsificata e contata); **nessun messaggio porta un
@@ -1891,13 +1811,12 @@ l'indice è [`ROADMAP.md`](../ROADMAP.md).
    Come in Accord: nessun dato personale nel repository (nomi reali, email, percorsi personali) e commit firmati con
    l'indirizzo noreply di GitHub, non con l'email personale.
 8. **Pesi delle statistiche**: vi basta l'item level + pesi predefiniti, o avete già pesi/BiS list per spec da
-   importare? **Aperta**, opzioni in [issue #2](https://github.com/Finland6738/finland-dragon-credit-points/issues/2).
-   Default reversibile finché non decide il GM: item level + pesi predefiniti modificabili, import stile Pawn
-   facoltativo e spento (step M5-1 e M5-3). M5-1 ha costruito la prima parte: pesi predefiniti per spec in
-   `Data/StatWeights.lua` e ripiego sul solo item level (§5.1, "Come è fatto (M5-1)"); nessuna BiS list di gilda. M5-2 li
-   usa nel popup (verdetto per MS1 e per MS2). M5-3 aggiunge i pesi personali per spec, l'import stile Pawn (spento finché il
-   giocatore non importa, `/fdcp weights off` lo spegne senza perdere nulla) e la wishlist BiS personale (§5.1, "Come è fatto
-   (M5-3)"); ancora nessuna BiS list di gilda. La domanda resta **aperta**.
+   importare? **Risolta** dal proprietario il 2026-11-22 ([issue #2](https://github.com/Finland6738/finland-dragon-credit-points/issues/2),
+   chiusa): **niente pesi delle statistiche**, niente import stile Pawn, niente BiS list né wishlist. Il badge di upgrade lo
+   calcola l'addon con le fasce di qualità contro l'equipaggiamento dello scontro (viola su viola della stessa season = piccolo,
+   su blu o su un viola di una season precedente = medio, su verde o slot vuoto = grande), sempre con la differenza di item
+   level; ogni season ha una fascia di item level impostata dal GM (§5.1, "Come è fatto (M7-5c)"). Il default reversibile di
+   M5-1 / M5-3 (pesi predefiniti, pesi personali, wishlist) è stato tolto.
 9. **Lingua** **Risolta (19/11/2026)**: addon multilingua, all'inizio italiano e inglese, con altre lingue
    aggiungibili tramite un file (§8.5). Documentazione come Accord.
 10. **Sito della community**: va bene estendere `loot.json` con `start` (crediti iniziali) e `kind` (assegnazione /

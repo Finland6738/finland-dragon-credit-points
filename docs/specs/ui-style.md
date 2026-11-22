@@ -202,8 +202,8 @@ che un rango non può usare non compaiono (§3.9 dell'analisi).
 | **Storico** | serate, log del loot, audit, esportazioni (Discord, CSV, JSON e i tre file del sito) | Serate · Log · Audit · Esporta | tutti (Audit ed Esporta con i permessi) | M6-1…M6-4 |
 | **Impostazioni** | preferenze personali (tema, effetti, font, lingua, popup), regole in sola lettura, permessi (GM), profilo del sito (nome della fazione) | Personali · Regole · Permessi · Sito · Season | tutti (modifiche solo GM) | M7-2 |
 
-Fuori dalla finestra: il **popup del pezzo** per il giocatore (card impilabili, con risposta, etichetta, timer e
-tiro; M4-6), il **pulsante della minimappa** e la voce nel compartment con il logo. Quando una sessione di loot è
+Fuori dalla finestra: il **popup del pezzo** per il giocatore (card impilabili, con badge di upgrade, timer e tre pulsanti:
+Passo, Tira Main-spec, Tira Off-spec; M4-6, M7-5c), il **pulsante della minimappa** e la voce nel compartment con il logo. Quando una sessione di loot è
 aperta, la finestra si apre sulla scheda Loot.
 
 ## 7. Texture e prestazioni

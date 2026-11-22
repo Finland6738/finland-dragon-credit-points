@@ -242,10 +242,10 @@ describe("running a whole session from the window", function()
 	end)
 end)
 
-describe("labels and notes (M4-6)", function()
+describe("an old client's label and note (M7-5c)", function()
 	before_boot(setup)
 
-	it("shows the label next to the response and the note in the Notes column, for the master looter only", function()
+	it("are ignored: the Response column says the response only, the Notes column what the addon knows", function()
 		local b = bench(1)
 		b.collect()
 		click(ui().main)
@@ -254,95 +254,20 @@ describe("labels and notes (M4-6)", function()
 			fields.s, fields.i, fields.r = s.id, s.active, s.net.rounds[s.active]
 			Mock.chat.Receive("FDCP1", Codec():Encode("SRESP", fields), "RAID", name)
 		end
-		answer("Aurel", { rs = "MS", lb = "BIG_UPGRADE", n = "two-hander" })
-		answer("Bryn", { rs = "MS", lb = "BIS", n = "|cffff0000red|r" .. string.char(10) .. "line" })
+		answer("Aurel", { rs = "MS", lb = "BIG_UPGRADE", lo = "AUTO", n = "two-hander" })
 		answer("Corin", { rs = "OS" })
-		eq(b.item().labels[full("Aurel")], "BIG_UPGRADE")
-		eq(b.item().notes[full("Aurel")], "two-hander")
+		eq(b.item().responses[full("Aurel")], "MS")
+		isNil(b.item().labels); isNil(b.item().notes)
 		local by = {}
 		for _, r in ipairs(ui().card.table:GetData()) do by[r.name] = r end
-		eq(by.Aurel.label, "BIG_UPGRADE"); eq(by.Aurel.note, "two-hander")
-		eq(by.Bryn.note, "||cffff0000red||r line", "escape sequences are doubled and control characters become spaces")
-		isNil(by.Corin.label)
+		isNil(by.Aurel.label); isNil(by.Aurel.note)
 		local rows = {}
 		for _, row in ipairs(ui().card.table.rows) do
 			if row:IsShown() and row.cells[1]:GetText() ~= "" then rows[row.cells[1]:GetText()] = row end
 		end
-		eq(rows.Aurel.cells[3]:GetText(), "Main-spec · Big upgrade")
+		eq(rows.Aurel.cells[3]:GetText(), "Main-spec")
 		eq(rows.Corin.cells[3]:GetText(), "Off-spec")
-		eq(rows.Aurel.cells[6]:GetText(), "two-hander")
-		eq(rows.Bryn.cells[3]:GetText(), "Main-spec · BiS")
-	end)
-end)
-
-describe("who chose the label (M7-2b)", function()
-	before_boot(setup)
-
-	local function answers(b)
-		local s = b.s()
-		return function(name, fields)
-			fields.s, fields.i, fields.r = s.id, s.active, s.net.rounds[s.active]
-			Mock.chat.Receive("FDCP1", Codec():Encode("SRESP", fields), "RAID", name)
-		end
-	end
-	local function rowsByName()
-		local rows = {}
-		for _, row in ipairs(ui().card.table.rows) do
-			if row:IsShown() and row.cells[1]:GetText() ~= "" then rows[row.cells[1]:GetText()] = row end
-		end
-		return rows
-	end
-
-	it("says auto or changed next to the label, and nothing for a label the player chose or an older client's", function()
-		local b = bench(1)
-		b.collect()
-		click(ui().main)
-		local answer = answers(b)
-		answer("Aurel", { rs = "MS", lb = "BIG_UPGRADE", lo = "AUTO" })
-		answer("Bryn", { rs = "MS", lb = "SITUATIONAL", lo = "CHANGED" })
-		answer("Corin", { rs = "MS", lb = "BIS", lo = "MANUAL" })
-		assert(PS():Respond("MS", "BIS"))   -- the master looter's own answer, sent without an origin like an older client's
-		eq(b.item().labelOrigins[full("Aurel")], "AUTO")
-		eq(b.item().labelOrigins[full("Bryn")], "CHANGED")
-		local by = {}
-		for _, r in ipairs(ui().card.table:GetData()) do by[r.name] = r end
-		eq(by.Aurel.labelOrigin, "AUTO"); eq(by.Bryn.labelOrigin, "CHANGED"); eq(by.Corin.labelOrigin, "MANUAL"); isNil(by.Dara.labelOrigin)
-		local rows = rowsByName()
-		eq(rows.Aurel.cells[3]:GetText(), "Main-spec · Big upgrade (auto)")
-		eq(rows.Bryn.cells[3]:GetText(), "Main-spec · Situational (changed)")
-		eq(rows.Corin.cells[3]:GetText(), "Main-spec · BiS")
-		eq(rows.Dara.cells[3]:GetText(), "Main-spec · BiS")
-	end)
-
-	it("the row's tooltip names the origin in words, and there is none for a label with no origin", function()
-		local b = bench(1)
-		b.collect()
-		click(ui().main)
-		local answer = answers(b)
-		answer("Aurel", { rs = "MS", lb = "BIG_UPGRADE", lo = "AUTO" })
-		answer("Bryn", { rs = "MS", lb = "SITUATIONAL", lo = "CHANGED" })
-		answer("Corin", { rs = "MS", lb = "BIS" })
-		local rows = rowsByName()
-		Mock.RunScript(rows.Bryn, "OnEnter")
-		truthy(GameTooltip:IsShown())
-		local text = table.concat(GameTooltip._lines, " | ")
-		contains(text, "Situational"); contains(text, "Suggested by the addon, changed by the player")
-		Mock.RunScript(rows.Bryn, "OnLeave")
-		Mock.RunScript(rows.Aurel, "OnEnter")
-		contains(table.concat(GameTooltip._lines, " | "), "Set by the addon")
-		Mock.RunScript(rows.Aurel, "OnLeave")
-		Mock.RunScript(rows.Corin, "OnEnter")
-		falsy(GameTooltip:IsShown() and #GameTooltip._lines > 0 and table.concat(GameTooltip._lines, " | "):find("Suggested"))
-		Mock.RunScript(rows.Corin, "OnLeave")
-	end)
-
-	it("speaks Italian", function()
-		FDCP.Locale.SetActive("itIT")
-		local b = bench(1)
-		b.collect()
-		click(ui().main)
-		answers(b)("Aurel", { rs = "MS", lb = "BIG_UPGRADE", lo = "CHANGED" })
-		eq(rowsByName().Aurel.cells[3]:GetText(), "Main-spec · Upgrade grande (cambiata)")
+		eq(rows.Aurel.cells[6]:GetText(), "")
 	end)
 end)
 
@@ -719,24 +644,24 @@ describe("upgrade verdicts (M5-2)", function()
 		return rows
 	end
 
-	it("shows the verdict the player's client sent next to the response, and a dot for a player who sent none", function()
+	it("shows the badge the player's client sent next to the response, and a dot for a player who sent none", function()
 		local b, answer = bootstrap()
-		answer("Aurel", { rs = "MS", vd = { m = { v = "BIG", b = "STATS", p = 74, l = 6 } }, eq = { "item:19100" } })
+		answer("Aurel", { rs = "MS", vd = { m = { v = "MEDIUM", l = 13 } }, eq = { "item:19100" } })
 		answer("Bryn", { rs = "PASS", vd = { m = { v = "NONE", u = false, c = "ARMOR_TYPE" } } })
-		answer("Corin", { rs = "OS", vd = { m = { v = "SMALL", p = 20 }, o = { v = "BIG", p = 150, l = 12 } } })
-		answer("Dara", { rs = "MS" })
+		answer("Corin", { rs = "OS", vd = { m = { v = "MINOR", l = 2 }, o = { v = "MAJOR", c = "EMPTY_SLOT" } } })
+		answer("Dara", { rs = "MS", vd = { m = { v = "BIG", b = "STATS", p = 74, l = 6 } } })   -- a client older than M7-5c
 		local rows = rowsByName()
-		eq(rows.Aurel.cells[4]:GetText(), "Big upgrade +7.4% · ilvl +6")
+		eq(rows.Aurel.cells[4]:GetText(), "Medium upgrade · ilvl +13")
 		eq(rows.Bryn.cells[4]:GetText(), "Not usable")
-		eq(rows.Corin.cells[4]:GetText(), "Big upgrade +15.0% · ilvl +12", "an off-spec answer shows the off-spec verdict")
+		eq(rows.Corin.cells[4]:GetText(), "Major upgrade · empty slot", "an off-spec answer shows the off-spec badge")
 		eq(rows.Dara.cells[4]:GetText(), "·")
 		eq(ui().card.table.columns[4].title, L("ML_COL_UPGRADE"))
 	end)
 
-	it("sorts by verdict: big upgrades first, then small, none, not comparable, not usable, nothing", function()
+	it("sorts by badge: major first, then medium, minor, none, not usable, nothing", function()
 		local b, answer = bootstrap()
-		answer("Aurel", { rs = "MS", vd = { m = { v = "NONE" } } })
-		answer("Bryn", { rs = "MS", vd = { m = { v = "BIG", p = 90 } } })
+		answer("Aurel", { rs = "MS", vd = { m = { v = "MINOR", l = 3 } } })
+		answer("Bryn", { rs = "MS", vd = { m = { v = "MAJOR", l = 40 } } })
 		answer("Corin", { rs = "MS", vd = { m = { v = "NONE", u = false } } })
 		answer("Dara", { rs = "MS" })
 		ui().card.table:SortBy("upgrade", false)
@@ -745,18 +670,18 @@ describe("upgrade verdicts (M5-2)", function()
 		deepEq(names, { "Bryn", "Aurel", "Corin", "Dara" })
 	end)
 
-	it("hovering a row shows both verdicts, what is worn and the limits", function()
+	it("hovering a row shows both badges, what is worn and the rule", function()
 		local b, answer = bootstrap()
 		Mock.items.Add{ id = 19100, link = link(19100), name = "Old Helm", quality = 4, equipLoc = "INVTYPE_HEAD", classID = 4, subclassID = 4 }
-		answer("Corin", { rs = "OS", vd = { m = { v = "SMALL", p = 20 }, o = { v = "BIG", p = 150, l = 12 } }, eq = { "item:19100" } })
+		answer("Corin", { rs = "OS", vd = { m = { v = "MINOR", l = 2 }, o = { v = "MEDIUM", l = 12 } }, eq = { "item:19100" } })
 		local row = rowsByName().Corin
 		Mock.RunScript(row, "OnEnter")
 		truthy(GameTooltip:IsShown())
 		local lines = GameTooltip._lines
-		eq(lines[1], "Main-spec: Small upgrade +2.0%")
-		contains(table.concat(lines, "\n"), "Off-spec: Big upgrade +15.0% · ilvl +12")
+		eq(lines[1], "Main-spec: Minor upgrade · ilvl +2")
+		contains(table.concat(lines, "\n"), "Off-spec: Medium upgrade · ilvl +12")
 		contains(table.concat(lines, "\n"), "Old Helm")
-		eq(lines[#lines], L("UPG_LIMITS"))
+		eq(lines[#lines], L("UPG_RULE"))
 		Mock.RunScript(row, "OnLeave")
 		falsy(GameTooltip:IsShown())
 	end)
@@ -771,8 +696,8 @@ describe("upgrade verdicts (M5-2)", function()
 	it("reads the same in Italian", function()
 		FDCP.Locale.SetActive("itIT")
 		local b, answer = bootstrap()
-		answer("Aurel", { rs = "MS", vd = { m = { v = "SMALL", p = 74, l = 6 } } })
-		eq(rowsByName().Aurel.cells[4]:GetText(), "Upgrade piccolo +7,4% · ilvl +6")
+		answer("Aurel", { rs = "MS", vd = { m = { v = "MINOR", l = 6 } } })
+		eq(rowsByName().Aurel.cells[4]:GetText(), "Upgrade piccolo · ilvl +6")
 		eq(ui().card.table.columns[4].title, "Upgrade")
 	end)
 end)
@@ -802,16 +727,16 @@ describe("council flags (M5-4)", function()
 
 	it("tells the master looter about a pass on a big upgrade before the round closes", function()
 		local b, answer = bootstrap()
-		answer("Bryn", { rs = "PASS", vd = { m = { v = "BIG", b = "STATS", p = 120 } } })
+		answer("Bryn", { rs = "PASS", vd = { m = { v = "MAJOR", l = 12 } } })
 		eq(b.s().state, "ROLLING")
-		contains(ui().card.strip.sub:GetText(), L("ML_FLAG_IGNORED_PASS"):format("Bryn", "Big upgrade +12.0%"))
+		contains(ui().card.strip.sub:GetText(), L("ML_FLAG_IGNORED_PASS"):format("Bryn", "Major upgrade · ilvl +12"))
 		eq(rowsByName().Bryn.cells[6]:GetText(), L("ML_FLAG_SHORT_UPGRADE_IGNORED"))
 	end)
 
 	it("keeps the flags with the proposal and still proposes the rules' winner", function()
 		local b, answer = bootstrap()
-		answer("Aurel", { rs = "MS", vd = { m = { v = "SMALL", b = "STATS", p = 10 } } })
-		answer("Corin", { rs = "MS", vd = { m = { v = "BIG", b = "STATS", p = 90 } } })
+		answer("Aurel", { rs = "MS", vd = { m = { v = "MINOR", l = 1 } } })
+		answer("Corin", { rs = "MS", vd = { m = { v = "MAJOR", l = 9 } } })
 		answer("Bryn", { rs = "PASS" })
 		b.respond("Dara", "PASS")
 		b.roll("Aurel", 90); b.roll("Corin", 10)
@@ -819,7 +744,7 @@ describe("council flags (M5-4)", function()
 		local board = SC():Board()
 		eq(board.proposal.winner, full("Aurel"), "same credits, the higher roll: the flag changes nothing")
 		local sub = ui().card.strip.sub:GetText()
-		contains(sub, L("ML_FLAG_WASTE"):format("Aurel", "Small upgrade +1.0%", "Corin", "Big upgrade +9.0%"))
+		contains(sub, L("ML_FLAG_WASTE"):format("Aurel", "Minor upgrade · ilvl +1", "Corin", "Major upgrade · ilvl +9"))
 		eq(rowsByName().Corin.cells[6]:GetText(), L("ML_FLAG_SHORT_POSSIBLE_WASTE"))
 	end)
 
@@ -827,8 +752,8 @@ describe("council flags (M5-4)", function()
 		bench(1)
 		PS().view = { s = "S1-9", q = 4, ml = full("Bryn"), items = { { id = 19003, ca = "jewelry", cs = { MS = 1, OS = 0 }, st = "ROLLING" } },
 			a = 1, mine = {}, responses = { [1] = {
-				[full("Aurel")] = { rs = "PASS", vd = { m = { v = "BIG", b = "STATS", p = 120 } } },
-				[full("Corin")] = { rs = "MS", vd = { m = { v = "SMALL", b = "STATS", p = 20 } } } } } }
+				[full("Aurel")] = { rs = "PASS", vd = { m = { v = "MAJOR", l = 12 } } },
+				[full("Corin")] = { rs = "MS", vd = { m = { v = "MINOR", l = 2 } } } } } }
 		FDCP.PermissionService.Can = function(_, p) return p == "council.member" end
 		MW():Open("loot")
 		W():Refresh()
@@ -836,7 +761,7 @@ describe("council flags (M5-4)", function()
 		eq(board.host, false)
 		eq(#board.candidates, 2)
 		eq(rowsByName().Aurel.cells[2]:GetText(), "·", "no credits travel to the view")
-		contains(ui().card.strip.sub:GetText(), L("ML_FLAG_IGNORED_PASS"):format("Aurel", "Big upgrade +12.0%"))
+		contains(ui().card.strip.sub:GetText(), L("ML_FLAG_IGNORED_PASS"):format("Aurel", "Major upgrade · ilvl +12"))
 		FDCP.PermissionService.Can = function(_, p) return p == "award.confirm" end
 		board = SC():Board()
 		eq(#board.candidates, 0, "verdicts to the council only (preset)")

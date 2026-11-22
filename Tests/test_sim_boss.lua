@@ -104,9 +104,14 @@ local function kill(net, c)
 	net:Advance(3)
 end
 
--- A raider's answer and roll, from the popup (the click on Roll is the game's RandomRoll, answered to the whole raid).
-local function answer(c, rs) card(c).data.seg.buttons[rs]:Click() end
-local function roll(c) card(c).rollButton:Click() end
+-- A raider's answer and roll, from the popup (M7-5c: three buttons; a roll button answers and rolls in one click, the roll
+-- being the game's RandomRoll, answered to the whole raid). The test answers everybody first and rolls after, so the answer
+-- goes through the popup's Choose and the roll through the button of the answer given.
+local function answer(c, rs) A(c).MemberLootPopup:Choose(rs) end
+local function roll(c)
+	local d = card(c).data
+	card(c).buttons[(d.response and d.response ~= "PASS") and d.response or "MS"]:Click()
+end
 
 local function session(c) return SC(c).session end
 local function item(c, i) local s = session(c); return s.items[i or s.active] end
@@ -232,7 +237,8 @@ describe("a whole boss on a raid of 40", function()
 			net:Advance(0.5)
 		end
 		truthy(shown(c.Dara), "Dara's card is back")
-		eq(card(c.Dara).data.seg:Active(), "MS", "with her answer")
+		eq(card(c.Dara).data.response, "MS", "with her answer")
+		truthy(card(c.Dara).buttons.MS.selected)
 		for _, n in ipairs({ "Corin", "Dara", "Edda" }) do roll(c[n]) end
 		net:Advance(2)
 		local it2 = item(mlc, 2)

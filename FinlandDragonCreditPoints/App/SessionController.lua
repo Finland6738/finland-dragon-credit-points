@@ -273,7 +273,7 @@ function SC:CarryOver(old)
 	if not store or #list == 0 then return end
 	local carry = self:Carry()
 	if not carry then
-		carry = F().New({ id = "carry-" .. tostring(old.id), season = old.season, ml = old.ml, ts = now(), rules = old.rules })
+		carry = F().New({ id = "carry-" .. tostring(old.id), season = old.season, ml = old.ml, ts = now(), rules = old.rules, band = old.band })
 		if not carry then return end
 		carry.state = "ENDED"
 		carry.endedAt = now()
@@ -489,6 +489,7 @@ function SC:OnKill(info)
 			lootThreshold = C().Loot.Threshold(),
 		},
 		present = raidInput.present, addon = raidInput.addon,
+		band = season.band,   -- the season's item-level band, for the raid's upgrade badges (M7-5c)
 	})
 	if not s then return nil, code end
 	if self.store == nil and ns.Config and ns.Config.IsReadOnly and ns.Config:IsReadOnly() then return nil, "READ_ONLY" end
