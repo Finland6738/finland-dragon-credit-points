@@ -39,6 +39,8 @@ local function nightOf(L, e, payload, nights, byId)
 	return best
 end
 
+CreditTable.NightOf = nightOf   -- also read by Domain/History.lua (the night an award belongs to)
+
 -- The credits each member spent per night: { [member] = { [nightId] = n } }.
 function CreditTable.PerNight(L, season, nights)
 	local Lg = Ledger()

@@ -4,7 +4,7 @@
 
 ## Cosa esiste ora
 
-La finestra è costruita: la aprono `/fdcp`, il pulsante della minimappa (il logo della gilda) o la voce nell'AddOn Compartment. Ha la barra del titolo, le sei schede qui sotto, i **temi** (Nebula, Aurora, Drago: `/fdcp theme`) e le schede si riempiono con le versioni: Roster, Crediti, Progress e **Loot › Sessione** (la finestra del master looter, vedi la [[Guida del master looter|Master-Looter-Guide-it]]) e **Loot › Council** (vedi [[Council|Council-it]]) funzionano già; Storico e Impostazioni sono ancora pagine vuote. Si trascina dalla barra del titolo, si ridimensiona dall'angolo in basso a destra (non sotto 900 × 560) e ricorda dove stava per ogni personaggio; **Esc** la chiude. I font sono Outfit, JetBrains Mono e Orbitron, inclusi nell'addon (font liberi, SIL Open Font License); se uno non si carica si usa il font del gioco. Le immagini qui sotto sono ancora anteprime di progetto: la finestra vera non è stata ancora vista in gioco.
+La finestra è costruita: la aprono `/fdcp`, il pulsante della minimappa (il logo della gilda) o la voce nell'AddOn Compartment. Ha la barra del titolo, le sei schede qui sotto, i **temi** (Nebula, Aurora, Drago: `/fdcp theme`) e le schede si riempiono con le versioni: Roster, Crediti, Progress e **Loot › Sessione** (la finestra del master looter, vedi la [[Guida del master looter|Master-Looter-Guide-it]]) e **Loot › Council** (vedi [[Council|Council-it]]) funzionano già, e anche **Storico › Serate** (vedi [[Storico|History-it]]); Impostazioni è ancora una pagina vuota. Si trascina dalla barra del titolo, si ridimensiona dall'angolo in basso a destra (non sotto 900 × 560) e ricorda dove stava per ogni personaggio; **Esc** la chiude. I font sono Outfit, JetBrains Mono e Orbitron, inclusi nell'addon (font liberi, SIL Open Font License); se uno non si carica si usa il font del gioco. Le immagini qui sotto sono ancora anteprime di progetto: la finestra vera non è stata ancora vista in gioco.
 
 ## Una finestra, sei schede
 
@@ -16,7 +16,7 @@ La finestra è costruita: la aprono `/fdcp`, il pulsante della minimappa (il log
 | **Crediti** | La tabella dei crediti della season come sul sito: una colonna per serata, il tuo totale e il tuo posto nella fila del loot. Meno crediti vuol dire più precedenza. |
 | **Progress** | Ogni boss di ogni raid, con la data della prima uccisione della tua gilda e dell'altra, come sul sito. |
 | **Loot** | La sessione di loot del master looter: i pezzi, chi ha risposto, i roll e il vincitore proposto. Gli altri la vedono in sola lettura. Sotto-schede: **Sessione**, **Da consegnare** e **Council** (le segnalazioni, il voto, l'annullamento di un'assegnazione, la correzione dei crediti, l'audit e i progetti leggendari: [[Council|Council-it]]). |
-| **Storico** | Le serate passate, il log del loot, l'audit delle correzioni e le esportazioni (Discord, CSV, JSON e i file del sito della community). |
+| **Storico** | Le serate passate per settimana con chi ha preso cosa, lo storico di un membro e di un oggetto ([[Storico|History-it]]), il log del loot, l'audit delle correzioni e le esportazioni (Discord, CSV, JSON e i file del sito della community). |
 | **Impostazioni** | Le tue preferenze (tema, effetti, font, lingua), le regole della gilda (in sola lettura se non sei il GM) e le impostazioni del sito. |
 
 Quando c'è un pezzo a cui rispondere compare un **popup** a parte, con una card per ogni pezzo: vedi [[Rollare per il loot|Rolling-for-Loot-it]].

@@ -145,6 +145,13 @@ function MainWindow:Build()
 		ns.MLSession:Build(f.pages.loot, f)
 	end
 
+	-- History (M6-1): the nights, the member and the item views replace the empty page
+	if ns.HistoryWindow then
+		f.pages.history.eyebrow:Hide()
+		f.pages.history.empty:Hide()
+		ns.HistoryWindow:Build(f.pages.history)
+	end
+
 	-- resize grip (bottom right)
 	local grip = CreateFrame("Button", nil, f)
 	grip:SetSize(18, 18)
@@ -174,6 +181,7 @@ function MainWindow:ShowPage(id)
 	for pid, page in pairs(f.pages) do page:SetShown(pid == id) end
 	if id == "credits" and ns.CreditsWindow then ns.CreditsWindow:Refresh() end
 	if id == "progress" and ns.ProgressWindow then ns.ProgressWindow:Refresh() end
+	if id == "history" and ns.HistoryWindow then ns.HistoryWindow:Refresh() end
 	if id == "loot" and ns.MLSession and ns.MLSession.root then ns.MLSession:Refresh() end
 end
 

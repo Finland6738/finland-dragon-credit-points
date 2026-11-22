@@ -490,3 +490,97 @@ function Widgets.ChoiceList(parent, opts)
 	f:SetScript("OnMouseWheel", function(self, delta) self:Scroll(-delta * 2) end)
 	return f
 end
+
+-- --- LineWindow -------------------------------------------------------------------------------------------------------
+
+-- A small movable window that lists lines of text (the Member and Item windows of M6-1): a title bar, a list of pooled
+-- lines scrolled with the mouse wheel, Esc and the cross close it. Lines are set with :SetLines({ { text, token? ("text-1"
+-- default), color? = {r, g, b}, head? (a section heading), onClick? (the line is a link) } ... }). opts: name (global
+-- frame name, closed by Esc), title, width (460), height (520), lines (visible lines, 22).
+-- :SetHeader(title, subtitle), :Open(), :Close(), :IsShown(), :Lines() (the visible lines, for tests).
+function Widgets.LineWindow(opts)
+	opts = opts or {}
+	local rows, lineH = opts.lines or 22, 20
+	local w = CreateFrame("Frame", opts.name, UIParent)
+	w:SetSize(opts.width or 460, opts.height or (rows * lineH + 100))
+	w:SetFrameStrata("DIALOG")
+	w:SetToplevel(true)
+	w:SetClampedToScreen(true)
+	w:SetMovable(true)
+	w:EnableMouse(true)
+	w:RegisterForDrag("LeftButton")
+	w:SetPoint("CENTER", UIParent, "CENTER", opts.x or 0, opts.y or 0)
+	w.parts = Theme.Panel(w, { radius = 12, fill = "bg", border = "border", shadow = true })
+	w.titleBar = Widgets.TitleBar(w, { title = opts.title or "", subtitle = "", onClose = function() w:Hide() end })
+	w.titleBar:SetPoint("TOPLEFT", w, "TOPLEFT", 0, 0)
+	w.titleBar:SetPoint("TOPRIGHT", w, "TOPRIGHT", 0, 0)
+	w.titleBar:EnableMouse(true)
+	w.titleBar:RegisterForDrag("LeftButton")
+	w.titleBar:SetScript("OnDragStart", function() w:StartMoving() end)
+	w.titleBar:SetScript("OnDragStop", function() w:StopMovingOrSizing() end)
+	w:SetScript("OnDragStart", function() w:StartMoving() end)
+	w:SetScript("OnDragStop", function() w:StopMovingOrSizing() end)
+
+	w.list = CreateFrame("Frame", nil, w)
+	w.list:SetPoint("TOPLEFT", w, "TOPLEFT", 20, -66)
+	w.list:SetPoint("BOTTOMRIGHT", w, "BOTTOMRIGHT", -20, 16)
+	w.list:EnableMouseWheel(true)
+	w.items, w.offset, w.rows = {}, 0, {}
+	for i = 1, rows do
+		local r = CreateFrame("Button", nil, w.list)
+		r:SetHeight(lineH)
+		r:SetPoint("TOPLEFT", w.list, "TOPLEFT", 0, -(i - 1) * lineH)
+		r:SetPoint("TOPRIGHT", w.list, "TOPRIGHT", 0, -(i - 1) * lineH)
+		r.text = Theme.NewText(r, "Body", "text-1")
+		r.text:SetPoint("LEFT", r, "LEFT", 0, 0)
+		r.text:SetPoint("RIGHT", r, "RIGHT", 0, 0)
+		r.text:SetJustifyH("LEFT")
+		r:Hide()
+		w.rows[i] = r
+	end
+
+	local function paint()
+		for i, r in ipairs(w.rows) do
+			local item = w.items[w.offset + i]
+			if item then
+				r.text:SetText(item.text or "")
+				Theme.Text(r.text, item.head and "accent-text" or item.token or "text-1")
+				if item.color then r.text:SetTextColor(item.color[1], item.color[2], item.color[3]) end
+				r.onClick = item.onClick
+				r:SetScript("OnClick", item.onClick and function() item.onClick() end or nil)
+				r:EnableMouse(item.onClick ~= nil)
+				r.item = item
+				r:Show()
+			else
+				r.item, r.onClick = nil, nil
+				r:Hide()
+			end
+		end
+	end
+	function w:SetLines(list)
+		self.items, self.offset = list or {}, 0
+		paint()
+	end
+	function w:Scroll(delta)
+		self.offset = math.min(math.max(self.offset + delta, 0), math.max(#self.items - rows, 0))
+		paint()
+	end
+	function w:SetHeader(title, subtitle)
+		self.titleBar.title:SetText(title or "")
+		self.titleBar.subtitle:SetText(subtitle or "")
+	end
+	function w:Lines()
+		local out = {}
+		for _, r in ipairs(self.rows) do if r:IsShown() then out[#out + 1] = r end end
+		return out
+	end
+	function w:Open() self:Show(); self:Raise() end
+	function w:Close() self:Hide() end
+	w.list:SetScript("OnMouseWheel", function(_, delta) w:Scroll(-delta * 3) end)
+	if opts.name then
+		for _, n in ipairs(UISpecialFrames) do if n == opts.name then opts.name = nil break end end
+		if opts.name then UISpecialFrames[#UISpecialFrames + 1] = opts.name end
+	end
+	w:Hide()
+	return w
+end

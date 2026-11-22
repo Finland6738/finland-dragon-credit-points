@@ -43,6 +43,7 @@ Domain\WeightImport.lua
 Domain\Wishlist.lua
 Domain\Flags.lua
 Domain\Council.lua
+Domain\History.lua
 Domain\Legendary.lua
 Domain\GuildBank.lua
 Data\StatWeights.lua
@@ -89,5 +90,8 @@ UI\Windows\Progress.lua
 UI\Windows\MLSession.lua
 UI\Windows\Council.lua
 UI\Windows\MemberLootPopup.lua
+UI\Windows\Member.lua
+UI\Windows\Item.lua
+UI\Windows\History.lua
 UI\MainWindow.lua
 UI\Minimap.lua

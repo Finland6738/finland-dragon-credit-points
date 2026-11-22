@@ -12,9 +12,11 @@ Open question 10 ([#3](https://github.com/Finland6738/finland-dragon-credit-poin
 - Analysis: §7 (views); [`docs/specs/ui-style.md`](../specs/ui-style.md) §6
 - Scope: the **History** tab (sub-tabs Nights · Log · Audit · Export, look per `ui-style.md`): query functions over the ledger and the Nights sub-tab, `UI/Windows/Member.lua`, `UI/Windows/Item.lua`: nights by week (instance, bosses, lineup, bench, drops, credits spent), a member's items, credit curve, attendance and council actions about them (attendance visible only to officers), an item's drops and owners.
 - Done when:
-  - [ ] Views match the ledger in tests; members never see attendance.
+  - [x] Views match the ledger in tests; members never see attendance.
+  - [ ] The windows look and work right in game. *(in game)*
 - Tests: `Tests/test_history.lua`.
 - Docs: wiki **History** (EN + IT), CHANGELOG.
+- Note: built as `Domain/History.lua` (pure: `WeekOf`, `Nights`, `Member`, `Item`), `UI/Windows/History.lua` (the tab with the sub-tabs *Nights*, *Log*, *Audit*, *Export*; only *Nights* is drawn, the others say they are coming with M6-2 / M6-3), `UI/Windows/Member.lua`, `UI/Windows/Item.lua` and a new `Widgets.LineWindow`. The lineup, the bench and the attendance only exist in the answers when the caller passes `attendance = true` (the `view.attendance` permission). A voided award stays in the lists, marked, and moves no credits ([`docs/ANALISI.md`](../ANALISI.md) §7, "Come è fatto (M6-1)").
 - Real client: the windows in game.
 - Suggested model/effort: `sonnet` / medium
 

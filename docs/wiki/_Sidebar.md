@@ -12,6 +12,7 @@
 - [[Rolling for Loot|Rolling-for-Loot]]
 - [[Upgrade Hints|Upgrade-Hints]]
 - [[Council|Council]]
+- [[History|History]]
 
 **Italiano**
 - [[Home|Home-it]]
@@ -27,3 +28,4 @@
 - [[Rollare per il loot|Rolling-for-Loot-it]]
 - [[Suggerimenti di upgrade|Upgrade-Hints-it]]
 - [[Council|Council-it]]
+- [[Storico|History-it]]
