@@ -87,6 +87,7 @@ UI\Windows\Roster.lua
 UI\Windows\Credits.lua
 UI\Windows\Progress.lua
 UI\Windows\MLSession.lua
+UI\Windows\Council.lua
 UI\Windows\MemberLootPopup.lua
 UI\MainWindow.lua
 UI\Minimap.lua

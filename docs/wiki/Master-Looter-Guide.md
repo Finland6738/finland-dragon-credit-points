@@ -108,7 +108,7 @@ Two flags help you and the council spot the cases the guild's rules say must be 
 
 ## The council: interventions and the vote
 
-**Who is on the council.** By default, the guild ranks with the *council member* permission (officers) who are **in the raid**. The guild may instead write an **explicit list of characters** in its rules: then the list replaces the rank (still only those in the raid, unless the guild turns the presence rule off). Type `/fdcp council` to see whether you are on it.
+**Who is on the council.** By default, the guild ranks with the *council member* permission (officers) who are **in the raid**. The guild may instead write an **explicit list of characters** in its rules: then the list replaces the rank (still only those in the raid, unless the guild turns the presence rule off). Type `/fdcp council` to see whether you are on it. The **Loot › Council** page does the same from the window, with buttons and dialogs: see [[Council|Council]].
 
 **What the council can do, always with a reason.** You carry out the council's decisions from your window, and each one is written in the log with its reason and your name:
 

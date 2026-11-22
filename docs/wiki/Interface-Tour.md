@@ -4,7 +4,7 @@
 
 ## What exists now
 
-The window itself is built: `/fdcp`, the minimap button (the guild logo) or the AddOn Compartment entry opens it. It has the title bar, the six tabs below, **themes** (Nebula, Aurora, Drago: `/fdcp theme`), and the tabs fill in as the versions arrive: Roster, Credits, Progress and **Loot › Session** (the master looter's window, see the [[Master Looter Guide|Master-Looter-Guide]]) already work; History and Settings are still empty pages. You can drag it by the title bar, resize it from the corner grip (not below 900 × 560), and it remembers where it was for each character; **Esc** closes it. The fonts are Outfit, JetBrains Mono and Orbitron, shipped with the addon (free fonts, SIL Open Font License); if one cannot load, the game's own font is used. The images below are still design previews: the real window has not been seen in the game yet.
+The window itself is built: `/fdcp`, the minimap button (the guild logo) or the AddOn Compartment entry opens it. It has the title bar, the six tabs below, **themes** (Nebula, Aurora, Drago: `/fdcp theme`), and the tabs fill in as the versions arrive: Roster, Credits, Progress and **Loot › Session** (the master looter's window, see the [[Master Looter Guide|Master-Looter-Guide]]) and **Loot › Council** (see [[Council|Council]]) already work; History and Settings are still empty pages. You can drag it by the title bar, resize it from the corner grip (not below 900 × 560), and it remembers where it was for each character; **Esc** closes it. The fonts are Outfit, JetBrains Mono and Orbitron, shipped with the addon (free fonts, SIL Open Font License); if one cannot load, the game's own font is used. The images below are still design previews: the real window has not been seen in the game yet.
 
 ## One window, six tabs
 
@@ -15,7 +15,7 @@ The window itself is built: `/fdcp`, the minimap button (the guild logo) or the 
 | **Roster** | The raid roster as on the site: one column each for tanks, healers and DPS, with free slots and trial members. Officers also see the night's lineup and bench, and who in the raid has the addon. |
 | **Credits** | The season's credits table as on the site: one column per raid night, your total and your place in the loot queue. Fewer credits means more priority. |
 | **Progress** | Every boss of every raid, with the date of your guild's first kill and the other guild's, as on the site: see [The Progress tab](#the-progress-tab). |
-| **Loot** | The master looter's loot session: the items, who answered, the rolls and the proposed winner. Everyone else sees it read-only. |
+| **Loot** | The master looter's loot session: the items, who answered, the rolls and the proposed winner. Everyone else sees it read-only. Sub-tabs: **Session**, **To deliver** and **Council** (the flags, the vote, cancelling an award, correcting credits, the audit and the legendary projects: [[Council|Council]]). |
 | **History** | Past nights, the loot log, the audit of corrections and the exports (Discord, CSV, JSON and the community site files). |
 | **Settings** | Your preferences (theme, effects, fonts, language), the guild rules (read-only unless you are the Guild Master) and the site settings. |
 

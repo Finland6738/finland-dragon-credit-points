@@ -108,7 +108,7 @@ Due segnalazioni aiutano te e il council a vedere i casi che il regolamento dice
 
 ## Il council: interventi e voto
 
-**Chi è il council.** Di base, i ranghi di gilda con il permesso *membro del council* (gli officer) che sono **nel raid**. La gilda può invece scrivere nelle sue regole una **lista esplicita di personaggi**: allora la lista sostituisce il rango (sempre solo chi è nel raid, salvo che la gilda spenga la regola della presenza). Scrivi `/fdcp council` per sapere se ne fai parte.
+**Chi è il council.** Di base, i ranghi di gilda con il permesso *membro del council* (gli officer) che sono **nel raid**. La gilda può invece scrivere nelle sue regole una **lista esplicita di personaggi**: allora la lista sostituisce il rango (sempre solo chi è nel raid, salvo che la gilda spenga la regola della presenza). Scrivi `/fdcp council` per sapere se ne fai parte. La pagina **Loot › Council** fa lo stesso dalla finestra, con pulsanti e finestre di dialogo: vedi [[Council|Council-it]].
 
 **Cosa può fare il council, sempre con un motivo.** Le decisioni del council le esegui tu dalla tua finestra, e ognuna finisce nel log con il motivo e il tuo nome:
 

@@ -25,7 +25,7 @@ local L = ns.L
 
 MLSession.ITEM_ROWS, MLSession.ITEM_H, MLSession.LIST_W = 6, 62, 300
 MLSession.TICK = 1   -- seconds between two redraws of the timer while the tab is on screen
-MLSession.SUBTABS = { "session", "deliver" }   -- Council arrives with M5-8
+MLSession.SUBTABS = { "session", "deliver", "council" }   -- Council: UI/Windows/Council.lua (M5-8)
 
 local function SC() return ns.SessionController end
 local function SB() return ns.SessionBoard end
@@ -205,7 +205,8 @@ function MLSession:Build(page, frame)
 	self.root, self.page, self.frame = root, page, frame
 
 	root.sub = Widgets.Segmented(root, { { id = "session", text = L["ML_SUBTAB_SESSION"] },
-		{ id = "deliver", text = L["ML_SUBTAB_DELIVER"] } }, function(id) MLSession:ShowSub(id) end)
+		{ id = "deliver", text = L["ML_SUBTAB_DELIVER"] }, { id = "council", text = L["COUNCIL_SUBTAB"] } },
+		function(id) MLSession:ShowSub(id) end)
 	root.sub:SetPoint("TOPLEFT", root, "TOPLEFT", 0, -4)
 	root.panes = {}
 	for _, id in ipairs(self.SUBTABS) do
@@ -217,6 +218,7 @@ function MLSession:Build(page, frame)
 	end
 	self:BuildSession(root.panes.session)
 	self:BuildDeliver(root.panes.deliver)
+	if ns.CouncilWindow then ns.CouncilWindow:Build(root.panes.council, frame) end   -- M5-8
 	root.sub:Select("session")
 	root:SetScript("OnShow", function() MLSession:Arm(); MLSession:Refresh() end)
 	root:SetScript("OnHide", function() MLSession:Disarm() end)
@@ -675,6 +677,7 @@ function MLSession:Refresh()
 	local board = SC() and SC():Board(self.selected) or nil
 	self.board = board
 	self:PaintDeliver()
+	if ns.CouncilWindow then ns.CouncilWindow:Refresh() end   -- the council's page follows the same board (M5-8)
 	if not board then
 		s.status:SetText(L["ML_NONE"])
 		s.empty:SetText(L["ML_NONE_HELP"])

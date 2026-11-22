@@ -8,8 +8,9 @@
 --   LS:Close(id, outcome)               LEGENDARY_PROJECT_CLOSED: COMPLETED or ABANDONED
 -- LEGENDARY_PROJECT_PAID is the session's (SessionFSM CONFIRM of a chain piece), never written by hand.
 --
--- Until the council window (M5-8) the command `/fdcp legendary` is the interface: the list, one project's pieces, open,
--- complete, abandon. Item fields take item links (shift-click) or item ids; its words are locale keys.
+-- The council window (UI/Windows/Council.lua, M5-8) drives these methods; the command `/fdcp legendary` stays as the
+-- keyboard interface: the list, one project's pieces, open, complete, abandon. Item fields take item links (shift-click)
+-- or item ids; its words are locale keys.
 -- Bus events: "LEGENDARY_CHANGED"(event) after a project was opened or closed.
 -- Not verified in the real client: the command's output in the chat and item links typed into it.
 local ADDON_NAME, ns = ...

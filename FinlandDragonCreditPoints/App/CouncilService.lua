@@ -10,14 +10,17 @@
 --   CS:Void(ref, reason)           AWARD_VOIDED: cancels an award or a manual adjustment (compensation event)
 --   CS:Adjust(member, delta, reason)  CREDITS_ADJUSTED: moves a member's credits by hand
 --   CS:Audit(season?)              every intervention of the ledger (Council.Audit)
+--   CS:AwardMode()                 how an award is decided: the rules' awardMode and whether the council votes (M5-8)
+--   CS:CanVote(board)              does the council vote on the item the board shows, and is the vote still open (M5-8)
+--   CS:Pool()                      the characters of the open season's pool (who an adjustment names, M5-8)
 -- Both corrections need night.run while a night of the season is open (the master looter writes the council's
 -- corrections, §3.6) and credits.adjust outside one (the GM in the preset): the gate of Ledger.Append decides, and every
 -- other client checks the event again when it arrives. The interventions on a proposal (another winner, a non-roller
 -- at full cost) and the corrections of category or cost before the roll are the master looter's commands
 -- (SessionController:Command MODIFY / CORRECT_ITEM), each with its reason.
 --
--- Until the council window (M5-8) the command `/fdcp council` is the interface: status, vote, the awards a void can
--- cancel, void, adjust, audit. Its words are locale keys.
+-- The council window (UI/Windows/Council.lua, M5-8) drives these methods; the command `/fdcp council` stays as the
+-- keyboard interface: status, vote, the awards a void can cancel, void, adjust, audit. Its words are locale keys.
 -- Bus events: "COUNCIL_CORRECTED"(event) after a void or an adjustment was written.
 -- Not verified in the real client: the vote message on RAID during a session (spike S4, like SRESP).
 local ADDON_NAME, ns = ...
@@ -48,6 +51,28 @@ function CS:Rules()
 	end
 	local rules = SC() and SC():Rules() or (ns.Rules and ns.Rules.DefaultConfig())
 	return rules and rules.council or {}
+end
+
+-- The rules' award mode in force ("confirm", "auto" or "council") and whether the council votes in the other modes too
+-- (`council.vote`): what the council window says about how an award is decided (M5-8).
+function CS:AwardMode()
+	local s = SC() and SC().session
+	local rules
+	if s and s.state ~= "ENDED" and type(s.rules) == "table" then rules = s.rules end
+	rules = rules or (SC() and SC():Rules()) or (ns.Rules and ns.Rules.DefaultConfig()) or {}
+	local mode = type(rules.session) == "table" and rules.session.awardMode or "confirm"
+	return mode, type(rules.council) == "table" and rules.council.vote == true
+end
+
+-- Does the council vote on the item `board` (App/SessionBoard.lua) shows? When the award mode is the council's, or the
+-- rules ask for the vote as advice (`council.vote`), the item has its proposal and the vote is not closed. A read-only
+-- view does not say whether anybody voted yet, so the rules decide, as they do on the master looter's client (M5-8).
+function CS:CanVote(board)
+	local item = type(board) == "table" and board.selectedItem or nil
+	if not item or item.state ~= "PROPOSAL" then return false end
+	local mode, advice = self:AwardMode()
+	if mode ~= "council" and not advice then return false end
+	return not (board.votes ~= nil and board.votes.open == false)
 end
 
 -- Is `name` in the raid? The hosted session's raid on the master looter's client, else the last raid scan; nil when
@@ -120,6 +145,17 @@ function CS:Audit(season)
 		season = open and open.id or nil
 	end
 	return ns.Council.Audit(Lg, season)
+end
+
+-- The characters of the open season's pool, sorted (with the realm): who a manual adjustment can name (M5-8).
+function CS:Pool()
+	local Lg = ledger()
+	local season = Lg and ns.Season.Current(Lg)
+	if not season then return {} end
+	local out = {}
+	for _, m in ipairs(ns.Roster.List(Lg, season.id, {})) do out[#out + 1] = m.member end
+	table.sort(out)
+	return out
 end
 
 -- The awards of the open season a void may still cancel, newest first.

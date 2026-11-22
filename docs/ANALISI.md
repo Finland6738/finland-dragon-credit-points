@@ -309,11 +309,45 @@ con ranghi, raid, protocollo e registro). Scelte fatte dove il testo sopra non d
   è falso, `FORGED`), contato solo da un membro del council su ogni client e di nuovo dalla macchina a stati del ML;
   `SPROP` porta `vc` (voto chiuso), `SSTATE` i voti già dati (`vt`). Retrocompatibile: un client di protocollo 2 o 3
   scarta il tipo nuovo senza leggerlo e continua a seguire la sessione (`Protocol.MIN` resta 2); semplicemente non vota.
-- **Interfaccia.** Fino alla finestra del council (M5-8) il comando `/fdcp council` (stato, `vote`, `awards`, `void`,
-  `adjust`, `audit`), parole tutte da chiavi di traduzione.
+- **Interfaccia.** Il comando `/fdcp council` (stato, `vote`, `awards`, `void`, `adjust`, `audit`), parole tutte da
+  chiavi di traduzione, resta come interfaccia da tastiera accanto alla finestra del council (M5-8, sotto).
 - **Da verificare in gioco:** il messaggio `SVOTE` sul canale del raid durante una sessione vera (spike S4, come
   `SRESP`), la riga dei voti e il pulsante *Chiudi il voto* nella striscia della finestra, e l'output di `/fdcp council`
   nella chat.
+
+**Come è fatto (M5-8).** La sotto-scheda **Loot › Council** è `UI/Windows/Council.lua`, agganciata a `UI/Windows/MLSession.lua`
+(terza voce del selettore dopo *Sessione* e *Da consegnare*). Non decide niente: legge la plancia
+(`SessionController:Board()`, la stessa della scheda Sessione e con la stessa selezione del pezzo), `CouncilService`
+(appartenenza, voto, annullamento, correzione, audit) e `LegendaryService` (i progetti), e rimanda i clic a quei servizi, di cui
+mostra a parole i rifiuti (rango, motivo, season, oggetto). Scelte fatte dove il testo non decideva (tutte reversibili):
+
+- **Scheda "Sul tavolo".** A sinistra: il pezzo, la proposta, le segnalazioni che nominano un giocatore (`SessionBoard.FlagLines`,
+  in tempo reale a roll aperto), i voti (`SessionBoard.VoteText`), l'elenco **Il tuo voto** (il proposto per primo, poi i candidati
+  che la plancia conosce) con **Vota**, e le scorciatoie **Modifica** / **Correggi**, solo sul client del ML: aprono le finestre con
+  motivo della scheda Sessione (`MLSession:OpenDialog`), che restano l'unico posto dove si scrive `MODIFY` / `CORRECT_ITEM`, e solo se
+  la plancia dice che l'azione è ammessa (`board.actions`).
+- **Quando si può votare.** Nuovo `CouncilService:CanVote(board)`: il pezzo è in proposta, le regole chiedono il voto
+  (`awardMode = council`, oppure `council.vote`) e il voto non è chiuso. La vista in sola lettura non dice se qualcuno ha già votato,
+  quindi decidono le regole in vigore sul client (come sul ML, `SessionFSM.VoteDecides`); un voto fuori da questi casi il ML lo
+  ignorerebbe, e il pulsante resta spento con la riga *nessun voto aperto su questo pezzo*. Nuovo anche `CouncilService:AwardMode()`
+  (la modalità di assegnazione e se il voto è consultivo) per la riga di stato, e `CouncilService:Pool()` (i personaggi del pool
+  della season per **Correggi crediti**).
+- **Tre viste a destra.** *Assegnazioni* (`Council.Voidable`, dalla più recente, **Annulla assegnazione...**), *Audit*
+  (`Council.Audit` letto al contrario, una riga per intervento con `CouncilService.AuditLine`, gli annullati attenuati) e *Leggendari*
+  (`Legendary.Projects`, con la modalità e il costo del pezzo, **Apri progetto...**, **Segna come costruito**, **Abbandona**).
+  *Correggi crediti...* sta in alto a destra.
+- **Finestre con motivo obbligatorio.** Annulla e correggi hanno una finestra sola (velo e card come le altre, Esc chiude): la lista
+  dei motivi è quella del dominio (`Council.VOID_ORDER` / `ADJUST_ORDER`, parole del gruppo `CORRECTION`), mai testo libero; senza
+  motivo non si scrive, e il rifiuto del cancello dei permessi (`RANK_TOO_LOW`...) resta nella finestra, aperta. Il numero dei
+  crediti accetta la virgola e il meno tipografico. Il progetto leggendario chiede nome, oggetto finale, pezzi (link o id), costruttore
+  (il pool, o nessuno) e coda; i link si possono inserire con Maiusc+clic ascoltando `ChatEdit_InsertLink` (solo se la funzione c'è, mai
+  sostituita: `hooksecurefunc`).
+- **Cosa non c'è.** Nessuna finestra per la banca di gilda (`/fdcp bank`, M5-7 resta il comando) e nessuna per il voto "in alto":
+  il ML chiude il voto dalla scheda Sessione.
+- **Da verificare in gioco:** la pagina in un raid vero (layout accanto alle altre schede, leggibilità, scorrimento con la
+  rotella), il voto e il suo messaggio `SVOTE`, le finestre di dialogo, il Maiusc+clic dei link nei campi (la funzione la definisce il
+  gioco in Lua e non è nel dump delle API), la vista in sola lettura di un membro del council. Tutto è nella checklist
+  `docs/checklists/M5.md`.
 
 ### 3.7 Leggendari
 
@@ -1484,7 +1518,8 @@ della finestra e nel pulsante della minimappa in ogni tema.
 2. **Popup del pezzo (giocatore)**: una card per pezzo, impilabili; vedi §5.1.
 3. **Sessione (ML)**, nella scheda Loot: a sinistra i pezzi della sessione con stato; a destra i candidati con
    crediti, risposta, roll, segnalazioni; sotto la proposta con "Conferma e assegna", "Modifica", "Intervento del
-   council".
+   council". La sotto-scheda **Council** (M5-8, §3.6) raccoglie gli interventi del council: il pezzo sul tavolo con segnalazioni
+   e voto, annullamento, correzione dei crediti, audit e progetti leggendari.
 4. **Tabella crediti**: come sul sito (season a fisarmonica, una colonna per serata, totale, precedenza), filtri per
    ruolo e classe, la propria riga evidenziata, esportazione.
 5. **Progress**: una card per istanza con copertina, barra per fazione e boss con teschio e data.

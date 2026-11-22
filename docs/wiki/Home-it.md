@@ -21,8 +21,9 @@
 | Condurre una sessione di loot da master looter | [[Guida del master looter|Master-Looter-Guide-it]] |
 | Rispondere e rollare per un pezzo da raider | [[Rollare per il loot|Rolling-for-Loot-it]] |
 | Impostare i miei pesi o una lista best-in-slot | [[Suggerimenti di upgrade|Upgrade-Hints-it]] |
+| Votare, annullare un'assegnazione, correggere i crediti o seguire un progetto leggendario come council | [[Council|Council-it]] |
 
-Altre pagine (il council, le impostazioni) arrivano con le funzioni.
+Altre pagine (le impostazioni, lo storico) arrivano con le funzioni.
 
 ## Per gli sviluppatori
 

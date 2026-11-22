@@ -8,7 +8,7 @@
 --   BS:Totals()               { items, sold, copper }
 --   BS:RecordSale(ref, copper) BANK_ITEM_SOLD{ref, copper}
 --
--- Until the council window (M5-8) the command `/fdcp bank` is the interface: the fallback in force and the bank
+-- The command `/fdcp bank` is the interface (the council window of M5-8 does not cover the bank): the fallback in force and the bank
 -- character, the bank items with their price, and `sold <n> <price>`. Its words are locale keys.
 -- Bus events: "BANK_CHANGED"(event) after a sale was recorded.
 -- Not verified in the real client: the command's output in the chat.

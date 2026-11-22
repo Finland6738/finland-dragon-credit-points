@@ -102,9 +102,10 @@ Open question 8 ([#2](https://github.com/Finland6738/finland-dragon-credit-point
 - Analysis: §9.3 (Council page), §12 (M5 exit); [`docs/specs/ui-style.md`](../specs/ui-style.md) §6
 - Scope: `UI/Windows/Council.lua` as the **Loot › Council** sub-tab, look per `ui-style.md` (flags, intervention dialogs with reason, votes, legendary projects); `docs/checklists/M5.md` for the owner.
 - Done when:
-  - [ ] The council can do every action of M5-5 and M5-6 from the window in the mock.
+  - [x] The council can do every action of M5-5 and M5-6 from the window in the mock.
   - [ ] The owner confirms the council flow in game. *(in game)*
 - Tests: `Tests/test_ui_council.lua`.
 - Docs: wiki **Council** (EN + IT), README features (EN + IT), CHANGELOG.
+- Note: built as `UI/Windows/Council.lua`, hooked into `UI/Windows/MLSession.lua` as its third sub-tab, and `docs/checklists/M5.md`. The window decides nothing: it draws the session board, `CouncilService` and `LegendaryService` and sends the clicks back; new service methods `CanVote(board)`, `AwardMode()` and `Pool()`. The item on the table (proposal, flags, votes, the member's vote, the master looter's shortcuts to the Session tab's Modify / Correct dialogs), the views *Awards*, *Audit* and *Legendary*, and one reason dialog for cancelling an award, adjusting credits and opening a project; the bank has no window (`/fdcp bank`). The wiki page is **Council** (EN + IT); the checklist collects every "not verified in game" item of M5 ([`docs/ANALISI.md`](../ANALISI.md) §3.6, "Come è fatto (M5-8)").
 - Real client: the whole checklist.
 - Suggested model/effort: `sonnet` / medium
