@@ -1,0 +1,25 @@
+name: Feature request
+description: An idea or a change to the loot rules. / Un'idea o una modifica alle regole del loot.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please write in English or Italian. / Puoi scrivere in inglese o in italiano.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What do you need? / Di cosa hai bisogno?
+      description: The situation in your guild that the addon does not cover today. / La situazione della tua gilda che oggi l'addon non copre.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea / La tua idea
+      description: How you would like it to work. / Come vorresti che funzionasse.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives / Alternative
+      description: What you do today instead. / Cosa fai oggi al suo posto.

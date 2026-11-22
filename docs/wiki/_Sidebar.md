@@ -17,6 +17,7 @@
 - [[Seasons|Seasons]]
 - [[Backup and Seasons|Backup-and-Seasons]]
 - [[Settings|Settings]]
+- [[Reporting Bugs|Reporting-Bugs]]
 - [[About|About]]
 
 **Italiano**
@@ -38,4 +39,5 @@
 - [[Season|Seasons-it]]
 - [[Backup e season|Backup-and-Seasons-it]]
 - [[Impostazioni|Settings-it]]
+- [[Segnalare un bug|Reporting-Bugs-it]]
 - [[Crediti e info|About-it]]

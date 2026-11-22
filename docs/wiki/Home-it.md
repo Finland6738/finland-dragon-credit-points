@@ -25,6 +25,7 @@
 | Votare, annullare un'assegnazione, correggere i crediti o seguire un progetto leggendario come council | [[Council|Council-it]] |
 | Leggere le serate, lo storico di un membro o di un oggetto | [[Storico|History-it]] |
 | Cambiare le mie preferenze o (Guild Master) le regole e i permessi | [[Impostazioni|Settings-it]] |
+| Segnalare un bug (la finestra del rapporto bug) | [[Segnalare un bug|Reporting-Bugs-it]] |
 | Sapere chi ha fatto l'addon, la licenza e i link | [[Crediti e info|About-it]] |
 | Incollare la tabella crediti su Discord, o averla in CSV o JSON | [[Esporta|Export-it]] |
 

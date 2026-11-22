@@ -1,0 +1,37 @@
+name: Bug report
+description: Something does not work as the manual says. / Qualcosa non funziona come dice il manuale.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for the report. Please write in English or Italian. / Grazie della segnalazione: puoi scrivere in inglese o in italiano.
+
+        **Privacy:** the bug report of the addon (`/fdcp debug`, then Ctrl+C) holds no player, guild or item names. Do not add screenshots or text that show names you do not want to publish.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened? / Cosa è successo?
+      description: What you did, what you expected and what you saw instead. / Cosa hai fatto, cosa ti aspettavi e cosa hai visto.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce / Come riprodurlo
+      description: If you know how to make it happen again. / Se sai come farlo ripetere.
+  - type: input
+    id: version
+    attributes:
+      label: Addon version / Versione dell'addon
+      description: Shown on the first line of the bug report and on the Info page of Settings. / Si vede nella prima riga del rapporto bug e nella pagina Info delle Impostazioni.
+    validations:
+      required: true
+  - type: textarea
+    id: report
+    attributes:
+      label: Bug report of the addon / Rapporto bug dell'addon
+      description: Type `/fdcp debug` in the game, press Ctrl+C in the window and paste here. / Scrivi `/fdcp debug` nel gioco, premi Ctrl+C nella finestra e incolla qui.
+      render: text
+    validations:
+      required: true

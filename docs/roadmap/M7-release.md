@@ -93,7 +93,9 @@
 - Analysis: §11
 - Scope: `/fdcp debug` in a selectable window (capabilities, versions, queue state, ledger size, last errors, no names), an error catcher for the addon's own errors, a "copy bug report" text; issue templates on GitHub (bug, feature) in English with an Italian note.
 - Done when:
-  - [ ] The report contains no names in tests.
+  - [x] The report contains no names in tests.
+  - [x] An error raised by the addon is caught, cleaned and listed; the window and `/fdcp debug chat` show the same report; issue templates (bug, feature) exist in English with an Italian note.
+  - [ ] The window in the game: it opens, the text is selected, Ctrl+C copies it, the report reads well. *(in game)*
 - Tests: `Tests/test_diagnostics.lua`.
 - Docs: wiki **Reporting Bugs** (EN + IT), CHANGELOG.
 - Real client: the window in game.

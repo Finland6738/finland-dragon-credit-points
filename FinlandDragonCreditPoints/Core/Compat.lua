@@ -1491,8 +1491,14 @@ if FDCP then
 	local commands = FDCP.commands
 	commands[#commands + 1] = {
 		name = "debug", helpKey = "HELP_DEBUG",
-		handler = function(self)
+		handler = function(self, input)
+			local _, arg = self:GetArgs(input or "", 2)
+			-- /fdcp debug opens the report in a window (M7-4); /fdcp debug chat prints it in the chat frame
+			if ns.Diagnostics and ns.DiagnosticsWindow and not (arg and arg:lower() == "chat") then
+				return ns.DiagnosticsWindow:Open()
+			end
 			Compat:Probe()
+			if ns.Diagnostics then return ns.Diagnostics:PrintToChat() end
 			for _, line in ipairs(Compat:DebugLines()) do self:Print(line) end
 			for _, line in ipairs(self:DebugSectionLines()) do self:Print(line) end   -- the lines of the other modules
 		end,

@@ -26,6 +26,7 @@
 | Vote, cancel an award, correct credits or run a legendary project as the council | [[Council|Council]] |
 | Read the nights, a member's history or an item's history | [[History|History]] |
 | Change my preferences, or (Guild Master) the rules and the permissions | [[Settings|Settings]] |
+| Report a bug (the bug report window) | [[Reporting Bugs|Reporting-Bugs]] |
 | Find out who made the addon, the licence and the links | [[About|About]] |
 
 More pages are added as the features are built.

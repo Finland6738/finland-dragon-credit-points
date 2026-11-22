@@ -80,6 +80,7 @@ Net\Snapshot.lua
 App\SeasonController.lua
 App\BackupService.lua
 App\AddonCheck.lua
+App\Diagnostics.lua
 App\AddonNotice.lua
 App\Announcer.lua
 App\PersonalUpgrade.lua
@@ -117,5 +118,6 @@ UI\Windows\RulesForm.lua
 UI\Windows\Profiles.lua
 UI\Windows\Settings.lua
 UI\Windows\About.lua
+UI\Windows\Diagnostics.lua
 UI\MainWindow.lua
 UI\Minimap.lua
