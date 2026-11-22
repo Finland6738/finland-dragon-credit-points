@@ -39,4 +39,6 @@ Una riga **Controllo addon** riassume chi nel tuo raid ha l'addon: "37/40 con l'
 
 Una riga **Permissions** dice se il roster della gilda è stato letto in questa sessione (`loaded` o `loading`), il tuo rango di gilda per posizione (0 è il Guild Master) e quanti eventi degli altri giocatori aspettano il roster.
 
+Una riga **Sync** (officer) descrive la sincronizzazione del registro con gli altri officer: `on` quando il tuo gioco partecipa (il tuo rango può scrivere eventi del registro e il roster della gilda è stato letto), quanti officer ha sentito, quante volte ha chiesto gli eventi mancanti e ha risposto alla richiesta di un altro (con il numero di eventi mandati), quanti eventi ha aggiunto, rifiutato (il loro autore non aveva il rango) o trovato in conflitto (lo stesso evento con un altro contenuto: si tiene quello che hai), e quanti messaggi di sincronizzazione sono arrivati da chi non è officer e sono stati ignorati.
+
 `/fdcp debug` non stampa mai nomi di giocatori, di gilda o di oggetti, quindi puoi incollarne l'output in una segnalazione di errore. Controlla di nuovo il client a ogni esecuzione.

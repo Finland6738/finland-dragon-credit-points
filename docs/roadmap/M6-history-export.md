@@ -83,7 +83,9 @@ Open question 10 ([#3](https://github.com/Finland6738/finland-dragon-credit-poin
 - Analysis: §8.4 (`OFFICER`, trust), §0 point 2
 - Scope: `Net/Sync.lua` on `OFFICER`: per-author high-water marks exchanged ("how far I have"), requests for missing ranges, events accepted only if their author had the required rank when they were written; no overwrites, only more events; budgets for traffic.
 - Done when:
-  - [ ] In the simulator, officers who ran different nights converge; a forged event from a member is refused everywhere.
+  - [x] In the simulator, officers who ran different nights converge; a forged event from a member is refused everywhere.
+  - [ ] In game: two officers who ran different nights see the same ledger after logging in together. *(in game)*
+- Note: built as `Net/Sync.lua` with three `OFFICER` messages: `LHEADS` (the heads), `LWANT` (ranges asked to one officer), `LEVENTS` (the events, heard and merged by every officer). A sync message counts only from a sender whose current rank may write ledger events; every event then passes the permission gate; refused events are not asked again until the ranks or the permission table change. An author the local rank history has never seen (an officer who left before this client's first roster, the M3-1 caveat) is vouched for by the relaying officer and judged with that officer's rank ([ADR 0005](../adr/0005-officer-ledger-sync.md)). The simulator delivers `OFFICER` only to clients whose rank reads the officer chat and gained `Logout` / `Login` ([`docs/ANALISI.md`](../ANALISI.md) §8.4, "Sincronizzazione del registro fra officer (M6-5)").
 - Tests: `Tests/test_sync.lua` (network simulator).
 - Docs: §8.4 if anything changes; CHANGELOG.
 - Real client: two officers in game.

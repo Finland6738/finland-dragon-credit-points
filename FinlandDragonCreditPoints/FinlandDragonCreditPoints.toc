@@ -69,6 +69,7 @@ App\NightController.lua
 App\RosterController.lua
 App\ProgressController.lua
 App\SiteExportService.lua
+Net\Sync.lua
 App\SeasonController.lua
 App\AddonCheck.lua
 App\AddonNotice.lua

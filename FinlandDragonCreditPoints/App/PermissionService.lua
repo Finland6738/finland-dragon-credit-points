@@ -142,10 +142,11 @@ end
 
 function PermissionService:QueueSize() return #self.queue end
 
--- Merges events into ledger L through the gate. The events whose author's rank is not known yet wait in the queue.
--- Returns the Ledger.Merge report (its `pending` are the queued events), or nil and "READ_ONLY".
-function PermissionService:Merge(L, events)
-	local report, err = ns.Ledger.Merge(L, events, self:Gate())
+-- Merges events into ledger L through the gate (`gate`, default PermissionService:Gate(); the officer sync passes its own,
+-- Net/Sync.lua). The events whose author's rank is not known yet wait in the queue (and are merged again with the
+-- default gate). Returns the Ledger.Merge report (its `pending` are the queued events), or nil and "READ_ONLY".
+function PermissionService:Merge(L, events, gate)
+	local report, err = ns.Ledger.Merge(L, events, gate or self:Gate())
 	if not report then return nil, err end
 	for _, e in ipairs(report.pending) do enqueue(self, L, e) end
 	if #report.pending > 0 then log("info", "QUEUED", #report.pending, #self.queue) end
@@ -245,11 +246,15 @@ function PermissionService:OnRoster(snapshot)
 	if type(snapshot) ~= "table" or type(snapshot.members) ~= "table" then return false end
 	local h = self:History()
 	local now = ns.Compat.ServerTime()
-	for name, rank in pairs(snapshot.members) do P().RecordRank(h, name, rank, now) end
+	local changed = false
+	for name, rank in pairs(snapshot.members) do
+		if P().RecordRank(h, name, rank, now) then changed = true end
+	end
 	if snapshot.complete then
 		for name, list in pairs(h.members) do
 			if snapshot.members[name] == nil and list[#list] and list[#list].rank ~= false then
 				P().RecordRank(h, name, false, now)
+				changed = true
 			end
 		end
 	end
@@ -262,6 +267,7 @@ function PermissionService:OnRoster(snapshot)
 		emit("GUILD_RANKS_READY", snapshot.myRank)
 		self:ReportRanks()   -- a review left from an earlier session
 	end
+	if changed and not first then emit("GUILD_RANK_HISTORY_CHANGED") end   -- the officer sync asks again what it refused
 	self:Drain()
 	return first
 end

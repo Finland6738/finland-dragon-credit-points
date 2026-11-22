@@ -1436,6 +1436,37 @@ tools/ check_docs.py, build/release
   (`Session:Host`). I timer viaggiano in ora del server (`GetServerTime`, uguale per tutti), mai nell'orologio locale.
   Tutto passa dalla coda di `Net/Transport.lua` con priorità `ALERT`: aspetta il lockdown, le restrizioni e i boss
   (piano B: sessioni dopo `ENCOUNTER_END`), in ordine; più risposte in attesa dello stesso giocatore → parte l'ultima.
+- **Sincronizzazione del registro fra officer (M6-5).** `Net/Sync.lua`, solo su `OFFICER` (un messaggio di questi tipi
+  da un altro canale si ignora); vedi [ADR 0005](adr/0005-officer-ledger-sync.md). Messaggi:
+
+  | Tipo | Campi | Significato |
+  |---|---|---|
+  | `LHEADS` | `h` = `{ [autore] = segno }` (al massimo 200 autori) | "fin dove sono arrivato": per autore il più alto `seq` senza buchi (`Ledger.Heads`) |
+  | `LWANT` | `to`, `r` = `{ {a, f, l}, … }` (al massimo 20 intervalli) | "mandami questi": i `seq` da `f` a `l` dell'autore `a`, chiesti al solo officer `to` |
+  | `LEVENTS` | `e` = `{ evento, … }`, `to?`, `d?` | gli eventi (senza `id`, che è `autore:seq`), pochi per messaggio; `to` = chi li ha chiesti, `d` = ultimo messaggio della risposta; chiunque li sente li unisce (un'unione di insiemi: due volte non fa danni) |
+
+  È un **pull**: un client annuncia i suoi segni 5 secondi dopo aver letto il roster della gilda, 3 secondi dopo che il
+  suo registro è cresciuto e almeno ogni 5 minuti, mai due volte in 20 secondi, mai con il registro vuoto (impara
+  ascoltando i segni degli altri); chi sente segni più alti dei propri
+  chiede all'officer che ha più eventi che gli mancano (una richiesta alla volta, 60 secondi per la risposta, poi chiede
+  di nuovo, magari a un altro); chi sente segni più bassi dei propri annuncia i suoi, così l'altro può chiedere.
+  **Nessuna sovrascrittura**: un evento già presente con un altro contenuto è un conflitto, vince quello salvato e il
+  conflitto si conta (`/fdcp debug`). **Fiducia**: un messaggio di sincronizzazione conta solo da un officer, cioè da un
+  mittente (letto dal client, mai da un campo) che **ora**, nel roster di gilda locale, ha un rango che può scrivere
+  eventi (il permesso più largo della tabella in vigore); poi ogni evento passa dal cancello dei permessi uno per uno
+  (entra solo se il suo autore aveva il rango richiesto quando l'ha scritto). Un evento rifiutato non si salva e non si
+  richiede più finché la tabella dei permessi o la storia dei ranghi non cambiano (`GUILD_RANK_HISTORY_CHANGED`);
+  quelli che il cancello non sa ancora decidere aspettano nella coda del servizio dei permessi. **Autori mai visti**
+  (la storia dei ranghi è locale, M3-1): un autore che non ha nessuna riga nella storia dei ranghi di questo client
+  (un officer uscito dalla gilda prima che questo client leggesse il suo primo roster) è **garantito dall'officer che
+  inoltra l'evento**: l'evento si giudica con il rango di chi lo inoltra, quindi un officer può portare dentro solo quello
+  che avrebbe potuto scrivere lui, e un membro nulla; un autore che la storia conosce si giudica sempre con il suo rango.
+  **Budget**: al massimo 200 eventi per richiesta, 600 eventi serviti ogni 5 minuti, 1800 byte di testo per messaggio
+  (25 eventi al massimo; `Net/Transport.lua` lo spezza in pezzi da 255), `LHEADS` tre al minuto e `LWANT` dieci al
+  minuto, `LEVENTS` in priorità `BULK` (dopo la sessione e gli annunci). Un membro che non è officer non partecipa (la
+  tabella in sola lettura per i membri è M6-6). Evento sul bus: `LEDGER_SYNCED{from, added, refused, pending, conflict}`.
+  Non verificato nel client: chi riceve i messaggi addon `OFFICER`, il ritmo dei testi lunghi e il CBOR di
+  `C_EncodingUtil` sui payload del registro.
 - **Coda con lockdown**: se `InChatMessagingLockdown()` o le restrizioni sono attive, i messaggi aspettano
   (riuso del modulo di Accord). Le sessioni partono dopo `ENCOUNTER_END`.
 - **Fiducia**: un evento del registro è accettato solo se l'autore ha il rango richiesto dal permesso (§3.9),

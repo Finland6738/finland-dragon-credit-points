@@ -39,4 +39,6 @@ A line **Addon check** sums up who in your raid runs the addon: "37/40 with the 
 
 A **Permissions** line says whether the guild roster has been read this session (`loaded` or `loading`), your guild rank by position (0 is the Guild Master) and how many events from other players wait for the roster.
 
+A **Sync** line (officers) describes the ledger sync with the other officers: `on` when your game takes part (your rank may write ledger events and the guild roster has been read), how many officers it has heard, how many times it asked for missing events and answered someone else's request (with the number of events sent), how many events it added, refused (their author did not have the rank) or found in conflict (the same event with another content: the one you have is kept), and how many sync messages came from someone who is not an officer and were ignored.
+
 `/fdcp debug` never prints player names, guild names or item names, so you can paste its output in a bug report. It checks the client again each time you run it.
