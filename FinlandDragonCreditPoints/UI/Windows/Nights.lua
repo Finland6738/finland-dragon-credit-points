@@ -2,6 +2,8 @@
 -- official night, the lineup in three columns (raid, bench, absent), the proposed bench of Domain/Rotation.lua that the
 -- master looter applies, and the attendance per member **for the officers only** (`view.attendance`, §6: a member never
 -- sees it, the table is not even built for them to find). Reads and writes through App/NightController.lua. Lua 5.1.
+-- M7-5b: after the close the officer sees the proposed absence penalties (who, why, +amount) and confirms them with one
+-- click; every player has "Bench myself" while a night may be running (the request goes to the night's runner).
 local ADDON_NAME, ns = ...
 ns = ns or {}
 local NightsWindow = {}
@@ -21,6 +23,7 @@ local function short(name) return (tostring(name):gsub("%-.*$", "")) end
 -- locale-key: NIGHT_ERR_NOT_READY NIGHT_ERR_NO_SEASON NIGHT_ERR_PENDING NIGHT_ERR_NOT_IN_GUILD NIGHT_ERR_RANK_TOO_LOW
 -- locale-key: NIGHT_ERR_NOT_IN_PACK NIGHT_ERR_DIFFICULTY NIGHT_ERR_NIGHT_ALREADY_OPEN NIGHT_ERR_NO_NIGHT_OPEN
 -- locale-key: NIGHT_ERR_NOT_MEMBER NIGHT_ERR_NO_CHANGE NIGHT_ERR_READ_ONLY NIGHT_ERR_SIZE NIGHT_ERR_NOT_RUNNER NIGHT_ERR_NOT_GM
+-- locale-key: NIGHT_ERR_NO_NIGHT_CLOSED NIGHT_ERR_NIGHT_UNKNOWN NIGHT_ERR_NIGHT_OPEN
 function NightsWindow.ErrorText(code)
 	local key = "NIGHT_ERR_" .. tostring(code)
 	if L[key] ~= key then return L[key] end
@@ -35,6 +38,17 @@ local function instanceName(id)
 	return inst and inst.name or tostring(id)
 end
 NightsWindow.InstanceName = instanceName
+
+-- The line of the proposed absence penalties: "Absence penalties (+1): Dara (not signed up), Hale (no-show)", or nil
+-- when there is nothing to confirm.
+function NightsWindow.AbsenceText(p)
+	if not p or #p.entries == 0 then return nil end
+	local parts = {}
+	for i, e in ipairs(p.entries) do
+		parts[i] = L["NIGHT_ABSENCE_ENTRY"]:format(short(e.member), ns.Reasons.Text("ABSENCE", e.cause))
+	end
+	return L["NIGHT_ABSENCE_PROPOSAL"]:format(#p.entries, p.amount, table.concat(parts, ", "))
+end
 
 -- The attendance as a list of rows for the table: { name, played, benched, bosses, possible, percent }.
 function NightsWindow.AttendanceRows(att)
@@ -74,6 +88,8 @@ function NightsWindow:Build(pane)
 	root.status:SetPoint("TOPLEFT", root.eyebrow, "BOTTOMLEFT", 0, -6)
 	root.message = Theme.NewText(root, "Small", "text-2")
 	root.message:SetPoint("TOPLEFT", root.status, "BOTTOMLEFT", 0, -6)
+	root.absence = Theme.NewText(root, "Small", "warn")
+	root.absence:SetPoint("TOPLEFT", root.message, "BOTTOMLEFT", 0, -4)
 
 	-- the choice of the night to open (while none is open): the pack's instance and the difficulty
 	root.pick = CreateFrame("Frame", nil, root)
@@ -90,6 +106,11 @@ function NightsWindow:Build(pane)
 	root.close = Widgets.Button(root, { text = L["NIGHT_CLOSE"], style = "secondary", width = 150, onClick = function() NightsWindow:OnClose() end })
 	root.propose = Widgets.Button(root, { text = L["NIGHT_PROPOSE"], style = "secondary", width = 170, onClick = function() NightsWindow:OnPropose() end })
 	root.apply = Widgets.Button(root, { text = L["NIGHT_APPLY_BENCH"], style = "neon", width = 170, onClick = function() NightsWindow:OnApply() end })
+	root.confirmAbsence = Widgets.Button(root, { text = L["NIGHT_ABSENCE_CONFIRM"], style = "neon", width = 190,
+		onClick = function() NightsWindow:OnConfirmAbsences() end })
+	root.selfBench = Widgets.Button(root, { text = L["NIGHT_SELF_BENCH"], style = "secondary", width = 170,
+		onClick = function() NightsWindow:OnSelfBench() end })
+	root.selfBench:SetPoint("TOPRIGHT", root, "TOPRIGHT", 0, -40)
 	root.close:SetPoint("TOPRIGHT", root, "TOPRIGHT", 0, 0)
 	root.open:SetPoint("TOPRIGHT", root, "TOPRIGHT", 0, -40)
 	root.propose:SetPoint("RIGHT", root.close, "LEFT", -8, 0)
@@ -234,6 +255,23 @@ function NightsWindow:OnApply()
 	self:Refresh()
 end
 
+-- The officer confirms the proposed absence penalties of the last closed night (one click, M7-5b).
+function NightsWindow:OnConfirmAbsences()
+	local written, code = NC():ApplyAbsences({})
+	if not written then self:SetMessage(self.ErrorText(code), true)
+	else self:SetMessage(L["NIGHT_ABSENCE_APPLIED"]:format(#written)) end
+	self:Refresh()
+end
+
+-- The player benches themselves for tonight (M7-5b): written at once on the runner's client, else a request.
+function NightsWindow:OnSelfBench()
+	local ok, code = NC():SelfBench()
+	if not ok then self:SetMessage(self.ErrorText(code), true)
+	elseif code == "SENT" then self:SetMessage(L["NIGHT_SELF_BENCH_SENT"])
+	else self:SetMessage(L["NIGHT_SELF_BENCH_DONE"]) end
+	self:Refresh()
+end
+
 -- The button of a lineup row: a raider goes to the bench, a benched one back, an absent one into the raid.
 function NightsWindow:OnMove(member, from)
 	if not member then return end
@@ -314,6 +352,15 @@ function NightsWindow:Refresh()
 	root.apply:ClearAllPoints()
 	root.apply:SetPoint("RIGHT", root.propose, "LEFT", -8, 0)
 
+	-- the absence penalties of the last closed night (officers), and the player's own bench
+	local absence = mayRun and s ~= nil and night == nil and nc:AbsenceProposal() or nil
+	local absenceText = self.AbsenceText(absence)
+	root.absence:SetText(absenceText or "")
+	root.confirmAbsence:SetShown(absenceText ~= nil)
+	root.confirmAbsence:ClearAllPoints()
+	root.confirmAbsence:SetPoint("RIGHT", root.propose, "LEFT", -8, 0)
+	root.selfBench:SetShown(nc:Me() ~= nil and not (mayRun and night == nil))
+
 	-- the lineup
 	-- locale-key: NIGHT_COL_RAID NIGHT_COL_BENCH NIGHT_COL_ABSENT
 	local lists = nc:Lineup() or { raid = {}, bench = {}, absent = {} }
@@ -339,7 +386,7 @@ function NightsWindow:Refresh()
 end
 
 if ns.Bus then
-	for _, ev in ipairs({ "NIGHT_OPENED", "NIGHT_CLOSED", "NIGHT_LINEUP_CHANGED", "NIGHT_ENCOUNTER_RECORDED" }) do
+	for _, ev in ipairs({ "NIGHT_OPENED", "NIGHT_CLOSED", "NIGHT_LINEUP_CHANGED", "NIGHT_ENCOUNTER_RECORDED", "NIGHT_ABSENCES_APPLIED" }) do
 		ns.Bus:On(ev, function() NightsWindow:Refresh() end, NightsWindow)
 	end
 end

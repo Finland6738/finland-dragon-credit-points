@@ -20,8 +20,14 @@
 --   sign-ups) and **writes nothing**: the master looter decides and ApplyBench writes the bench in one lineup change. A night
 --   is linked to the official raid event of the game's calendar when there is one (Adapters/Calendar.lua, `eventID`).
 --
+-- * Absences (M7-5b, owner rule of 2026-11-22): at the close the controller keeps the calendar's sign-ups of the night (in
+--   memory) and AbsenceProposal lists the penalties of Domain/Absence.lua; the officer confirms them with ApplyAbsences
+--   (one CREDITS_ADJUSTED each, reason ABSENCE), or the close writes them by itself when the rules say
+--   `penalties.autoApply`. A player benches themselves with SelfBench: the request goes on GUILD (NBENCH) to the client
+--   that runs the night, which writes it as a self-bench (LINEUP_CHANGED `self`); the sender is the client's, never a field.
+--
 -- Bus events: "NIGHT_OPENED"(night), "NIGHT_CLOSED"(night), "NIGHT_LINEUP_CHANGED"(night, event),
--- "NIGHT_ENCOUNTER_RECORDED"(night, event).
+-- "NIGHT_ENCOUNTER_RECORDED"(night, event), "NIGHT_ABSENCES_APPLIED"(night, events).
 -- Not verified in the real client (M0 spike S4/S7): the group events in a raid and the encounter ids of Forever.
 local ADDON_NAME, ns = ...
 ns = ns or {}
@@ -29,13 +35,15 @@ ns.modules = ns.modules or {}
 local NightController = {}
 ns.NightController, ns.modules.NightController = NightController, NightController
 
-local type, pairs, ipairs, tostring = type, pairs, ipairs, tostring
+local type, pairs, ipairs, tostring, tonumber = type, pairs, ipairs, tostring, tonumber
 
 local function log(level, code, ...) if ns.Log then ns.Log[level]("Nights", code, ...) end end
 local function emit(event, ...) if ns.Bus then ns.Bus:Emit(event, ...) end end
 
 NightController.ledger = nil
 NightController.group = nil   -- { [night id] = { [main] = true } }: who was in the group at the last complete scan
+NightController.signups = nil -- { [night id] = { [name] = "yes" | "maybe" | "no" } }: the calendar's answers read at the close
+NightController.SELF_BENCH_MSG = "NBENCH"   -- a player's request to bench themselves (GUILD)
 
 ---------------------------------------------------------------------------------------------------------------------
 -- The ledger and the player
@@ -44,6 +52,7 @@ NightController.group = nil   -- { [night id] = { [main] = true } }: who was in 
 function NightController:Bind(ledger)
 	self.ledger = ledger
 	self.group = {}
+	self.signups = {}
 	if ns.PermissionService then ns.PermissionService:BindLedger(ledger) end
 	return ledger
 end
@@ -183,8 +192,15 @@ function NightController:Close()
 	if not event then return nil, why end
 	self.group[night.id] = nil
 	local closed = ns.Nights.Get(L, night.id)
+	self.signups = self.signups or {}
+	self.signups[night.id] = self:NightSignups(closed)
 	log("info", "NIGHT_CLOSED")
 	emit("NIGHT_CLOSED", closed)
+	local rules = ns.Rules.Current(L)
+	if rules.penalties and rules.penalties.autoApply then
+		local written = self:ApplyAbsences({ night = closed.id })
+		if written and #written > 0 then log("info", "ABSENCES_AUTO", #written) end
+	end
 	return closed
 end
 
@@ -209,6 +225,135 @@ function NightController:SetState(name, state)
 end
 
 function NightController:Bench(name) return self:SetState(name, "BENCH") end
+
+---------------------------------------------------------------------------------------------------------------------
+-- Benching oneself (M7-5b)
+
+-- Writes a self-bench for `name` (a pool main or an alt) in the open night: the runner's side of a player's request.
+-- Returns the LINEUP_CHANGED event, or nil and a code ("NO_NIGHT_OPEN", "NOT_RUNNER", "NOT_MEMBER", "NO_CHANGE", ...).
+function NightController:RecordSelfBench(name)
+	local L, season = writer(self)
+	if not L then return nil, season end
+	local night = ns.Nights.Current(L, season)
+	if not night then return nil, "NO_NIGHT_OPEN" end
+	if not self:IsRunner(night) then return nil, "NOT_RUNNER" end
+	local main = mainOf(ns.Roster.State(L, season), name)
+	if not main then return nil, "NOT_MEMBER" end
+	local event, why = ns.Nights.SetLineup(L, { author = self:Me(), ts = now(), season = season, bench = { main },
+		selfBench = true }, gate())
+	if not event then return nil, why end
+	log("info", "SELF_BENCH")
+	emit("NIGHT_LINEUP_CHANGED", night, event)
+	return event
+end
+
+-- The player benches themselves for tonight. On the client that runs the night it is written at once; elsewhere the
+-- request goes on GUILD to that client. Returns the event (written here), or true and "SENT", or nil and a code
+-- ("NOT_READY": no guild yet, or a Transport reason).
+function NightController:SelfBench()
+	local me = self:Me()
+	if not me then return nil, "NOT_READY" end
+	local L = self:Ledger()
+	local night = L and self:Current()
+	if night and self:IsRunner(night) then return self:RecordSelfBench(me) end
+	if not ns.Transport then return nil, "NOT_READY" end
+	local item, why = ns.Transport:Send("GUILD", { t = self.SELF_BENCH_MSG })
+	if not item then return nil, why end
+	return true, "SENT"
+end
+
+-- A message of the transport: a player's NBENCH on GUILD reaches the client that runs the night.
+function NightController:OnMessage(msg, sender, dist)
+	if type(msg) ~= "table" or msg.t ~= self.SELF_BENCH_MSG or dist ~= "GUILD" or type(sender) ~= "string" then return nil end
+	local night = self:Current()
+	if not night or not self:IsRunner(night) then return nil, "NOT_RUNNER" end
+	return self:RecordSelfBench(sender)
+end
+
+---------------------------------------------------------------------------------------------------------------------
+-- Absence penalties (M7-5b)
+
+-- The night's date as the realm's day number YYYYMMDD (what the calendar reads), or nil.
+local function dayOf(night)
+	local y, m, d = tostring(night and night.date or ""):match("^(%d+)%-(%d+)%-(%d+)$")
+	if not y then return nil end
+	return tonumber(y) * 10000 + tonumber(m) * 100 + tonumber(d)
+end
+
+-- The calendar's sign-ups of a night (the event it is linked to, else the official raid event of its date), or nil when
+-- the calendar has none or is not loaded.
+function NightController:NightSignups(night)
+	local day = dayOf(night)
+	if not day or not ns.Calendar then return nil end
+	local event
+	for _, e in ipairs(ns.Calendar.RaidEvents(day)) do
+		if night.eventID and e.eventID == night.eventID then event = e end
+	end
+	if night.eventID and not event then return nil end   -- linked to an event the calendar no longer shows
+	event = event or ns.Calendar.FindRaidEvent(day)
+	return event and ns.Calendar.Signups(event) or nil
+end
+
+-- The night the penalties are about: `id`, else the newest closed night of the open season. Returns L, season id, night
+-- or nil and a code.
+local function absenceNight(self, id)
+	local L, season = writer(self)
+	if not L then return nil, season end
+	local night
+	if id then
+		night = ns.Nights.Get(L, id)
+		if not night or night.season ~= season then return nil, "NIGHT_UNKNOWN" end
+	else
+		for _, n in ipairs(ns.Nights.List(L, season)) do
+			if n.closed then night = n end
+		end
+		if not night then return nil, "NO_NIGHT_CLOSED" end
+	end
+	return L, season, night
+end
+
+-- The absence penalties proposed for a closed night (args.night = its id; default the newest closed one). Nothing is
+-- written. Returns Absence.Propose's table plus `signupsKnown`, or nil and a code ("NOT_READY", "NO_SEASON", a permission
+-- code, "NO_NIGHT_CLOSED", "NIGHT_UNKNOWN", "NIGHT_OPEN").
+function NightController:AbsenceProposal(args)
+	args = args or {}
+	local L, season, night = absenceNight(self, args.night)
+	if not L then return nil, season end
+	self.signups = self.signups or {}
+	local signups = self.signups[night.id]
+	if signups == nil then
+		signups = self:NightSignups(night)
+		if signups then self.signups[night.id] = signups end
+	end
+	local rules = ns.Rules.Current(L)
+	local p, code = ns.Absence.Propose(L, season, night.id, { signups = signups,
+		amount = rules.penalties and rules.penalties.absence or 0 })
+	if not p then return nil, code end
+	p.signupsKnown = signups ~= nil
+	return p
+end
+
+-- The officer's confirmation: writes the proposed penalties of a closed night (args.night, default the newest closed;
+-- args.members = only these). Returns the events written and the refused entries, or nil and a code.
+function NightController:ApplyAbsences(args)
+	args = args or {}
+	local p, code = self:AbsenceProposal(args)
+	if not p then return nil, code end
+	local entries = p.entries
+	if args.members then
+		local want = {}
+		for _, name in ipairs(args.members) do want[name] = true end
+		entries = {}
+		for _, e in ipairs(p.entries) do if want[e.member] then entries[#entries + 1] = e end end
+	end
+	if #entries == 0 then return {}, {} end
+	local L, season = self:Ledger(), p.night.season
+	local written, refused = ns.Absence.Apply(L, { author = self:Me(), ts = now(), season = season, night = p.night.id,
+		entries = entries }, gate())
+	for _, r in ipairs(refused) do log("warn", "ABSENCE_REFUSED", ns.Log and ns.Log.Plain(r.code)) end
+	if #written > 0 then emit("NIGHT_ABSENCES_APPLIED", p.night, written) end
+	return written, refused
+end
 
 -- The master looter's decision: benches a whole list in one lineup change (names are pool mains or alts). Returns the
 -- LINEUP_CHANGED event, or nil and a code ("NO_NIGHT_OPEN", "NOT_MEMBER", "NO_CHANGE", ...).
@@ -394,9 +539,18 @@ end
 if ns.Bus then
 	ns.Bus:On("GROUP_SCANNED", function(_, snapshot) NightController:OnGroup(snapshot) end, NightController)
 	ns.Bus:On("ENCOUNTER_ENDED", function(_, info) NightController:OnEncounterEnd(info) end, NightController)
-	ns.Bus:On("GUILD_KEY_CHANGED", function() NightController.ledger, NightController.group = nil, {} end, NightController)
+	ns.Bus:On("GUILD_KEY_CHANGED", function()
+		NightController.ledger, NightController.group, NightController.signups = nil, {}, {}
+	end, NightController)
+	ns.Bus:On("NET_MESSAGE", function(_, msg, sender, dist)
+		if type(msg) == "table" and msg.t == NightController.SELF_BENCH_MSG then
+			local full = ns.GuildRanks and ns.GuildRanks.FullName(sender) or sender
+			NightController:OnMessage(msg, full, dist)
+		end
+	end, NightController)
 end
-NightController.group = {}
+if ns.Codec then ns.Codec:RegisterType(NightController.SELF_BENCH_MSG, {}) end
+NightController.group, NightController.signups = {}, {}
 
 if ns.addon then
 	ns.addon.NightController = NightController   -- also reachable from tests

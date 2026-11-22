@@ -115,6 +115,8 @@ add("members", { "members", "lateJoin", "decimals" }, "int", { "RULEF_LATE_DECIM
 add("members", { "members", "lateJoin", "minNights" }, "int", { "RULEF_LATE_MIN_NIGHTS" }, { min = 0, max = 100 })
 add("members", { "members", "lateJoin", "fixed" }, "number", { "RULEF_LATE_FIXED" }, { min = 0, max = 1000 })
 add("members", { "season", "startCredits" }, "number", { "RULEF_START_CREDITS" }, { min = 0, max = 1000 })
+add("members", { "penalties", "absence" }, "number", { "RULEF_PENALTY_ABSENCE" }, { min = 0, max = 100 })   -- M7-5b
+add("members", { "penalties", "autoApply" }, "bool", { "RULEF_PENALTY_AUTO_APPLY" })
 
 -- council: the loot council (§3.6, §5.2)
 add("council", { "council", "requirePresent" }, "bool", { "RULEF_COUNCIL_PRESENT" })

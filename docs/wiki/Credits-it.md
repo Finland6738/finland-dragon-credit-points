@@ -25,7 +25,7 @@ Ogni season è una scheda con il nome, il numero di serate, se è in corso o chi
 | **Giocatore** | Il nome con il colore della classe (e un quadratino). |
 | **Classe · Spec** | La classe e la spec principale dichiarata. |
 | Una colonna per serata | La data e l'istanza della serata, e `+N` per quanto il giocatore ha pagato per gli oggetti vinti quella sera; un punto se niente. Chi vince due oggetti nella stessa serata vede la somma. Si vedono le ultime 8 serate; le più vecchie restano nel totale. |
-| **Totale** | Il totale del registro in una pastiglia: i crediti iniziali della season (chi arriva dopo parte dalla media del roster), più ogni assegnazione e correzione degli officer, meno le assegnazioni annullate. |
+| **Totale** | Il totale del registro in una pastiglia: i crediti iniziali della season (chi arriva dopo parte dai crediti più bassi del roster), più ogni assegnazione e correzione degli officer, meno le assegnazioni annullate. |
 
 Per i crediti iniziali e le correzioni, il totale può essere più della somma delle colonne delle serate. Un'assegnazione appartiene alla serata che era aperta quando è stata registrata.
 

@@ -3,7 +3,8 @@
 -- (docs/wiki/Loot-Rules.md). The domain itself never writes sentences: it returns codes, this table names the key.
 -- A code is only meaningful inside its group: NOT_PRESENT is a discarded roll in one and a refused action in another.
 -- Groups: REASON (why a player won), FLAG (what to check), DISCARD (a roll set aside), SOURCE (where a cost or a
--- category comes from), JOIN (a new member's credits), CORRECTION (the master looter's reasons), AUTO (automatic
+-- category comes from), JOIN (a new member's credits), CORRECTION (the master looter's reasons), ABSENCE (why a missed
+-- night is penalized, M7-5b), AUTO (automatic
 -- phases), RANKS (guild rank changes), DELIVERY (where an award is on its way to the winner, M4-7), REFUSAL (an action refused), STATUS (a member of the pool),
 -- RESPONSE, LABEL (the optional label of a main-spec response), LABEL_ORIGIN (who chose it, M7-2b), VERDICT (the upgrade verdicts, M5-2), UPGRADE (why an item
 -- cannot be used or compared, M5-2), IMPORT (why a weight string was refused, M5-3), KIND (what a proposal does), REJECT, STATE, EVENT (ledger event types), OUTCOME (how a legendary project ended, M5-6) and PRESET
@@ -14,7 +15,7 @@ ns.modules = ns.modules or {}
 local Reasons = {}
 ns.Reasons, ns.modules.Reasons = Reasons, Reasons
 
-Reasons.GROUPS = { "REASON", "FLAG", "DISCARD", "SOURCE", "JOIN", "CORRECTION", "AUTO", "RANKS", "DELIVERY", "REFUSAL", "STATUS", "RESPONSE", "LABEL", "LABEL_ORIGIN", "VERDICT", "UPGRADE", "IMPORT", "KIND", "REJECT", "STATE", "EVENT", "OUTCOME", "PRESET" }
+Reasons.GROUPS = { "REASON", "FLAG", "DISCARD", "SOURCE", "JOIN", "CORRECTION", "ABSENCE", "AUTO", "RANKS", "DELIVERY", "REFUSAL", "STATUS", "RESPONSE", "LABEL", "LABEL_ORIGIN", "VERDICT", "UPGRADE", "IMPORT", "KIND", "REJECT", "STATE", "EVENT", "OUTCOME", "PRESET" }
 
 -- KEYS[group][code] = locale key.
 Reasons.KEYS = {
@@ -105,6 +106,13 @@ Reasons.KEYS = {
 		DUPLICATE_AWARD = "RC_CORRECTION_DUPLICATE_AWARD",   -- a void or a manual adjustment (Domain/Council.lua, M5-5)
 		PENALTY = "RC_CORRECTION_PENALTY",
 		BONUS = "RC_CORRECTION_BONUS",
+		ABSENCE = "RC_CORRECTION_ABSENCE",   -- a missed official night (Domain/Absence.lua, M7-5b)
+	},
+	ABSENCE = {   -- why a member gets the absence penalty (Domain/Absence.lua, M7-5b)
+		NOT_SIGNED_UP = "RC_ABSENCE_NOT_SIGNED_UP",
+		NO_SHOW = "RC_ABSENCE_NO_SHOW",
+		SELF_BENCH = "RC_ABSENCE_SELF_BENCH",
+		ABSENT = "RC_ABSENCE_ABSENT",
 	},
 	AUTO = {
 		TIMER = "RC_AUTO_TIMER",

@@ -47,7 +47,7 @@ A list of pages on the left, the fields of the page on a card:
 - **Priority**: who goes first (fewest credits, fewest credits per night, highest roll), the tie-breaks, the rerolls in a row, whether the addon is required, which responses are allowed, **who sets the label of a main-spec answer** (see below), what happens to an item nobody wants or a BoE.
 - **Costs**: the cost of each category and quality, in a grid (*Council* in the legendary column means the council sets the cost; type the word to put it back).
 - **Multipliers**: the cost factor of each response, of the raid size and of the difficulty.
-- **Members and credits**: main characters only, how late joiners start (average, median, lowest, zero, fixed), the rounding, and the credits a season starts with.
+- **Members and credits**: main characters only, how late joiners start (fewest credits of the pool in the guild's preset, average, median, zero, fixed), the rounding, the credits a season starts with, and the **absence penalty** (credits added for a missed night, 1 in the preset, 0 turns it off) with the switch that writes it at the close without an officer's confirmation (off in the preset).
 - **Loot council**: whether its members must be in the raid, the vote, the flags for wasteful requests, who sees the verdicts, and the list of council names (empty: whoever has the rank).
 - **Legendaries and bench**: how a legendary is awarded, the cost of a chain piece, and what the bench earns.
 - **Messages in /raid**: the wording of the notice for players without the addon and of the item and result lines (placeholders `{names}`, `{link}`, `{addon}`).

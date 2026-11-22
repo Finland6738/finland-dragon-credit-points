@@ -15,7 +15,7 @@ Only who holds the `season.manage` permission (the **Guild Master** by default) 
 1. Type an optional **name** (otherwise the season is called S1, S2…).
 2. Type the **start credits** (what a member present from the start begins with; the guild's rule is proposed, 0 in the *Patto* preset).
 3. Pick the **raids** of the pack (click a raid to select it) and the **size** of each (10, 20 or 40 players).
-4. Pick the **late-join rule**: what a member who joins after the first night starts with (average of the pool, median, lowest, zero or a fixed value). If you change it, the new rule is written in the guild's rules as an audited change, just before the season.
+4. Pick the **late-join rule**: what a member who joins after the first night starts with (fewest credits of the pool, the guild's preset; average of the pool, median, zero or a fixed value). If you change it, the new rule is written in the guild's rules as an audited change, just before the season.
 5. Click **Open the season**. A summary appears: nothing is written until you click **Confirm**; **Cancel** leaves everything as it was.
 
 The season is written in the guild's ledger as an audited event and **cannot be deleted**, only closed. A second season cannot be opened while one is open: the window says so and tells you to close the first.

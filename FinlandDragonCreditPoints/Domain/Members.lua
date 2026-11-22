@@ -17,8 +17,9 @@
 --
 -- Late joiners (§3.5): a member who joins after the season's first official night gets `lateJoin.method` of the
 -- credits of the basis ("members with at least `minNights` nights in the season", of the same faction when the joiner
--- declares one), rounded with `lateJoin.rounding` to `lateJoin.decimals` places. Methods: `average` (preset), `median`,
--- `min`, `zero`, `fixed` (`lateJoin.fixed`). An empty basis gives the season's `startCredits`. A member who joins
+-- declares one), rounded with `lateJoin.rounding` to `lateJoin.decimals` places. Methods: `average` (this module's
+-- default), `median`, `min` (the "Patto" preset since M7-5b, Domain/Rules.lua: the credits of the member with the
+-- fewest), `zero`, `fixed` (`lateJoin.fixed`). An empty basis gives the season's `startCredits`. A member who joins
 -- before the first night starts with `startCredits`.
 local ADDON_NAME, ns = ...
 ns = ns or {}

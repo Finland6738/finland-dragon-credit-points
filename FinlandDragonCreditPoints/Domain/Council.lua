@@ -38,7 +38,8 @@ Council.VOID_REASONS = {
 	LEGENDARY = true, OTHER = true,
 }
 -- The reasons a manual adjustment may give.
-Council.ADJUST_REASONS = { MISTAKE = true, PENALTY = true, BONUS = true, COUNCIL_VOTE = true, OTHER = true }
+Council.ADJUST_REASONS = { MISTAKE = true, PENALTY = true, BONUS = true, COUNCIL_VOTE = true, OTHER = true,
+	ABSENCE = true }   -- ABSENCE: the missed night's penalty (Domain/Absence.lua, M7-5b), not in the dialog's list
 -- The same reasons in the order a dialog or the help lists them.
 Council.VOID_ORDER = { "MISTAKE", "DUPLICATE_AWARD", "OBVIOUS_WASTE", "PASSED_TO_GAME", "COUNCIL_VOTE", "LEGENDARY", "OTHER" }
 Council.ADJUST_ORDER = { "MISTAKE", "PENALTY", "BONUS", "COUNCIL_VOTE", "OTHER" }
@@ -136,8 +137,9 @@ end
 
 -- Moves a member's credits by hand: CREDITS_ADJUSTED{member, delta, reason}. draft = { author, ts, season, member,
 -- delta (a number, not 0, at most MAX_DELTA either way: positive raises the credits, so it weighs like a cost),
--- reason }. The member must be in the season's pool (a main). Returns the stored event, or nil and a code:
--- REASON_REQUIRED, NOT_MEMBER, BAD_DELTA, or a Ledger.Append code.
+-- reason, night?, cause? }: `night` and `cause` are the absence penalty's (M7-5b: the night's id and why). The member
+-- must be in the season's pool (a main). Returns the stored event, or nil and a code: REASON_REQUIRED, NOT_MEMBER,
+-- BAD_DELTA, or a Ledger.Append code.
 function Council.Adjust(L, draft, opts)
 	if type(draft) ~= "table" then return nil, "event" end
 	if not Council.ADJUST_REASONS[draft.reason] then return nil, "REASON_REQUIRED" end
@@ -145,7 +147,7 @@ function Council.Adjust(L, draft, opts)
 	if not isNum(d) or d == 0 or d > Council.MAX_DELTA or d < -Council.MAX_DELTA then return nil, "BAD_DELTA" end
 	if not isName(draft.member) or not ns.Members.Get(L, draft.season, draft.member) then return nil, "NOT_MEMBER" end
 	return Ledger().Append(L, { author = draft.author, ts = draft.ts, season = draft.season, type = "CREDITS_ADJUSTED",
-		payload = { member = draft.member, delta = d, reason = draft.reason } }, opts)
+		payload = { member = draft.member, delta = d, reason = draft.reason, night = draft.night, cause = draft.cause } }, opts)
 end
 
 ---------------------------------------------------------------------------------------------------------------------

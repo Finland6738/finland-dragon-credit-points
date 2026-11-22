@@ -167,6 +167,11 @@ end
 -- permission that writes any event: whoever may write something may forward it; its content is never read.
 function Permissions.Required(L, e)
 	if Permissions.IN_NIGHT[e.type] and inNight(L, e) then return Permissions.IN_NIGHT[e.type] end
+	if e.type == "CREDITS_ADJUSTED" and Ledger().Readable(e) then
+		-- the absence penalty of a night (M7-5b) is confirmed by who runs the nights, after the close too
+		local p = Ledger().Payload(e)
+		if type(p) == "table" and p.reason == "ABSENCE" and p.night ~= nil then return "night.run" end
+	end
 	local p = Permissions.EVENT_PERMISSION[e.type]
 	if p then return p end
 	local t, loosest, best = Permissions.Current(L, e), nil, -1

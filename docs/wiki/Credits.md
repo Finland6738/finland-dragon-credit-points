@@ -25,7 +25,7 @@ Each season is a card with its name, the number of nights, whether it is in prog
 | **Player** | The name in the class colour (with a square). |
 | **Class · Spec** | The class and the declared main spec. |
 | One column per night | The date and the instance of the night, and `+N` for what the player paid for items won that night; a dot when nothing. A player who won two items in a night shows the sum. The newest 8 nights are shown; older ones are still counted in the total. |
-| **Total** | The ledger's total in a chip: the initial credits of the season (late joiners start with the roster average), plus every award and officer adjustment, minus the awards that were cancelled. |
+| **Total** | The ledger's total in a chip: the initial credits of the season (late joiners start with the fewest credits of the roster), plus every award and officer adjustment, minus the awards that were cancelled. |
 
 Because of the initial credits and the adjustments, the total can be more than the sum of the night columns. An award belongs to the night that was open when it was recorded.
 

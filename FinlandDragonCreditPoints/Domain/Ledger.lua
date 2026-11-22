@@ -215,6 +215,8 @@ CHECKS.CREDITS_ADJUSTED = function(p)
 	if not isName(p.member) then return "member" end
 	if not isNum(p.delta) or p.delta == 0 then return "delta" end
 	if not isCode(p.reason) then return "reason" end
+	if p.night ~= nil and not Ledger.SplitId(p.night) then return "night" end   -- the absence penalty's night (M7-5b)
+	if p.cause ~= nil and not isCode(p.cause) then return "cause" end
 end
 
 CHECKS.AWARD_VOIDED = function(p)

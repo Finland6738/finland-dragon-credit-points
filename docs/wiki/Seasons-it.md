@@ -15,7 +15,7 @@ Il modulo lo vede solo chi ha il permesso `season.manage` (di default il **Guild
 1. Scrivi un **nome** facoltativo (altrimenti la season si chiama S1, S2…).
 2. Scrivi i **crediti iniziali** (da cui parte chi c'è dall'inizio; viene proposto quello delle regole della gilda, 0 nel preset *Patto*).
 3. Scegli i **raid** del gruppo (clic su un raid per sceglierlo) e la **dimensione** di ciascuno (10, 20 o 40 giocatori).
-4. Scegli la **regola per chi entra in ritardo**: con cosa parte un membro che entra dopo la prima serata (media del gruppo, mediana, il più basso, zero o un valore fisso). Se la cambi, la nuova regola viene scritta nelle regole della gilda come modifica verificabile, subito prima della season.
+4. Scegli la **regola per chi entra in ritardo**: con cosa parte un membro che entra dopo la prima serata (meno crediti del gruppo, il preset della gilda; media del gruppo, mediana, zero o un valore fisso). Se la cambi, la nuova regola viene scritta nelle regole della gilda come modifica verificabile, subito prima della season.
 5. Premi **Apri la season**. Compare un riepilogo: non viene scritto nulla finché non premi **Conferma**; **Annulla** lascia tutto com'era.
 
 La season è scritta nel registro della gilda come evento verificabile e **non si può cancellare**, solo chiudere. Non si può aprire una seconda season mentre una è aperta: la finestra lo dice e ti chiede di chiudere la prima.

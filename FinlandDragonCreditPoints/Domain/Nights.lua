@@ -13,8 +13,10 @@
 --       at a time.
 --   NIGHT_CLOSED{night?}  the night is over (`night` = the id of the NIGHT_OPENED it closes; without it, the newest night
 --       opened before the close that is still open).
---   LINEUP_CHANGED{night, boss?, raid?, bench?, absent?}  a change of the lineup: the lists of members who are now RAID
---       (in the raid group, playing), BENCH (benched by the master looter, not playing) or ABSENT (neither). Only the members
+--   LINEUP_CHANGED{night, boss?, raid?, bench?, absent?, self?}  a change of the lineup: the lists of members who are now RAID
+--       (in the raid group, playing), BENCH (benched, not playing) or ABSENT (neither). `self` (M7-5b) lists the members of
+--       `bench` who benched **themselves** (their own request); the others of `bench` were benched by an officer. Who
+--       benched matters for the absence penalty (Domain/Absence.lua): a self-bench is penalized, an officer's never. Only the members
 --       that changed are written, in one event, so a raid forming costs one event and not forty. `boss` is the boss of
 --       reference: the encounter id of the last boss killed in the night before the change (nil before the first kill), so
 --       the log says "this change came after that boss". A member with no entry is ABSENT.
@@ -140,6 +142,14 @@ do
 			end
 		end
 		if total == 0 or total > Nights.MAX_LINEUP then return "lineup" end
+		if p.self ~= nil then
+			if not nameList(p.self) then return "self" end
+			local benched = {}
+			for _, name in ipairs(p.bench or {}) do benched[name] = true end
+			for _, name in ipairs(p.self) do
+				if not benched[name] then return "self" end
+			end
+		end
 	end
 end
 
@@ -260,9 +270,15 @@ function Nights.KillsByEncounter(L, season)
 	return out
 end
 
-local function applyLineup(states, p)
+local function applyLineup(states, p, origins)
 	for _, state in ipairs({ "RAID", "BENCH", "ABSENT" }) do
-		for _, name in ipairs(p[state:lower()] or {}) do states[name] = state end
+		for _, name in ipairs(p[state:lower()] or {}) do
+			states[name] = state
+			if origins then origins[name] = state == "BENCH" and "OFFICER" or nil end
+		end
+	end
+	if origins then
+		for _, name in ipairs(p.self or {}) do origins[name] = "SELF" end
 	end
 end
 
@@ -303,25 +319,27 @@ end
 -- The lineup of a night: { [member] = "RAID" | "BENCH" | "ABSENT" } for every member a LINEUP_CHANGED mentioned (a member
 -- not in it is ABSENT). opts.at = an event: only the changes before it in canonical order count (the lineup at that moment).
 -- A night of a compacted season (M6-7) gives the summary the compaction kept: who played and who sat on the bench.
+-- The second result says who benched each member now on the bench: { [member] = "SELF" | "OFFICER" } (M7-5b; the bench
+-- of a compacted night is the officers').
 function Nights.Lineup(L, nightId, opts)
 	local Lg = Ledger()
 	local night = L.events[nightId]
-	local states = {}
-	if not night then return states end
+	local states, origins = {}, {}
+	if not night then return states, origins end
 	local kept = Nights.Compacted(L, night.season)
 	if kept and kept[nightId] then
-		for name in pairs(kept[nightId].benched) do states[name] = "BENCH" end
-		for name in pairs(kept[nightId].played) do states[name] = "RAID" end
-		return states
+		for name in pairs(kept[nightId].benched) do states[name] = "BENCH"; origins[name] = "OFFICER" end
+		for name in pairs(kept[nightId].played) do states[name] = "RAID"; origins[name] = nil end
+		return states, origins
 	end
 	local at = opts and opts.at
 	for _, e in ipairs(Lg.Sorted(L, function(e)
 		return e.type == "LINEUP_CHANGED" and e.season == night.season
 	end)) do
 		local p = readable(L, e)
-		if p and p.night == nightId and (not at or Lg.Before(e, at)) then applyLineup(states, p) end
+		if p and p.night == nightId and (not at or Lg.Before(e, at)) then applyLineup(states, p, origins) end
 	end
-	return states
+	return states, origins
 end
 
 -- The lists of a lineup: { raid = {sorted}, bench = {sorted}, absent = {sorted} } (absent = the explicit ones only).
@@ -340,7 +358,7 @@ end
 
 -- The pool at a moment: the members of the season who had joined by `ts`, play (not inactive) and belong to the night's
 -- faction (a member without a faction counts for every night).
-local function poolAt(L, rs, night, ts)
+function Nights.PoolAt(L, rs, night, ts)
 	local out = {}
 	for name, m in pairs(rs.members) do
 		local je = L.events[m.joined]
@@ -357,7 +375,7 @@ local function snapshot(L, rs, night, states, ts)
 		if state == "RAID" then raid[#raid + 1] = name; listed[name] = true
 		elseif state == "BENCH" then bench[#bench + 1] = name; listed[name] = true end
 	end
-	for _, name in ipairs(poolAt(L, rs, night, ts)) do
+	for _, name in ipairs(Nights.PoolAt(L, rs, night, ts)) do
 		if not listed[name] then absent[#absent + 1] = name end
 	end
 	sort(raid); sort(bench); sort(absent)
@@ -521,9 +539,12 @@ local function lastBoss(L, season, nightId, ts)
 	return best
 end
 
--- Changes the lineup of the open night. draft = { author, ts, season, raid? = {members}, bench?, absent? }: a member
--- goes to the state of the list they are in; the ones already in that state are left out, so only real changes are
--- written (one event for all of them). Every member has to be a main of the pool (an alt is resolved by the caller).
+-- Changes the lineup of the open night. draft = { author, ts, season, raid? = {members}, bench?, absent?, selfBench? }: a
+-- member goes to the state of the list they are in; the ones already in that state are left out, so only real changes
+-- are written (one event for all of them). `selfBench = true` says the members of `bench` benched themselves (M7-5b:
+-- written in `self`); without it the bench is the officer's. A member already on the bench by the other origin counts
+-- as a change, so an officer can take over a self-bench (and the other way round). Every member has to be a main of the
+-- pool (an alt is resolved by the caller).
 -- Returns the LINEUP_CHANGED event, or nil and a code: "SEASON_UNKNOWN", "NO_NIGHT_OPEN", "NOT_MEMBER", "NO_CHANGE" or
 -- a Ledger.Append code. `opts` goes to Ledger.Append.
 function Nights.SetLineup(L, draft, opts)
@@ -532,7 +553,8 @@ function Nights.SetLineup(L, draft, opts)
 	local night = Nights.Current(L, draft.season)
 	if not night then return nil, "NO_NIGHT_OPEN" end
 	local rs = Roster().State(L, draft.season)
-	local states = Nights.Lineup(L, night.id)
+	local states, origins = Nights.Lineup(L, night.id)
+	local want = draft.selfBench == true and "SELF" or "OFFICER"
 	local payload, count, seen = { night = night.id }, 0, {}
 	for _, state in ipairs({ "RAID", "BENCH", "ABSENT" }) do
 		local key = state:lower()
@@ -540,7 +562,8 @@ function Nights.SetLineup(L, draft, opts)
 			if not rs.members[name] then return nil, "NOT_MEMBER" end
 			if not seen[name] then
 				seen[name] = true
-				if (states[name] or "ABSENT") ~= state then
+				local now = states[name] or "ABSENT"
+				if now ~= state or (state == "BENCH" and origins[name] ~= want) then
 					payload[key] = payload[key] or {}
 					payload[key][#payload[key] + 1] = name
 					count = count + 1
@@ -551,6 +574,10 @@ function Nights.SetLineup(L, draft, opts)
 	if count == 0 then return nil, "NO_CHANGE" end
 	for _, key in ipairs({ "raid", "bench", "absent" }) do
 		if payload[key] then sort(payload[key]) end
+	end
+	if want == "SELF" and payload.bench then
+		payload.self = {}
+		for i, name in ipairs(payload.bench) do payload.self[i] = name end
 	end
 	payload.boss = lastBoss(L, draft.season, night.id, draft.ts)
 	return Ledger().Append(L, { author = draft.author, ts = draft.ts, season = draft.season, type = "LINEUP_CHANGED",

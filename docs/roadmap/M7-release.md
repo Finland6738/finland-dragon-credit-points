@@ -113,6 +113,21 @@
 - Real client: load time and memory in game.
 - Suggested model/effort: `sonnet` / medium
 
+### M7-5b — Dynamic roster: late joiners at the minimum, absence penalty
+- Branch: `step/m7-5b-absence-penalty`
+- Depends on: M2-4, M3-3, M3-4, M3-7, M5-5
+- Analysis: §3.1, §3.5, §6 ("Assenze")
+- Scope: owner rules of 2026-11-22, which supersede the late joiners at the floor of the roster average. The roster is dynamic: a player who joins mid-season gets **the credits of the player with the fewest** (the "Patto" preset's `members.lateJoin.method = min`; the other presets keep theirs). **Absence penalty: +1 credit** (fewest credits wins, so a penalty adds) for a season roster member, on an official night, who did **not sign up** on the calendar, **signed up but did not attend**, or **benched themselves**; nothing for who played or was **benched by the officers**. `LINEUP_CHANGED` gains `self` (who benched themselves); a player benches themselves with **Bench myself** (the request `NBENCH` on GUILD reaches the night's runner). `Domain/Absence.lua` proposes the penalties at the close; the officer confirms them with one click unless the GM rule `penalties.autoApply` (default off; `penalties.absence`, default 1). Each penalty is a `CREDITS_ADJUSTED{reason = ABSENCE, night, cause}` through the permission gate (`night.run` because it names the night), audited and voidable.
+- Done when:
+  - [x] Not signed up → +1; signed up but absent → +1; self-bench → +1; officer bench → 0; present → 0 (offline tests).
+  - [x] A late joiner gets the minimum; a confirmation is required unless `autoApply` is on; a void restores the previous credits.
+  - [x] The Night window shows the proposed penalties with **Confirm the penalties** for the officer and **Bench myself** for the player; words through locale keys (enUS + itIT) and `Domain/Reasons.lua`.
+  - [ ] In the game: the calendar's sign-ups at the close of a real night, the `NBENCH` request over GUILD, the Night window's new line and buttons. *(in game)*
+- Tests: `Tests/test_absence.lua`; `Tests/test_rules.lua`, `Tests/test_season_window.lua` (the preset's new rule).
+- Docs: analysis §3.1, §3.5, §6; wiki **Loot Rules**, **Roster and Nights**, **Master Looter Guide**, **Settings**, **Seasons**, **Credits** (EN + IT); README; CHANGELOG.
+- Real client: the calendar sign-ups read at the close; GUILD addon messages from a member to the officer running the night.
+- Suggested model/effort: `opus` / high
+
 ### M7-6 — Packaging and the release workflow
 - Branch: `step/m7-6-packaging`
 - Depends on: M1-1

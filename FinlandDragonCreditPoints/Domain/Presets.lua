@@ -4,12 +4,14 @@
 -- GM picks one and edits it, and the rules are written in the ledger with Rules.Change (CONFIG_CHANGED keeps the
 -- preset's code for the audit). Codes, never names: the locales give the names (M2-7, M7-2).
 --   PATTO         the guild's regulation (§3.1): fewest credits wins, then the roll, then a reroll among the tied;
---                 off-spec only when nobody needs it for main-spec and free; late joiners at the floor of the average.
+--                 off-spec only when nobody needs it for main-spec and free; late joiners at the fewest credits of the
+--                 pool, +1 credit for a missed official night, confirmed by an officer (M7-5b).
 --   ROLL_ONLY     "Solo roll": the highest roll wins, nothing costs credits (main-spec still before off-spec).
 --   LOOT_COUNCIL  "Loot council puro": the council decides every item by vote, nothing costs credits; the addon still
 --                 shows its proposal and the rolls as a hint.
 --   EPGP_SIMPLE   "EPGP semplice": credits are the gear points and the nights played the effort, so the lowest credits
 --                 per night played wins; costs as in Patto; late joiners at the average.
+-- Only Patto has the absence penalty and the late joiners at the minimum (M7-5b); the others keep what they had.
 -- Every preset passes Rules.Validate; the rank permissions are not part of a preset (Domain/Permissions.lua).
 local ADDON_NAME, ns = ...
 ns = ns or {}
@@ -40,6 +42,7 @@ local BUILD = {
 		r.priority.metric = "roll"
 		free(r.cost)
 		r.members.lateJoin.method = "zero"
+		r.penalties.absence = 0
 		r.legendary.mode = "roll"
 		r.priority.fallback = "freeroll"
 		return r
@@ -49,11 +52,14 @@ local BUILD = {
 		r.council.vote = true
 		free(r.cost)
 		r.members.lateJoin.method = "zero"
+		r.penalties.absence = 0
 		r.legendary.mode = "vote"
 		return r
 	end,
 	EPGP_SIMPLE = function(r)
 		r.priority.metric = "creditsPerNight"
+		r.members.lateJoin.method = "average"
+		r.penalties.absence = 0
 		return r
 	end,
 }

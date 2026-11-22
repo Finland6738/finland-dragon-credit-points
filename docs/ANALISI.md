@@ -122,7 +122,8 @@ Guild ─┬─ Config profile (regole, costi, UI)
 | Categoria annunciata prima del roll | `session.lockCategoryOnOpen` | sì: dopo l'apertura del roll la categoria non si cambia |
 | BoE senza richieste MS | `boe.fallback` | banca di gilda |
 | Leggendari | `legendary.mode` | assegnati dal council, senza roll; 2 crediti per ogni pezzo della catena |
-| Nuovo arrivato | `members.lateJoin` | media dei crediti del roster, arrotondata per difetto |
+| Nuovo arrivato | `members.lateJoin` | i crediti del membro che ne ha **meno** (`min`, regola del proprietario del 22/11/2026, M7-5b) |
+| Assenza da una serata ufficiale | `penalties.absence`, `penalties.autoApply` | **+1 credito** a chi non si iscrive, si iscrive e non viene, o si mette in panchina da solo; confermato da un officer (§6, M7-5b) |
 | Rotazione | `bench.creditEffect` | nessuno (chi gioca meno accumula meno crediti, quindi ha la precedenza); `bonus` / `malus` + `bench.creditAmount` per altre gilde |
 
 ### 3.2 Costo di un oggetto
@@ -251,9 +252,21 @@ con 76), spallina (crediti 0, 2, 3; roll 34, 90, 99: vince Aurel con 34), mantel
 
 ### 3.5 Nuovi arrivati a season iniziata
 
-`members.lateJoin` = `average` | `median` | `min` | `zero` | `fixed`; arrotondamento `floor` | `round` | `ceil`;
+Il roster è **dinamico**: un giocatore può entrare a season iniziata. Chi entra **riceve i crediti del giocatore che
+ne ha meno** (regola del proprietario del 22/11/2026, che sostituisce la "media del roster arrotondata per difetto":
+preset Patto `members.lateJoin.method = min`). Così il nuovo arrivato non scavalca chi c'era già (vince chi ha meno
+crediti) ma nemmeno parte svantaggiato rispetto all'ultimo della fila.
+
+`members.lateJoin` = `min` (Patto) | `average` | `median` | `zero` | `fixed`; arrotondamento `floor` | `round` | `ceil`;
 base di calcolo = "membri con almeno N serate nella season" (preset N = 1). Il valore iniziale viene scritto
-nel registro come evento `MEMBER_JOINED{initialCredits}`: resta stabile anche se la media cambia dopo.
+nel registro come evento `MEMBER_JOINED{initialCredits}`: resta stabile anche se il minimo cambia dopo.
+
+**Come è fatto (M7-5b).** Il preset Patto (`Rules.DefaultConfig`) sceglie `min`; `Domain/Members.lua` tiene
+`average` come proprio default per chi lo chiama senza regole, e gli altri preset restano com'erano (Solo roll e Loot
+council `zero`, EPGP semplice `average`). Il nome nella finestra della season è "Meno crediti del gruppo". La base è
+quella di sempre: i membri con almeno `minNights` serate giocate (preset 1), della stessa fazione se il nuovo
+arrivato la dichiara; un membro che non ha mai giocato non abbassa il minimo. Le penalità di assenza (§6) contano: il
+minimo si legge dai crediti del registro nel momento in cui il membro entra.
 
 **Come è fatto (M2-4).** `Domain/Members.lua`: `MEMBER_JOINED{member, faction?, initialCredits, rule, basis?}`, dove `rule` è il codice del calcolo (`START`, `AVERAGE`, `MEDIAN`, `MIN`, `ZERO`, `FIXED`, `EMPTY_BASIS`) e `basis` quanti membri ha usato; arrotondamento a 0-2 decimali (preset 0). Default scelti dove l'analisi taceva: si è "nuovo arrivato" quando la season ha già almeno una serata ufficiale (`NIGHT_OPENED`), prima si parte da `season.startCredits`; le serate per membro le dà la lineup (M3), senza quel dato la base è tutto il pool; se il nuovo arrivato dichiara una fazione la base sono i membri di quella fazione (o senza fazione); base vuota = `startCredits`. `Domain/Season.lua`: `SEASON_OPENED{label?, instances = {{id, size}}, startCredits}` e `SEASON_CLOSED`; una sola season aperta alla volta, un id non si riusa; `startCredits` resta scritto nell'evento.
 
@@ -1287,10 +1300,47 @@ crediti.
   di riferimento, quindi la presenza è per boss, non solo per serata.
 - **Effetto sui crediti**: nessuno nel preset (la rotazione non si paga sul loot). Per altre gilde: bonus o malus
   per panchina configurabile.
+- **Assenze (regola del proprietario del 22/11/2026, M7-5b).** Un membro del roster della season riceve **+1
+  credito** (vince chi ne ha meno, quindi è una penalità) per una serata ufficiale in cui:
+  - **non si è iscritto** al raid nel calendario del gioco (nessuna risposta, oppure "no"), e non ha giocato;
+  - **si è iscritto ma non è venuto** ("sì" o "forse", e non ha giocato);
+  - **si è messo in panchina da solo**, di sua iniziativa.
+
+  **Nessuna penalità** per chi era nel raid (in un momento qualsiasi della serata) e per chi è stato **messo in
+  panchina dagli officer**: la rotazione non penalizza mai.
+- **Come è fatto (M7-5b).**
+  - **Chi ha messo in panchina.** `LINEUP_CHANGED` ha un campo facoltativo `self`: i membri di `bench` che si sono
+    messi in panchina da soli; gli altri di `bench` li ha messi un officer. `Nights.Lineup` restituisce anche l'origine
+    (`SELF` / `OFFICER`) di chi è in panchina; un officer che rimette in panchina chi si era messo da solo rende la
+    panchina sua (e niente penalità), e viceversa.
+  - **Mettersi in panchina.** Il giocatore preme "Mettimi in panchina" nella scheda Serata: sul client di chi guida la
+    serata è scritto subito, altrove parte un messaggio `NBENCH` (senza campi) sul canale di gilda e il client di chi
+    guida la serata lo scrive come panchina volontaria. Chi chiede è il mittente che dice il client, mai un campo del
+    messaggio: si può mettere in panchina solo se stessi (o il proprio main, da un alt).
+  - **Il calcolo.** `Domain/Absence.lua` (puro), `Absence.Propose`: per ogni membro del pool **al momento
+    dell'apertura** della serata (non inattivo, della fazione della serata) che non ha giocato. Chi è in panchina alla
+    fine: `SELF_BENCH` se si è messo da solo, niente se l'ha messo un officer. Gli altri: `NO_SHOW` se le iscrizioni
+    dicono "sì" o "forse" (anche con un alt), `NOT_SIGNED_UP` altrimenti; `ABSENT` quando le iscrizioni non si
+    conoscono (nessun evento raid nel calendario, o calendario non caricato): +1 comunque. Chi è entrato nel pool
+    dopo l'apertura non è contato.
+  - **La regola.** Nuova sezione `penalties` delle regole: `absence` (crediti per serata saltata, preset 1, 0 =
+    spenta, al massimo 100) e `autoApply` (preset **spento**: serve la conferma di un officer). Solo Patto ha la
+    penalità; gli altri preset hanno `absence = 0`. Le regole scritte prima ricevono i valori predefiniti.
+  - **La conferma.** Alla chiusura il controller della serata tiene le iscrizioni del calendario per quella serata;
+    la scheda Serata mostra all'officer "Penalità di assenza proposte" (chi e perché) e il pulsante **Conferma le
+    penalità**. Con `autoApply` acceso la chiusura le scrive da sola. Ogni penalità è un
+    `CREDITS_ADJUSTED{member, delta, reason = ABSENCE, night, cause}`: passa dal cancello dei permessi, finisce nel
+    log e nell'audit e si annulla come ogni correzione (`AWARD_VOIDED`, che rimette i crediti di prima). Il permesso è
+    `night.run` (chi guida le serate) anche dopo la chiusura, perché l'evento nomina la serata; una correzione a mano
+    fuori serata resta di `credits.adjust`. Un membro già penalizzato per quella serata non viene più proposto, anche
+    se la sua penalità è stata annullata (l'officer l'ha tolta apposta).
+  - **Scelte fatte dove il testo non decideva (tutte modificabili):** "forse" vale come iscritto; il "no" vale come
+    non iscritto; la panchina conta com'è alla **fine** della serata; chi gioca anche un solo boss è presente; senza
+    calendario si penalizza comunque l'assente (`ABSENT`); la conferma è per tutta la lista in un clic.
 - **Statistiche**: serate giocate, panchine, boss presenti, pezzi vinti, crediti, per membro e per season.
 - **Attenzione al tono**: il canale Roster promette "non è un registro di presenze: nessuno conta le serate di
-  nessuno". Le presenze servono all'addon solo per ruotare la panchina in modo equo e per la media dei nuovi
-  arrivati; per questo nel preset sono **visibili solo agli officer** e non compaiono in nessuna esportazione
+  nessuno". Le presenze servono all'addon solo per ruotare la panchina in modo equo, per la base dei nuovi
+  arrivati e (dal 22/11/2026, per scelta del proprietario) per la penalità di assenza; per questo nel preset sono **visibili solo agli officer** e non compaiono in nessuna esportazione
   pubblica.
 
 ---

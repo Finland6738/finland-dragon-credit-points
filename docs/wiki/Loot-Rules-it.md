@@ -10,7 +10,8 @@ L'addon fa i conti, il master looter decide. Queste sono le regole della gilda (
 - Una season fa partire tutti da **0 crediti**. La season è un pacchetto di raid (10, 20 e 40 giocatori hanno una sola tabella di crediti, anche Normal e Veteran).
 - **Solo i main** guadagnano e spendono crediti. Un alt è collegato al suo main e usa i crediti del main.
 - Meno crediti significa una posizione migliore: **vince chi ha meno crediti**, e il roll serve solo a sciogliere le parità.
-- Un nuovo arrivato a season iniziata non parte da 0: parte dalla **media dei crediti del roster, arrotondata per difetto**, così non salta la fila e non resta in fondo. Il numero si scrive una volta e resta stabile.
+- Il roster è **dinamico**: si può entrare a season iniziata. Un nuovo arrivato parte con **i crediti del giocatore che ne ha meno** (fra i membri che hanno giocato almeno una serata), così non salta la fila e non parte nemmeno dietro all'ultimo. Il numero si scrive una volta e resta stabile.
+- **Saltare una serata ufficiale costa +1 credito** (vedi [Assenze](#assenze) più sotto).
 
 ## Quanto costa un oggetto
 
@@ -137,6 +138,18 @@ Il raid tiene sempre il suo **minimo di tank e healer** (2 e 4 di default, regol
 
 **La panchina non costa crediti** nel preset della gilda: chi gioca meno guadagna meno crediti e ha quindi già la precedenza. Una gilda che lo vuole può dare un **bonus** (meno crediti per ogni panchina, mai sotto 0) o un **malus**. Quante volte ciascuno è stato in panchina lo vedono solo gli officer.
 
+## Assenze
+
+Un membro del roster della season riceve **+1 credito** (vince chi ne ha meno, quindi è una penalità) per una serata ufficiale in cui:
+
+- **non si è iscritto** al raid nel calendario del gioco (nessuna risposta, oppure "no") e non ha giocato;
+- **si è iscritto ma non è venuto** ("sì" o "forse", e non ha giocato);
+- **si è messo in panchina da solo**, di sua iniziativa (il pulsante **Mettimi in panchina** nella scheda Serata).
+
+**Nessuna penalità** per chi era nel raid (anche per un solo boss) e per chi è stato **messo in panchina dagli officer**: la rotazione non costa mai crediti.
+
+Alla chiusura della serata l'addon elenca le penalità proposte e un officer le conferma con **un clic**; prima non si scrive nulla, a meno che il Guild Master non accenda *Scrivi le penalità di assenza alla chiusura, senza conferma*. Ogni penalità è una correzione dei crediti con il motivo *Assenza da una serata ufficiale*: si vede nel log e nell'audit, e un officer la può annullare come ogni correzione (i crediti tornano quelli di prima). Se il calendario non ha un evento raid per la serata, l'assente è penalizzato lo stesso (*assente, iscrizioni non note*). L'importo (1) e la conferma sono regole della gilda, in Impostazioni › Regole › Membri.
+
 ## Le parole nel gioco
 
 Il motore non scrive mai frasi: registra codici brevi, e l'addon li trasforma nelle frasi qui sotto nella tua lingua, così la proposta, il log e questo manuale dicono la stessa cosa. Il codice si vede nell'audit accanto alla frase.
@@ -245,8 +258,18 @@ Il motore non scrive mai frasi: registra codici brevi, e l'addon li trasforma ne
 | `DUPLICATE_AWARD` | Lo stesso oggetto è stato assegnato due volte. |
 | `PENALTY` | Una penalità decisa dal council. |
 | `BONUS` | Un bonus deciso dal council. |
+| `ABSENCE` | Assenza da una serata ufficiale. |
 
-Gli ultimi tre, e alcuni degli altri, sono i motivi di un'assegnazione annullata o di una correzione dei crediti a mano.
+Gli ultimi quattro, e alcuni degli altri, sono i motivi di un'assegnazione annullata o di una correzione dei crediti a mano.
+
+### Perché una serata saltata è penalizzata
+
+| Codice | Frase |
+|---|---|
+| `NOT_SIGNED_UP` | non iscritto |
+| `NO_SHOW` | iscritto, non presente |
+| `SELF_BENCH` | si è messo in panchina da solo |
+| `ABSENT` | assente, iscrizioni non note |
 
 ### Fasi automatiche
 

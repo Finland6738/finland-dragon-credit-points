@@ -10,7 +10,8 @@ The addon does the arithmetic, the master looter decides. These are the guild's 
 - A season starts everyone at **0 credits**. A season is a pack of raids (10, 20 and 40 players share one credit table, Normal and Veteran too).
 - **Only mains** earn and spend credits. An alt is linked to its main and uses the main's credits.
 - Fewer credits means a better position: **the player with the fewest credits wins**, and the roll only breaks ties.
-- A newly arrived member does not start at 0 in the middle of a season: they start at the **average of the roster's credits, rounded down**, so they neither jump the queue nor sit at the bottom. The number is written down once and stays stable.
+- The roster is **dynamic**: a player can join in the middle of a season. A newly arrived member starts with **the credits of the player who has the fewest** (among the members who played at least one night), so they do not jump the queue and do not start behind the last in line either. The number is written down once and stays stable.
+- **Missing an official night costs +1 credit** (see [Absences](#absences) below).
 
 ## What an item costs
 
@@ -137,6 +138,18 @@ The raid always keeps its **minimum of tanks and healers** (2 and 4 by default, 
 
 **The bench never costs credits** in the guild's preset: someone who plays less earns fewer credits and so already has the precedence. A guild that wants it can give a **bonus** (fewer credits for every bench, never below 0) or a **malus**. Who benched how often is shown to officers only.
 
+## Absences
+
+A member of the season's roster gets **+1 credit** (remember: fewer credits wins, so this is a penalty) for an official night when they:
+
+- **did not sign up** for the raid on the in-game calendar (no answer, or "no"), and did not play;
+- **signed up but did not come** ("yes" or "maybe", and did not play);
+- **benched themselves** on their own initiative (the **Bench myself** button in the Night tab).
+
+**No penalty** for anyone who was in the raid (even for one boss) and for anyone the **officers benched**: the rotation never costs credits.
+
+At the close of the night the addon lists the proposed penalties and an officer confirms them with **one click**; nothing is written before that, unless the Guild Master turns on *Write the absence penalties at the close, without confirmation*. Each penalty is a credit correction with the reason *Absence from an official night*: it shows in the log and in the audit, and an officer can cancel it like any correction (the credits go back to what they were). When the calendar has no raid event for the night, an absent member is still penalized (*absent, sign-ups unknown*). The amount (1) and the confirmation are guild rules, under Settings › Rules › Members.
+
 ## Words in the game
 
 The engine never writes sentences: it records short codes, and the addon turns them into the sentences below in your language, so the proposal, the log and this manual say the same thing. The code is shown in the audit next to the sentence.
@@ -245,8 +258,18 @@ The engine never writes sentences: it records short codes, and the addon turns t
 | `DUPLICATE_AWARD` | The same item was awarded twice. |
 | `PENALTY` | A penalty decided by the council. |
 | `BONUS` | A bonus decided by the council. |
+| `ABSENCE` | Absence from an official night. |
 
-The last three, and some of the others, are the reasons of a cancelled award or of a manual credit correction.
+The last four, and some of the others, are the reasons of a cancelled award or of a manual credit correction.
+
+### Why a missed night is penalized
+
+| Code | Sentence |
+|---|---|
+| `NOT_SIGNED_UP` | not signed up |
+| `NO_SHOW` | signed up, did not come |
+| `SELF_BENCH` | benched themselves |
+| `ABSENT` | absent, sign-ups unknown |
 
 ### Automatic phases
 

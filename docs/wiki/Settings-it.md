@@ -47,7 +47,7 @@ A sinistra l'elenco delle pagine, a destra i campi della pagina su una card:
 - **Priorità**: chi ha la precedenza (meno crediti, meno crediti per serata, roll più alto), gli spareggi, i reroll di fila, se l'addon è necessario, quali risposte sono ammesse, **chi imposta l'etichetta di una risposta main-spec** (vedi sotto), cosa succede a un pezzo che nessuno vuole o a un BoE.
 - **Costi**: il costo di ogni categoria e qualità, in una griglia (*Council* nella colonna dei leggendari vuol dire che il costo lo decide il council; scrivi la parola per rimetterlo).
 - **Moltiplicatori**: il fattore sul costo di ogni risposta, della dimensione del raid e della difficoltà.
-- **Membri e crediti**: solo i main, da dove partono i nuovi arrivati (media, mediana, il più basso, zero, fisso), l'arrotondamento e i crediti con cui parte una season.
+- **Membri e crediti**: solo i main, da dove partono i nuovi arrivati (meno crediti del gruppo nel preset della gilda, media, mediana, zero, fisso), l'arrotondamento, i crediti con cui parte una season e la **penalità di assenza** (crediti aggiunti per una serata saltata, 1 nel preset, 0 la spegne) con l'interruttore che la scrive alla chiusura senza la conferma di un officer (spento nel preset).
 - **Loot council**: se i membri devono essere nel raid, il voto, le segnalazioni per le richieste dispendiose, chi vede i verdetti e l'elenco dei nomi del council (vuoto: chi ha il rango).
 - **Leggendari e panchina**: come si assegna un leggendario, il costo di un pezzo della catena e cosa guadagna la panchina.
 - **Messaggi in /raid**: il testo dell'avviso per chi non ha l'addon e delle righe di pezzo e risultato (segnaposto `{names}`, `{link}`, `{addon}`).

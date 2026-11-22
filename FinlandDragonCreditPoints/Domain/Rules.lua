@@ -18,6 +18,8 @@
 --   announce  Domain/Announce.lua { enabled, itemText, resultText, reason }: category, cost and result in /raid  §4 (M4-8)
 --   upgrade   Domain/UpgradeScore.lua { enabled, autoPass, useStats, bigThreshold, smallThreshold, ilvlBigThreshold }: the upgrade verdict of the popup  §5.1 (M5-2)
 --   responses Domain/Labels.lua { labelMode }: who picks the optional label of a main-spec response  §5.1 (M7-2b)
+--   penalties Domain/Absence.lua { absence, autoApply }: the credits added for a missed official night and whether
+--             they are written at the close without the officer's confirmation  §3.5, §6 (M7-5b)
 -- Rules.DefaultConfig() is the "Patto" preset (§3.1); Domain/Presets.lua builds the others from it.
 --
 -- The rules live in the ledger, never apart: CONFIG_CHANGED{rules, preset?, confirmed?} carries the whole validated
@@ -35,7 +37,7 @@ local type, pairs, ipairs, tostring, floor, sort = type, pairs, ipairs, tostring
 
 local function Ledger() return ns.Ledger end
 
-Rules.SECTIONS = { "night", "members", "season", "cost", "priority", "session", "council", "legendary", "bench", "site", "notice", "announce", "upgrade", "responses" }
+Rules.SECTIONS = { "night", "members", "season", "cost", "priority", "session", "council", "legendary", "bench", "site", "notice", "announce", "upgrade", "responses", "penalties" }
 Rules.AWARD_MODES = { confirm = true, auto = true, council = true }
 Rules.LEGENDARY_MODES = { council = true, vote = true, roll = true, queue = true }
 Rules.BENCH_EFFECTS = { none = true, bonus = true, malus = true }
@@ -51,11 +53,15 @@ Rules.Copy = copy
 local function isNum(n) return type(n) == "number" and n == n and n > -math.huge and n < math.huge end
 local function isCode(s) return type(s) == "string" and s:match("^[A-Z][A-Z0-9_]*$") ~= nil end
 
--- The "Patto" preset (§3.1): every section, a fresh copy on every call.
+-- The "Patto" preset (§3.1): every section, a fresh copy on every call. Since M7-5b (owner rule of 2026-11-22) a late
+-- joiner starts with the credits of the member with the fewest (`members.lateJoin.method = "min"`; Domain/Members.lua
+-- keeps `average` as its own default for a caller without rules).
 function Rules.DefaultConfig()
+	local members = ns.Members.DefaultConfig()
+	members.lateJoin.method = "min"
 	return {
 		night = { requiresOfficialStart = true },
-		members = ns.Members.DefaultConfig(),
+		members = members,
 		season = ns.Season.DefaultConfig(),
 		cost = ns.Pricing.DefaultCost(),
 		priority = ns.Priority.DefaultConfig(),
@@ -76,6 +82,7 @@ function Rules.DefaultConfig()
 		announce = ns.Announce.DefaultConfig(),
 		upgrade = ns.UpgradeScore.DefaultRules(),
 		responses = ns.Labels.DefaultConfig(),
+		penalties = ns.Absence.DefaultConfig(),
 	}
 end
 
@@ -171,6 +178,7 @@ function Rules.Validate(config)
 	if type(c.announce) == "table" then sub(problems, "announce", ns.Announce.ValidateConfig(c.announce)) end
 	if type(c.upgrade) == "table" then sub(problems, "upgrade", ns.UpgradeScore.ValidateRules(c.upgrade)) end
 	if type(c.responses) == "table" then sub(problems, "responses", ns.Labels.ValidateConfig(c.responses)) end
+	if type(c.penalties) == "table" then sub(problems, "penalties", ns.Absence.Validate(c.penalties)) end
 	sort(problems)
 	return #problems == 0, problems
 end
