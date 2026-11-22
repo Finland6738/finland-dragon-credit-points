@@ -9,6 +9,8 @@ Everything starts with `/fdcp`: on its own it opens (or closes) the main window.
 | `/fdcp` or `/fdcp toggle` | Opens the main window, or closes it when it is open. |
 | `/fdcp help` | Lists the commands. |
 | `/fdcp theme [nebula\|aurora\|drago]` | Shows the theme, or sets it. It changes at once, no `/reload` needed. |
+| `/fdcp effects [on\|off]` | Shows or sets the neon effects (glows and shadows). See the [[Interface Tour|Interface-Tour]]. |
+| `/fdcp animations [on\|off]` | Shows or sets the animations (the short transitions). |
 | `/fdcp weights [on\|off\|import <spec> <string>\|show <spec>\|reset <spec\|all>]` | Your own stat weights for the upgrade hints: import them from a Pawn-like string, show, switch on or off, remove. See [Upgrade Hints](Upgrade-Hints). |
 | `/fdcp wish [list\|add <item>\|remove <item>\|clear]` | Your own best-in-slot list: the popup reminds you when one of the items is up for grabs. See [Upgrade Hints](Upgrade-Hints). |
 | `/fdcp council [vote <player>\|awards\|void <n> <reason>\|adjust <player> <credits> <reason>\|audit]` | The loot council: on its own, whether you are on it. `vote` sends your vote on the open proposal; `awards` lists the season's awards a void can cancel, `void` cancels one of them; `adjust` corrects a member's credits by hand; `audit` lists the season's interventions. Every correction needs a reason (the command lists them). See [Master Looter Guide](Master-Looter-Guide#the-council-interventions-and-the-vote). The same from the **Loot › Council** page: [[Council|Council]]. |

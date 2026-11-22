@@ -11,7 +11,7 @@ local CreditsWindow = {}
 ns.CreditsWindow = CreditsWindow
 if ns.addon then ns.addon.CreditsWindow = CreditsWindow end   -- also reachable from tests
 
-local Theme, Widgets = ns.Theme, ns.Widgets
+local Theme, Widgets, Motion = ns.Theme, ns.Widgets, ns.Motion
 local L = ns.L
 
 CreditsWindow.HEAD_H = 52          -- the accordion header of a season
@@ -97,7 +97,7 @@ local function columns(nights)
 			value = function(d) return ns.RosterWindow.ShortName(d.member):lower() end,
 			render = function(fs, d)
 				fs:SetText(ns.RosterWindow.ShortName(d.member))
-				fs:SetTextColor(ns.RosterWindow.ClassColor(d.class))
+				Theme.ClassText(fs, ns.RosterWindow.ClassColor(d.class))
 			end },
 		{ id = "spec", title = L["CREDITS_COL_SPEC"], flex = 1.4, token = function() return "text-2" end,
 			text = function(d)
@@ -144,8 +144,12 @@ function CreditsWindow:SeasonCard(id)
 	card.sub:SetPoint("TOPLEFT", card.title, "BOTTOMLEFT", 0, -3)
 	card.count = Theme.NewText(card.head, "Small", "text-1")
 	card.count:SetPoint("RIGHT", card.head, "RIGHT", -44, 0)
-	card.chevron = Theme.NewText(card.head, "Body", "text-3")
+	card.chevron = card.head:CreateTexture(nil, "OVERLAY")   -- the arrow of the sheet turns 90 degrees in 320 ms
+	card.chevron:SetTexture(ns.Assets.textures.icons.path)
+	card.chevron:SetTexCoord(ns.Assets.IconCoords("chevron"))
+	card.chevron:SetSize(16, 16)
 	card.chevron:SetPoint("RIGHT", card.head, "RIGHT", -18, 0)
+	Theme.Tint(card.chevron, "text-3")
 	card:Hide()
 	root.cards[id] = card
 	return card
@@ -214,15 +218,13 @@ function CreditsWindow:EnsureTable(card, nights)
 			r.bar:Hide()
 			r.chip = Theme.Slice(r, "rr_fill_8", "surface-3", "BACKGROUND")
 			r.chip:SetSize(46, 24)
-			r.square = r:CreateTexture(nil, "ARTWORK")
-			r.square:SetSize(10, 10)
-			r.square:SetColorTexture(1, 1, 1, 1)
+			r.square = Widgets.ClassMark(r)
 		end,
 		rowUpdate = function(r, d)
 			local own = Mine(d)
 			r.mine:SetShown(own)
 			r.bar:SetShown(own)
-			r.square:SetColorTexture(ns.RosterWindow.ClassColor(d.class))
+			Widgets.PaintClassMark(r.square, ns.RosterWindow.ClassColor(d.class))
 			local pos = card.table.pos
 			local n = #card.table.columns
 			r.chip:ClearAllPoints()
@@ -319,12 +321,15 @@ function CreditsWindow:Refresh()
 		if src.snapshot then sub = sub .. " · " .. L["CREDITS_SNAPSHOT"]:format(ns.RosterWindow.ShortName(src.snapshot.from or "")) end
 		card.sub:SetText(sub)
 		card.count:SetText(L["CREDITS_IN_ROSTER"]:format(data and #data.rows or 0))
-		card.chevron:SetText(isOpen and "^" or "v")
+		Motion.Rotate(card.chevron, isOpen and -math.pi / 2 or 0, card.arrowSet and Motion.SLOW or 0)
+		card.arrowSet = true
 		card:Show()
 		if isOpen then
 			if s.open then root.eyebrow:SetText(L["CREDITS_EYEBROW_OPEN"]:format(label):upper()) else root.eyebrow:SetText(L["CREDITS_EYEBROW_CLOSED"]:format(label):upper()) end
 			local t = self:EnsureTable(card, data.nights)
+			local wasShown = t:IsShown()
 			t:Show()
+			if not wasShown and card.arrowSet and Motion.On() then Motion.FadeIn(t, Motion.SLOW) end   -- the body shows with a fade
 			t:SetData(rows)
 			if not t.sortId then t:SortBy("rank", false) end
 		elseif card.table then

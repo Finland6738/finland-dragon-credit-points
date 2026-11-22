@@ -30,6 +30,8 @@ FDCP.commands = {
 	{ name = "help", helpKey = "HELP_HELP", handler = function(self) self:PrintHelp() end },
 	{ name = "toggle", helpKey = "HELP_TOGGLE", handler = function(self) self:ToggleWindow() end },
 	{ name = "theme", helpKey = "HELP_THEME", handler = function(self, input) self:ThemeCommand(input) end },
+	{ name = "effects", helpKey = "HELP_EFFECTS", handler = function(self, input) self:PreferenceCommand("effects", "EFFECTS_STATE", input) end },
+	{ name = "animations", helpKey = "HELP_ANIMATIONS", handler = function(self, input) self:PreferenceCommand("animations", "ANIMATIONS_STATE", input) end },
 	{ name = "language", helpKey = "HELP_LANGUAGE", handler = function(self, input) self:LanguageCommand(input) end },
 }
 
@@ -61,6 +63,26 @@ function FDCP:ThemeCommand(input)
 	else
 		self:Print(L["THEME_UNKNOWN"]:format(arg, list))
 	end
+end
+
+-- /fdcp effects | animations [on|off]: shows or sets one of the two look preferences (they are also in the Settings of M7-2).
+-- locale-key: EFFECTS_STATE ANIMATIONS_STATE
+function FDCP:PreferenceCommand(name, stateKey, input)
+	local Config = ns.Config
+	if not (Config and Config.db) then return end
+	local _, arg = self:GetArgs(input or "", 2)
+	arg = arg and arg:lower() or ""
+	if arg == "on" or arg == "off" then
+		local ok = Config:Set(name, arg == "on")
+		if not ok then
+			self:Print(L["LANGUAGE_READ_ONLY"])
+			return
+		end
+	elseif arg ~= "" then
+		self:Print(L["PREF_USAGE"]:format(name, name))
+		return
+	end
+	self:Print(L[stateKey]:format(L[Config:Get(name) and "PREF_ON" or "PREF_OFF"]))
 end
 
 -- Modules add their lines to /fdcp debug: AddDebugSection("Transport", function() return { "line", ... } end).

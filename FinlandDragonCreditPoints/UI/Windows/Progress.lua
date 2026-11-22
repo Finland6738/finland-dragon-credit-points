@@ -17,6 +17,8 @@ local L = ns.L
 ProgressWindow.COVER_H = 96
 ProgressWindow.ROW_H = 26
 ProgressWindow.GAP = 12
+-- A generated cover takes the colour of its place in the list from the theme's gradient, so the cards differ (M7-1).
+ProgressWindow.COVER_TOKENS = { "grad-1", "grad-2", "grad-3", "grad-4" }
 
 local function PC() return ns.ProgressController end
 
@@ -53,10 +55,11 @@ local function coverArt(card, inst)
 	local art = card.cover
 	if cover then
 		art:SetTexture(cover)
-		art:SetVertexColor(1, 1, 1, 1)
+		art:SetVertexColor(1, 1, 1, 1)   -- theme-ok: the journal image is shown as it is
 		card.glow:Hide()
 	else
 		Theme.Fill(art, "surface-3")
+		Theme.Tint(card.glow, card.coverToken or "accent", 0.35)
 		card.glow:Show()
 	end
 	card.hasCover = cover ~= nil
@@ -325,8 +328,9 @@ function ProgressWindow:Refresh()
 		return
 	end
 	root.empty:SetText("")
-	for _, inst in ipairs(data.instances) do
+	for i, inst in ipairs(data.instances) do
 		local card = self:Card(inst.slug)
+		card.coverToken = self.COVER_TOKENS[(i - 1) % #self.COVER_TOKENS + 1]
 		root.order[#root.order + 1] = inst.slug
 		card:Show()
 		card:SetHeight(200)

@@ -110,6 +110,11 @@ function CouncilWindow:BuildTable(root)
 	c:SetPoint("BOTTOMLEFT", root, "BOTTOMLEFT", 0, 0)
 	c:SetWidth(self.CARD_W)
 	self.card = c
+	-- the one neon element of the view (docs/specs/ui-style.md §2.1): the card of the item whose vote is open
+	c.glow = Theme.Glow(c, "glow_l", "neon", { alpha = 0.25 })
+	c.glow:SetPoint("TOPLEFT", c, "TOPLEFT", -30, 30)
+	c.glow:SetPoint("BOTTOMRIGHT", c, "BOTTOMRIGHT", 30, -30)
+	Theme.GlowShow(c.glow, false)
 	c.eyebrow = Theme.NewText(c, "Eyebrow", "accent-text")
 	c.eyebrow:SetPoint("TOPLEFT", c, "TOPLEFT", 20, -16)
 	c.eyebrow:SetText(L["COUNCIL_TABLE_EYEBROW"]:upper())
@@ -181,12 +186,12 @@ function CouncilWindow:BuildAwards(pane)
 		{ id = "item", title = L["COUNCIL_COL_ITEM"], flex = 1, sortable = false, text = function(r) return itemName(r.item) end,
 			render = function(fs, r)
 				fs:SetText(itemName(r.item))
-				fs:SetTextColor(itemColor(r.item))
+				Theme.TextRGB(fs, itemColor(r.item))
 			end },
 		{ id = "winner", title = L["COUNCIL_COL_WINNER"], width = 120, sortable = false, text = function(r) return short(r.member) end,
 			render = function(fs, r)
 				fs:SetText(short(r.member))
-				fs:SetTextColor(ns.RosterWindow.ClassColor(SC() and SC():ClassOf(r.member)))
+				Theme.ClassText(fs, ns.RosterWindow.ClassColor(SC() and SC():ClassOf(r.member)))
 			end },
 		{ id = "cost", title = L["COUNCIL_COL_CREDITS"], width = 80, sortable = false, align = "RIGHT", mono = true,
 			text = function(r) return num(r.cost) end },
@@ -312,6 +317,8 @@ local function paintTable(self, board)
 		c.item:SetText(L["COUNCIL_NO_SESSION"])
 		Theme.Text(c.item, "text-3")
 		c.proposal:SetText(""); c.flags:SetText(""); c.votes:SetText("")
+		Theme.GlowShow(c.glow, false)
+		Theme.Tint(c.parts.ring, "border-subtle")
 		c.choices:SetChoices({})
 		c.voteHint:SetText("")
 		for _, b in ipairs({ c.vote, c.modify, c.correct }) do enable(b, false) end
@@ -320,7 +327,7 @@ local function paintTable(self, board)
 	local sel = board.selectedItem
 	if sel then
 		c.item:SetText(itemName(sel.itemID))
-		c.item:SetTextColor(itemColor(sel.itemID, sel.quality))
+		Theme.TextRGB(c.item, itemColor(sel.itemID, sel.quality))
 	else
 		c.item:SetText(L["COUNCIL_ITEM_NONE"])
 		Theme.Text(c.item, "text-3")
@@ -340,6 +347,8 @@ local function paintTable(self, board)
 	c.votes:SetText(SB().VoteText(board.votes))
 	-- the vote
 	local open = cs:CanVote(board)
+	Theme.GlowShow(c.glow, open)
+	Theme.Tint(c.parts.ring, open and "neon" or "border-subtle")
 	local mine = board.votes and board.votes.voters and board.votes.voters[me() or ""] or nil
 	c.choices:SetChoices(open and voteChoices(board) or {})
 	if mine then c.choices:Select(mine) end

@@ -120,12 +120,11 @@ local PAD = 16
 local function buildCard(self, parent)
 	local c = CreateFrame("Frame", nil, parent)
 	c:SetSize(self.width, 300)
-	c.parts = Theme.Panel(c, { radius = 18, fill = "surface-1", border = "border", shadow = true })
+	c.parts = Theme.Panel(c, { radius = 18, fill = "surface-1", border = "border", shadow = true, highlight = true })
 	-- the one neon element of the view: a glow behind the top card (docs/specs/ui-style.md §3)
-	c.glow = Theme.Slice(c, "glow_l", "neon", "BACKGROUND", 0.3)
+	c.glow = Theme.Glow(c, "glow_l", "neon", { alpha = 0.3 })
 	c.glow:SetPoint("TOPLEFT", c, "TOPLEFT", -40, 40)
 	c.glow:SetPoint("BOTTOMRIGHT", c, "BOTTOMRIGHT", 40, -40)
-	if c.glow.SetBlendMode and Theme.IsDark() then c.glow:SetBlendMode("ADD") end
 	c:EnableMouse(true)
 	c:RegisterForDrag("LeftButton")
 	c:SetScript("OnDragStart", function() parent:StartMoving() end)
@@ -462,7 +461,7 @@ local function applyCard(self, c, d, top)
 	local r, g, b = 1, 1, 1
 	if ns.MLSession then r, g, b = ns.MLSession.QualityColor(info.quality or 4) end
 	c.name:SetText(info.name or L["ML_ITEM_UNKNOWN"]:format(d.itemID))
-	c.name:SetTextColor(r, g, b)
+	Theme.TextRGB(c.name, r, g, b)
 	c.line:SetText(Popup.ItemLine(info))
 	if info.icon then c.icon:SetTexture(info.icon) end
 	c.iconRing:SetVertexColor(r, g, b, 1)
@@ -513,7 +512,7 @@ local function applyCard(self, c, d, top)
 	c.rollButton:SetAlpha(d.canRoll and 1 or 0.45)
 
 	-- the neon element: the top card only
-	c.glow:SetShown(top)
+	Theme.GlowShow(c.glow, top)
 	Theme.Tint(c.parts.ring, top and "neon" or "border")
 	applyTimer(self, c, d)
 	return layoutCard(self, c, d, top)

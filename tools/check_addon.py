@@ -6,6 +6,8 @@ Adapted from Azeroth Accord (tools/check_addon.py), same owner, GPL-3.0.
 The locale tables are checked by tools/check_locale.py (M1-5).
 
 Usage: python -I -X utf8 tools/check_addon.py (also called by tools/check_docs.py)
+
+M7-1 adds the colour rule: no hard-coded colour in UI/ outside UI/Theme.lua.
 """
 import os
 import re
@@ -129,8 +131,40 @@ def check_assets(problems):
             problems.append(f"Media/Fonts/{family}-OFL.txt (the licence) is missing")
 
 
+# A colour written by hand in the UI: a hex code, a |c escape, or numbers given to a colour call (a colour built from a
+# variable, such as one read from a token or from the game, is fine).
+HARD_COLOURS = (
+    (re.compile(r"#[0-9A-Fa-f]{6}\b"), "a hex colour"),
+    (re.compile(r"\|c[0-9A-Fa-f]{8}"), "a |c colour escape"),
+    (re.compile(r"\b(?:SetColorTexture|SetVertexColor|SetTextColor|SetShadowColor|CreateColor)\s*\(\s*-?\.?[0-9]"),
+     "a colour given as numbers"),
+)
+
+
+def check_ui_colours(problems):
+    """Every colour of the UI comes from UI/Theme.lua (M7-1): the other files tint through Theme.Tint / Fill / Text / Call
+    / ClassText / TextRGB. A line that must call the engine with a colour (a white overlay, a game colour) says so with
+    `-- theme-ok`. Only the code is read: comments and the text of strings are skipped for the hex test."""
+    ui = os.path.join(ADDON, "UI")
+    for folder, _, names in os.walk(ui):
+        for name in names:
+            if not name.endswith(".lua") or (name == "Theme.lua" and folder == ui):
+                continue
+            path = os.path.join(folder, name)
+            rel = os.path.relpath(path, ROOT).replace(os.sep, "/")
+            with open(path, encoding="utf-8") as f:
+                for n, line in enumerate(f.read().splitlines(), 1):
+                    if "theme-ok" in line:
+                        continue
+                    code = line.split("--", 1)[0]
+                    for pattern, what in HARD_COLOURS:
+                        if pattern.search(code):
+                            problems.append(f"{rel}:{n}: {what} outside UI/Theme.lua (use the theme tokens, or mark the line theme-ok)")
+
+
 def check(problems):
     check_assets(problems)
+    check_ui_colours(problems)
     results = [check_toc(name, problems) for name in TOCS]
     if all(results):
         (meta_a, files_a), (meta_b, files_b) = results

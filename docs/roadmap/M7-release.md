@@ -10,7 +10,8 @@
 - Analysis: §9.2; [`docs/specs/ui-style.md`](../specs/ui-style.md) (the whole spec, §5 verdicts)
 - Scope: every window checked against `ui-style.md` and its previews: the "approximated" elements finished (glows in `ADD`, the one neon element per view, two-stop gradients, generated or Encounter Journal covers, the text glow of the title), shadows and the light highlight, hover 8% / pressed 12% layers and the 0.97 press, motion 120 / 200 / 320 ms with `OUT`, the "Animations: off" and "Neon effects" preferences, the three themes reviewed for contrast; remaining components (chips, snackbar, switch, slider, select without `UIDropDownMenu`, skeletons); the icon sheet complete; font and icon licences recorded in the repository.
 - Done when:
-  - [ ] Every window uses the theme tokens and components; no hard-coded colours outside `UI/Theme.lua`; every element marked "identical" or "approximated" in `ui-style.md` §5 is built.
+  - [x] Every window uses the theme tokens and components; no hard-coded colours outside `UI/Theme.lua` (checked by `tools/check_addon.py`); every element marked "identical" or "approximated" in `ui-style.md` §5 is built.
+  - [ ] The look and the speed in the game: glows, the light line, hover and press, the transitions and the two preferences, in the three themes. *(in game)*
 - Tests: `Tests/test_theme.lua`.
 - Docs: Interface Tour (EN + IT), CHANGELOG.
 - Real client: look and performance in game.

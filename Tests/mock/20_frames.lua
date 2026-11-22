@@ -333,14 +333,58 @@ function CreateFont(name)
 	return font
 end
 
--- Animations (LibDBIcon fades its button): the groups and animations are inert objects that accept every call.
-local function inert()
-	return setmetatable({}, { __index = function(self, key)
-		if key == "CreateAnimation" then return function() return inert() end end
-		return function() return self end
-	end })
+-- Animations (LibDBIcon fades its button, UI/Motion.lua plays the transitions of the theme): the groups and animations
+-- record what the addon asked for and accept every other call. Mock.animGroups lists the groups made; a group that is
+-- playing stays playing until Mock.FinishAnimations() (or the test) finishes it, which runs its OnFinished script.
+Mock.animGroups = {}
+local animation = {}
+animation.__index = function(self, key)
+	if animation[key] then return animation[key] end
+	if key:sub(1, 3) == "Set" then
+		return function(me, ...) me._set[key:sub(4)] = { ... }; return me end
+	elseif key:sub(1, 3) == "Get" then
+		return function(me) local v = me._set[key:sub(4)]; if v then return unpack(v) end end
+	end
+	return function(me) return me end
 end
-function Widget:CreateAnimationGroup() return inert() end
+local group = {}
+group.__index = function(self, key)
+	if group[key] then return group[key] end
+	return function(me) return me end
+end
+function group:CreateAnimation(kind)
+	local a = setmetatable({ _kind = kind, _set = {} }, animation)
+	self._anims[#self._anims + 1] = a
+	return a
+end
+function group:GetAnimations() return unpack(self._anims) end
+function group:SetScript(name, fn) self._scripts[name] = fn end
+function group:GetScript(name) return self._scripts[name] end
+function group:HookScript(name, fn) self._scripts[name] = fn end
+function group:Play(reverse)
+	self._playing, self._reverse, self._plays = true, reverse and true or false, (rawget(self, "_plays") or 0) + 1
+	if self._scripts.OnPlay then self._scripts.OnPlay(self) end
+end
+function group:Stop() self._playing = false end
+function group:Finish()
+	if self._playing then
+		self._playing = false
+		if self._scripts.OnFinished then self._scripts.OnFinished(self) end
+	end
+end
+function group:IsPlaying() return rawget(self, "_playing") == true end
+function group:SetLooping(v) self._looping = v end
+function group:GetLooping() return rawget(self, "_looping") or "NONE" end
+function Widget:CreateAnimationGroup()
+	local g = setmetatable({ _anims = {}, _scripts = {}, _parent = self }, group)
+	self._animGroups = self._animGroups or {}
+	self._animGroups[#self._animGroups + 1] = g
+	Mock.animGroups[#Mock.animGroups + 1] = g
+	return g
+end
+function Mock.FinishAnimations()
+	for _, g in ipairs({ unpack(Mock.animGroups) }) do g:Finish() end
+end
 
 -- GameTooltip: records what the addon puts in it (Mock.tooltips can be inspected through the widget fields).
 function Widget:SetOwner(owner, anchor) self._owner, self._anchor, self._lines = owner, anchor, {} end

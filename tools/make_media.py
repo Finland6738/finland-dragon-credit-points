@@ -10,7 +10,8 @@ file belongs to a theme. All files are 32-bit uncompressed TGA with power-of-two
   pill              64x32    pill (half-circle ends), 9-slice on the left and right
   circle            64x64    filled circle
   blob_radial       128x128  radial fall-off for generated covers and soft spots
-  icons             256x256  16 px cells: chevron, check, cross, dashed circle, skull, shield, cross-plus, sword, ...
+  icons             256x256  16 px cells, 40 drawn (ICON_NAMES): chevron, check, cross, skull, shield, sword, info, search, ...
+                             all drawn for this addon with Pillow shapes (no third-party artwork; docs/third-party.md)
   logo_256, logo_64          the guild logo from assets/logo-source.webp
 
 Usage: python -X utf8 tools/make_media.py   (needs Pillow; rewrites the files; the committed result is what ships)
@@ -74,7 +75,11 @@ def radial(size):
 # --- icons: 16 px cells drawn at 8x ---------------------------------------------------------------------------------
 CELL, ICON_SS = 16, 8
 ICON_NAMES = ["chevron", "check", "cross", "dashed", "skull", "shield", "heal", "sword", "star", "gear", "arrow_up",
-              "arrow_down", "lock", "eye", "dot", "plus"]
+              "arrow_down", "lock", "eye", "dot", "plus",
+              # M7-1: the rest of the sheet, one row of 16 each (mirrored in UI/Assets.lua)
+              "info", "warn", "search", "filter", "copy", "trash", "edit", "calendar", "clock", "user", "users", "crown",
+              "coin", "refresh", "download", "upload",
+              "bell", "flag", "minus", "gem", "bag", "book", "link", "arrow_left"]
 
 
 def draw_icon(name):
@@ -147,6 +152,89 @@ def draw_icon(name):
     elif name == "plus":
         d.line([pt(8, 3), pt(8, 13)], fill=255, width=w)
         d.line([pt(3, 8), pt(13, 8)], fill=255, width=w)
+    elif name == "info":
+        d.ellipse([pt(2, 2), pt(14, 14)], outline=255, width=w)
+        d.line([pt(8, 7), pt(8, 11.5)], fill=255, width=w)
+        d.ellipse([pt(7.1, 4.1), pt(8.9, 5.9)], fill=255)
+    elif name == "warn":
+        d.polygon([pt(8, 1.8), pt(14.5, 13.5), pt(1.5, 13.5)], fill=255)
+        d.line([pt(8, 6), pt(8, 9.6)], fill=0, width=int(1.5 * u))
+        d.ellipse([pt(7.2, 10.6), pt(8.8, 12.2)], fill=0)
+    elif name == "search":
+        d.ellipse([pt(2, 2), pt(10.5, 10.5)], outline=255, width=w)
+        d.line([pt(9.6, 9.6), pt(14, 14)], fill=255, width=int(1.9 * u))
+    elif name == "filter":
+        d.polygon([pt(2, 3), pt(14, 3), pt(9.6, 8.4), pt(9.6, 13.5), pt(6.4, 12), pt(6.4, 8.4)], fill=255)
+    elif name == "copy":
+        d.rounded_rectangle([pt(5.5, 2), pt(13.5, 10.5)], radius=u, outline=255, width=w)
+        d.rounded_rectangle([pt(2.5, 5), pt(10.5, 14)], radius=u, fill=0)
+        d.rounded_rectangle([pt(2.5, 5), pt(10.5, 14)], radius=u, outline=255, width=w)
+    elif name == "trash":
+        d.line([pt(2.5, 4), pt(13.5, 4)], fill=255, width=w)
+        d.line([pt(6, 4), pt(6, 2.4), pt(10, 2.4), pt(10, 4)], fill=255, width=w, joint="curve")
+        d.polygon([pt(3.8, 5.2), pt(12.2, 5.2), pt(11.4, 14), pt(4.6, 14)], fill=255)
+        for x in (6.6, 9.4):
+            d.line([pt(x, 7), pt(x, 12)], fill=0, width=int(0.8 * u))
+    elif name == "edit":
+        d.polygon([pt(2.5, 13.5), pt(3.2, 10), pt(11, 2.2), pt(13.8, 5), pt(6, 12.8)], fill=255)
+        d.line([pt(9.6, 3.8), pt(12.2, 6.4)], fill=0, width=int(0.8 * u))
+    elif name == "calendar":
+        d.rounded_rectangle([pt(2, 3.5), pt(14, 14)], radius=int(1.4 * u), outline=255, width=w)
+        d.line([pt(2, 7), pt(14, 7)], fill=255, width=w)
+        d.line([pt(5, 1.8), pt(5, 4.6)], fill=255, width=w)
+        d.line([pt(11, 1.8), pt(11, 4.6)], fill=255, width=w)
+    elif name == "clock":
+        d.ellipse([pt(2, 2), pt(14, 14)], outline=255, width=w)
+        d.line([pt(8, 4.5), pt(8, 8), pt(10.8, 9.6)], fill=255, width=w, joint="curve")
+    elif name == "user":
+        d.ellipse([pt(5, 2), pt(11, 8)], fill=255)
+        d.pieslice([pt(2.5, 9), pt(13.5, 20)], start=180, end=360, fill=255)
+    elif name == "users":
+        d.ellipse([pt(2.8, 3), pt(7.8, 8)], fill=255)
+        d.pieslice([pt(1.2, 9), pt(9.4, 17.2)], start=180, end=360, fill=255)
+        d.ellipse([pt(9, 3.6), pt(13.4, 8)], fill=255)
+        d.pieslice([pt(8.6, 9.4), pt(15.4, 16.2)], start=180, end=360, fill=255)
+    elif name == "crown":
+        d.polygon([pt(1.8, 12.5), pt(1.8, 4.6), pt(5.4, 8.2), pt(8, 3), pt(10.6, 8.2), pt(14.2, 4.6), pt(14.2, 12.5)], fill=255)
+    elif name == "coin":
+        d.ellipse([pt(1.8, 1.8), pt(14.2, 14.2)], outline=255, width=w)
+        d.line([pt(8, 4.8), pt(8, 11.2)], fill=255, width=w)
+        d.line([pt(5.6, 8), pt(10.4, 8)], fill=255, width=w)
+    elif name == "refresh":
+        d.arc([pt(2.6, 2.6), pt(13.4, 13.4)], start=40, end=320, fill=255, width=w)
+        d.polygon([pt(13.6, 2.2), pt(13.6, 7.4), pt(8.6, 6.2)], fill=255)
+    elif name == "download":
+        d.line([pt(8, 2.5), pt(8, 10.5)], fill=255, width=w)
+        d.line([pt(4.6, 7.4), pt(8, 10.8), pt(11.4, 7.4)], fill=255, width=w, joint="curve")
+        d.line([pt(3, 13.5), pt(13, 13.5)], fill=255, width=w)
+    elif name == "upload":
+        d.line([pt(8, 11), pt(8, 3)], fill=255, width=w)
+        d.line([pt(4.6, 6.2), pt(8, 2.8), pt(11.4, 6.2)], fill=255, width=w, joint="curve")
+        d.line([pt(3, 13.5), pt(13, 13.5)], fill=255, width=w)
+    elif name == "bell":
+        d.pieslice([pt(3.4, 2), pt(12.6, 12)], start=180, end=360, fill=255)
+        d.polygon([pt(3.4, 7), pt(12.6, 7), pt(14, 12), pt(2, 12)], fill=255)
+        d.ellipse([pt(6.4, 12), pt(9.6, 14.8)], fill=255)
+    elif name == "flag":
+        d.line([pt(3.8, 1.8), pt(3.8, 14.5)], fill=255, width=w)
+        d.polygon([pt(4, 2.5), pt(13.5, 2.5), pt(11, 6.2), pt(13.5, 9.8), pt(4, 9.8)], fill=255)
+    elif name == "minus":
+        d.line([pt(3, 8), pt(13, 8)], fill=255, width=w)
+    elif name == "gem":
+        d.polygon([pt(1.8, 6), pt(4.8, 2.4), pt(11.2, 2.4), pt(14.2, 6), pt(8, 14)], fill=255)
+        d.line([pt(1.8, 6), pt(14.2, 6)], fill=0, width=int(0.7 * u))
+    elif name == "bag":
+        d.rounded_rectangle([pt(3, 6), pt(13, 14.2)], radius=int(1.6 * u), fill=255)
+        d.arc([pt(5.2, 1.8), pt(10.8, 9.6)], start=180, end=360, fill=255, width=w)
+    elif name == "book":
+        d.rounded_rectangle([pt(2.4, 2.8), pt(13.6, 13.2)], radius=int(1.2 * u), outline=255, width=w)
+        d.line([pt(8, 3), pt(8, 13)], fill=255, width=w)
+    elif name == "link":
+        d.rounded_rectangle([pt(1.6, 5.8), pt(9, 10.2)], radius=int(2.2 * u), outline=255, width=w)
+        d.rounded_rectangle([pt(7, 5.8), pt(14.4, 10.2)], radius=int(2.2 * u), outline=255, width=w)
+    elif name == "arrow_left":
+        d.line([pt(13, 8), pt(3.5, 8)], fill=255, width=w)
+        d.line([pt(7.5, 4), pt(3.5, 8), pt(7.5, 12)], fill=255, width=w, joint="curve")
     return img.resize((CELL, CELL), Image.LANCZOS)
 
 

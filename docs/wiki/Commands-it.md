@@ -9,6 +9,8 @@ Tutto parte da `/fdcp`: da solo apre (o chiude) la finestra principale.
 | `/fdcp` o `/fdcp toggle` | Apre la finestra principale, oppure la chiude se è aperta. |
 | `/fdcp help` | Elenca i comandi. |
 | `/fdcp theme [nebula\|aurora\|drago]` | Mostra il tema, oppure lo imposta. Cambia subito, senza `/reload`. |
+| `/fdcp effects [on\|off]` | Mostra o imposta gli effetti neon (bagliori e ombre). Vedi il [[Giro dell'interfaccia|Interface-Tour-it]]. |
+| `/fdcp animations [on\|off]` | Mostra o imposta le animazioni (le transizioni brevi). |
 | `/fdcp weights [on\|off\|import <spec> <stringa>\|show <spec>\|reset <spec\|all>]` | I tuoi pesi delle statistiche per i suggerimenti di upgrade: importali da una stringa tipo Pawn, mostrali, accendili o spegnili, toglili. Vedi [Suggerimenti di upgrade](Upgrade-Hints-it). |
 | `/fdcp wish [list\|add <oggetto>\|remove <oggetto>\|clear]` | La tua lista best-in-slot: il popup te lo ricorda quando uno dei pezzi è in palio. Vedi [Suggerimenti di upgrade](Upgrade-Hints-it). |
 | `/fdcp council [vote <giocatore>\|awards\|void <n> <motivo>\|adjust <giocatore> <crediti> <motivo>\|audit]` | Il loot council: da solo, se ne fai parte. `vote` manda il tuo voto sulla proposta aperta; `awards` elenca le assegnazioni della season che si possono annullare, `void` ne annulla una; `adjust` corregge a mano i crediti di un membro; `audit` elenca gli interventi della season. Ogni correzione vuole un motivo (il comando li elenca). Vedi [Guida del master looter](Master-Looter-Guide-it#il-council-interventi-e-voto). Le stesse cose dalla pagina **Loot › Council**: [[Council|Council-it]]. |

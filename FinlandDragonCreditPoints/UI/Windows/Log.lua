@@ -63,7 +63,7 @@ local function columns()
 			render = function(fs, d)
 				local name, color = ns.MemberWindow.ItemLine(d.item)
 				fs:SetText(d.voided and (name .. " " .. L["ITEM_DROP_VOIDED"]) or name)
-				if d.voided then Theme.Text(fs, "text-3") else fs:SetTextColor(color[1], color[2], color[3]) end
+				if d.voided then Theme.Text(fs, "text-3") else Theme.TextRGB(fs, color[1], color[2], color[3]) end
 			end },
 		{ id = "to", title = L["HISTORY_COL_TO"], flex = 1, text = LogWindow.Recipient },
 		{ id = "response", title = L["HISTORY_COL_RESPONSE"], width = 110, text = LogWindow.Response },

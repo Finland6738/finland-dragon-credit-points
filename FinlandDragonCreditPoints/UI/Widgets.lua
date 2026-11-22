@@ -1,5 +1,7 @@
--- Widgets: the first components of docs/specs/ui-style.md §3 — Button (primary, secondary, ghost, neon), Card, TitleBar,
--- Tabs with the underline indicator, Segmented (pill selector), Badge and the Dialog base (M1-7). Lua 5.1.
+-- Widgets: the components of docs/specs/ui-style.md §3 — Button (primary, secondary, ghost, neon), Card, TitleBar,
+-- Tabs with the underline indicator, Segmented (pill selector), Badge, Chip and the Dialog base (M1-7), finished in M7-1
+-- with the glows, the hover and press states and the motion of UI/Motion.lua; the Switch, Slider, Select, Snackbar,
+-- Skeleton and class mark are in UI/Widgets/Controls.lua. Lua 5.1.
 -- Every widget is made of ordinary frames and white textures tinted through UI/Theme.lua. Text is passed in already
 -- translated by the caller (L[...]); a widget never contains a sentence. Unprotected frames only.
 local ADDON_NAME, ns = ...
@@ -11,6 +13,7 @@ if ns.addon then ns.addon.Widgets = Widgets end   -- also reachable from tests
 
 local Theme = ns.Theme
 local Assets = ns.Assets
+local Motion = ns.Motion
 
 local function gradientColor(token)
 	local r, g, b, a = Theme.Color(token)
@@ -22,20 +25,28 @@ end
 
 -- Button styles: fill token, text token, and what else the style adds.
 local BUTTON_STYLES = {
-	primary   = { fill = "accent",    ink = "on-accent", gradient = true },
+	primary   = { fill = "accent",    ink = "on-accent", gradient = true, glow = "accent", glowAlpha = 0.3 },
 	secondary = { fill = "surface-3", ink = "text-1",    ring = "border" },
 	ghost     = { fill = nil,         ink = "text-2",    ring = nil },
-	neon      = { fill = "surface-1", ink = "text-1",    ring = "neon", glow = true },
+	neon      = { fill = "surface-1", ink = "text-1",    ring = "neon", glow = "neon", glowAlpha = 0.5 },
 }
 Widgets.BUTTON_STYLES = BUTTON_STYLES
+Widgets.HOVER, Widgets.PRESSED = 0.08, 0.12   -- the white layers of the states (docs/specs/ui-style.md §3)
 
 -- opts: text, style ("primary" | "secondary" | "ghost" | "neon"), width, height, onClick.
+-- The primary button has the amber glow of the site (dark themes, "Neon effects"), the neon one a magenta ring and glow;
+-- hover lays 8 % white over the shape and pressed 12 % (faded in 120 ms), a press shrinks the button to 0.97 (Motion.Press).
 function Widgets.Button(parent, opts)
 	opts = opts or {}
 	local style = BUTTON_STYLES[opts.style or "secondary"] or BUTTON_STYLES.secondary
 	local b = CreateFrame("Button", nil, parent)
 	b:SetSize(opts.width or 120, opts.height or 32)
 	b.style = opts.style or "secondary"
+	if style.glow then
+		b.glow = Theme.Glow(b, "glow_s", style.glow, { alpha = style.glowAlpha or 0.5 })
+		b.glow:SetPoint("TOPLEFT", b, "TOPLEFT", -18, 18)
+		b.glow:SetPoint("BOTTOMRIGHT", b, "BOTTOMRIGHT", 18, -18)
+	end
 	if style.fill then
 		b.fill = Theme.Slice(b, "rr_fill_8", style.fill, "BACKGROUND")
 		b.fill:SetAllPoints(b)
@@ -49,36 +60,46 @@ function Widgets.Button(parent, opts)
 		b.ring = Theme.Slice(b, "rr_ring_8", style.ring, "BORDER")
 		b.ring:SetAllPoints(b)
 	end
-	if style.glow then
-		b.glow = Theme.Slice(b, "glow_s", "neon", "BACKGROUND", 0.5)
-		b.glow:SetPoint("TOPLEFT", b, "TOPLEFT", -18, 18)
-		b.glow:SetPoint("BOTTOMRIGHT", b, "BOTTOMRIGHT", 18, -18)
-		if b.glow.SetBlendMode and Theme.IsDark() then b.glow:SetBlendMode("ADD") end
-	end
-	-- hover 8 % and pressed 12 % white over the shape
+	-- hover 8 % and pressed 12 % white over the shape (a white texture whose alpha is faded)
 	b.over = Theme.Slice(b, "rr_fill_8", nil, "ARTWORK")
 	b.over:SetAllPoints(b)
-	b.over:SetVertexColor(1, 1, 1, 0)
+	b.over:SetVertexColor(1, 1, 1, 1)   -- theme-ok: the white of the hover and pressed layers
+	b.over:SetAlpha(0)
 	b.label = Theme.NewText(b, "Button", style.ink)
 	b.label:SetPoint("CENTER", b, "CENTER", 0, 0)
 	b.label:SetText(opts.text or "")
 	function b:SetLabel(text) self.label:SetText(text or "") end
-	b:SetScript("OnEnter", function(self) if self:IsEnabled() then self.over:SetVertexColor(1, 1, 1, 0.08) end end)
-	b:SetScript("OnLeave", function(self) self.over:SetVertexColor(1, 1, 1, 0) end)
-	b:SetScript("OnMouseDown", function(self) if self:IsEnabled() then self.over:SetVertexColor(1, 1, 1, 0.12) end end)
-	b:SetScript("OnMouseUp", function(self) self.over:SetVertexColor(1, 1, 1, 0) end)
+	local function layer(self)
+		if not self:IsEnabled() then return 0 end
+		if self.pressed then return Widgets.PRESSED end
+		return self.hot and Widgets.HOVER or 0
+	end
+	local function paint(self) Motion.Fade(self.over, layer(self), Motion.FAST) end
+	b:SetScript("OnEnter", function(self) self.hot = true; paint(self) end)
+	b:SetScript("OnLeave", function(self) self.hot, self.pressed = false, false; paint(self) end)
+	b:SetScript("OnMouseDown", function(self) self.pressed = true; paint(self) end)
+	b:SetScript("OnMouseUp", function(self) self.pressed = false; paint(self) end)
+	local setEnabled = b.SetEnabled
+	function b:SetEnabled(enabled)
+		setEnabled(self, enabled and true or false)
+		self:SetAlpha(enabled and 1 or 0.45)
+		if not enabled then self.hot, self.pressed = false, false end
+		paint(self)
+	end
+	Motion.Press(b)
 	if opts.onClick then b:SetScript("OnClick", opts.onClick) end
 	return b
 end
 
 -- --- Card -------------------------------------------------------------------------------------------------------------
 
--- A card: surface-1 fill, subtle ring (strong on hover when `hover`), radius 18, optional shadow. Four regions at most.
+-- A card: surface-1 fill, subtle ring (strong on hover when `hover`), the light line of the dark themes along its top edge,
+-- radius 18, optional shadow. Four regions at most.
 function Widgets.Card(parent, opts)
 	opts = opts or {}
 	local c = CreateFrame("Frame", nil, parent)
 	c:SetSize(opts.width or 200, opts.height or 100)
-	c.parts = Theme.Panel(c, { radius = 18, fill = opts.fill or "surface-1", border = "border-subtle", shadow = opts.shadow })
+	c.parts = Theme.Panel(c, { radius = 18, fill = opts.fill or "surface-1", border = "border-subtle", shadow = opts.shadow, highlight = true })
 	if opts.hover then
 		c:EnableMouse(true)
 		c:SetScript("OnEnter", function(self) Theme.Tint(self.parts.ring, "border-strong") end)
@@ -164,6 +185,7 @@ function Widgets.Tabs(parent, tabs, onSelect)
 		local changed = self.active ~= id
 		self.active = id
 		paint(); layout()
+		if changed and self.indicator:IsShown() then Motion.FadeIn(self.indicator, Motion.BASE) end   -- 200 ms
 		if changed and onSelect then onSelect(id) end
 		return true
 	end
@@ -314,10 +336,9 @@ function Widgets.TitleBar(parent, opts)
 	bar.line:SetPoint("BOTTOMRIGHT", bar, "BOTTOMRIGHT", -12, 0)
 	bar.line:SetHeight(Theme.Px(1))
 
-	bar.logoGlow = Theme.Slice(bar, "glow_s", "accent", "ARTWORK", 0.35)
+	bar.logoGlow = Theme.Glow(bar, "glow_s", "accent", { layer = "ARTWORK", alpha = 0.35 })
 	bar.logoGlow:SetSize(64, 64)
 	bar.logoGlow:SetPoint("LEFT", bar, "LEFT", 6, 0)
-	if bar.logoGlow.SetBlendMode and Theme.IsDark() then bar.logoGlow:SetBlendMode("ADD") end
 	bar.logo = bar:CreateTexture(nil, "OVERLAY")
 	bar.logo:SetTexture(Assets.textures.logo_64.path)
 	bar.logo:SetSize(32, 32)
@@ -327,6 +348,12 @@ function Widgets.TitleBar(parent, opts)
 	bar.title = Theme.NewText(bar, "Display", "text-1")
 	bar.title:SetPoint("TOPLEFT", bar, "TOPLEFT", 64, -9)
 	bar.title:SetText(opts.title or "")
+	-- the text glow of the site's title (approximated: a coloured shadow of the font and a soft glow behind it); the one
+	-- display title of a view
+	Theme.TextGlow(bar.title, "accent")
+	bar.titleGlow = Theme.Glow(bar, "glow_l", "accent", { layer = "ARTWORK", alpha = 0.16 })
+	bar.titleGlow:SetPoint("TOPLEFT", bar.title, "TOPLEFT", -26, 18)
+	bar.titleGlow:SetPoint("BOTTOMRIGHT", bar.title, "BOTTOMRIGHT", 26, -18)
 	bar.subtitle = Theme.NewText(bar, "MonoSmall", "text-3")
 	bar.subtitle:SetPoint("TOPLEFT", bar.title, "BOTTOMLEFT", 0, -3)
 	bar.subtitle:SetText(opts.subtitle or "")
@@ -350,7 +377,8 @@ end
 
 -- --- Dialog -----------------------------------------------------------------------------------------------------------
 
--- A modal base: a dark veil (no blur: the engine cannot) over `parent` with a centred card on the DIALOG strata.
+-- A modal base: a dark veil (no blur: the engine cannot) over `parent` with a centred card on the DIALOG strata; it enters
+-- with Motion.Rise (alpha and a 16 pt rise, 320 ms).
 -- Esc closes it (it is added to UISpecialFrames under `name`). :Open(), :Close(), .card, .content.
 function Widgets.Dialog(parent, name, opts)
 	opts = opts or {}
@@ -364,14 +392,19 @@ function Widgets.Dialog(parent, name, opts)
 	d.card = CreateFrame("Frame", nil, d)
 	d.card:SetSize(opts.width or 420, opts.height or 220)
 	d.card:SetPoint("CENTER", d, "CENTER", 0, 0)
-	d.card.parts = Theme.Panel(d.card, { radius = 18, fill = "surface-1", border = "border", shadow = true })
+	d.card.parts = Theme.Panel(d.card, { radius = 18, fill = "surface-1", border = "border", shadow = true, highlight = true })
 	d.content = d.card
 	d:Hide()
 	if name then
 		for _, n in ipairs(UISpecialFrames) do if n == name then name = nil break end end
 		if name then UISpecialFrames[#UISpecialFrames + 1] = name end
 	end
-	function d:Open() self:Show() end
+	-- the card rises 16 points while it fades in, 320 ms, the veil fades in 200 ms (both at once with animations off)
+	function d:Open()
+		self:Show()
+		Motion.FadeIn(self.veil, Motion.BASE)
+		Motion.Rise(self.card, 16, Motion.SLOW)
+	end
 	function d:Close() self:Hide() end
 	return d
 end
@@ -510,7 +543,7 @@ function Widgets.LineWindow(opts)
 	w:EnableMouse(true)
 	w:RegisterForDrag("LeftButton")
 	w:SetPoint("CENTER", UIParent, "CENTER", opts.x or 0, opts.y or 0)
-	w.parts = Theme.Panel(w, { radius = 12, fill = "bg", border = "border", shadow = true })
+	w.parts = Theme.Panel(w, { radius = 12, fill = "bg", border = "border", shadow = true, highlight = true })
 	w.titleBar = Widgets.TitleBar(w, { title = opts.title or "", subtitle = "", onClose = function() w:Hide() end })
 	w.titleBar:SetPoint("TOPLEFT", w, "TOPLEFT", 0, 0)
 	w.titleBar:SetPoint("TOPRIGHT", w, "TOPRIGHT", 0, 0)
@@ -545,7 +578,7 @@ function Widgets.LineWindow(opts)
 			if item then
 				r.text:SetText(item.text or "")
 				Theme.Text(r.text, item.head and "accent-text" or item.token or "text-1")
-				if item.color then r.text:SetTextColor(item.color[1], item.color[2], item.color[3]) end
+				if item.color then Theme.TextRGB(r.text, item.color[1], item.color[2], item.color[3]) end
 				r.onClick = item.onClick
 				r:SetScript("OnClick", item.onClick and function() item.onClick() end or nil)
 				r:EnableMouse(item.onClick ~= nil)

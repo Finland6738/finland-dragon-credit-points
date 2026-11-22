@@ -46,7 +46,16 @@ The default theme is **Nebula**, the dark look of the community site. You can sw
 - **Aurora** is the site's light theme.
 - **Drago** uses the colours of the guild logo.
 
-Class colours and item quality colours are always the game's own.
+Class colours and item quality colours are always the game's own. On the light theme Aurora a player's name is written in the normal text colour and only the small square next to it carries the class colour, so a white priest stays readable.
+
+## Effects and animations
+
+Two preferences change how the window looks, both on by default and both set at once, without `/reload`:
+
+- **Neon effects** (`/fdcp effects on|off`): the soft glows (the amber one behind the main button, the magenta one on the one highlighted item popup, the one under the title and the logo) and the shadows under windows and cards. Off, the window is flat.
+- **Animations** (`/fdcp animations on|off`): the short transitions (120 ms for a button pressed or hovered, 200 ms for tabs, 320 ms for a card or dialog entering and the season arrow turning). Off, everything changes at once, as for anyone who prefers reduced motion.
+
+The same two switches will be in the Settings tab.
 
 ![Settings: theme](../specs/mockups/fdcp-settings-theme.webp)
 
@@ -55,9 +64,9 @@ Class colours and item quality colours are always the game's own.
 The game has no web styling, so a few things are approximated:
 
 - no blurred glass behind dialogs;
-- glows drawn as soft images;
+- glows drawn as soft images added to the picture;
 - gradients with two colours;
-- simple animations;
+- simple animations, always ending the same way (no springy curves);
 - no letter spacing in headings.
 
 The site's logo font cannot be redistributed, so headings use a free font with a similar shape. The text and number fonts are the same as on the site.

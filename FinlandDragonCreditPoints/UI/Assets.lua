@@ -30,8 +30,12 @@ Assets.textures = {
 }
 
 -- Cells of the icon sheet, in the order of tools/make_media.py (16 per row).
+-- M7-1 completed the sheet: 40 icons, drawn for this addon (docs/third-party.md).
 Assets.icons = { "chevron", "check", "cross", "dashed", "skull", "shield", "heal", "sword", "star", "gear", "arrow_up",
-	"arrow_down", "lock", "eye", "dot", "plus" }
+	"arrow_down", "lock", "eye", "dot", "plus",
+	"info", "warn", "search", "filter", "copy", "trash", "edit", "calendar", "clock", "user", "users", "crown",
+	"coin", "refresh", "download", "upload",
+	"bell", "flag", "minus", "gem", "bag", "book", "link", "arrow_left" }
 
 -- Fonts. Orbitron ships whole (it declares a Reserved Font Name): it is used for the title only, in capitals, and has
 -- no middle dot or arrow. `fallback` is the game font used when SetFont fails or the user chose the game fonts.

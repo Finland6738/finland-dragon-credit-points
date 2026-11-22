@@ -141,7 +141,7 @@ local function candidateColumns()
 			value = function(d) return d.name:lower() end,
 			render = function(fs, d)
 				fs:SetText(d.name)
-				fs:SetTextColor(ns.RosterWindow.ClassColor(d.class))
+				Theme.ClassText(fs, ns.RosterWindow.ClassColor(d.class))
 			end },
 		{ id = "credits", title = L["ML_COL_CREDITS"], width = 76, align = "CENTER", mono = true,
 			text = function(d) return d.credits or "·" end, value = function(d) return d.credits or -1 end },
@@ -320,9 +320,7 @@ function MLSession:BuildSession(pane)
 			r.bar:SetPoint("BOTTOMLEFT", r, "BOTTOMLEFT", 0, 0)
 			r.bar:SetWidth(2)
 			r.bar:Hide()
-			r.square = r:CreateTexture(nil, "ARTWORK")
-			r.square:SetSize(10, 10)
-			r.square:SetColorTexture(1, 1, 1, 1)
+			r.square = Widgets.ClassMark(r)
 			for _, fs in ipairs(r.cells) do fs:SetWordWrap(false) end
 			-- the verdicts of both specs and the worn pieces, from what the player's client sent
 			r:HookScript("OnEnter", function(self) MLSession:ShowCandidateTip(self) end)
@@ -330,7 +328,7 @@ function MLSession:BuildSession(pane)
 		end,
 		rowUpdate = function(r, d)
 			r.bar:SetShown(d.proposed == true)
-			r.square:SetColorTexture(ns.RosterWindow.ClassColor(d.class))
+			Widgets.PaintClassMark(r.square, ns.RosterWindow.ClassColor(d.class))
 			local pos = card.table.pos
 			r.square:ClearAllPoints()
 			r.square:SetPoint("LEFT", r, "LEFT", pos[1].x, 0)
@@ -421,12 +419,12 @@ function MLSession:BuildDeliver(pane)
 		{ id = "item", title = L["ML_COL_ITEM"], width = 230, text = function(r) return MLSession.ItemName(r.itemID, MLSession:ItemInfo(r.itemID)) end,
 			render = function(fs, r)
 				fs:SetText(MLSession.ItemName(r.itemID, MLSession:ItemInfo(r.itemID)))
-				fs:SetTextColor(MLSession.QualityColor(r.quality or MLSession:ItemInfo(r.itemID).quality))
+				Theme.TextRGB(fs, MLSession.QualityColor(r.quality or MLSession:ItemInfo(r.itemID).quality))
 			end },
 		{ id = "winner", title = L["ML_COL_WINNER"], width = 150, text = function(r) return SB().Short(r.recipient or "") end,
 			render = function(fs, r)
 				fs:SetText(SB().Short(r.recipient or ""))
-				fs:SetTextColor(ns.RosterWindow.ClassColor(SC() and SC():ClassOf(r.recipient)))
+				Theme.ClassText(fs, ns.RosterWindow.ClassColor(SC() and SC():ClassOf(r.recipient)))
 			end },
 		{ id = "status", title = L["ML_COL_STATUS"], flex = 1, sortable = false, text = function(r) return r.text end,
 			token = function(r) return (r.status == "GIVEN" and not r.noReceipt) and "text-2" or "warn" end },
@@ -479,7 +477,7 @@ local function paintRow(self, r, item)
 	r.index = item.index
 	r.icon:SetTexture(info.icon or "Interface\\Icons\\INV_Misc_QuestionMark")
 	r.name:SetText(self.ItemName(item.itemID, info))
-	r.name:SetTextColor(self.QualityColor(item.quality or info.quality))
+	Theme.TextRGB(r.name, self.QualityColor(item.quality or info.quality))
 	local sub = self.CategoryName(item.category) .. " · " .. costText(item)
 	if item.winner then sub = SB().Short(item.winner) .. " · " .. SB().CreditsText(item.paid) end
 	r.sub:SetText(sub)
@@ -583,7 +581,7 @@ local function paintDetail(self, board)
 	local info = self:ItemInfo(sel.itemID)
 	card.icon:SetTexture(info.icon or "Interface\\Icons\\INV_Misc_QuestionMark")
 	card.name:SetText(self.ItemName(sel.itemID, info))
-	card.name:SetTextColor(self.QualityColor(sel.quality or info.quality))
+	Theme.TextRGB(card.name, self.QualityColor(sel.quality or info.quality))
 	card.line:SetText(self.ItemLine(sel, info))
 	card.badge:SetBadge(sel.category and (self.CategoryName(sel.category) .. " · " .. costText(sel)):upper() or "", "accent")
 	card.table:SetData(board.candidates)

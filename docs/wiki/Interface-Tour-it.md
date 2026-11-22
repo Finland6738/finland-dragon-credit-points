@@ -46,7 +46,16 @@ Il tema predefinito è **Nebula**, l'aspetto scuro del sito della community. Lo 
 - **Aurora** è il tema chiaro del sito.
 - **Drago** usa i colori del logo della gilda.
 
-I colori delle classi e della qualità degli oggetti sono sempre quelli del gioco.
+I colori delle classi e della qualità degli oggetti sono sempre quelli del gioco. Nel tema chiaro Aurora il nome di un giocatore è scritto nel colore normale del testo e solo il quadratino accanto porta il colore della classe, così un sacerdote bianco resta leggibile.
+
+## Effetti e animazioni
+
+Due preferenze cambiano l'aspetto della finestra, entrambe attive di default e applicate subito, senza `/reload`:
+
+- **Effetti neon** (`/fdcp effects on|off`): i bagliori morbidi (quello ambra dietro il pulsante principale, quello magenta sull'unico popup evidenziato, quello sotto il titolo e il logo) e le ombre sotto finestre e card. Spenti, la finestra è piatta.
+- **Animazioni** (`/fdcp animations on|off`): le transizioni brevi (120 ms per un pulsante premuto o sotto il mouse, 200 ms per le schede, 320 ms per l'entrata di una card o di un dialog e per la freccia della season che ruota). Spente, tutto cambia di colpo, come per chi preferisce meno movimento.
+
+Gli stessi due interruttori saranno nella scheda Impostazioni.
 
 ![Impostazioni: tema](../specs/mockups/fdcp-settings-theme.webp)
 
@@ -55,9 +64,9 @@ I colori delle classi e della qualità degli oggetti sono sempre quelli del gioc
 Il gioco non ha gli stili del web, quindi alcune cose sono approssimate:
 
 - niente vetro sfocato dietro i dialog;
-- i bagliori sono immagini sfumate;
+- i bagliori sono immagini sfumate sommate all'immagine;
 - i gradienti hanno due colori;
-- le animazioni sono semplici;
+- le animazioni sono semplici e finiscono sempre allo stesso modo (niente curve a molla);
 - nei titoli non c'è spaziatura fra le lettere.
 
 Il carattere del logo del sito non si può ridistribuire, quindi i titoli usano un carattere libero dalla forma simile. I caratteri del testo e dei numeri sono gli stessi del sito.

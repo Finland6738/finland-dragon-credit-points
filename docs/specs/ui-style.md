@@ -55,7 +55,7 @@ I nomi dei token sono quelli che `UI/Theme.lua` userà (M1-7); i valori del tema
 | `accent-hover` | `#FDA877` | `#003F8A` | `#F2CD6E` | passaggio del mouse sull'accento |
 | `accent-text` | `#FC8C46` | `#0054B6` | `#E9B949` | numeri `+N`, sopratitoli, colonna ordinata |
 | `accent-2` | `#EE4662` | `#00766C` | `#3E9E5F` | secondo colore del gradiente del pulsante |
-| `neon` / `neon-core` | `#C45BC4` / `#9A2A9A` | `#00A89A` / `#009A9A` | `#B8E86A` / `#6FA83A` | un solo elemento neon per vista (council, roll aperto) |
+| `neon` / `neon-core` | `#C45BC4` / `#9A2A9A` | `#008F84` / `#009A9A` (M7-1: il `#00A89A` del sito scurito, 3:1 sul fondo chiaro) | `#B8E86A` / `#6FA83A` | un solo elemento neon per vista (council, roll aperto) |
 | `ok` / `warn` / `err` | `#46C28F` / `#F2B33D` / `#FF6369` | `#1B7A50` / `#8F5B00` / `#C0262D` | `#5BC17F` / `#F2B33D` / `#FF6B5E` | stati, Trial, annullamenti |
 | `grad` | `#FC8C46 → #EE4662 → #9A2A9A → #702AA8` | `#0054B6 → #007EA8 → #00A89A → #70C446` | `#E9B949 → #B8E86A → #3E9E5F → #1F6F5A` | barre sottili, timer |
 
@@ -245,3 +245,23 @@ quelli del computer che le genera, i nomi sono inventati e nulla è stato provat
 | ![Aurora](mockups/fdcp-credits-aurora.webp) | Crediti nel tema chiaro **Aurora** |
 | ![Drago](mockups/fdcp-roster-drago.webp) | Roster nel tema **Drago** (palette del logo) |
 | ![Design system](mockups/fdcp-design-system.webp) | Token, componenti e tipografia del tema Nebula |
+
+## 9. Stato dopo M7-1 (rifinitura)
+
+Ogni elemento "identico" o "approssimato" del §5 è costruito nel codice; resta da vedere in gioco (nulla è verificato):
+
+| Elemento | Dove |
+|---|---|
+| Bagliori in `ADD` (nei temi chiari fusione normale a metà intensità), nascosti da "Effetti neon: no" | `Theme.Glow`, `Theme.GlowShow` (`UI/Theme.lua`); pulsante principale (ambra), pulsante neon, logo e titolo, card del popup in testa (l'unico neon della vista), quadratino della classe |
+| Testo neon del titolo | `Theme.TextGlow` (ombra colorata del font) più `bar.titleGlow` (bagliore dietro il titolo), solo nei temi scuri |
+| Ombre e linea di luce | `Theme.Panel{ shadow, highlight }`: finestra, card, dialog, snackbar; la linea di 1 px `highlight` sul bordo alto |
+| Stati hover 8 % / pressed 12 % e pressione 0,97 | `Widgets.Button` (strato bianco con dissolvenza di 120 ms), `Motion.Press` (`Scale` 120 ms `OUT`, tiene la dimensione finché il mouse è premuto) |
+| Movimento 120 / 200 / 320 ms con `OUT` | `UI/Motion.lua`; indicatore delle schede 200 ms, dialog 320 ms (`Rise`), freccia della fisarmonica 320 ms (`Rotate`), corpo della season che compare in dissolvenza |
+| "Animazioni: no" | `Theme.AnimationsOn()` letto da ogni chiamata di `Motion`: tutto finisce subito, nessun gruppo parte |
+| Tre temi rivisti per il contrasto | `Tests/test_theme.lua`; unica correzione: il neon di Aurora (`#008F84`) |
+| Chip, switch, slider, selezione senza `UIDropDownMenu`, snackbar, scheletri | `Widgets.Chip` (M1-7), `UI/Widgets/Controls.lua` |
+| Copertine generate | colore del gradiente del tema per posizione nella lista (`ProgressWindow.COVER_TOKENS`); l'immagine del Diario resta quando il client la offre |
+| Nome di classe | colore della classe nei temi scuri, `text-1` in Aurora con il solo quadratino colorato (`Theme.ClassText`, `Widgets.ClassMark`) |
+| Foglio di icone | 40 icone in `tools/make_media.py` e `Assets.icons` |
+| Colori solo nel tema | `tools/check_addon.py` (`check_ui_colours`) |
+| Licenze di font e icone | [`../third-party.md`](../third-party.md) |

@@ -26,7 +26,7 @@ THEMES = {
         "border-subtle": "rgba(11,27,43,.07)", "border": "rgba(11,27,43,.13)", "border-strong": "rgba(11,27,43,.24)",
         "text-1": "#0B1B2B", "text-2": "#3C4E60", "text-3": "#526476", "on-accent": "#FFFFFF",
         "accent": "#0054B6", "accent-hover": "#003F8A", "accent-text": "#0054B6", "accent-2": "#00766C",
-        "neon": "#00A89A", "neon-core": "#009A9A", "ok": "#1B7A50", "warn": "#8F5B00", "err": "#C0262D",
+        "neon": "#008F84", "neon-core": "#009A9A", "ok": "#1B7A50", "warn": "#8F5B00", "err": "#C0262D",
         "grad": "#0054B6, #007EA8 35%, #00A89A 65%, #70C446", "glow": "rgba(0,168,154,.25)", "glow-accent": "rgba(0,84,182,.18)",
         "highlight": "rgba(255,255,255,0)", "cover": "rgba(11,27,43,.85), rgba(11,27,43,.2)",
     },

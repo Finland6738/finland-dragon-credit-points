@@ -25,3 +25,5 @@ The analysis (`docs/ANALISI.md` §9, first version) planned a Material Design 3 
 ## Consequences
 
 M1-7 builds the theme from the spec. Every window step and M7-1 refer to it. The roadmap gains steps M3-3b (first kills) and M3-8b (Progress tab). Elements marked "not feasible" (backdrop blur, letter spacing, spring curves) use the alternatives listed in the spec. The in-game look stays unverified until the owner checks M1-7.
+
+**Amendment (M7-1).** The polish step built every "identical" and "approximated" element and changed one token: Aurora's `neon` is `#008F84` (the site's `#00A89A` fails the 3:1 contrast of a ring on the light background). `tools/check_addon.py` now fails on a colour written outside `UI/Theme.lua`, and `docs/third-party.md` records the licences of fonts, icons and textures.

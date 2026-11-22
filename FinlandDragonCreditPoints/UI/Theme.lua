@@ -45,7 +45,7 @@ Theme.themes = {
 		raised = hex("#FFFFFF"),
 		["text-1"] = hex("#0B1B2B"), ["text-2"] = hex("#3C4E60"), ["text-3"] = hex("#526476"),
 		["on-accent"] = hex("#FFFFFF"), accent = hex("#0054B6"), ["accent-hover"] = hex("#003F8A"), ["accent-text"] = hex("#0054B6"),
-		["accent-2"] = hex("#00766C"), neon = hex("#00A89A"), ["neon-core"] = hex("#009A9A"),
+		["accent-2"] = hex("#00766C"), neon = hex("#008F84"), ["neon-core"] = hex("#009A9A"),   -- the site's #00A89A darkened to 3:1 on the light surface (M7-1)
 		ok = hex("#1B7A50"), warn = hex("#8F5B00"), err = hex("#C0262D"),
 		highlight = rgba(255, 255, 255, .6), scrim = rgba(11, 27, 43, .45),
 		["grad-1"] = hex("#0054B6"), ["grad-2"] = hex("#007EA8"), ["grad-3"] = hex("#00A89A"), ["grad-4"] = hex("#70C446"),
@@ -102,17 +102,32 @@ local function applyOne(region, entry)
 	elseif kind == "text" then
 		local r, g, b, a = Theme.Color(entry.token)
 		region:SetTextColor(r, g, b, a or 1)
+	elseif kind == "rgb" then
+		region:SetTextColor(entry.r, entry.g, entry.b, 1)   -- a colour of the game (item quality), not of a theme
+	elseif kind == "class" then
+		if Theme.IsDark() then
+			region:SetTextColor(entry.r, entry.g, entry.b, 1)   -- the class colour on a dark surface
+		else
+			local r, g, b, a = Theme.Color("text-1")            -- on a light surface only the square is coloured
+			region:SetTextColor(r, g, b, a or 1)
+		end
 	elseif kind == "fn" then
 		entry.fn(region, current)
 	end
 end
+
+-- The colour of a text is one thing: a token ("text"), a class colour ("class") or a game colour ("rgb"); setting one
+-- replaces the others, so a pooled row that is filled again never keeps the colour of its previous data.
+local TEXT_COLOUR = { text = true, class = true, rgb = true }
 
 local function add(region, entry)
 	local list = registry[region]
 	if not list then list = {}; registry[region] = list end
 	-- one entry per kind: registering again replaces the token (a button that changes style)
 	for i, e in ipairs(list) do
-		if e.kind == entry.kind and e.kind ~= "fn" then list[i] = entry; applyOne(region, entry); return region end
+		if e.kind ~= "fn" and (e.kind == entry.kind or (TEXT_COLOUR[e.kind] and TEXT_COLOUR[entry.kind])) then
+			list[i] = entry; applyOne(region, entry); return region
+		end
 	end
 	list[#list + 1] = entry
 	applyOne(region, entry)
@@ -125,6 +140,10 @@ function Theme.Tint(region, token, alpha) return add(region, { kind = "vertex", 
 function Theme.Fill(region, token, alpha) return add(region, { kind = "color", token = token, alpha = alpha }) end
 -- A FontString (or font object) coloured with `token`.
 function Theme.Text(region, token) return add(region, { kind = "text", token = token }) end
+-- A FontString in a colour of the game (r, g, b in 0..1): the item quality, the class of a player. It survives Apply.
+function Theme.TextRGB(region, r, g, b) return add(region, { kind = "rgb", r = r, g = g, b = b }) end
+-- A player's name: the class colour on the dark themes, text-1 on the light one (the square next to it carries the colour).
+function Theme.ClassText(region, r, g, b) return add(region, { kind = "class", r = r, g = g, b = b }) end
 -- A free function fn(region, themeId) that sets whatever a token cannot (a gradient, a blend mode); runs now and on Apply.
 function Theme.Call(region, fn) return add(region, { kind = "fn", fn = fn }) end
 
@@ -132,6 +151,52 @@ function Theme.Count()
 	local n = 0
 	for _ in pairs(registry) do n = n + 1 end
 	return n
+end
+
+-- The two preferences of the Settings (docs/specs/ui-style.md §5: "Neon effects", "Animations"). Both are on by default;
+-- a client without a database (the first frames of a load) answers the default.
+local function preference(name)
+	local cfg = ns.Config
+	if cfg and cfg.db then
+		local v = cfg:Get(name)
+		if v ~= nil then return v and true or false end
+	end
+	return true
+end
+function Theme.EffectsOn() return preference("effects") end
+function Theme.AnimationsOn() return preference("animations") end
+
+-- A soft glow of Media/glow_s or glow_l behind `parent`, white and tinted with `token`. Dark themes add it to the picture
+-- (blend mode ADD, the site's neon); the light theme draws it as an ordinary soft shadow at half strength. It is hidden
+-- with the "Neon effects" preference off. opts: layer, alpha. Returns the texture; the caller anchors it.
+function Theme.Glow(parent, key, token, opts)
+	opts = opts or {}
+	local tex = Theme.Slice(parent, key, token, opts.layer or "BACKGROUND", opts.alpha or 0.4)   -- no token: the caller tints it
+	tex._glow = true
+	Theme.Call(tex, function(region, id)
+		local dark = Theme.themes[id].dark
+		if region.SetBlendMode then region:SetBlendMode(dark and "ADD" or "BLEND") end
+		region:SetShown(Theme.EffectsOn() and region._want ~= false)
+		region._additive = dark
+	end)
+	return tex
+end
+
+-- Shows or hides a glow on purpose (the one neon element of a view): it still disappears with "Neon effects" off.
+function Theme.GlowShow(tex, shown)
+	tex._want = shown and true or false
+	tex:SetShown(tex._want and Theme.EffectsOn())
+end
+
+-- A text glow for the one display title of a view: a coloured shadow of the font, dark themes and effects on only.
+function Theme.TextGlow(fs, token)
+	Theme.Call(fs, function(region, id)
+		local on = Theme.themes[id].dark and Theme.EffectsOn()
+		local r, g, b = Theme.Color(token or "accent", id)
+		if region.SetShadowColor then region:SetShadowColor(r, g, b, on and 0.55 or 0) end
+		if region.SetShadowOffset then region:SetShadowOffset(0, on and -1 or 0) end
+		region._glowing = on
+	end)
 end
 
 -- Switches the theme and recolours every registered region. Returns true when the theme exists.
@@ -277,6 +342,7 @@ function Theme.Panel(frame, opts)
 		p.shadow = Theme.Slice(frame, "shadow", "scrim", "BACKGROUND", opts.shadowAlpha or 0.6)
 		p.shadow:SetPoint("TOPLEFT", frame, "TOPLEFT", -24, 16)
 		p.shadow:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 24, -32)
+		Theme.Call(p.shadow, function(region) region:SetShown(Theme.EffectsOn()) end)   -- "Neon effects: off" is flat
 	end
 	if opts.fill ~= false then
 		p.fill = Theme.Slice(frame, "rr_fill_" .. r, opts.fill or "surface-1", "BACKGROUND")
@@ -286,7 +352,25 @@ function Theme.Panel(frame, opts)
 		p.ring = Theme.Slice(frame, "rr_ring_" .. r, opts.border or "border", "BORDER")
 		p.ring:SetAllPoints(frame)
 	end
+	if opts.highlight then
+		-- "on the dark the depth comes from the light": a 1 px line of `highlight` along the top edge, inside the corners
+		p.highlight = frame:CreateTexture(nil, "BORDER", nil, 1)
+		Theme.Fill(p.highlight, "highlight")
+		Theme.Crisp(p.highlight)
+		p.highlight:SetPoint("TOPLEFT", frame, "TOPLEFT", r, -1)
+		p.highlight:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -r, -1)
+		p.highlight:SetHeight(Theme.Px(1, frame))
+	end
 	return p
+end
+
+-- Rebuild what the preferences decide when one changes (or the profile does): glows, shadows, text glow.
+if ns.Bus then
+	local function refresh(_, name)
+		if name == nil or name == "effects" then Theme.Apply() end
+	end
+	ns.Bus:On("CONFIG_CHANGED", refresh, Theme)
+	ns.Bus:On("CONFIG_PROFILE_CHANGED", function() Theme.Load() end, Theme)
 end
 
 -- The probes of /fdcp debug (docs/specs/ui-style.md §7): what the client answered. Nothing here is a verdict: the owner

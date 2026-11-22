@@ -110,9 +110,7 @@ function RosterWindow:ActiveSub() return self.root and self.root.sub:Active() en
 local function buildRow(card, i)
 	local r = CreateFrame("Frame", nil, card)
 	r:SetHeight(RosterWindow.ROW_H)
-	r.square = r:CreateTexture(nil, "ARTWORK")
-	r.square:SetSize(10, 10)
-	r.square:SetColorTexture(1, 1, 1, 1)
+	r.square = Widgets.ClassMark(r)
 	r.square:SetPoint("LEFT", r, "LEFT", 0, 0)
 	r.name = Theme.NewText(r, "BodyMedium", "text-1")
 	r.name:SetPoint("LEFT", r.square, "RIGHT", 8, 0)
@@ -288,7 +286,7 @@ function RosterWindow:RefreshPool()
 			local m = r.list[card.offset + i]
 			if m then
 				row.member = m.member
-				row.square:SetColorTexture(self.ClassColor(m.class))
+				Widgets.PaintClassMark(row.square, self.ClassColor(m.class))
 				row.name:SetText(short(m.member) .. (m.altCount > 0 and L["ROSTER_ALTS"]:format(m.altCount) or ""))
 				if Theme.IsDark() then Theme.Text(row.name, "text-1") end
 				row.spec:SetText(specText(m))

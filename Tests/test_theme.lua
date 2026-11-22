@@ -294,3 +294,165 @@ describe("assets table", function()
 		isNil(A.IconCoords("nothing"))
 	end)
 end)
+
+-- M7-1: the finished look ------------------------------------------------------------------------------------------
+
+describe("text colours", function()
+	it("a game colour survives Apply and a token replaces it", function()
+		local fs = CreateFrame("Frame"):CreateFontString()
+		T().Text(fs, "text-1")
+		T().TextRGB(fs, 0.2, 0.4, 0.6)
+		T().Apply("aurora")
+		local r, g, b = fs:GetTextColor()
+		near(r, 0.2, 1e-6); near(g, 0.4, 1e-6); near(b, 0.6, 1e-6)
+		T().Text(fs, "text-3")
+		T().Apply("nebula")
+		near((fs:GetTextColor()), 0x9A / 255, 1e-6)    -- the token won: one colour per text
+	end)
+
+	it("a class name is class-coloured on the dark themes and text-1 on the light one", function()
+		local fs = CreateFrame("Frame"):CreateFontString()
+		T().ClassText(fs, 0.78, 0.61, 0.43)
+		near((fs:GetTextColor()), 0.78, 1e-6)
+		T().Apply("aurora")
+		near((fs:GetTextColor()), 0x0B / 255, 1e-6)
+		T().Apply("drago")
+		near((fs:GetTextColor()), 0.78, 1e-6)
+	end)
+end)
+
+describe("glows and effects", function()
+	local function glowOf() return T().Glow(CreateFrame("Frame"), "glow_s", "neon", { alpha = 0.5 }) end
+
+	it("a glow adds to the picture on the dark themes and blends on the light one", function()
+		local g = glowOf()
+		eq(g._additive, true)
+		T().Apply("aurora")
+		eq(g._additive, false)
+		T().Apply("nebula")
+		eq(g._additive, true)
+	end)
+
+	it("the Neon effects preference hides glows and shadows at once and brings them back", function()
+		local f = CreateFrame("Frame")
+		local g = T().Glow(f, "glow_s", "neon")
+		local p = T().Panel(f, { radius = 12, shadow = true })
+		truthy(T().EffectsOn())
+		truthy(g:IsShown() and p.shadow:IsShown())
+		truthy(FDCP.Config:Set("effects", false))
+		falsy(T().EffectsOn())
+		falsy(g:IsShown()); falsy(p.shadow:IsShown())
+		FDCP.Config:Set("effects", true)
+		truthy(g:IsShown() and p.shadow:IsShown())
+	end)
+
+	it("a glow shown on purpose still obeys the preference", function()
+		local g = glowOf()
+		T().GlowShow(g, false)
+		falsy(g:IsShown())
+		T().GlowShow(g, true)
+		truthy(g:IsShown())
+		FDCP.Config:Set("effects", false)
+		falsy(g:IsShown())
+		T().GlowShow(g, true)
+		falsy(g:IsShown())
+	end)
+
+	it("the title glow is a coloured font shadow, only with effects on and a dark theme", function()
+		local fs = CreateFrame("Frame"):CreateFontString()
+		T().TextGlow(fs, "accent")
+		eq(fs._glowing, true)
+		T().Apply("aurora")
+		eq(fs._glowing, false)
+		T().Apply("nebula")
+		FDCP.Config:Set("effects", false)
+		eq(fs._glowing, false)
+	end)
+
+	it("the dark themes put a light line along the top of a panel", function()
+		local p = T().Panel(CreateFrame("Frame"), { radius = 18, highlight = true })
+		truthy(p.highlight)
+		falsy(T().Panel(CreateFrame("Frame"), { radius = 18 }).highlight)
+	end)
+
+	it("a card has at most four regions of its own", function()
+		local c = FDCP.Widgets.Card(CreateFrame("Frame"), { shadow = true })
+		eq(c:GetNumRegions(), 4)
+	end)
+end)
+
+describe("contrast, finished", function()
+	local function pair(id, a, b) return contrast(color(id, a), color(id, b)) end
+
+	it("the accent and the neon read as shapes (3:1) on the window background of every theme", function()
+		for id in pairs(T().themes) do
+			truthy(pair(id, "accent", "bg") >= 3, id .. " accent on bg = " .. pair(id, "accent", "bg"))
+			truthy(pair(id, "neon", "bg") >= 3 or id == "nebula", id .. " neon on bg")
+		end
+	end)
+
+	it("the state colours read on the raised and secondary surfaces too (3:1 as a badge text on its tint)", function()
+		for id in pairs(T().themes) do
+			for _, token in ipairs({ "ok", "warn", "err", "accent-text" }) do
+				for _, s in ipairs({ "surface-3", "raised" }) do
+					local ratio = pair(id, token, s)
+					truthy(ratio >= 3, ("%s %s on %s = %.2f"):format(id, token, s, ratio))
+				end
+			end
+		end
+	end)
+
+	it("the strong border is a visible edge on every surface (1.3:1 at least)", function()
+		for id, t in pairs(T().themes) do
+			local b = t["border-strong"]
+			for _, s in ipairs({ "bg", "surface-1", "surface-2" }) do
+				local base = t[s]
+				local mixed = { b[1] * b[4] + base[1] * (1 - b[4]), b[2] * b[4] + base[2] * (1 - b[4]), b[3] * b[4] + base[3] * (1 - b[4]) }
+				truthy(contrast(mixed, base) >= 1.3, id .. " border-strong on " .. s)
+			end
+		end
+	end)
+end)
+
+describe("icon sheet", function()
+	it("lists forty distinct icons that fit the sheet", function()
+		local A = FDCP.Assets
+		eq(#A.icons, 40)
+		local seen = {}
+		for _, n in ipairs(A.icons) do falsy(seen[n], "duplicate " .. n); seen[n] = true end
+		local per = A.textures.icons.w / A.textures.icons.cell
+		truthy(#A.icons <= per * per)
+	end)
+
+	it("every icon the UI asks for is on the sheet", function()
+		for _, n in ipairs({ "chevron", "cross", "dashed", "skull", "arrow_left", "search", "warn", "info" }) do
+			notNil(FDCP.Assets.IconCoords(n), n)
+		end
+	end)
+
+	it("the last icon sits in the third row", function()
+		local l, r, t, b = FDCP.Assets.IconCoords("arrow_left")
+		near(l, 7 / 16, 1e-9); near(t, 2 / 16, 1e-9)
+	end)
+end)
+
+describe("look preferences by command", function()
+	it("/fdcp effects and /fdcp animations show and set the preferences in the active language", function()
+		Mock.Slash("/fdcp effects")
+		contains(table.concat(Mock.PlainOutput(), "\n"), "Neon effects: on.")
+		Mock.Slash("/fdcp effects off")
+		falsy(FDCP.Config:Get("effects"))
+		contains(table.concat(Mock.PlainOutput(), "\n"), "Neon effects: off.")
+		Mock.Slash("/fdcp animations off")
+		falsy(FDCP.Config:Get("animations"))
+		contains(table.concat(Mock.PlainOutput(), "\n"), "Animations: off.")
+		Mock.Slash("/fdcp animations maybe")
+		contains(table.concat(Mock.PlainOutput(), "\n"), "Use: /fdcp animations on")
+	end)
+
+	it("speak Italian", function()
+		FDCP.Locale.SetActive("itIT")
+		Mock.Slash("/fdcp effects off")
+		contains(table.concat(Mock.PlainOutput(), "\n"), "Effetti neon: disattivati.")
+	end)
+end)

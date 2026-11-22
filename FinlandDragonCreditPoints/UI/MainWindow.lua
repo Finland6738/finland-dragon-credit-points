@@ -68,7 +68,7 @@ function MainWindow:Build()
 	f:SetResizeBounds(MainWindow.MIN_W, MainWindow.MIN_H, MainWindow.MAX_W, MainWindow.MAX_H)
 	f:EnableMouse(true)
 	f:RegisterForDrag("LeftButton")
-	f.parts = Theme.Panel(f, { radius = 12, fill = "bg", border = "border", shadow = true })
+	f.parts = Theme.Panel(f, { radius = 12, fill = "bg", border = "border", shadow = true, highlight = true })
 
 	local placement = MainWindow.LoadPlacement()
 	if placement then
@@ -205,6 +205,14 @@ end
 function MainWindow:SetTabVisible(id, shown)
 	self:Build()
 	self.frame.tabs:SetTabShown(id, shown)
+end
+
+-- A message at the bottom right of the window (the snackbar of the spec): text already translated, tone "ok" | "warn" |
+-- "err" | "accent".
+function MainWindow:Toast(text, tone, seconds)
+	self:Build()
+	if not self.snackbar then self.snackbar = Widgets.Snackbar(self.frame) end
+	self.snackbar:Say(text, tone, seconds)
 end
 
 function MainWindow:IsShown() return self.frame ~= nil and self.frame:IsShown() end
