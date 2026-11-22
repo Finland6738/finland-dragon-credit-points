@@ -200,7 +200,7 @@ che un rango non può usare non compaiono (§3.9 dell'analisi).
 | **Progress** | una card per istanza come sul sito: copertina, barra per fazione, boss su due colonne con teschio e data della prima uccisione per fazione | — | tutti | M3-8b |
 | **Loot** | sessione del master looter: pezzi a sinistra, candidati con crediti, risposta e roll a destra, proposta, conferma, intervento del council; per gli altri la stessa vista in sola lettura | Sessione · Council | ML e council (gli altri in sola lettura) | M4-5, M5-8 |
 | **Storico** | serate, log del loot, audit, esportazioni (Discord, CSV, JSON e i tre file del sito) | Serate · Log · Audit · Esporta | tutti (Audit ed Esporta con i permessi) | M6-1…M6-4 |
-| **Impostazioni** | preferenze personali (tema, effetti, font, lingua, popup), regole in sola lettura, permessi (GM), profilo del sito (nome della fazione) | Personali · Regole · Permessi · Sito | tutti (modifiche solo GM) | M7-2 |
+| **Impostazioni** | preferenze personali (tema, effetti, font, lingua, popup), regole in sola lettura, permessi (GM), profilo del sito (nome della fazione) | Personali · Regole · Permessi · Sito · Season | tutti (modifiche solo GM) | M7-2 |
 
 Fuori dalla finestra: il **popup del pezzo** per il giocatore (card impilabili, con risposta, etichetta, timer e
 tiro; M4-6), il **pulsante della minimappa** e la voce nel compartment con il logo. Quando una sessione di loot è

@@ -1112,6 +1112,12 @@ function Compat.Now()
 	return time()
 end
 
+-- Sounds: Play(soundKit) -> true when the client played it (PlaySound; a missing or failing call is just false).
+Compat.Sound = {}
+function Compat.Sound.Play(soundKit)
+	return Compat.Call("PlaySound", soundKit) == AVAILABLE
+end
+
 -- C_Timer wrappers. After(seconds, fn) -> true when scheduled. NewTimer / NewTicker -> a handle with :Cancel(), or nil
 -- when timers are not available (the caller must cope: no timer, no sending).
 function Compat.After(seconds, fn)

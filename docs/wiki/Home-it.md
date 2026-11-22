@@ -24,9 +24,10 @@
 | Impostare i miei pesi o una lista best-in-slot | [[Suggerimenti di upgrade|Upgrade-Hints-it]] |
 | Votare, annullare un'assegnazione, correggere i crediti o seguire un progetto leggendario come council | [[Council|Council-it]] |
 | Leggere le serate, lo storico di un membro o di un oggetto | [[Storico|History-it]] |
+| Cambiare le mie preferenze o (Guild Master) le regole e i permessi | [[Impostazioni|Settings-it]] |
 | Incollare la tabella crediti su Discord, o averla in CSV o JSON | [[Esporta|Export-it]] |
 
-Altre pagine (le impostazioni, le esportazioni) arrivano con le funzioni.
+Altre pagine arrivano con le funzioni.
 
 ## Per gli sviluppatori
 

@@ -40,6 +40,7 @@ Config.defaults = {
 		fontSource = "addon",   -- "addon" (Media/Fonts) | "game" (the game's fonts)
 		effects = true,         -- glows and shadows
 		animations = true,      -- transitions of 120-320 ms
+		sounds = true,          -- the chime when a loot popup appears (M7-2)
 		minimap = { hide = false },   -- LibDBIcon keeps its position here
 	},
 }
@@ -53,6 +54,7 @@ Config.validators = {
 	fontSource = { type = "string", values = { addon = true, game = true } },
 	effects = { type = "boolean" },
 	animations = { type = "boolean" },
+	sounds = { type = "boolean" },
 }
 
 -- Runs the steps from `from` to `to` on `global`. A failing step stops there and leaves the version at the last good

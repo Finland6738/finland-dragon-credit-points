@@ -4,7 +4,7 @@
 
 ## Cosa esiste ora
 
-La finestra è costruita: la aprono `/fdcp`, il pulsante della minimappa (il logo della gilda) o la voce nell'AddOn Compartment. Ha la barra del titolo, le sei schede qui sotto, i **temi** (Nebula, Aurora, Drago: `/fdcp theme`) e le schede si riempiono con le versioni: Roster, Crediti, Progress e **Loot › Sessione** (la finestra del master looter, vedi la [[Guida del master looter|Master-Looter-Guide-it]]) e **Loot › Council** (vedi [[Council|Council-it]]) funzionano già, e anche **Storico › Serate** (vedi [[Storico|History-it]]); Impostazioni mostra la **Season** (vedi [[Season|Seasons-it]]), il resto della pagina è ancora vuoto. Si trascina dalla barra del titolo, si ridimensiona dall'angolo in basso a destra (non sotto 900 × 560) e ricorda dove stava per ogni personaggio; **Esc** la chiude. I font sono Outfit, JetBrains Mono e Orbitron, inclusi nell'addon (font liberi, SIL Open Font License); se uno non si carica si usa il font del gioco. Le immagini qui sotto sono ancora anteprime di progetto: la finestra vera non è stata ancora vista in gioco.
+La finestra è costruita: la aprono `/fdcp`, il pulsante della minimappa (il logo della gilda) o la voce nell'AddOn Compartment. Ha la barra del titolo, le sei schede qui sotto, i **temi** (Nebula, Aurora, Drago: `/fdcp theme`) e le schede si riempiono con le versioni: Roster, Crediti, Progress e **Loot › Sessione** (la finestra del master looter, vedi la [[Guida del master looter|Master-Looter-Guide-it]]) e **Loot › Council** (vedi [[Council|Council-it]]) funzionano già, e anche **Storico › Serate** (vedi [[Storico|History-it]]); **Impostazioni** (vedi [[Impostazioni|Settings-it]]) ha le tue preferenze, le regole e i permessi della gilda (in sola lettura se non sei il Guild Master), la chiave del sito e la **Season** (vedi [[Season|Seasons-it]]). Si trascina dalla barra del titolo, si ridimensiona dall'angolo in basso a destra (non sotto 900 × 560) e ricorda dove stava per ogni personaggio; **Esc** la chiude. I font sono Outfit, JetBrains Mono e Orbitron, inclusi nell'addon (font liberi, SIL Open Font License); se uno non si carica si usa il font del gioco. Le immagini qui sotto sono ancora anteprime di progetto: la finestra vera non è stata ancora vista in gioco.
 
 ## Una finestra, sei schede
 
@@ -55,7 +55,7 @@ Due preferenze cambiano l'aspetto della finestra, entrambe attive di default e a
 - **Effetti neon** (`/fdcp effects on|off`): i bagliori morbidi (quello ambra dietro il pulsante principale, quello magenta sull'unico popup evidenziato, quello sotto il titolo e il logo) e le ombre sotto finestre e card. Spenti, la finestra è piatta.
 - **Animazioni** (`/fdcp animations on|off`): le transizioni brevi (120 ms per un pulsante premuto o sotto il mouse, 200 ms per le schede, 320 ms per l'entrata di una card o di un dialog e per la freccia della season che ruota). Spente, tutto cambia di colpo, come per chi preferisce meno movimento.
 
-Gli stessi due interruttori saranno nella scheda Impostazioni.
+Gli stessi due interruttori sono in **Impostazioni › Personali** (vedi [[Impostazioni|Settings-it]]).
 
 ![Impostazioni: tema](../specs/mockups/fdcp-settings-theme.webp)
 

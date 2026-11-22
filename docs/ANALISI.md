@@ -1621,7 +1621,8 @@ della finestra e nel pulsante della minimappa in ogni tema.
    fazione) · **Loot** (Sessione · Council) · **Storico** (Serate · Log · Audit · Esporta) · **Impostazioni**
    (Personali · Regole · Permessi · Sito). Le schede che un rango non può usare non compaiono. L'apertura e la
    chiusura della season (pacchetto di istanze, taglie, regola dei late joiner, crediti iniziali; permesso
-   `season.manage`) hanno una finestra propria, step M6-1b della roadmap; i membri vedono la season in sola lettura.
+   `season.manage`) hanno una finestra propria, step M6-1b della roadmap (la sotto-scheda **Season** di Impostazioni, M7-2);
+   i membri vedono la season in sola lettura.
 2. **Popup del pezzo (giocatore)**: una card per pezzo, impilabili; vedi §5.1.
 3. **Sessione (ML)**, nella scheda Loot: a sinistra i pezzi della sessione con stato; a destra i candidati con
    crediti, risposta, roll, segnalazioni; sotto la proposta con "Conferma e assegna", "Modifica", "Intervento del
@@ -1656,6 +1657,31 @@ Tutto ciò che è in §3 più:
 
 Per tutti gli altri membri la pagina Impostazioni mostra le regole in **sola lettura** (con "modificabile dal GM"),
 più le preferenze personali: posizione dei popup, suoni, pesi delle statistiche personali, wishlist.
+
+**Come è fatto (M7-2).** La scheda **Impostazioni** è `UI/Windows/Settings.lua` (le sotto-schede Personali · Regole ·
+Permessi · Sito · Season; Season è la pagina di M6-1b, `UI/Windows/Season.lua`) sopra `App/SettingsController.lua`;
+il modulo di regole è `UI/Windows/RulesForm.lua` sopra `Domain/RuleFields.lua` (puro: per ogni valore delle regole
+dice il percorso, il tipo, i limiti e le chiavi di testo; `Get`, `Set`, `Parse`). **Personali**: tema, caratteri,
+effetti neon, animazioni, suoni (`sounds`, nuova voce del profilo: un breve suono quando compare il popup), lingua
+personale e lingua dei messaggi per tutti, posizione del popup (si rimette al centro), pesi personali e wishlist
+(`App/PersonalUpgrade.lua`); nessuna è condivisa. **Regole**: dieci pagine (Serata e sessione · Priorità · Costi ·
+Moltiplicatori · Membri e crediti · Loot council · Leggendari e panchina · Messaggi in /raid · Verdetto di upgrade ·
+Sito) che coprono **ogni** sezione di `Domain/Rules.lua`, anche quelle senza finestra prima (testo dell'avviso in
+`/raid`, annunci, regole di upgrade, council). Le modifiche vanno a una **bozza**; **Salva** controlla tutta la
+configurazione con `Rules.Validate` (apre la pagina del campo sbagliato) e scrive **un** `CONFIG_CHANGED`. Con una
+season aperta una finestra elenca le modifiche e chiede la conferma esplicita: l'evento tiene `confirmed` per l'audit.
+**Permessi**: una riga per permesso con il rango più basso che lo ha (i ranghi del gioco per nome, per indice); i due
+fissi restano al GM; Salva scrive un `PERMISSIONS_CHANGED` con la stessa conferma. Qui il GM chiude anche la **revisione
+dei ranghi** (M3-1: un rango riordinato, aggiunto o tolto lascia un avviso finché il GM non conferma la tabella).
+**Chi può**: solo il GM (indice di rango 0, `config.permissions`). Per gli altri i controlli sono spenti e i pulsanti
+non esistono; `SettingsController:ApplyRules` e `ApplyPermissions` rispondono `NOT_GM` **prima** di costruire un evento,
+e un evento falsificato (o arrivato da un peer) lo rifiuta il cancello di fiducia del registro (`Permissions.Gate`).
+Nella finestra delle impostazioni del gioco c'è una voce AceConfig con gli interruttori personali e un pulsante che
+apre la scheda (`SettingsController:GameOptions`). **Scelte**: la scelta dei preset e il profilo come stringa sono
+M7-3; il campo "Pezzo che nessuno vuole" e simili sono liste di codici chiuse (mai testo libero); i costi per singolo
+oggetto (`cost.overrides`) e la lista dei token **non** hanno ancora una pagina (sono elenchi di id, non valori: restano
+nel dominio e nell'esportazione delle regole di M6-7); le regole importate che li contengono si conservano intatte
+quando il GM salva da qui.
 
 ---
 

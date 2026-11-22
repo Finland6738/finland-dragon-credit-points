@@ -25,8 +25,9 @@
 | Set my own stat weights or a best-in-slot list | [[Upgrade Hints|Upgrade-Hints]] |
 | Vote, cancel an award, correct credits or run a legendary project as the council | [[Council|Council]] |
 | Read the nights, a member's history or an item's history | [[History|History]] |
+| Change my preferences, or (Guild Master) the rules and the permissions | [[Settings|Settings]] |
 
-More pages (settings, the exports) are added as the features are built.
+More pages are added as the features are built.
 
 ## For developers
 

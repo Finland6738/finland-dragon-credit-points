@@ -55,6 +55,7 @@ Domain\Notice.lua
 Domain\Announce.lua
 Domain\Rules.lua
 Domain\Presets.lua
+Domain\RuleFields.lua
 Domain\Permissions.lua
 Domain\Backup.lua
 Domain\SessionFSM.lua
@@ -67,6 +68,7 @@ Adapters\LootSource.lua
 Adapters\RollListener.lua
 Adapters\MasterLoot.lua
 App\PermissionService.lua
+App\SettingsController.lua
 App\NightController.lua
 App\RosterController.lua
 App\ProgressController.lua
@@ -109,5 +111,7 @@ UI\Windows\Export.lua
 UI\Windows\Backup.lua
 UI\Windows\History.lua
 UI\Windows\Season.lua
+UI\Windows\RulesForm.lua
+UI\Windows\Settings.lua
 UI\MainWindow.lua
 UI\Minimap.lua

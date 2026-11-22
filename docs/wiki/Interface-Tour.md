@@ -4,7 +4,7 @@
 
 ## What exists now
 
-The window itself is built: `/fdcp`, the minimap button (the guild logo) or the AddOn Compartment entry opens it. It has the title bar, the six tabs below, **themes** (Nebula, Aurora, Drago: `/fdcp theme`), and the tabs fill in as the versions arrive: Roster, Credits, Progress and **Loot › Session** (the master looter's window, see the [[Master Looter Guide|Master-Looter-Guide]]) and **Loot › Council** (see [[Council|Council]]) already work; **History › Nights** (see [[History|History]]) already work; Settings shows the **Season** (see [[Seasons|Seasons]]), the rest of the page is still empty. You can drag it by the title bar, resize it from the corner grip (not below 900 × 560), and it remembers where it was for each character; **Esc** closes it. The fonts are Outfit, JetBrains Mono and Orbitron, shipped with the addon (free fonts, SIL Open Font License); if one cannot load, the game's own font is used. The images below are still design previews: the real window has not been seen in the game yet.
+The window itself is built: `/fdcp`, the minimap button (the guild logo) or the AddOn Compartment entry opens it. It has the title bar, the six tabs below, **themes** (Nebula, Aurora, Drago: `/fdcp theme`), and the tabs fill in as the versions arrive: Roster, Credits, Progress and **Loot › Session** (the master looter's window, see the [[Master Looter Guide|Master-Looter-Guide]]) and **Loot › Council** (see [[Council|Council]]) already work; **History › Nights** (see [[History|History]]) already work; **Settings** (see [[Settings|Settings]]) has your preferences, the guild's rules and permissions (read-only unless you are the Guild Master), the site key and the **Season** (see [[Seasons|Seasons]]). You can drag it by the title bar, resize it from the corner grip (not below 900 × 560), and it remembers where it was for each character; **Esc** closes it. The fonts are Outfit, JetBrains Mono and Orbitron, shipped with the addon (free fonts, SIL Open Font License); if one cannot load, the game's own font is used. The images below are still design previews: the real window has not been seen in the game yet.
 
 ## One window, six tabs
 
@@ -55,7 +55,7 @@ Two preferences change how the window looks, both on by default and both set at 
 - **Neon effects** (`/fdcp effects on|off`): the soft glows (the amber one behind the main button, the magenta one on the one highlighted item popup, the one under the title and the logo) and the shadows under windows and cards. Off, the window is flat.
 - **Animations** (`/fdcp animations on|off`): the short transitions (120 ms for a button pressed or hovered, 200 ms for tabs, 320 ms for a card or dialog entering and the season arrow turning). Off, everything changes at once, as for anyone who prefers reduced motion.
 
-The same two switches will be in the Settings tab.
+The same two switches are in **Settings › Personal** (see [[Settings|Settings]]).
 
 ![Settings: theme](../specs/mockups/fdcp-settings-theme.webp)
 

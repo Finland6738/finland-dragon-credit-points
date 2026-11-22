@@ -152,11 +152,11 @@ function MainWindow:Build()
 		ns.HistoryWindow:Build(f.pages.history)
 	end
 
-	-- Settings (M6-1b): the season page (every member sees the season, the manager opens and closes it); M7-2 adds the rest
-	if ns.SeasonWindow then
+	-- Settings (M7-2): Personal, Rules, Permissions, Site and the season page of M6-1b (UI/Windows/Settings.lua)
+	if ns.SettingsWindow then
 		f.pages.settings.eyebrow:Hide()
 		f.pages.settings.empty:Hide()
-		ns.SeasonWindow:Build(f.pages.settings)
+		ns.SettingsWindow:Build(f.pages.settings)
 	end
 
 	-- resize grip (bottom right)
@@ -188,7 +188,7 @@ function MainWindow:ShowPage(id)
 	for pid, page in pairs(f.pages) do page:SetShown(pid == id) end
 	if id == "credits" and ns.CreditsWindow then ns.CreditsWindow:Refresh() end
 	if id == "progress" and ns.ProgressWindow then ns.ProgressWindow:Refresh() end
-	if id == "settings" and ns.SeasonWindow then ns.SeasonWindow:Refresh() end
+	if id == "settings" and ns.SettingsWindow then ns.SettingsWindow:Refresh() end
 	if id == "history" and ns.HistoryWindow then ns.HistoryWindow:Refresh() end
 	if id == "loot" and ns.MLSession and ns.MLSession.root then ns.MLSession:Refresh() end
 end

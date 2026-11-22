@@ -65,6 +65,25 @@ function Popup.LoadPlacement()
 	return { point = p.point, x = p.x, y = p.y, w = math.min(Popup.MAX_W, math.max(Popup.MIN_W, tonumber(p.w) or Popup.DEFAULT_W)) }
 end
 
+-- Puts the popup back at its starting place and width (Settings > Personal).
+function Popup:ResetPlacement()
+	local f = self.frame
+	self.width = Popup.DEFAULT_W
+	if not f then return end
+	f:ClearAllPoints()
+	f:SetPoint("CENTER", UIParent, "CENTER", 0, 120)
+	f:SetWidth(Popup.DEFAULT_W)
+	self:Layout()
+end
+
+-- A short chime when the popup appears, unless the player turned the sounds off (Settings > Personal).
+Popup.CHIME = 8960   -- the game's "ready check" sound kit
+function Popup:Chime()
+	if ns.Config and ns.Config.db and ns.Config:Get("sounds") == false then return false end
+	local kit = _G.SOUNDKIT and _G.SOUNDKIT.READY_CHECK or Popup.CHIME
+	return ns.Compat.Sound.Play(kit)
+end
+
 function Popup:SavePlacement()
 	local f, c = self.frame, charData()
 	if not f or not c then return end
@@ -284,7 +303,7 @@ function Popup:Build()
 			Popup:Layout()
 		end
 	end)
-	f:SetScript("OnShow", function() Popup:Arm() end)
+	f:SetScript("OnShow", function() Popup:Arm(); Popup:Chime() end)
 	f:SetScript("OnHide", function() Popup:Disarm() end)
 	f:Hide()
 	return f

@@ -16,6 +16,7 @@
 - [[Export|Export]]
 - [[Seasons|Seasons]]
 - [[Backup and Seasons|Backup-and-Seasons]]
+- [[Settings|Settings]]
 
 **Italiano**
 - [[Home|Home-it]]
@@ -35,3 +36,4 @@
 - [[Esporta|Export-it]]
 - [[Season|Seasons-it]]
 - [[Backup e season|Backup-and-Seasons-it]]
+- [[Impostazioni|Settings-it]]

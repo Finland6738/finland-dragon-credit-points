@@ -23,7 +23,8 @@
 - Analysis: §3.9, §10
 - Scope: `UI/Windows/Settings.lua`, the **Settings** tab with the sub-tabs Personal · Rules · Permissions · Site of [`docs/specs/ui-style.md`](../specs/ui-style.md) §6: theme (Nebula, Aurora, Drago), neon effects, animations, fonts (addon or game); rules read-only for everyone but the GM ("editable by the GM"), the GM's editor for costs, categories, responses, award mode, legendaries, late joiners, with explicit confirmation and an audit entry when the season is open; the permissions table by rank (GM only); personal preferences (popup position, sounds, personal weights, wishlist, language); also in the game's settings window.
 - Done when:
-  - [ ] A non-GM cannot change rules from the UI and a forged change is refused by the domain; open-season changes ask for confirmation.
+  - [x] A non-GM cannot change rules from the UI and a forged change is refused by the domain; open-season changes ask for confirmation.
+  - [ ] The window in the game, as the Guild Master and as an officer: the sub-tabs, the form on every page, the dropdowns, the confirmation dialog and the entry in the game's settings window. *(in game)*
 - Tests: `Tests/test_ui_settings.lua`.
 - Docs: wiki **Settings** (EN + IT), CHANGELOG.
 - Real client: the window in game, GM and officer.
