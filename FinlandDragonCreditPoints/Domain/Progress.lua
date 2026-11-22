@@ -47,10 +47,12 @@ function Progress.ValidKey(s)
 end
 
 ---------------------------------------------------------------------------------------------------------------------
--- The rules' section "site" (Domain/Rules.lua): { factionName = "" } ("" = the default of the client's faction)
+-- The rules' section "site" (Domain/Rules.lua): { factionName = "", extended = false } ("" = the default of the client's
+-- faction). `extended` is the hidden switch of issue #3 (M6-4): the site export writes `start` and `kind` too. It is off, not in
+-- the settings window, and only a rules change from the Guild Master turns it on.
 
 function Progress.DefaultConfig()
-	return { factionName = "" }
+	return { factionName = "", extended = false }
 end
 
 -- Returns true, or false and a list of codes.
@@ -58,8 +60,9 @@ function Progress.ValidateConfig(c)
 	if type(c) ~= "table" then return false, { "site" } end
 	local problems = {}
 	if not (c.factionName == "" or Progress.ValidKey(c.factionName)) then problems[#problems + 1] = "factionName" end
+	if c.extended ~= nil and type(c.extended) ~= "boolean" then problems[#problems + 1] = "extended" end
 	for k in pairs(c) do
-		if k ~= "factionName" then problems[#problems + 1] = "unknown:" .. tostring(k) end
+		if k ~= "factionName" and k ~= "extended" then problems[#problems + 1] = "unknown:" .. tostring(k) end
 	end
 	sort(problems)
 	return #problems == 0, problems

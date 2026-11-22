@@ -1,0 +1,7 @@
+{
+  "slug": "wow-forever",
+  "factions": [
+    { "name": "Nebulah", "faction": "Orda", "active": true },
+    { "name": "Nebulaa", "faction": "Alleanza", "active": false }
+  ]
+}

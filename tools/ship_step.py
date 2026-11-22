@@ -60,6 +60,8 @@ def out(cmd):
 
 def local_checks(dry):
     run([sys.executable, "-I", "-X", "utf8", "tools/check_docs.py"], capture=False, dry=dry)
+    # the Python tools' own tests (tools/site_export.py, M6-4): standard library only
+    run([sys.executable, "-I", "-X", "utf8", "-m", "unittest", "discover", "-s", "Tests", "-p", "test_*.py"], capture=False, dry=dry)
     tests = os.path.join(ROOT, "Tests", "run_tests.py")
     if os.path.isfile(tests):
         # No -I here: lupa may live in the user's site-packages, which isolated mode ignores (CI installs it system-wide

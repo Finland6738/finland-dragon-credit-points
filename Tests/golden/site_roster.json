@@ -1,0 +1,11 @@
+{
+  "updated": "2026-10-29",
+  "players": [
+    { "name": "Corin", "class": "druid", "spec": "Restoration", "role": "healer", "faction": "Nebulah", "rank": "Trial" },
+    { "name": "Hadri", "class": "druid", "spec": "Restoration", "role": "healer", "faction": "Nebulah", "rank": "Raider" },
+    { "name": "Dara", "class": "mage", "spec": "Fire", "role": "dps", "faction": "Nebulah", "rank": "Raider" },
+    { "name": "Ivo", "class": "mage", "spec": "Frost", "role": "dps", "faction": "Nebulah", "rank": "Raider" },
+    { "name": "Bryn", "class": "paladin", "spec": "Holy", "role": "healer", "faction": "Nebulah", "rank": "Raider" },
+    { "name": "Aurel", "class": "warrior", "spec": "Protection", "role": "tank", "faction": "Nebulah", "rank": "Raider" }
+  ]
+}

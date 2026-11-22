@@ -1,0 +1,74 @@
+{
+  "seasons": [
+    {
+      "season": "2",
+      "updated": "2026-10-21",
+      "closed": false,
+      "roster": [
+        { "name": "Corin", "class": "druid", "spec": "Restoration", "faction": "Nebulah" },
+        { "name": "Hadri", "class": "druid", "spec": "Restoration", "faction": "Nebulah" },
+        { "name": "Dara", "class": "mage", "spec": "Fire", "faction": "Nebulah" },
+        { "name": "Ivo", "class": "mage", "spec": "Frost", "faction": "Nebulah" },
+        { "name": "Bryn", "class": "paladin", "spec": "Holy", "faction": "Nebulah" },
+        { "name": "Édda", "class": "priest", "spec": "Shadow", "faction": "Nebulah" },
+        { "name": "Aurel", "class": "warrior", "spec": "Protection", "faction": "Nebulah" }
+      ],
+      "raids": [
+        {
+          "id": "s2-r1",
+          "instance": "Molten Core",
+          "date": "14/10",
+          "bosses": "2/10",
+          "awards": [
+            { "player": "Bryn", "item": "Item 1023 of the Test", "cost": 1 },
+            { "player": "Corin", "item": "Item 1024 of the Test", "cost": 2 },
+            { "player": "Aurel", "item": "Item 1025 of the Test", "cost": 2 },
+            { "player": "Dara", "item": "Item 1026 of the Test", "cost": 2 },
+            { "player": "Aurel", "item": "Item 1027 of the Test (off-spec)", "cost": 0 }
+          ]
+        },
+        {
+          "id": "s2-r2",
+          "instance": "Molten Core",
+          "date": "21/10",
+          "bosses": "1/10",
+          "awards": [
+            { "player": "Hadri", "item": "Crediti iniziali (media del roster)", "cost": 1 },
+            { "player": "Ivo", "item": "Crediti iniziali (media del roster)", "cost": 2 },
+            { "player": "Ivo", "item": "Crediti iniziali (media del roster)", "cost": 1 },
+            { "player": "Hadri", "item": "Item 1042 of the Test", "cost": 1 },
+            { "player": "Aurel", "item": "Item 1044 of the Test", "cost": 2 },
+            { "player": "Aurel", "item": "Item 1044 of the Test", "cost": 1 },
+            { "player": "Ivo", "item": "Item 1045 of the Test", "cost": 2 }
+          ]
+        },
+        {
+          "id": "s2-r3",
+          "instance": "Onyxia’s Lair",
+          "date": "21/10",
+          "bosses": "1/1",
+          "awards": []
+        }
+      ]
+    },
+    {
+      "season": "1",
+      "updated": "2026-09-02",
+      "closed": true,
+      "roster": [
+        { "name": "Aurel", "class": "warrior", "spec": "Protection", "faction": "Nebulah" }
+      ],
+      "raids": [
+        {
+          "id": "s1-r1",
+          "instance": "Molten Core",
+          "date": "02/09",
+          "bosses": "0/10",
+          "awards": [
+            { "player": "Aurel", "item": "Item 77 of the Test", "cost": 1 }
+          ]
+        }
+      ]
+    }
+  ]
+}

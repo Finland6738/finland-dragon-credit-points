@@ -1,0 +1,10 @@
+{
+  "_readme": "Roster raid attivo, per fazione. Solo main dichiarati (Raider e Trial).",
+  "updated": "2026-10-01",
+  "players": [
+    { "name": "Aurel", "class": "warrior", "spec": "Arms", "role": "dps", "faction": "Nebulah", "rank": "Raider" },
+    { "name": "Mordo", "class": "warrior", "spec": "Protection", "role": "tank", "faction": "Nebulah", "rank": "Raider" },
+    { "name": "Zed", "class": "rogue", "spec": "Combat", "role": "dps", "faction": "Nebulaa", "rank": "Raider" },
+    { "name": "Yara", "class": "priest", "spec": "Holy", "role": "healer", "faction": "Nebulaa", "rank": "Trial" }
+  ]
+}

@@ -2,7 +2,7 @@
 
 > **Built, not yet seen in the game.** The export works in the offline tests with a simulated client; how the copy box behaves in the real game is still to be confirmed. [Italiano](Export-it)
 
-The **History › Export** sub-tab turns the season's **credits table** into text you can paste: into a Discord channel, into a spreadsheet, or into any tool that reads JSON. The text is worked out from the ledger every time you open the tab, so it always matches the Credits tab. For the community site's own files (roster, loot, progress) see [[Site Export|Site-Export]].
+The **History › Export** sub-tab turns the season's **credits table** into text you can paste: into a Discord channel, into a spreadsheet, or into any tool that reads JSON. The text is worked out from the ledger every time you open the tab, so it always matches the Credits tab. For the community site's own files (roster, loot, progress) use the **Site** form of the same tab: see [[Site Export|Site-Export]].
 
 ## Who can export
 
@@ -11,7 +11,7 @@ The permission `export.public`: **officers** by default (the Guild Master can lo
 ## How to copy
 
 1. Open **History › Export** (the season shown is the one picked in the Nights tab).
-2. Pick **Discord**, **CSV** or **JSON**.
+2. Pick **Discord**, **CSV** or **JSON** (the fourth choice, **Site**, is for the community site's files: [[Site Export|Site-Export]]).
 3. Press **Select all**, then **Ctrl+C**. The game does not let an addon write to your clipboard, so the text is selected for you to copy. The box cannot be edited: a change by hand is put back.
 4. Paste it where you want it.
 

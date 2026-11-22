@@ -1,0 +1,29 @@
+{
+  "instances": [
+    {
+      "id": "mc",
+      "name": "Molten Core",
+      "size": 40,
+      "bosses": [
+        { "name": "Lucifron", "Nebulah": "2026-09-30" },
+        { "name": "Magmadar", "Nebulah": "2026-10-14" },
+        { "name": "Gehennas", "Nebulah": null },
+        { "name": "Garr", "Nebulah": null },
+        { "name": "Shazzrah", "Nebulah": null },
+        { "name": "Baron Geddon", "Nebulah": null },
+        { "name": "Sulfuron Harbinger", "Nebulah": null },
+        { "name": "Golemagg", "Nebulah": null },
+        { "name": "Majordomo Executus", "Nebulah": null },
+        { "name": "Ragnaros", "Nebulah": null }
+      ]
+    },
+    {
+      "id": "ony",
+      "name": "Onyxia’s Lair",
+      "size": 40,
+      "bosses": [
+        { "name": "Onyxia", "Nebulah": "2026-10-21" }
+      ]
+    }
+  ]
+}

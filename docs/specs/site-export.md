@@ -234,6 +234,16 @@ non usa git e non tocca altro che quei tre file. Non ci sono dipendenze oltre a 
 Presenze e panchine (sono dati da officer), note, interventi del council e motivazioni, chi non ha l'addon, alt,
 GUID, reami. L'esportazione pubblica contiene solo ciò che il sito già pubblica oggi.
 
+### 6.4 Come è stato fatto (M6-4)
+
+Le scelte che la specifica lasciava aperte, scritte dal passo M6-4 (dettagli e punti non verificati in gioco: `docs/ANALISI.md` §7.1):
+
+- le SavedVariables contengono i tre file come **testo JSON** (`siteExport.files.roster|loot|progress`), non come tabelle Lua: un `null` o un elenco vuoto non sopravvivono a una tabella;
+- il frammento di `progress.json` è l'elenco `[{ "id", "bosses": [{ "name", "<chiave>" }] }]`, quello di `loot.json` l'oggetto della season corrente (`null` se non c'è), quello di `roster.json` l'elenco `players`;
+- le serate **non ancora chiuse** non sono colonne (escono alla chiusura) e le loro assegnazioni sono contate come avviso;
+- le correzioni manuali dei crediti (`CREDITS_ADJUSTED`) non hanno una riga nel formato attuale (il sito rifiuta costi negativi o frazionari): sono contate come avviso `ADJUSTMENT_NOT_SHOWN`, e con l'opzione `extended` diventano righe con `kind = "adjust"`;
+- lo script unisce le serate di una season condivisa riconoscendo quelle della gilda dai giocatori del suo roster, toglie il marcatore `example` quando sostituisce i dati d'esempio e può scrivere i due fogli CSV del percorso Google Sheets del sito (`--csv-dir`).
+
 ## 7. Tabelle fisse in `Data/`
 
 | Tabella | Contenuto | Perché è fissa |

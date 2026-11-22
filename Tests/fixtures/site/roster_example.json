@@ -1,0 +1,8 @@
+{
+  "_readme": "Roster di esempio.",
+  "example": true,
+  "updated": "[[AAAA-MM-GG]]",
+  "players": [
+    { "name": "Aurel", "class": "warrior", "spec": "Protection", "role": "tank", "faction": "Nebulah", "rank": "Raider" }
+  ]
+}

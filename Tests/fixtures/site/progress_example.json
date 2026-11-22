@@ -1,0 +1,17 @@
+{
+  "_readme": "Progress di esempio.",
+  "example": true,
+  "instances": [
+    {
+      "id": "mc",
+      "name": "Molten Core",
+      "size": 40,
+      "cover": "media/art/concept-nebula-inn.webp",
+      "bosses": [
+        { "name": "Lucifron", "Nebulaa": "[[AAAA-MM-GG]]", "Nebulah": "[[AAAA-MM-GG]]" },
+        { "name": "Magmadar", "Nebulaa": null, "Nebulah": null }
+      ]
+    },
+    { "id": "next", "name": "[[PROSSIMA ISTANZA]]", "size": null, "locked": true, "bosses": [] }
+  ]
+}

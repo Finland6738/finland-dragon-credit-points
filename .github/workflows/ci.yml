@@ -44,6 +44,10 @@ jobs:
           python -m pip install lupa==2.8
           python -I -X utf8 tools/check_probe.py
 
+      # tools/site_export.py merges the addon's export into the community site's files; its tests need only Python.
+      - name: Test the site-export script
+        run: python -I -X utf8 -m unittest discover -s Tests -p "test_*.py"
+
       # What .pkgmeta would put in the release zip (from M1-1 on).
       - name: Check the package contents
         if: hashFiles('tools/check_package.py') != ''

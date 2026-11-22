@@ -45,6 +45,7 @@ Domain\Flags.lua
 Domain\Council.lua
 Domain\History.lua
 Domain\Export.lua
+Domain\SiteExport.lua
 Domain\Legendary.lua
 Domain\GuildBank.lua
 Data\StatWeights.lua
@@ -67,6 +68,7 @@ App\PermissionService.lua
 App\NightController.lua
 App\RosterController.lua
 App\ProgressController.lua
+App\SiteExportService.lua
 App\SeasonController.lua
 App\AddonCheck.lua
 App\AddonNotice.lua

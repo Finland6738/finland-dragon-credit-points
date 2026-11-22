@@ -2,7 +2,7 @@
 
 > **Costruito, non ancora visto in gioco.** L'esportazione funziona nei test offline con un client simulato; come si comporta la casella di copia nel gioco vero è ancora da confermare. [English](Export)
 
-La sotto-scheda **Storico › Esporta** trasforma la **tabella crediti** della season in testo da incollare: in un canale Discord, in un foglio di calcolo o in qualsiasi strumento che legga JSON. Il testo si calcola dal registro ogni volta che apri la scheda, quindi coincide sempre con la scheda Crediti. Per i file del sito della community (roster, loot, progress) vedi [[Esportazione per il sito|Site-Export-it]].
+La sotto-scheda **Storico › Esporta** trasforma la **tabella crediti** della season in testo da incollare: in un canale Discord, in un foglio di calcolo o in qualsiasi strumento che legga JSON. Il testo si calcola dal registro ogni volta che apri la scheda, quindi coincide sempre con la scheda Crediti. Per i file del sito della community (roster, loot, progress) usa la forma **Sito** della stessa scheda: vedi [[Esportazione per il sito|Site-Export-it]].
 
 ## Chi può esportare
 
@@ -11,7 +11,7 @@ Il permesso `export.public`: di base gli **officer** (il Guild Master può abbas
 ## Come copiare
 
 1. Apri **Storico › Esporta** (la season mostrata è quella scelta nella scheda Serate).
-2. Scegli **Discord**, **CSV** o **JSON**.
+2. Scegli **Discord**, **CSV** o **JSON** (la quarta voce, **Sito**, è per i file del sito della community: [[Esportazione per il sito|Site-Export-it]]).
 3. Premi **Seleziona tutto**, poi **Ctrl+C**. Il gioco non lascia che un addon scriva negli appunti, quindi il testo viene selezionato per te. La casella non si modifica: una modifica a mano viene rimessa a posto.
 4. Incolla dove ti serve.
 

@@ -1,0 +1,23 @@
+{
+  "_readme": "Progress di gilda per istanza e per fazione. killed: data del primo kill (AAAA-MM-GG) o null.",
+  "instances": [
+    {
+      "id": "mc",
+      "name": "Molten Core",
+      "size": 40,
+      "cover": "media/art/concept-nebula-inn.webp",
+      "bosses": [
+        { "name": "Lucifron", "Nebulaa": "2026-10-16", "Nebulah": "2026-10-20" },
+        { "name": "Magmadar", "Nebulaa": null, "Nebulah": "2026-10-10" },
+        { "name": "Gehennas", "Nebulaa": "2026-10-19", "Nebulah": null }
+      ]
+    },
+    {
+      "id": "next",
+      "name": "[[PROSSIMA ISTANZA]]",
+      "size": null,
+      "locked": true,
+      "bosses": []
+    }
+  ]
+}

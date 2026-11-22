@@ -1,0 +1,38 @@
+{
+  "_readme": "Tabella crediti loot. Una voce in 'seasons' per ogni season, la più recente in cima.",
+  "seasons": [
+    {
+      "season": "2",
+      "updated": "2026-10-12",
+      "closed": false,
+      "roster": [
+        { "name": "Zed", "class": "rogue", "spec": "Combat", "faction": "Nebulaa" },
+        { "name": "Yara", "class": "priest", "spec": "Holy", "faction": "Nebulaa" },
+        { "name": "Mordo", "class": "warrior", "spec": "Protection", "faction": "Nebulah" }
+      ],
+      "raids": [
+        {
+          "id": "s2-r1", "instance": "Molten Core", "date": "12/10", "bosses": "3/10",
+          "awards": [
+            { "player": "Zed", "item": "Sash of Whispered Secrets", "cost": 1 },
+            { "player": "Yara", "item": "Staff of Dominance", "cost": 2 }
+          ]
+        }
+      ]
+    },
+    {
+      "season": "0",
+      "updated": "2026-08-30",
+      "closed": true,
+      "roster": [
+        { "name": "Mordo", "class": "warrior", "spec": "Protection", "faction": "Nebulah" }
+      ],
+      "raids": [
+        {
+          "id": "s0-r1", "instance": "Molten Core", "date": "30/08", "bosses": "2/10",
+          "awards": [ { "player": "Mordo", "item": "Cloak of the Shrouded Mists", "cost": 1 } ]
+        }
+      ]
+    }
+  ]
+}

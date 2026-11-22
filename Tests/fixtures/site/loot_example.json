@@ -1,0 +1,12 @@
+{
+  "_readme": "Tabella di esempio.",
+  "example": true,
+  "seasons": [
+    {
+      "season": "[[SEASON]]",
+      "updated": "[[DATA AGGIORNAMENTO]]",
+      "roster": [ { "name": "Aurel", "class": "warrior", "spec": "Protection", "faction": "Nebulah" } ],
+      "raids": []
+    }
+  ]
+}
