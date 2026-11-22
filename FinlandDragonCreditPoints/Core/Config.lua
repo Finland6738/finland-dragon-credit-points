@@ -194,6 +194,82 @@ function Config:Set(name, value)
 	return true
 end
 
+---------------------------------------------------------------------------------------------------------------------
+-- Profiles (AceDB, M7-3): named sets of the personal settings; the guild's rules are not here (they live in the ledger).
+
+-- The profile names, the current one first, the others by name.
+function Config:ProfileNames()
+	if not self.db then return {} end
+	return ns.Profiles.Sorted(self.db:GetProfiles(), self.db:GetCurrentProfile())
+end
+
+function Config:CurrentProfile()
+	return self.db and self.db:GetCurrentProfile() or nil
+end
+
+function Config:HasProfile(name)
+	if not self.db then return false end
+	for _, n in ipairs(self.db:GetProfiles()) do
+		if n == name then return true end
+	end
+	return false
+end
+
+local function profileGuard(self, name, mustExist)
+	if not self.db then return false, "NOT_READY" end
+	if self.readOnly then return false, "READ_ONLY" end
+	if name ~= nil then
+		local ok = ns.Profiles.ValidName(name)
+		if not ok then return false, "BAD_NAME" end
+		local exists = self:HasProfile(name)
+		if mustExist and not exists then return false, "NO_PROFILE" end
+		if mustExist == false and exists then return false, "EXISTS" end
+	end
+	return true
+end
+
+-- Switches to a profile that exists. Returns true, or false and a code ("NOT_READY", "READ_ONLY", "BAD_NAME", "NO_PROFILE").
+function Config:SelectProfile(name)
+	local ok, err = profileGuard(self, name, true)
+	if not ok then return false, err end
+	if name ~= self.db:GetCurrentProfile() then self.db:SetProfile(name) end
+	return true
+end
+
+-- Creates a profile (the defaults) and switches to it. Codes as SelectProfile plus "EXISTS".
+function Config:NewProfile(name)
+	local ok, err = profileGuard(self, name, false)
+	if not ok then return false, err end
+	self.db:SetProfile(name)
+	return true
+end
+
+-- Copies the settings of profile `from` into the current one (AceDB overwrites it). Returns true, or a code.
+function Config:CopyProfile(from)
+	local ok, err = profileGuard(self, from, true)
+	if not ok then return false, err end
+	if from == self.db:GetCurrentProfile() then return false, "SAME" end
+	self.db:CopyProfile(from)
+	return true
+end
+
+-- Deletes a profile that is not the current one. Returns true, or a code ("CURRENT" for the one in use).
+function Config:DeleteProfile(name)
+	local ok, err = profileGuard(self, name, true)
+	if not ok then return false, err end
+	if name == self.db:GetCurrentProfile() then return false, "CURRENT" end
+	self.db:DeleteProfile(name, true)
+	return true
+end
+
+-- The current profile goes back to the defaults.
+function Config:ResetProfile()
+	local ok, err = profileGuard(self)
+	if not ok then return false, err end
+	self.db:ResetProfile()
+	return true
+end
+
 local FDCP = ns.addon
 if FDCP then
 	FDCP.Config = Config

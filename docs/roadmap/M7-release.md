@@ -81,7 +81,7 @@
 - Analysis: §10 (profiles, presets, import / export)
 - Scope: AceDB profiles in the UI, the four presets ready to apply, a profile exported and imported as a string to paste on Discord, validation and a preview of the differences before applying.
 - Done when:
-  - [ ] Each preset applies and round-trips through the string unchanged.
+  - [x] Each preset applies and round-trips through the string unchanged.
 - Tests: `Tests/test_profiles.lua`.
 - Docs: Settings (EN + IT), CHANGELOG.
 - Real client: nothing beyond M7-2.

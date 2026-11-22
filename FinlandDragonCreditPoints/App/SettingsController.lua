@@ -188,6 +188,89 @@ function SettingsController:ResetPopup()
 end
 
 ---------------------------------------------------------------------------------------------------------------------
+-- Presets of the rules (the Guild Master): Domain/Presets.lua over the same write as the form (M7-3)
+
+-- The presets in order: { { code, active = bool } }; `active` marks the one whose rules equal the rules in force.
+function SettingsController:Presets()
+	local match = ns.Presets.Match(self:Rules())
+	local out = {}
+	for _, code in ipairs(ns.Presets.ORDER) do out[#out + 1] = { code = code, active = code == match } end
+	return out
+end
+
+-- The leaf paths that applying a preset would change in the rules in force, or nil and "UNKNOWN_PRESET".
+function SettingsController:PresetDiff(code)
+	local rules, why = ns.Presets.Get(code)
+	if not rules then return nil, why end
+	-- the guild's own values (the council's members, the faction name) stay as they are, as in an import
+	local mine = self:Rules()
+	for _, path in ipairs(ns.Backup.LOCAL) do
+		if type(rules[path[1]]) == "table" and type(mine[path[1]]) == "table" then
+			rules[path[1]][path[2]] = mine[path[1]][path[2]]
+		end
+	end
+	return self:RulesDiff(rules), rules
+end
+
+-- Writes a preset as a CONFIG_CHANGED that keeps its code. opts = { confirmed }. Codes as ApplyRules plus "UNKNOWN_PRESET".
+function SettingsController:ApplyPreset(code, opts)
+	local diff, rules = self:PresetDiff(code)
+	if not diff then return nil, rules end
+	return self:ApplyRules(rules, { confirmed = opts and opts.confirmed, preset = code })
+end
+
+---------------------------------------------------------------------------------------------------------------------
+-- Profiles of the personal settings and their string (everybody)
+
+-- The profile names, the current first.
+function SettingsController:Profiles() return ns.Config:ProfileNames() end
+
+function SettingsController:CurrentProfile() return ns.Config:CurrentProfile() end
+
+-- Each of these returns true, or false and a Config code ("READ_ONLY", "BAD_NAME", "EXISTS", "NO_PROFILE", "CURRENT", "SAME").
+local function profileDone(ok, err)
+	if ok then emit("SETTINGS_PERSONAL_CHANGED", "profile") end
+	return ok, err
+end
+function SettingsController:SelectProfile(name) return profileDone(ns.Config:SelectProfile(name)) end
+function SettingsController:NewProfile(name) return profileDone(ns.Config:NewProfile(name)) end
+function SettingsController:CopyProfile(from) return profileDone(ns.Config:CopyProfile(from)) end
+function SettingsController:DeleteProfile(name) return profileDone(ns.Config:DeleteProfile(name)) end
+function SettingsController:ResetProfile() return profileDone(ns.Config:ResetProfile()) end
+
+-- The string of the current profile: "!FDCP:PRF:1:..." to paste on Discord. Returns the text, or nil and a code.
+function SettingsController:ExportProfile()
+	if not (ns.Config and ns.Config.db) then return nil, "NOT_READY" end
+	return ns.BackupService.Encode(ns.Profiles.Export(ns.Config.db.profile))
+end
+
+-- What importing `text` would change: { settings, changes = { { key, from, to } } }, or nil and a code (a Decode code,
+-- "INVALID:<code>" or a Profiles.Check one: "EMPTY", "BAD:<key>:<code>").
+function SettingsController:PreviewProfile(text)
+	if not (ns.Config and ns.Config.db) then return nil, "NOT_READY" end
+	local data, why = ns.BackupService.Decode(text, { PRF = true })
+	if not data then return nil, why end
+	local settings, code = ns.Profiles.Check(data, ns.Config.Validate)
+	if not settings then return nil, code end
+	return { settings = settings, changes = ns.Profiles.Diff(ns.Config.db.profile, settings) }
+end
+
+-- Applies a pasted profile string over the current profile, setting by setting through SetPersonal (so the theme and the fonts
+-- are redrawn). Returns the number of settings changed, or nil and a code ("UNCHANGED" when nothing differs).
+function SettingsController:ImportProfile(text)
+	local preview, why = self:PreviewProfile(text)
+	if not preview then return nil, why end
+	if #preview.changes == 0 then return nil, "UNCHANGED" end
+	if ns.Config:IsReadOnly() then return nil, "READ_ONLY" end
+	for _, c in ipairs(preview.changes) do
+		local ok, err = self:SetPersonal(c.key, c.to)
+		if not ok then return nil, "BAD:" .. c.key .. ":" .. tostring(err) end
+	end
+	log("info", "PROFILE_IMPORTED", #preview.changes)
+	return #preview.changes
+end
+
+---------------------------------------------------------------------------------------------------------------------
 -- The game's own settings window
 
 -- The options of the addon's entry in the game's settings (AceConfig): the personal switches and a button that opens the

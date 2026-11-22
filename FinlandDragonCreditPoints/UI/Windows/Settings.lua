@@ -20,7 +20,7 @@ if ns.addon then ns.addon.SettingsWindow = SettingsWindow end   -- also reachabl
 local Theme, Widgets = ns.Theme, ns.Widgets
 local L = ns.L
 
-SettingsWindow.SUBTABS = { "personal", "rules", "permissions", "site", "season", "about" }
+SettingsWindow.SUBTABS = { "personal", "profiles", "rules", "permissions", "site", "season", "about" }
 SettingsWindow.RULE_PAGES = { "session", "priority", "costs", "multipliers", "members", "council", "legendary", "messages", "upgrade" }
 SettingsWindow.ROW_H = 36
 
@@ -78,7 +78,7 @@ end
 ---------------------------------------------------------------------------------------------------------------------
 -- Build
 
--- locale-key: SETTINGS_SUB_PERSONAL SETTINGS_SUB_RULES SETTINGS_SUB_PERMISSIONS SETTINGS_SUB_SITE SETTINGS_SUB_SEASON SETTINGS_SUB_ABOUT
+-- locale-key: SETTINGS_SUB_PERSONAL SETTINGS_SUB_PROFILES SETTINGS_SUB_RULES SETTINGS_SUB_PERMISSIONS SETTINGS_SUB_SITE SETTINGS_SUB_SEASON SETTINGS_SUB_ABOUT
 function SettingsWindow:Build(page)
 	if self.root then return self.root end
 	local root = CreateFrame("Frame", nil, page)
@@ -97,6 +97,7 @@ function SettingsWindow:Build(page)
 		root.panes[id] = pane
 	end
 	self:BuildPersonal(root.panes.personal)
+	if ns.ProfilesWindow then ns.ProfilesWindow:Build(root.panes.profiles) end
 	self.rules = ns.RulesForm.New(root.panes.rules, { pages = self.RULE_PAGES, host = self })
 	self:BuildPermissions(root.panes.permissions)
 	self.site = ns.RulesForm.New(root.panes.site, { pages = { "site" }, host = self, list = false })
@@ -119,6 +120,7 @@ function SettingsWindow:Refresh()
 	if not self.root then return end
 	local id = self:ActiveSub()
 	if id == "personal" then self:RefreshPersonal()
+	elseif id == "profiles" and ns.ProfilesWindow then ns.ProfilesWindow:Refresh()
 	elseif id == "rules" then self.rules:Refresh()
 	elseif id == "permissions" then self:RefreshPermissions()
 	elseif id == "site" then self.site:Refresh()

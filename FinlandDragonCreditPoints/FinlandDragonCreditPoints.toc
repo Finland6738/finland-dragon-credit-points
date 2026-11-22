@@ -56,6 +56,7 @@ Domain\Announce.lua
 Domain\Labels.lua
 Domain\Rules.lua
 Domain\Presets.lua
+Domain\Profiles.lua
 Domain\RuleFields.lua
 Domain\Permissions.lua
 Domain\Backup.lua
@@ -113,6 +114,7 @@ UI\Windows\Backup.lua
 UI\Windows\History.lua
 UI\Windows\Season.lua
 UI\Windows\RulesForm.lua
+UI\Windows\Profiles.lua
 UI\Windows\Settings.lua
 UI\Windows\About.lua
 UI\MainWindow.lua

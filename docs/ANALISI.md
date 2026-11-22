@@ -1762,10 +1762,24 @@ non esistono; `SettingsController:ApplyRules` e `ApplyPermissions` rispondono `N
 e un evento falsificato (o arrivato da un peer) lo rifiuta il cancello di fiducia del registro (`Permissions.Gate`).
 Nella finestra delle impostazioni del gioco c'è una voce AceConfig con gli interruttori personali e un pulsante che
 apre la scheda (`SettingsController:GameOptions`). **Scelte**: la scelta dei preset e il profilo come stringa sono
-M7-3; il campo "Pezzo che nessuno vuole" e simili sono liste di codici chiuse (mai testo libero); i costi per singolo
+M7-3 (sotto); il campo "Pezzo che nessuno vuole" e simili sono liste di codici chiuse (mai testo libero); i costi per singolo
 oggetto (`cost.overrides`) e la lista dei token **non** hanno ancora una pagina (sono elenchi di id, non valori: restano
 nel dominio e nell'esportazione delle regole di M6-7); le regole importate che li contengono si conservano intatte
 quando il GM salva da qui.
+
+**Come è fatto (M7-3).** La sotto-scheda **Profili** (`UI/Windows/Profiles.lua`, sopra `SettingsController`) riunisce tre
+cose, senza duplicare quel che c'era già. **Profili personali (AceDB)**: `Config:ProfileNames / SelectProfile /
+NewProfile / CopyProfile / DeleteProfile / ResetProfile` (nome da 1 a 32 caratteri semplici, mai doppio, il profilo in
+uso non si elimina, niente scritto su uno schema più recente); al cambio l'aspetto si ridisegna (`CONFIG_PROFILE_CHANGED`).
+**Stringa del profilo**: `Domain/Profiles.lua` (puro) e il tipo `PRF` della stessa busta di M6-7
+(`!FDCP:PRF:1:<base64>`); viaggiano solo le impostazioni personali (tema, caratteri, effetti, animazioni, suoni,
+lingua dei messaggi, secondi del roll; mai `debug` né il minimap); ogni valore si controlla con i validatori di
+`Config`, l'anteprima elenca cosa cambierebbe e non si scrive nulla con un valore sbagliato. **Preset**: i quattro di
+`Domain/Presets.lua` con quello in vigore segnato (`Presets.Match`); `PresetDiff` conta le regole che cambierebbero
+(i valori propri della gilda, nomi del council e chiave del sito, restano) e `ApplyPreset` scrive con lo stesso
+`ApplyRules` del modulo (solo il GM, conferma con season aperta, l'audit tiene il codice del preset). Ogni preset si
+applica e fa il giro della stringa di configurazione (M6-7) senza cambiare. **Scelte**: la stringa del profilo non porta
+regole (hanno la loro stringa e i preset); importare un profilo cambia quello in uso, non ne crea uno.
 
 ---
 

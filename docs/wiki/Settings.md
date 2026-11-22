@@ -2,7 +2,7 @@
 
 > **Built, not yet seen in the game.** The tab works in the offline tests with a simulated client; how it looks in the real game is still to be confirmed. [Italiano](Settings-it)
 
-The **Settings** tab has six sub-tabs: **Personal**, **Rules**, **Permissions**, **Site**, **Season** and **Info** (see [[About|About]]). Everybody sees all of them. **Only the Guild Master** (the player with the first guild rank, rank index 0) can change the guild's **rules** and **permissions**: for everybody else the controls are off, the **Save** button is not there and a note says so. Your **personal** preferences are yours and anybody can change them.
+The **Settings** tab has seven sub-tabs: **Personal**, **Profiles**, **Rules**, **Permissions**, **Site**, **Season** and **Info** (see [[About|About]]). Everybody sees all of them. **Only the Guild Master** (the player with the first guild rank, rank index 0) can change the guild's **rules** and **permissions**: for everybody else the controls are off, the **Save** button is not there and a note says so. Your **personal** preferences are yours and anybody can change them.
 
 The addon also has a small entry in the game's own settings window (**Options › AddOns › Finland Dragon Credit Points**): the neon effects, animations and sounds switches and a button that opens this tab.
 
@@ -22,6 +22,22 @@ Only for you: nothing here is shared with the guild.
 | **Loot popup › Reset position** | Puts the popup back at the centre, at its starting width. |
 | **My own stat weights** | Turns your imported weights on or off (import them with `/fdcp weights`, see [[Upgrade Hints|Upgrade-Hints]]). |
 | **Wishlist › Clear** | Empties your best-in-slot list, after a confirmation. |
+
+## Profiles
+
+Your **profiles** keep your own settings (theme, fonts, effects, animations, sounds, languages, roll countdown); the guild's rules are not in them. You can have several, for example one for raiding and one for a quiet evening.
+
+| Button | What it does |
+|---|---|
+| **Use** | Switches to the profile picked in the list (the look is redrawn at once). |
+| **New** | Creates a profile with the name you typed (1 to 32 characters) and switches to it. |
+| **Copy here** | Copies the picked profile's settings over the one in use, after a confirmation. |
+| **Delete** | Deletes the picked profile, after a confirmation; the one in use cannot be deleted. |
+| **Reset** | Puts the profile in use back to the defaults, after a confirmation. |
+
+**Share a profile.** *Write my profile* puts the profile in use in the box as one line starting with `!FDCP:PRF:`; click the box, press Ctrl+A and Ctrl+C and paste it on Discord. To use somebody else's, paste the line in the box and press **Import**: a dialog lists what would change (*Theme: nebula > aurora*) and nothing is written until you confirm. A string with a wrong value, from a newer version of the addon or that is not a profile is refused with a message, and a chat window that wrapped the line does no harm.
+
+**Presets of the rules.** Four ready-made rule sets: *Patto* (the guild's regulation), *Roll only*, *Pure loot council* and *Simple EPGP*; the one equal to the rules in force is marked *in force*. Pick one to see how many rules it would change. Only the **Guild Master** can apply it: a dialog lists the first changes, and the preset is written like any other change of the rules (one ledger event that keeps the preset's name, visible in **History › Audit**; with a season open it also keeps your confirmation). The guild's own values, the council's names and the site key, are not touched. You can still edit any rule afterwards on the **Rules** tab. The whole rules can also travel as a string, see [[Backup and Seasons|Backup-and-Seasons]].
 
 ## Rules
 

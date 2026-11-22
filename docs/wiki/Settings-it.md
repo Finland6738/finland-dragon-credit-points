@@ -2,7 +2,7 @@
 
 > **Costruita, non ancora vista in gioco.** La scheda funziona nei test offline con un client simulato; come appare nel gioco vero è ancora da confermare. [English](Settings)
 
-La scheda **Impostazioni** ha sei sotto-schede: **Personali**, **Regole**, **Permessi**, **Sito**, **Season** e **Info** (vedi [[Crediti e info|About-it]]). Le vedono tutti. **Solo il Guild Master** (chi ha il primo rango di gilda, indice 0) può cambiare le **regole** e i **permessi** della gilda: per tutti gli altri i controlli sono spenti, il pulsante **Salva** non c'è e una nota lo dice. Le **preferenze personali** sono tue e le cambia chiunque.
+La scheda **Impostazioni** ha sette sotto-schede: **Personali**, **Profili**, **Regole**, **Permessi**, **Sito**, **Season** e **Info** (vedi [[Crediti e info|About-it]]). Le vedono tutti. **Solo il Guild Master** (chi ha il primo rango di gilda, indice 0) può cambiare le **regole** e i **permessi** della gilda: per tutti gli altri i controlli sono spenti, il pulsante **Salva** non c'è e una nota lo dice. Le **preferenze personali** sono tue e le cambia chiunque.
 
 L'addon ha anche una piccola voce nella finestra delle impostazioni del gioco (**Opzioni › AddOn › Finland Dragon Credit Points**): gli interruttori di effetti neon, animazioni e suoni e un pulsante che apre questa scheda.
 
@@ -22,6 +22,22 @@ Solo per te: niente di qui viene condiviso con la gilda.
 | **Popup del loot › Rimetti al suo posto** | Riporta il popup al centro, con la larghezza di partenza. |
 | **I miei pesi delle statistiche** | Accende o spegne i tuoi pesi importati (si importano con `/fdcp weights`, vedi [[Suggerimenti di upgrade|Upgrade-Hints-it]]). |
 | **Wishlist › Svuota** | Svuota la tua lista dei pezzi desiderati, dopo una conferma. |
+
+## Profili
+
+I tuoi **profili** conservano le tue impostazioni (tema, caratteri, effetti, animazioni, suoni, lingue, conto alla rovescia dei roll); le regole della gilda non ci sono. Puoi averne più d'uno, per esempio uno per il raid e uno per una serata tranquilla.
+
+| Pulsante | Cosa fa |
+|---|---|
+| **Usa** | Passa al profilo scelto nell'elenco (l'aspetto si ridisegna subito). |
+| **Nuovo** | Crea un profilo con il nome scritto (da 1 a 32 caratteri) e passa a quello. |
+| **Copia qui** | Copia le impostazioni del profilo scelto su quello in uso, dopo una conferma. |
+| **Elimina** | Elimina il profilo scelto, dopo una conferma; quello in uso non si può eliminare. |
+| **Ripristina** | Riporta il profilo in uso ai valori predefiniti, dopo una conferma. |
+
+**Condividere un profilo.** *Scrivi il mio profilo* mette il profilo in uso nel riquadro come una riga che inizia con `!FDCP:PRF:`; clicca nel riquadro, premi Ctrl+A e Ctrl+C e incollala su Discord. Per usare quello di un altro, incolla la riga nel riquadro e premi **Importa**: una finestra elenca cosa cambierebbe (*Tema: nebula > aurora*) e non si scrive nulla finché non confermi. Una stringa con un valore sbagliato, di una versione più recente dell'addon o che non è un profilo viene rifiutata con un messaggio, e una chat che ha spezzato la riga non fa danni.
+
+**Preset delle regole.** Quattro set di regole pronti: *Patto* (il regolamento della gilda), *Solo roll*, *Loot council puro* ed *EPGP semplice*; quello uguale alle regole in vigore è segnato *in vigore*. Sceglilo per vedere quante regole cambierebbe. Lo applica solo il **Guild Master**: una finestra elenca le prime modifiche e il preset si scrive come ogni altra modifica delle regole (un evento del registro che tiene il nome del preset, visibile in **Storico › Audit**; con una season aperta tiene anche la tua conferma). I valori propri della gilda, i nomi del council e la chiave del sito, non si toccano. Dopo puoi ancora modificare ogni regola nella scheda **Regole**. Le regole intere possono anche viaggiare come stringa, vedi [[Backup e season|Backup-and-Seasons-it]].
 
 ## Regole
 

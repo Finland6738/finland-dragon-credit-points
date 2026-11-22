@@ -33,7 +33,7 @@ local type, pairs, ipairs, tostring, floor, sort = type, pairs, ipairs, tostring
 local function Lg() return ns.Ledger end
 
 Backup.V = 1                       -- the layout of the three kinds
-Backup.KINDS = { CFG = true, BAK = true, ARC = true }
+Backup.KINDS = { CFG = true, BAK = true, ARC = true, PRF = true }   -- PRF: a personal profile (Domain/Profiles.lua)
 Backup.MAX_SUMMARY_NIGHTS = 400    -- nights a compaction summary may hold
 Backup.MAX_SUMMARY_MEMBERS = 1000  -- members a compaction summary may hold
 
@@ -116,6 +116,10 @@ function Backup.Validate(data)
 	if data.v > Backup.V then return false, "NEWER" end
 	if data.kind == "CFG" then
 		if type(data.rules) ~= "table" then return false, "rules" end
+		return true
+	end
+	if data.kind == "PRF" then
+		if type(data.settings) ~= "table" then return false, "settings" end
 		return true
 	end
 	if type(data.events) ~= "table" then return false, "events" end
