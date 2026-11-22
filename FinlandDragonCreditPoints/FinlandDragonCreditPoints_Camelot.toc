@@ -93,6 +93,8 @@ UI\Windows\Council.lua
 UI\Windows\MemberLootPopup.lua
 UI\Windows\Member.lua
 UI\Windows\Item.lua
+UI\Windows\Log.lua
+UI\Windows\Audit.lua
 UI\Windows\History.lua
 UI\Windows\Season.lua
 UI\MainWindow.lua

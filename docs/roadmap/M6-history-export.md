@@ -40,7 +40,9 @@ Open question 10 ([#3](https://github.com/Finland6738/finland-dragon-credit-poin
 - Analysis: §7 (log, audit); [`docs/specs/ui-style.md`](../specs/ui-style.md) §6
 - Scope: the **History › Log** and **History › Audit** sub-tabs: `UI/Windows/Log.lua` (everything that dropped, assigned or not, from which boss, to whom, for which response, at what cost) and the audit view (council interventions with reasons, manual corrections, voids, configuration changes with date and author); filters and search.
 - Done when:
-  - [ ] Every intervention of the M5 tests appears in the audit with its reason.
+  - [x] Offline: every intervention of the M5 tests appears in the audit with its reason (and every configuration change with its author and the settings that changed); the log lists every drop, assigned or not, with boss, recipient, response and cost; both filter and search.
+  - [ ] In game: the Log and Audit sub-tabs.
+- Note: built as `History.Log` / `History.Audit` / `FilterLog` / `FilterAudit` in `Domain/History.lua`, and `UI/Windows/Log.lua` + `UI/Windows/Audit.lua` drawn inside the History tab. The loot log takes the boss from the award's `encounter` (and a `DROP_SEEN`'s); configuration changes are guild-level and show in every season's audit ([`docs/ANALISI.md`](../ANALISI.md) §7, "Come è fatto (M6-2)").
 - Tests: `Tests/test_log_audit.lua`.
 - Docs: History (EN + IT), CHANGELOG.
 - Real client: the windows in game.

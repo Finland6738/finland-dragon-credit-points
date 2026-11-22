@@ -283,7 +283,7 @@ end
 describe("the History tab", function()
 	before_boot(guild(1))
 
-	it("has the sub-tabs Nights, Log, Audit and Export, the others say they are coming", function()
+	it("has the sub-tabs Nights, Log, Audit and Export, the Export one says it is coming", function()
 		bound()
 		open()
 		local root = HW().root
@@ -291,7 +291,7 @@ describe("the History tab", function()
 		eq(HW():ActiveSub(), "nights")
 		root.sub:Select("log")
 		truthy(root.panes.log:IsShown()); falsy(root.panes.nights:IsShown())
-		contains(root.panes.log.soon:GetText(), "later version")
+		contains(root.panes.export.soon:GetText(), "later version")
 		root.sub:Select("export")
 		truthy(root.panes.export:IsShown())
 		root.sub:Select("nights")

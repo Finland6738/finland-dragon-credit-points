@@ -278,4 +278,120 @@ function History.Item(L, item, opts)
 	return out
 end
 
+---------------------------------------------------------------------------------------------------------------------
+-- Loot log (M6-2)
+
+-- Everything that dropped in a season, assigned or not (docs/ANALISI.md §7), canonical order (oldest first):
+--   { kind = "AWARD", id, season, ts, author, item, member?, target, cost, response, reasons, flags, night, nightDate, boss
+--     (the encounter the session came from), voided, intervention }
+--   { kind = "SEEN",  id, season, ts, author, item, night, nightDate, boss }   a drop nobody was awarded (DROP_SEEN)
+-- The awards are the same rows as the Nights view (awardRow); a voided award stays, marked. nil and "SEASON_UNKNOWN" for a season that does not exist.
+function History.Log(L, season)
+	if not ns.Season.Get(L, season) then return nil, "SEASON_UNKNOWN" end
+	local Lg0 = Lg()
+	local nights = ns.Nights.List(L, season)
+	local byId = {}
+	for _, n in ipairs(nights) do byId[n.id] = n end
+	local rows = {}
+	for _, e in ipairs(Lg0.Sorted(L, function(x)
+		return x.season == season and (x.type == "ITEM_AWARDED" or x.type == "DROP_SEEN")
+	end)) do
+		local p = payloadOf(e)
+		if p then
+			if e.type == "ITEM_AWARDED" then
+				local row = awardRow(L, e, p, nights, byId, Lg0.IsVoided(L, e.id))
+				row.kind, row.boss, row.intervention = "AWARD", p.encounter, p.intervention or nil
+				rows[#rows + 1] = row
+			else
+				local night = ns.CreditTable.NightOf(L, e, p, nights, byId)
+				rows[#rows + 1] = { kind = "SEEN", id = e.id, season = e.season, ts = e.ts, author = e.author, item = p.item,
+					night = night, nightDate = night and byId[night] and byId[night].date or nil, boss = p.encounter, target = "none",
+					cost = 0, reasons = {}, flags = {} }
+			end
+		end
+	end
+	local out = rows
+	return out
+end
+
+-- The rows of a log (or any list of award rows) that pass a filter. f = { member?, item?, boss?, night?, response?,
+-- target? ("member" | "bank" | "disenchant" | "ml" | "none"), state? ("assigned" | "unassigned" | "voided" | "valid") };
+-- a field that is nil does not filter. Order is kept.
+function History.FilterLog(rows, f)
+	f = f or {}
+	local out = {}
+	for _, r in ipairs(rows) do
+		local ok = true
+		if f.member ~= nil and r.member ~= f.member then ok = false end
+		if ok and f.item ~= nil and r.item ~= f.item then ok = false end
+		if ok and f.boss ~= nil and r.boss ~= f.boss then ok = false end
+		if ok and f.night ~= nil and r.night ~= f.night then ok = false end
+		if ok and f.response ~= nil and r.response ~= f.response then ok = false end
+		if ok and f.target ~= nil and r.target ~= f.target then ok = false end
+		if ok and f.state ~= nil then
+			if f.state == "assigned" then ok = r.kind == "AWARD" and not r.voided
+			elseif f.state == "unassigned" then ok = r.kind == "SEEN"
+			elseif f.state == "voided" then ok = r.voided == true
+			elseif f.state == "valid" then ok = not r.voided end
+		end
+		if ok then out[#out + 1] = r end
+	end
+	return out
+end
+
+---------------------------------------------------------------------------------------------------------------------
+-- Audit (M6-2)
+
+-- The audit of a season: the council's interventions (Council.Audit, which the M5 tests already cover: the awards that
+-- departed from the rule, the corrections, the votes, the voids and the manual adjustments) and, with them, the guild's
+-- configuration changes, in order, oldest first:
+--   { kind = "CONFIG", id, author, ts, preset?, confirmed?, changes = { "cost.matrix.weapon.4" ... } }  the rules' leaf paths
+--     that changed from the rules before (the defaults before the first change)
+--   { kind = "PERMISSIONS", id, author, ts }                                                              the permission table changed
+-- Configuration changes are guild-level (no season): they appear in every season's audit from the date they were written
+-- until `opts.since` (an earlier ts, default: all), so the audit says who changed the rules and when. nil and
+-- "SEASON_UNKNOWN" for a season that does not exist.
+function History.Audit(L, season, opts)
+	opts = opts or {}
+	if not ns.Season.Get(L, season) then return nil, "SEASON_UNKNOWN" end
+	local Lg0 = Lg()
+	local out = ns.Council.Audit(L, season)
+	local prev = ns.Rules.DefaultConfig()
+	for _, e in ipairs(Lg0.Sorted(L, function(x) return x.type == "CONFIG_CHANGED" or x.type == "PERMISSIONS_CHANGED" end)) do
+		local p = payloadOf(e)
+		if p then
+			local entry
+			if e.type == "CONFIG_CHANGED" then
+				local rules = ns.Rules.WithDefaults(p.rules)
+				entry = { kind = "CONFIG", id = e.id, author = e.author, ts = e.ts, preset = p.preset, confirmed = p.confirmed,
+					changes = ns.Rules.Diff(prev, rules) }
+				prev = rules
+			else
+				entry = { kind = "PERMISSIONS", id = e.id, author = e.author, ts = e.ts }
+			end
+			if opts.since == nil or e.ts >= opts.since then out[#out + 1] = entry end
+		end
+	end
+	local order = {}
+	for i, e in ipairs(out) do order[e] = i end
+	sort(out, function(a, b)
+		if a.ts ~= b.ts then return a.ts < b.ts end
+		return order[a] < order[b]
+	end)
+	return out
+end
+
+-- The entries of an audit that pass a filter. f = { kind?, member?, author?, item? }; nil does not filter.
+function History.FilterAudit(entries, f)
+	f = f or {}
+	local out = {}
+	for _, e in ipairs(entries) do
+		if (f.kind == nil or e.kind == f.kind) and (f.member == nil or e.member == f.member)
+			and (f.author == nil or e.author == f.author) and (f.item == nil or e.item == f.item) then
+			out[#out + 1] = e
+		end
+	end
+	return out
+end
+
 if ns.addon then ns.addon.History = History end   -- also reachable from tests

@@ -1,5 +1,5 @@
 -- HistoryWindow: the History tab (docs/ANALISI.md §7, docs/specs/ui-style.md §6, M6-1): the sub-tabs Nights, Log, Audit and
--- Export. This step builds **Nights** (the loot log, the audit and the export arrive in M6-2 and M6-3, their panes say so):
+-- Export. **Nights** is here; **Log** and **Audit** are UI/Windows/Log.lua and Audit.lua (M6-2); Export arrives in M6-3 (its pane says so):
 -- the nights of a season by week, newest first, with the instance, the bosses killed, the drops and the credits spent; the
 -- selected night opens its detail (the bosses, what dropped to whom and, for the officers only, the lineup and the bench) and
 -- from a drop the Member and Item windows open. Everything comes from Domain/History.lua; this file draws. Lua 5.1.
@@ -93,13 +93,15 @@ function HistoryWindow:Build(page)
 		pane:SetPoint("BOTTOMRIGHT", root, "BOTTOMRIGHT", 0, 0)
 		pane:Hide()
 		root.panes[id] = pane
-		if id ~= "nights" then
+		if id == "export" then
 			pane.soon = Theme.NewText(pane, "Body", "text-3")
 			pane.soon:SetPoint("TOPLEFT", pane, "TOPLEFT", 0, -12)
 			pane.soon:SetText(L["HISTORY_SOON"])
 		end
 	end
 	self:BuildNights(root.panes.nights)
+	if ns.LogWindow then ns.LogWindow:Build(root.panes.log) end
+	if ns.AuditWindow then ns.AuditWindow:Build(root.panes.audit) end
 	root.sub:Select("nights")
 	self:Refresh()
 	return root
@@ -108,7 +110,9 @@ end
 function HistoryWindow:ShowSub(id)
 	if not self.root then return end
 	for pid, pane in pairs(self.root.panes) do pane:SetShown(pid == id) end
-	if id == "nights" then self:Refresh() end
+	if id == "nights" then self:Refresh()
+	elseif id == "log" and ns.LogWindow then ns.LogWindow:Refresh()
+	elseif id == "audit" and ns.AuditWindow then ns.AuditWindow:Refresh() end
 end
 
 function HistoryWindow:ActiveSub() return self.root and self.root.sub:Active() end
