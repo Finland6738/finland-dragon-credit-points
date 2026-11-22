@@ -580,7 +580,9 @@ non si scambia fra client (eventualmente M6).
 Dettagli importanti:
 
 - **Roll**: valgono solo i roll 1-100 fatti dopo l'apertura del round, il primo per giocatore, dal personaggio nel
-  raid, **con l'addon attivo**. Chi non ha l'addon è escluso (§4.1).
+  raid, **con l'addon attivo**. Chi non ha l'addon è escluso (§4.1). Da M7-2d (richiesta del proprietario del
+  22/11/2026) vale **solo il roll fatto con il pulsante "Rolla" del popup**, una volta per pezzo: un `/roll` scritto a mano
+  non conta, nemmeno da chi ha l'addon (regola `session.buttonRollsOnly`, preset sì; "Come è fatto (M7-2d)", sotto).
 - **Consegna rimandata**: se il ML preferisce rollare tutto a fine serata, la sessione resta aperta e la consegna
   avviene poi per scambio (l'addon traccia l'oggetto finché non cambia di mano).
 - **Disconnessioni e /reload**: lo stato della sessione è salvato a ogni passaggio; il ML riprende da dov'era.
@@ -878,6 +880,38 @@ online) tiene quello che la sessione sapeva; chi non aveva l'addon resta escluso
 39 risposte dopo il `/reload` in un raid vero. La verifica del proprietario è [`docs/checklists/M4.md`](checklists/M4.md)
 (piano A e piano B; senza una season aperta la sessione non parte: la checklist dà una riga `/run` per aprirne una di prova).
 
+**Come è fatto (M7-2d).** Il gioco non distingue un `/roll` scritto a mano da `RandomRoll` chiamato da un pulsante,
+quindi il clic su "Rolla" del popup (`UI/Windows/MemberLootPopup.lua`) manda **prima** un piccolo messaggio di sessione,
+l'**intento di roll** `SRINT` (pezzo, round, un nonce; **nessun valore**: la regola di fiducia di §8.4 resta) e **poi**
+chiama `RandomRoll(1, 100)`. Sul client del ML `Net/Protocol.lua` passa l'intento (il giocatore è il mittente, mai un
+campo; solo per il round aperto, altrimenti `STALE`) a `Adapters/RollListener.lua` con l'evento `ROLL_INTENT`. Con la
+regola accesa un roll che sarebbe `VALID` conta solo se c'è un intento dello stesso giocatore per lo stesso round:
+
+- un intento arrivato prima vale se non è più vecchio della finestra (`session.buttonRollWindow`, preset 10 secondi,
+  da 2 a 60) rispetto al roll, oppure se dopo il suo arrivo c'è stato un lockdown (il roll ha aspettato nella chat);
+- un roll arrivato prima (il messaggio addon è spesso più lento del messaggio di sistema) **aspetta** il suo intento fino
+  alla finestra, contata **solo fuori dal lockdown** (l'intento aspetta il lockdown di chi l'ha mandato nella sua coda);
+  intanto `Pending()` lo conta e il controller non fa scadere il round;
+- un intento per giocatore per round: il roll lo consuma; un secondo intento (un altro nonce) si conta come doppione e
+  si ignora, la ripetizione dello stesso nonce si ignora; **un intento senza roll non fa nulla**;
+- un roll ancora senza intento alla fine dell'attesa va alla sessione segnato `nb`: `Priority` lo scarta con il nuovo
+  codice **`NOT_FROM_BUTTON`** ("Scritto a mano: conta solo il pulsante Roll del popup") e, come un roll con un altro
+  intervallo, **non consuma il turno**: un clic dopo conta ancora; un roll dopo quello valido resta `DUPLICATE`; un roll
+  `nb` non chiude il round "tutti hanno rollato" e non blocca la risposta del giocatore;
+- i reroll fra i pari usano il pulsante come il primo round (ogni round ha il suo numero, quindi il suo intento);
+- il client del giocatore legge anche il proprio roll: scritto a mano durante un round aperto di una sessione con la
+  regola, stampa l'avviso "Usa il pulsante Roll del popup del loot: i roll scritti a mano non contano" (evento
+  `ROLL_TYPED`). Il comando `/roll` del gioco **non viene mai sostituito né bloccato**.
+
+Scelte fatte (modificabili): la regola è di sessione (sezione `session`, solo il GM, pagina Sessione delle Impostazioni),
+fissata nella sessione quando si apre; una sessione salvata prima di M7-2d non ha la chiave e funziona come prima; un
+client con un protocollo di sessione più vecchio di 6 (il suo `HELLO` dice `pv` < 6) non sa mandare intenti, quindi i suoi
+roll si giudicano come prima di M7-2d (`legacy` nel registro del listener) invece di scartarli: chi non ha aggiornato
+rolla ancora e vede l'invito ad aggiornare. La regola chiede correttezza, non sicurezza: chi sa scrivere una macro può
+mandare un intento a mano come fa il pulsante. Con la regola spenta tutto torna come prima. Non verificato nel gioco:
+l'ordine e il ritardo fra il messaggio addon e il messaggio di sistema del roll, in istanza e dopo un boss; `RandomRoll`
+da un clic; l'avviso.
+
 ### 4.1 L'addon è obbligatorio: chi non ce l'ha
 
 Tutti i raider devono avere l'addon attivo. L'addon lo verifica da solo e aiuta GM, officer e master looter a
@@ -938,6 +972,8 @@ preset; il GM può riattivare il roll a mano con `ms`/`os` in chat per altre gil
 - i candidati di un pezzo sono solo i membri del raid con l'addon attivo e una versione compatibile;
 - un `/roll` fatto a mano da chi non ha l'addon viene **ignorato**, e nella sessione del ML compare come "roll
   scartato: addon non attivo", così nessuno pensa che sia stato perso per errore;
+- da M7-2d anche chi ha l'addon rolla **solo con il pulsante del popup**: un `/roll` scritto a mano compare come "roll
+  scartato: scritto a mano" (`NOT_FROM_BUTTON`) e il suo client lo avvisa (§4, "Come è fatto (M7-2d)");
 - chi ha una versione **troppo vecchia** (protocollo incompatibile) è trattato come chi non ce l'ha; con una
   versione vecchia ma compatibile rolla normalmente e vede solo l'invito ad aggiornare;
 - quando si apre una sessione con qualcuno senza addon, il ML vede un avviso ("3 membri del raid non possono
@@ -1496,6 +1532,7 @@ tools/ check_docs.py, build/release
   | `SPAUSE` | `RAID` | `q`, `p`, `de?`, `rm?` | pausa (`p` vero) o ripresa |
   | `SEND` | `RAID` | `q` | sessione chiusa |
   | `SSYNCQ` | `WHISPER` (o `RAID`) | `s?` | "mandami la sessione": dopo un buco nella sequenza, al ML |
+  | `SRINT` | `RAID` | `i`, `r`, `n` | l'intento di roll (M7-2d, protocollo 6): il mittente ha cliccato "Rolla" per il round `r` del pezzo `i` e il roll del gioco segue; `n` = nonce del clic. Nessun valore di roll |
   | `SSTATE` | `WHISPER` | `q`, `ml`, `e?`, `rt?`, `it` (+ `st`, `w`, `pc`, `tg`), `a?`, `rd?`, `pr?`, `pz?`, `en?`, `my?` | tutta la vista per un membro: il pezzo attivo, il suo round e la proposta, pausa, fine, la sua risposta (`my` = `{ rs, lb?, n? }`) |
 
   Regole: **ogni risposta è del mittente** (il ML prende il giocatore dal mittente che dà il client, mai da un campo; una
@@ -1512,6 +1549,13 @@ tools/ check_docs.py, build/release
   (`Session:Host`). I timer viaggiano in ora del server (`GetServerTime`, uguale per tutti), mai nell'orologio locale.
   Tutto passa dalla coda di `Net/Transport.lua` con priorità `ALERT`: aspetta il lockdown, le restrizioni e i boss
   (piano B: sessioni dopo `ENCOUNTER_END`), in ordine; più risposte in attesa dello stesso giocatore → parte l'ultima.
+- **Come è fatto (M7-2d).** Il protocollo di sessione passa a **6** (`pm` resta 2): il nuovo tipo `SRINT` (l'intento di
+  roll del pulsante "Rolla", §4 "Come è fatto (M7-2d)") e il campo facoltativo `bo` di `SOPEN` / `SSTATE` (la regola
+  `session.buttonRollsOnly` è accesa: il client del giocatore sa quando avvisare per un `/roll` scritto a mano). Un client
+  di protocollo da 2 a 5 scarta `SRINT` senza leggerlo e ignora `bo`, quindi segue ancora la sessione; i suoi roll (senza
+  intento) si giudicano come prima. **La regola di fiducia resta**: l'intento non porta mai un valore e non diventa mai
+  un input `ROLL`; dice solo al listener del ML che il prossimo roll di quel mittente in quel round viene da un clic; il
+  roll stesso è sempre quello del server, letto nella chat. Un intento che nomina un altro giocatore (`p`) è falsificato.
 - **Sincronizzazione del registro fra officer (M6-5).** `Net/Sync.lua`, solo su `OFFICER` (un messaggio di questi tipi
   da un altro canale si ignora); vedi [ADR 0005](adr/0005-officer-ledger-sync.md). Messaggi:
 

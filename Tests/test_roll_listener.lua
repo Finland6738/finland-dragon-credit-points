@@ -30,6 +30,7 @@ local RING = { itemID = 19003, slot = 1, classID = 4, subclassID = 0, equipLoc =
 local function bench()
 	local r = FDCP.Rules.DefaultConfig()
 	r.session.autoAdvance = false
+	r.session.buttonRollsOnly = false   -- typed rolls: the button rule (M7-2d) is tested in test_button_rolls.lua
 	local b = {}
 	b.s = assert(F().New({ id = "S1-1", season = "S1", ml = ML, ts = GetTime(), encounter = 601, rules = r,
 		present = PRESENT, addon = ADDON }))

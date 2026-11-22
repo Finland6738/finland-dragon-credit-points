@@ -62,10 +62,16 @@ The guild's thresholds (what counts as big, the item-level-only mode, the presel
 ## How a roll goes
 
 1. **Answer.** Pick Main-spec, Off-spec or Pass (and a label or a note if you want).
-2. **Roll.** Press **Roll**: the addon asks the game for `/roll 1-100`, exactly as if you had typed it. The roll is the game's and nobody can choose it. The button then says *Rolled*, and your answer is locked: after you roll you can no longer change it. You roll **once** per round; a second roll is not counted.
+2. **Roll.** Press **Roll**: the addon first tells the master looter "this player clicked Roll", then asks the game for `/roll 1-100`. The roll is the game's and nobody can choose it. The button then says *Rolled*, and your answer is locked: after you roll you can no longer change it. You roll **once** per round; a second roll is not counted.
 3. **Wait.** The round closes by itself on its timer, or when everyone has answered and rolled. The popup closes with it, and the master looter's window shows the proposal.
 
 **Pass** needs no roll. If you do not answer at all, the rules treat it as a pass.
+
+### Roll only with the button
+
+By default the guild counts **only rolls made with the popup's Roll button**, once per item. A `/roll` you type by hand does **not** count, even with the addon: the master looter sees it set aside as *Typed by hand: only the Roll button of the popup counts*, and your own addon tells you in the chat: *Use the Roll button of the loot popup: rolls typed by hand do not count.* A typed roll does not use up your turn: click **Roll** afterwards and that roll counts. A second roll after your counted one is a duplicate and is not counted. Rerolls among tied players use the button too.
+
+Why: the game cannot tell a typed `/roll` from the button's roll, so the button sends a small "I clicked" message just before the roll. It carries no number: the roll is still the game's own. After a boss the message may wait a few seconds behind the game's chat lockdown; the master looter's addon waits for it. The Guild Master can turn the rule off (*Rolls count only from the popup's Roll button*, in the rules of the session), and then a typed `/roll 1-100` counts as before.
 
 ### Who rolls when
 
@@ -78,7 +84,7 @@ The line of help under the bar tells you what to do now: *Choose your response, 
 ## If something goes wrong
 
 - *Your answer could not be sent.* The addon could not hand your answer to the raid channel; click your answer again.
-- *The game did not let the addon roll: type /roll 1-100.* The client refused the roll from the button; type the command yourself, it counts the same.
+- *The game did not let the addon roll: type /roll 1-100 now.* The client refused the roll from the button; type the command yourself straight away: your click already told the master looter, so a roll typed within a few seconds (the guild's window, 10 seconds by default) counts the same.
 - **You reloaded the interface or logged in during a roll.** The master looter's addon sends your popup back with your answer, label and note as they were.
 - **You joined the raid after the roll opened.** You see the popup, but the raid of an item is fixed when its roll opens: your answer is not counted for that item, only from the next one.
 

@@ -225,6 +225,12 @@ describe("a whole boss on a raid of 40", function()
 		eq(s.state, "ROLLING"); eq(s.active, 2)
 		mlc.Mock.Slash("/fdcp")   -- the window opens on the session again
 		eq(A(mlc).MainWindow:ActiveTab(), "loot")
+		-- the state comes back by whisper behind the master looter's other whispers: how long depends on the bytes of the
+		-- messages (the zlib of the platform), so give it a few more seconds (M7-2d: 6.5 s on the CI's Linux)
+		for _ = 1, 10 do
+			if shown(c.Dara) then break end
+			net:Advance(0.5)
+		end
 		truthy(shown(c.Dara), "Dara's card is back")
 		eq(card(c.Dara).data.seg:Active(), "MS", "with her answer")
 		for _, n in ipairs({ "Corin", "Dara", "Edda" }) do roll(c[n]) end

@@ -62,10 +62,16 @@ Le soglie della gilda (cosa conta come grande, la modalità solo item level, la 
 ## Come va un roll
 
 1. **Rispondi.** Scegli Main-spec, Off-spec o Passo (e un'etichetta o una nota se vuoi).
-2. **Tira.** Premi **Tira**: l'addon chiede al gioco `/roll 1-100`, esattamente come se lo avessi scritto tu. Il roll è del gioco e nessuno può sceglierlo. Il pulsante dice poi *Tirato* e la tua risposta si blocca: dopo aver rollato non puoi più cambiarla. Rolli **una volta** per round; un secondo roll non conta.
+2. **Tira.** Premi **Tira**: l'addon prima dice al master looter "questo giocatore ha cliccato Tira", poi chiede al gioco `/roll 1-100`. Il roll è del gioco e nessuno può sceglierlo. Il pulsante dice poi *Tirato* e la tua risposta si blocca: dopo aver rollato non puoi più cambiarla. Rolli **una volta** per round; un secondo roll non conta.
 3. **Aspetta.** Il round si chiude da solo allo scadere del timer, o quando tutti hanno risposto e rollato. Il popup si chiude con lui e la finestra del master looter mostra la proposta.
 
 **Passo** non richiede un roll. Se non rispondi affatto, per le regole è come un passo.
+
+### Rolla solo con il pulsante
+
+Di norma la gilda conta **solo i roll fatti con il pulsante Tira del popup**, una volta per pezzo. Un `/roll` scritto a mano **non** conta, nemmeno con l'addon: il master looter lo vede messo da parte come *Scritto a mano: conta solo il pulsante Roll del popup*, e il tuo addon te lo dice in chat: *Usa il pulsante Roll del popup del loot: i roll scritti a mano non contano.* Un roll scritto a mano non consuma il tuo turno: clicca **Tira** dopo e quel roll conta. Un secondo roll dopo quello contato è un doppione e non conta. Anche i reroll fra i pari si fanno con il pulsante.
+
+Perché: il gioco non distingue un `/roll` scritto da quello del pulsante, quindi il pulsante manda un piccolo messaggio "ho cliccato" subito prima del roll. Non porta nessun numero: il roll resta quello del gioco. Dopo un boss il messaggio può aspettare qualche secondo dietro il lockdown della chat; l'addon del master looter lo aspetta. Il Guild Master può spegnere la regola (*I roll contano solo dal pulsante Roll del popup*, nelle regole della sessione), e allora un `/roll 1-100` scritto conta come prima.
 
 ### Chi rolla e quando
 
@@ -78,7 +84,7 @@ La riga di aiuto sotto la barra ti dice cosa fare adesso: *Scegli la risposta, p
 ## Se qualcosa va storto
 
 - *Non è stato possibile inviare la tua risposta.* L'addon non è riuscito a consegnare la risposta al canale del raid; clicca di nuovo la risposta.
-- *Il gioco non ha lasciato tirare all'addon: scrivi /roll 1-100.* Il client ha rifiutato il roll dal pulsante; scrivi tu il comando, conta uguale.
+- *Il gioco non ha lasciato tirare all'addon: scrivi subito /roll 1-100.* Il client ha rifiutato il roll dal pulsante; scrivi tu il comando subito: il tuo clic l'ha già detto al master looter, quindi un roll scritto entro pochi secondi (la finestra della gilda, 10 secondi di norma) conta uguale.
 - **Hai ricaricato l'interfaccia o sei entrato durante un roll.** L'addon del master looter ti rimanda il popup con la tua risposta, l'etichetta e la nota com'erano.
 - **Sei entrato nel raid dopo l'apertura del roll.** Vedi il popup, ma il raid di un pezzo si fissa quando si apre il suo roll: la tua risposta non conta per quel pezzo, solo dal successivo.
 

@@ -29,7 +29,7 @@ ns.Protocol, ns.modules.Protocol = Protocol, Protocol
 local type, ipairs, tostring, tonumber, floor = type, ipairs, tostring, tonumber, math.floor
 local match, gmatch = string.match, string.gmatch
 
-Protocol.VERSION = 5         -- the session protocol this client speaks (raise it when a session message changes);
+Protocol.VERSION = 6         -- the session protocol this client speaks (raise it when a session message changes);
                              -- 2 = the loot session messages of M4-1 (1 = the presence check of M3 only);
                              -- 3 = SRESP carries the upgrade verdicts and the worn pieces (M5-2): optional fields, so
                              --     a client of protocol 2 still understands every message and is understood
@@ -40,6 +40,10 @@ Protocol.VERSION = 5         -- the session protocol this client speaks (raise i
                              --     guild's mode: auto, suggest, manual) and `lo` of SRESP / `my` (the origin of the label:
                              --     AUTO, CHANGED, MANUAL). Optional fields: a client of protocol 2 to 4 ignores them, an
                              --     ML of protocol 4 or less says no mode and the popup keeps the player's own choice
+                             -- 6 = rolls only from the popup's button (M7-2d): SRINT, the roll intent a click on Roll
+                             --     sends before the game's RandomRoll, and the optional `bo` of SOPEN / SSTATE (the
+                             --     rule is on). A client of protocol 2 to 5 drops SRINT unread and ignores `bo`; its
+                             --     own rolls (it sends no intent) are judged as before M7-2d (Adapters/RollListener.lua)
 Protocol.MIN = 2             -- the oldest session protocol this client still understands
 Protocol.MAX_NAMES = 40      -- a HELLOQ names at most this many members; more means "everybody"
 Protocol.MAX_VERSION_LEN = 32
@@ -201,13 +205,14 @@ end
 -- (bus event SESSION_INPUT, stepped by the controller of M4-4).
 --
 --   type     dist      fields (besides s = session id)              meaning
---   SOPEN    RAID      q, ml, e?, rt?, lm?, it = { {id, ca, cs, co?} }  session opened: the items with category and costs
+--   SOPEN    RAID      q, ml, e?, rt?, lm?, bo?, it = { {id, ca, cs, co?} }  session opened: the items with category and costs
 --                                                                 per response (`cs`); `rt` = the responses on offer
 --                                                                 with their tier ({ MS = 1, OS = 2 }, M4-6: what the
 --                                                                 popup shows and who rolls in a tiered round); `lm` =
 --                                                                 who picks the label of a response (M7-2b: "auto",
---                                                                 "suggest" or "manual", the guild's rule); sent
---                                                                 again after a correction
+--                                                                 "suggest" or "manual", the guild's rule); `bo` =
+--                                                                 rolls count only from the popup's button (M7-2d);
+--                                                                 sent again after a correction
 --   SROLL    RAID      q, i, r, k, g?, tr?, am?, cl?, de?, rm?      round r of item i opened: kind, stage, tier, among (a
 --                                                                 reroll), cl = it collects the responses, de = the
 --                                                                 deadline in server time (rm = seconds left, paused)
@@ -231,10 +236,16 @@ end
 --   SEND     RAID      q                                          session closed
 --   SSYNCQ   RAID or   s?                                         "send me the session": after a /reload, on joining
 --            WHISPER                                              the raid late (RAID), after a gap (WHISPER to the ML)
---   SSTATE   WHISPER   q, ml, e?, rt?, lm?, it (+ st, w, pc, tg), a?, the whole view, for one member: the active item,
+--   SSTATE   WHISPER   q, ml, e?, rt?, lm?, bo?, it (+ st, w, pc, tg), a?, the whole view, for one member: the active item,
 --                      rd?, pr?, pz?, en?, my?, vt?               its round and proposal, paused, ended, the asker's
 --                                                                 own response (`my` = { rs, lb?, lo?, n? }), the votes on
 --                                                                 the proposal (`vt` = { [voter] = choice }, M5-5)
+--   SRINT    RAID      i, r, n                                    the roll intent (M7-2d): the sender clicked the popup's
+--                                                                 Roll button for round r of item i and the game's roll
+--                                                                 follows; n = a nonce of the click (a repeat of the same
+--                                                                 message is ignored, a second click is a DUPLICATE). No
+--                                                                 roll value: the roll itself is the server's, read from
+--                                                                 the chat. Always the sender's own, like SRESP
 --   SVOTE    RAID      i, c                                       a council member's vote on the proposal of item i
 --                                                                 (M5-5): c = the player they vote for. Always the
 --                                                                 sender's own vote, like SRESP. SPROP carries `vc` = the
@@ -246,7 +257,8 @@ end
 -- (App/CouncilService.lua: the rank or the explicit list, and present in the raid): every client checks it for its view,
 -- the master looter's state machine again (env.isCouncil). Rolls never travel by
 -- addon message: no message carries a roll and nothing read here ever becomes a ROLL input (rolls come from the chat,
--- M4-3). Control messages are taken only from the session's master looter (the sender of its SOPEN, who must name
+-- M4-3). A roll intent (SRINT, M7-2d) carries no value either: it only tells the master looter's roll listener that the
+-- sender's next roll of that round comes from a click (bus event ROLL_INTENT); the player is the sender, never a field. Control messages are taken only from the session's master looter (the sender of its SOPEN, who must name
 -- himself in `ml`); a SOPEN from someone outside the raid is refused, and one from another player while a session
 -- runs only when that player has `award.confirm`. Every control message carries `q`, the session's sequence number:
 -- a repeat is ignored, a gap (a message lost, or expired while waiting out a long lockdown) asks the ML for SSTATE.
@@ -255,6 +267,8 @@ end
 -- every client shares, never in the local clock.
 --
 -- Bus events: "SESSION_INPUT"(input)          a SessionFSM input for the hosted session (RESPONSE), with ts
+--             "ROLL_INTENT"(intent)           a roll intent for the hosted session's open round (M7-2d):
+--                                             { player, i, r, n, ts }; Adapters/RollListener.lua matches it to a roll
 --             "SESSION_VIEW"(view, what, i, who) the view changed: what = OPENED, ITEMS, ROLL, CLOSED, PROPOSAL,
 --                                             RESULT, PAUSE, ENDED, SYNCED, RESPONSE, VOTE, CLEARED
 --             "SESSION_REFUSED"(code, sender) a session message refused (FORGED, NOT_ML, NOT_IN_RAID, BUSY, ...)
@@ -262,7 +276,8 @@ local Session = {}
 Protocol.Session = Session
 
 Session.CONTROL = { SOPEN = true, SROLL = true, SCLOSE = true, SPROP = true, SRESULT = true, SPAUSE = true, SEND = true }
-Session.TYPES = { "SOPEN", "SROLL", "SRESP", "SCLOSE", "SPROP", "SRESULT", "SPAUSE", "SEND", "SSYNCQ", "SSTATE", "SVOTE" }
+Session.TYPES = { "SOPEN", "SROLL", "SRESP", "SCLOSE", "SPROP", "SRESULT", "SPAUSE", "SEND", "SSYNCQ", "SSTATE", "SVOTE",
+	"SRINT" }
 Session.LABELS = { "BIS", "BIG_UPGRADE", "SMALL_UPGRADE", "SITUATIONAL" }   -- the preset labels (§3.3); any code passes
 Session.OUTCOMES = { AWARDED = true, REJECTED = true, DELIVERED = true }
 Session.TARGETS = { member = true, bank = true, disenchant = true }
@@ -276,7 +291,7 @@ Session.SYNC_COOLDOWN = 3   -- the ML sends one state per member per this many s
 Session.STATE_TTL = 60      -- a whispered state or question older than this is dropped (it would be stale)
 
 Session.stats = { published = 0, inputs = 0, forged = 0, stale = 0, refused = 0, gaps = 0, dups = 0, syncAsked = 0,
-	syncServed = 0, synced = 0, bad = 0, votes = 0 }
+	syncServed = 0, synced = 0, bad = 0, votes = 0, intents = 0 }
 
 local huge = math.huge
 
@@ -519,6 +534,18 @@ function Session.ReadVote(msg, from)
 	return { s = msg.s, i = msg.i, c = choice }
 end
 
+Session.MAX_NONCE = 16      -- bytes of a roll intent's nonce
+
+-- A SRINT from `from` (M7-2d): { s, i, r, n }, or nil and a code ("FORGED" when it names another player).
+function Session.ReadIntent(msg, from)
+	if type(msg) ~= "table" or not from then return nil, "BAD" end
+	if msg.p ~= nil and nameOf(msg.p) ~= from then return nil, "FORGED" end
+	if not isSid(msg.s) or not isInt(msg.i, 1) or not isInt(msg.r, 1) then return nil, "BAD" end
+	local n = msg.n
+	if type(n) ~= "string" or n == "" or #n > Session.MAX_NONCE then return nil, "BAD" end
+	return { s = msg.s, i = msg.i, r = msg.r, n = n }
+end
+
 ---------------------------------------------------------------------------------------------------------------------
 -- The master looter's side: the hosted session, its effects as messages, the members' answers as inputs
 
@@ -557,6 +584,11 @@ end
 -- Who picks the label of a response, from the rules frozen on the session (M7-2b).
 local function wireLabelMode(s)
 	return ns.SessionFSM and ns.SessionFSM.LabelMode(s) or nil
+end
+
+-- Rolls count only from the popup's button (M7-2d): true, or nil when the rule is off.
+local function wireButtonRolls(s)
+	return ns.SessionFSM and ns.SessionFSM.ButtonRolls(s) or nil
 end
 
 local function wireItem(item, withState)
@@ -600,7 +632,8 @@ function Session.MessageFor(s, e)
 	local n = net(s)
 	if t == "ANNOUNCE_ITEMS" or (t == "ITEM_CORRECTED" and n.open) then
 		n.open = true
-		return { t = "SOPEN", ml = s.ml, e = s.encounter, rt = wireTiers(s), lm = wireLabelMode(s), it = wireItems(s, false) }
+		return { t = "SOPEN", ml = s.ml, e = s.encounter, rt = wireTiers(s), lm = wireLabelMode(s), bo = wireButtonRolls(s),
+			it = wireItems(s, false) }
 	elseif t == "OPEN_ROUND" then
 		n.rounds[e.item] = (n.rounds[e.item] or 0) + 1
 		local item = s.items[e.item]
@@ -664,8 +697,8 @@ end
 -- The SSTATE of session `s` for `asker` ("Name-Realm"): the whole view, with the asker's own response to the open item.
 function Session.StateFor(s, asker)
 	local t, st = now(), serverNow()
-	local msg = { t = "SSTATE", s = s.id, q = net(s).seq, ml = s.ml, e = s.encounter, rt = wireTiers(s), lm = wireLabelMode(s), it = wireItems(s, true),
-		a = s.active, pz = s.paused or nil, en = s.state == "ENDED" or nil }
+	local msg = { t = "SSTATE", s = s.id, q = net(s).seq, ml = s.ml, e = s.encounter, rt = wireTiers(s), lm = wireLabelMode(s), bo = wireButtonRolls(s),
+		it = wireItems(s, true), a = s.active, pz = s.paused or nil, en = s.state == "ENDED" or nil }
 	local item = s.active and s.items[s.active]
 	if item then
 		msg.rd = wireRound(s, s.active, t, st)
@@ -719,6 +752,19 @@ function Session:OnResponse(msg, from, own)
 		if from == me() then v.mine[r.i] = r.rs end
 		emit("SESSION_VIEW", v, "RESPONSE", r.i, from)
 	end
+	return true
+end
+
+-- SRINT (M7-2d): the master looter hands the intent to the roll listener (bus event ROLL_INTENT) when it names the open
+-- round of the hosted session; the player is the sender. Other clients ignore it (it changes no view).
+function Session:OnIntent(msg, from, own)
+	local r, code = Session.ReadIntent(msg, from)
+	if not r then return refuse(code, from) end
+	local s = self.host
+	if not s or s.id ~= r.s then return true end
+	if r.i ~= s.active or r.r ~= (net(s).rounds[r.i] or 1) then return refuse("STALE", from) end
+	self.stats.intents = self.stats.intents + 1
+	emit("ROLL_INTENT", { player = from, i = r.i, r = r.r, n = r.n, ts = now() })
 	return true
 end
 
@@ -805,7 +851,7 @@ end
 
 local function newView(msg, ml, items, tiers)
 	return { s = msg.s, q = msg.q, ml = ml, e = isInt(msg.e) and msg.e or nil, items = items, tiers = tiers, mine = {},
-		responses = {}, votes = {}, labelMode = readLabelMode(msg.lm) }
+		responses = {}, votes = {}, labelMode = readLabelMode(msg.lm), buttonRolls = msg.bo == true or nil }
 end
 
 -- Applies a SSTATE (from the ML, or built locally by Session:Host). Returns true, or false and a code.
@@ -885,6 +931,7 @@ function Session:OnControl(msg, from, own)
 			v.items, v.q = items, msg.q
 			if tiers then v.tiers = tiers end
 			v.labelMode = readLabelMode(msg.lm) or v.labelMode
+			v.buttonRolls = msg.bo == true or nil
 			changed(v, "ITEMS")
 			return true
 		end
@@ -1032,6 +1079,45 @@ function Session:Respond(response, label, note, extra, origin)
 	return item or true
 end
 
+-- The roll intent of a click on the popup's Roll button (M7-2d), sent before the game's RandomRoll: SRINT for the
+-- view's open round, with a fresh nonce. The round is remembered (Session:TakeClick), so this client's own roll message
+-- is known to come from the click. Returns the transport item (or true for the ML, whose own intent is also taken at
+-- once), or nil and a code: NO_SESSION, NO_ROUND, or the transport's reason.
+function Session:RollIntent()
+	local v = self.view
+	if not v or v.ended then return nil, "NO_SESSION" end
+	local round = v.round
+	if not round then return nil, "NO_ROUND" end
+	self.nonce = (self.nonce or 0) + 1
+	local n = tostring(floor(serverNow())) .. "-" .. tostring(self.nonce)
+	n = n:sub(-Session.MAX_NONCE)
+	local msg = { t = "SRINT", s = v.s, i = round.i, r = round.r, n = n }
+	self.clicks[v.s .. ":" .. round.i .. ":" .. round.r] = now()
+	local item, why
+	if ns.Transport then
+		item, why = ns.Transport:Send("RAID", msg, { prio = "ALERT" })
+		if not item then return nil, why end
+	end
+	local mine = me()
+	if mine then self:OnIntent(msg, mine, true) end   -- the client never hands a RAID message back to its sender
+	return item or true
+end
+Session.clicks = {}   -- [session:item:round] = when this client clicked Roll (M7-2d)
+
+-- This client's own 1-100 roll, read in the chat (M7-2d): true when it follows a click on Roll in the view's open round
+-- (the click is used up: a second roll typed after it is not one), false when the rule is on and it was typed by hand,
+-- nil when there is no open round in view or the rule is off (nothing to say).
+function Session:TakeClick()
+	local v = self.view
+	if not v or v.ended or not v.round or not v.buttonRolls then return nil end
+	local key = v.s .. ":" .. v.round.i .. ":" .. v.round.r
+	if self.clicks[key] then
+		self.clicks[key] = false
+		return true
+	end
+	return false
+end
+
 -- This council member's vote for `choice` ("Name-Realm") on the open proposal of the view (M5-5). Returns the transport
 -- item (or true for the ML, whose own vote is also taken at once), or nil and a code: NO_SESSION, NO_PROPOSAL,
 -- VOTE_CLOSED, BAD_CHOICE, NOT_COUNCIL, or the transport's reason.
@@ -1084,7 +1170,9 @@ end
 function Session:OnMessage(msg, sender, dist)
 	if type(msg) ~= "table" then return false end
 	local t = msg.t
-	if not (Session.CONTROL[t] or t == "SRESP" or t == "SVOTE" or t == "SSYNCQ" or t == "SSTATE") then return false end
+	if not (Session.CONTROL[t] or t == "SRESP" or t == "SVOTE" or t == "SRINT" or t == "SSYNCQ" or t == "SSTATE") then
+		return false
+	end
 	local from = fullName(sender)
 	if not from then return refuse("BAD", sender) end
 	if t == "SSTATE" then
@@ -1098,12 +1186,14 @@ function Session:OnMessage(msg, sender, dist)
 	if dist ~= "RAID" then return refuse("DIST", from) end
 	if t == "SRESP" then return self:OnResponse(msg, from, false) end
 	if t == "SVOTE" then return self:OnVote(msg, from, false) end
+	if t == "SRINT" then return self:OnIntent(msg, from, false) end
 	return self:OnControl(msg, from, false)
 end
 
 function Session:Reset()
 	self.host, self.view, self.raid, self.served = nil, nil, nil, {}
 	self.syncAt, self.syncToken, self.lastRefused = nil, nil, nil
+	self.clicks, self.nonce = {}, nil
 	for k in pairs(self.stats) do self.stats[k] = 0 end
 end
 Session.served = {}

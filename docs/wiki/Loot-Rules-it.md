@@ -36,6 +36,7 @@ Gli oggetti sotto la soglia di loot del gruppo (di norma i verdi) non sono tracc
 - **Passo**: non rolli.
 - Il transmog è disponibile come terzo tier, spento nel preset.
 - Conta solo un `/roll` **1-100**, **il primo del round**, fatto da un personaggio nel raid **con l'addon attivo**. Tutto il resto viene messo da parte e mostrato al master looter con il suo motivo.
+- Il roll deve venire dal **pulsante Tira del popup** (regola *I roll contano solo dal pulsante Roll del popup*, accesa di norma): un `/roll` scritto a mano viene messo da parte come `NOT_FROM_BUTTON` e non consuma il turno del giocatore. Il pulsante avvisa l'addon del master looter del clic subito prima del roll del gioco; il roll resta quello del gioco. Chi ha un addon più vecchio di questa regola rolla come prima finché non aggiorna.
 - Chi non ha l'addon non può rispondere né vincere (il master looter lo sa prima del primo roll).
 
 ## Parità e reroll
@@ -197,6 +198,7 @@ Il motore non scrive mai frasi: registra codici brevi, e l'addon li trasforma ne
 | `NO_ADDON` | L'addon non è attivo. |
 | `NOT_ELIGIBLE` | Non fa parte di questo round. |
 | `DUPLICATE` | Un secondo roll nello stesso round: conta solo il primo. |
+| `NOT_FROM_BUTTON` | Scritto a mano: conta solo il pulsante Roll del popup. |
 | `TIER_EMPTY` | Nessuno di quel tier poteva rollare: questi roll sono stati messi da parte. |
 
 ### Da dove viene un costo o una categoria

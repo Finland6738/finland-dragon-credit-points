@@ -60,6 +60,21 @@
 - Real client: the copy boxes and the layout of the page.
 - Suggested model/effort: `sonnet` / low
 
+### M7-2d — Rolls only from the button, once per item
+- Branch: `step/m7-2d-button-rolls`
+- Depends on: M4-3, M4-6, M7-2
+- Analysis: §4 ("Roll"), §4.1, §8.4 ("Come è fatto (M7-2d)", protocol 6)
+- Scope: owner request of 2026-11-22. A player rolls **only by clicking the popup's Roll button**, and only **once per item**; a `/roll` typed by hand does not count, even from a player with the addon. The game cannot tell a typed `/roll` from `RandomRoll` called by a click, so the click first sends a small session message, the **roll intent** (`SRINT`: item, round, nonce; no roll value, so the trust rule of §8.4 holds) and then calls `RandomRoll`. The master looter's roll listener counts a server roll only when an intent of the same sender for that round goes with it, within a window (rule `session.buttonRollWindow`, 10 seconds, counted only outside a lockdown); otherwise the roll is discarded with the new code `NOT_FROM_BUTTON` and does not use the player's turn. One intent per player per round: a second intent or a second roll is a `DUPLICATE`; an intent without a roll does nothing. A rule `session.buttonRollsOnly` (Guild Master, default on) turns it off (the old behaviour). The player's own client warns when they type `/roll` during an open round; the game's `/roll` command is never overridden or blocked. Rerolls among the tied use the button too. Protocol 6 with optional fields: an older client ignores `SRINT` and `bo`, and its rolls are judged as before.
+- Done when:
+  - [x] A typed roll is discarded as `NOT_FROM_BUTTON` and a button roll is accepted, on the network simulator; the warning shows on the player's own client.
+  - [x] A double click or a second roll is a duplicate; an intent without a roll does nothing; a lockdown that delays the intent stays within the window; a reroll works from the button.
+  - [x] With `session.buttonRollsOnly` off the old behaviour comes back; the rule is validated and older rules are filled in; a client of protocol 5 still rolls.
+  - [ ] In the game: the intent reaches the master looter before or shortly after the roll message, in and out of an instance, after a boss (the lockdown); the warning on a typed `/roll`. *(in game)*
+- Tests: `Tests/test_button_rolls.lua` (network simulator: the rule, typed and button rolls, duplicates, an intent without a roll, the lockdown, a reroll, a forged or stale intent, the rule off, an older client); `Tests/test_protocol_session.lua` (protocol 6); the benches that roll by hand for other purposes turn the rule off.
+- Docs: wiki **Rolling for Loot**, **Master Looter Guide** and **Loot Rules** (EN + IT), analysis §4, §4.1, §8.4, CHANGELOG.
+- Real client: the order and delay between the addon message and the system roll message; `RandomRoll` from a click.
+- Suggested model/effort: `opus` / high
+
 ### M7-3 — Profiles and presets
 - Branch: `step/m7-3-profiles`
 - Depends on: M7-2, M6-7

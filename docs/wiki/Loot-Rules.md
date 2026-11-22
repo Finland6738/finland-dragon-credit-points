@@ -36,6 +36,7 @@ Items below the group's loot threshold (green, normally) are not tracked and do 
 - **Pass**: you do not roll.
 - Transmog is available as a third tier, switched off in the preset.
 - Only a `/roll` of **1-100**, **the first one of the round**, made by a character in the raid **with the addon active**, counts. Anything else is set aside and shown to the master looter with its reason.
+- The roll must come from the **Roll button of the popup** (rule *Rolls count only from the popup's Roll button*, on by default): a `/roll` typed by hand is set aside as `NOT_FROM_BUTTON` and does not use up the player's turn. The button tells the master looter's addon about the click just before the game's roll; the roll itself is still the game's. A player whose addon is older than this rule rolls as before until they update.
 - Whoever does not have the addon cannot answer or win (the master looter is told before the first roll).
 
 ## Ties and rerolls
@@ -197,6 +198,7 @@ The engine never writes sentences: it records short codes, and the addon turns t
 | `NO_ADDON` | The addon is not active. |
 | `NOT_ELIGIBLE` | Not part of this round. |
 | `DUPLICATE` | A second roll in the same round: only the first counts. |
+| `NOT_FROM_BUTTON` | Typed by hand: only the Roll button of the popup counts. |
 | `TIER_EMPTY` | Nobody in that tier could roll: these rolls were set aside. |
 
 ### Where a cost or a category comes from

@@ -359,7 +359,7 @@ local function allRolled(s, item)
 	local rollMin, rollMax = cfg.rollMin or 1, cfg.rollMax or 100
 	local rolled = {}
 	for _, r in ipairs(round.rolls) do
-		if r.min == rollMin and r.max == rollMax then rolled[r.player] = true end
+		if r.min == rollMin and r.max == rollMax and not r.nb then rolled[r.player] = true end   -- a typed roll is not one
 	end
 	if round.among ~= nil then
 		for _, p in ipairs(round.among) do
@@ -408,7 +408,7 @@ function FSM.Flags(s, index)
 	local rolls = {}
 	local firstRound = (item.rounds and item.rounds[1]) or item.round
 	for _, r in ipairs(firstRound and firstRound.rolls or {}) do
-		if rolls[r.player] == nil and r.min == rollMin and r.max == rollMax then rolls[r.player] = r.value end
+		if rolls[r.player] == nil and r.min == rollMin and r.max == rollMax and not r.nb then rolls[r.player] = r.value end
 	end
 	local decided = type(item.rule) == "table"
 	return ns.Flags.Evaluate({ responses = item.responses, verdicts = item.verdicts, main = main, players = players,
@@ -840,7 +840,7 @@ function H.RESPONSE(s, input)
 	if not ok then return nil, code end
 	if item.responses[input.player] ~= nil then
 		for _, r in ipairs(item.round.rolls) do
-			if r.player == input.player then return nil, "RESPONSE_LOCKED" end
+			if r.player == input.player and not r.nb then return nil, "RESPONSE_LOCKED" end
 		end
 	end
 	item.responses[input.player] = response
@@ -859,15 +859,18 @@ function H.RESPONSE(s, input)
 	return true
 end
 
--- ROLL{player, value, min, max}: a /roll seen in the chat while a round is open. Every roll is kept: Priority decides
--- which are valid and lists the others with a code (NO_ADDON, NOT_1_100, DUPLICATE, ...), so the ML sees them.
+-- ROLL{player, value, min, max, nb?}: a /roll seen in the chat while a round is open. Every roll is kept: Priority decides
+-- which are valid and lists the others with a code (NO_ADDON, NOT_1_100, DUPLICATE, ...), so the ML sees them. `nb`
+-- (M7-2d): the roll listener found no click on the popup's Roll button for it (rule session.buttonRollsOnly): Priority
+-- discards it as NOT_FROM_BUTTON, and it neither uses the player's turn nor locks their response.
 function H.ROLL(s, input)
 	local item = current(s)
 	if s.state ~= "ROLLING" then return nil, "NO_ROUND_OPEN" end
 	if not isName(input.player) then return nil, "player" end
 	if not isNum(input.value) or not isNum(input.min) or not isNum(input.max) then return nil, "value" end
 	local rolls = item.round.rolls
-	rolls[#rolls + 1] = { player = input.player, value = input.value, min = input.min, max = input.max, ts = input.ts }
+	rolls[#rolls + 1] = { player = input.player, value = input.value, min = input.min, max = input.max, ts = input.ts,
+		nb = input.nb == true or nil }
 	return true
 end
 
@@ -1182,6 +1185,15 @@ end
 function FSM.LabelMode(s)
 	local mode = responsesRules(s).labelMode
 	return ns.Labels and ns.Labels.Mode(mode) or "manual"
+end
+
+-- The rolls-only-from-the-button rule of this session (M7-2d): on (true or false) and the window in seconds. A session
+-- saved before M7-2d has no such key: off, the old behaviour.
+function FSM.ButtonRolls(s)
+	local r = type(s) == "table" and type(s.rules) == "table" and type(s.rules.session) == "table" and s.rules.session or {}
+	local window = r.buttonRollWindow
+	if type(window) ~= "number" or window < 1 then window = 10 end
+	return r.buttonRollsOnly == true, window
 end
 
 -- The item in progress (its index and table), or nil.

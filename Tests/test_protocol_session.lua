@@ -63,11 +63,11 @@ describe("session messages on one client", function()
 		receive("SOPEN", fields, sender)
 	end
 
-	it("speaks protocol 5 (and still understands 2): the presence check plus the session messages", function()
-		eq(P().VERSION, 5)
+	it("speaks protocol 6 (and still understands 2): the presence check plus the session messages", function()
+		eq(P().VERSION, 6)
 		eq(P().MIN, 2)
 		for _, t in ipairs(S().TYPES) do truthy(Codec().SCHEMA[t], t .. " is registered") end
-		eq(#S().TYPES, 11)
+		eq(#S().TYPES, 12)   -- SRINT, the roll intent of M7-2d, carries no roll value
 		for _, t in ipairs(S().TYPES) do
 			falsy(t:find("ROLL") and t ~= "SROLL", "no message carries a roll")
 		end

@@ -19,8 +19,10 @@
 -- A valid roll (§4, §4.1): a 1-100 roll (`min` 1, `max` 100, an integer value between them), the first 1-100 roll of
 -- that player in the round (a roll with another range is discarded and does not use the player's turn), inside the
 -- round's window when the round has `openedAt` / `closedAt`, from a character present in the raid, with the addon
--- active (when the state says who has it and `requireAddon` is on), and from a candidate of that round. Every other
--- roll is listed in `discarded` with a code.
+-- active (when the state says who has it and `requireAddon` is on), and from a candidate of that round. A roll marked
+-- `nb` (M7-2d: the roll listener saw no click on the popup's Roll button for it) is discarded as NOT_FROM_BUTTON and,
+-- like a roll with another range, does not use the player's turn; one after the player's valid roll is a DUPLICATE.
+-- Every other roll is listed in `discarded` with a code.
 --
 -- Input:
 --   state = {
@@ -193,6 +195,8 @@ function Run:ValidRolls(roundIndex, round, among)
 			self:Discard(roundIndex, player, "NOT_ELIGIBLE")
 		elseif seen[player] then
 			self:Discard(roundIndex, player, "DUPLICATE")
+		elseif r.nb then   -- M7-2d: typed by hand, no click on the Roll button; it does not use the player's turn
+			self:Discard(roundIndex, player, "NOT_FROM_BUTTON")
 		else
 			seen[player] = true
 			valid[#valid + 1] = { player = player, value = value }

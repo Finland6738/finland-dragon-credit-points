@@ -22,7 +22,26 @@
 --   NO_ADDON     in the raid without the addon active ("addon not active", §4.1)
 --   NOT_ELIGIBLE not one of the players of a reroll
 --   DUPLICATE    a second valid roll of the same player in the same round: only the first counts
+--   NOT_FROM_BUTTON  (M7-2d, rule session.buttonRollsOnly) no click on the popup's Roll button came with it: typed by hand
 -- The order of the checks is the one of Priority (a roll with another range does not make a later one a duplicate).
+--
+-- Rolls only from the button (M7-2d, docs/ANALISI.md §4.1, §8.4). The game cannot tell a typed /roll from RandomRoll
+-- called by a click, so a click on the popup's Roll button first sends a roll intent (SRINT, Net/Protocol.lua: item,
+-- round, nonce; no value) and then calls RandomRoll. With the rule on, a roll that would be VALID counts only when an
+-- intent of the same player for the same round goes with it:
+--   * an intent that arrived first matches when it is not older than the window (session.buttonRollWindow) before the
+--     roll, or a lockdown was seen since it arrived (the roll waited in the chat);
+--   * a roll that arrived first waits for its intent (the addon message is often slower than the system message) up to
+--     the window, counted only while there is no lockdown (the intent waits out the sender's lockdown in its queue);
+--   * one intent per player per round: it is used up by the roll; a second intent (another nonce) is counted as a
+--     DUPLICATE and ignored; a repeat of the same nonce is ignored; an intent without a roll does nothing;
+--   * a roll still without an intent when its wait ends goes to the session marked `nb`: Priority discards it as
+--     NOT_FROM_BUTTON and it does not use the player's turn (a click afterwards still counts);
+--   * a client of an older session protocol (its HELLO says pv < INTENT_PROTOCOL) cannot send intents: its rolls are
+--     judged as before M7-2d (`legacy` in the log).
+-- With the rule off, or for a session saved before M7-2d, nothing changes. The player's own client also reads its own
+-- roll: typed by hand during an open round of a session with the rule on, it prints a warning (POPUP_ROLL_TYPED) and
+-- emits ROLL_TYPED. The game's /roll command is never touched.
 -- Names are written as the ledger writes them ("Name-Realm", GuildRanks.FullName): the message gives "Name" for the
 -- player's own realm.
 --
@@ -41,16 +60,21 @@
 -- RollListener:Detach()                    stops; the buffer is cleared
 -- RollListener:OnSystemMessage(text)       the CHAT_MSG_SYSTEM handler (tests call it too)
 -- RollListener:Flush()                     reads the held messages when the lockdown is over; returns how many were read
--- RollListener:Pending()                   how many hidden messages wait (the controller does not close a round while
---                                            rolls may still be held)
--- RollListener:Stats()                     { seen, fed, refused, held, hidden, dropped, byCode = { [code] = n } }
--- RollListener.log                         the last LOG_SIZE entries { player, value, min, max, ts, code, refused?, held? }
---                                            (held: read after the lockdown)
--- Bus event: "ROLL_SEEN"(entry) for every roll read while a session is attached.
+-- RollListener:Pending()                   how many hidden messages and rolls waiting for their intent wait (the
+--                                            controller does not close a round while rolls may still be held)
+-- RollListener:OnIntent(intent)            a roll intent { player, i, r, n, ts } (bus event ROLL_INTENT, M7-2d)
+-- RollListener:Expire()                    gives up on the rolls whose intent did not come in time (NOT_FROM_BUTTON)
+-- RollListener:Stats()                     { seen, fed, refused, held, hidden, dropped, intents, intentDups, waited,
+--                                            byCode = { [code] = n } }
+-- RollListener.log                         the last LOG_SIZE entries { player, value, min, max, ts, code, refused?, held?,
+--                                            button?, legacy? } (held: read after the lockdown; button: an intent went
+--                                            with it; legacy: an older client, judged without intent)
+-- Bus events: "ROLL_SEEN"(entry) for every roll read while a session is attached (a roll waiting for its intent is
+--             seen once it is decided); "ROLL_TYPED"(roll) on the player's own client for their own typed roll.
 local ADDON_NAME, ns = ...
 ns = ns or {}
 ns.modules = ns.modules or {}
-local RollListener = { log = {}, buffer = {} }
+local RollListener = { log = {}, buffer = {}, waiting = {}, intents = {} }
 ns.RollListener, ns.modules.RollListener = RollListener, RollListener
 
 local type, ipairs, pairs, floor, remove = type, ipairs, pairs, math.floor, table.remove
@@ -59,11 +83,15 @@ RollListener.LOG_SIZE = 200      -- rolls kept for the window and the debug outp
 RollListener.MAX_BUFFER = 200    -- hidden messages held during one lockdown (the oldest go first)
 RollListener.RECHECK = 1         -- seconds between two reads of the buffer while it is not empty
 RollListener.MIN, RollListener.MAX = 1, 100
+RollListener.INTENT_PROTOCOL = 6 -- the session protocol that sends roll intents (Net/Protocol.lua, M7-2d)
 
 local function C() return ns.Compat end
 local function emit(event, ...) if ns.Bus then ns.Bus:Emit(event, ...) end end
 
-local function newStats() return { seen = 0, fed = 0, refused = 0, held = 0, hidden = 0, dropped = 0, byCode = {} } end
+local function newStats()
+	return { seen = 0, fed = 0, refused = 0, held = 0, hidden = 0, dropped = 0, intents = 0, intentDups = 0, waited = 0,
+		byCode = {} }
+end
 RollListener.stats = newStats()
 
 local function fullName(name)
@@ -117,7 +145,7 @@ function RollListener.Classify(s, roll, ts)
 		if not listed then return "NOT_ELIGIBLE" end
 	end
 	for _, r in ipairs(type(round.rolls) == "table" and round.rolls or {}) do
-		if r.player == player and r.min == lo and r.max == hi and isValidValue(r.value, lo, hi)
+		if r.player == player and not r.nb and r.min == lo and r.max == hi and isValidValue(r.value, lo, hi)
 			and not (type(r.ts) == "number" and type(round.openedAt) == "number" and r.ts < round.openedAt) then
 			return "DUPLICATE"
 		end
@@ -133,6 +161,56 @@ local function record(self, entry)
 	by[entry.code] = (by[entry.code] or 0) + 1
 end
 
+-- Hands a decided roll to the session (`nb`: no click went with it, M7-2d), then logs and announces it.
+local function feed(self, entry, nb)
+	local stats = self.stats
+	if entry.code ~= "NO_ROUND" and self.step then
+		local ok, code = self.step({ type = "ROLL", ts = entry.ts, player = entry.player, value = entry.value,
+			min = entry.min, max = entry.max, nb = nb or nil })
+		if ok then
+			stats.fed = stats.fed + 1
+		else
+			entry.refused = code or "REFUSED"
+			stats.refused = stats.refused + 1
+		end
+	end
+	record(self, entry)
+	emit("ROLL_SEEN", entry)
+end
+
+-- The number of the open round of the active item as the raid knows it (Net/Protocol.lua's SROLL `r`).
+local function roundNumber(s)
+	local n = type(s.net) == "table" and type(s.net.rounds) == "table" and s.net.rounds[s.active]
+	return type(n) == "number" and n or 1
+end
+
+-- Is the rule on for this session, and its window (SessionFSM.ButtonRolls)?
+local function buttonRule(s)
+	local FSM = ns.SessionFSM
+	if not FSM or not FSM.ButtonRolls then return false, 10 end
+	return FSM.ButtonRolls(s)
+end
+
+-- An older client that sends no roll intents (its HELLO, App/AddonCheck.lua).
+local function legacy(player)
+	local AC = ns.AddonCheck
+	local reply = AC and type(AC.replies) == "table" and AC.replies[player]
+	return type(reply) == "table" and type(reply.pv) == "number" and reply.pv < RollListener.INTENT_PROTOCOL
+end
+
+-- The unused intent of `player` for round (sid, i, r) that may go with a roll read at `ts`, or nil.
+local function findIntent(self, player, sid, i, r, ts, window)
+	local intent = self.intents[player]
+	if type(intent) ~= "table" or intent.used or intent.sid ~= sid or intent.i ~= i or intent.r ~= r then return nil end
+	if ts - intent.ts <= window then return intent end
+	if self.lockSeenAt and self.lockSeenAt >= intent.ts then return intent end   -- the roll waited out a lockdown
+	return nil
+end
+
+local function markLock(self, isLocked)
+	if isLocked then self.lockSeenAt = C().Now() end
+end
+
 -- One readable message that arrived at `ts`.
 local function handle(self, text, ts, held)
 	local roll = RollListener.Parse(text)
@@ -143,18 +221,27 @@ local function handle(self, text, ts, held)
 	stats.seen = stats.seen + 1
 	local entry = { player = roll.player, value = roll.value, min = roll.min, max = roll.max, ts = ts,
 		code = RollListener.Classify(s, roll, ts), held = held or nil }
-	if entry.code ~= "NO_ROUND" and self.step then
-		local ok, code = self.step({ type = "ROLL", ts = ts, player = roll.player, value = roll.value, min = roll.min,
-			max = roll.max })
-		if ok then
-			stats.fed = stats.fed + 1
-		else
-			entry.refused = code or "REFUSED"
-			stats.refused = stats.refused + 1
+	if entry.code == "VALID" then
+		local on, window = buttonRule(s)
+		if on and legacy(roll.player) then
+			entry.legacy = true
+		elseif on then
+			local i, r = s.active, roundNumber(s)
+			local intent = findIntent(self, roll.player, s.id, i, r, ts, window)
+			if intent then
+				intent.used, entry.button = true, true
+			else
+				-- the intent may still be on its way: the roll waits for it (Expire gives up)
+				local waiting = self.waiting
+				waiting[#waiting + 1] = { entry = entry, sid = s.id, i = i, r = r, deadline = C().Now() + window,
+					window = window }
+				stats.waited = stats.waited + 1
+				self:EnsureTicker()
+				return true
+			end
 		end
 	end
-	record(self, entry)
-	emit("ROLL_SEEN", entry)
+	feed(self, entry)
 	return true
 end
 
@@ -171,15 +258,37 @@ local function stopTicker(self)
 	if self.ticker then self.ticker:Cancel() self.ticker = nil end
 end
 
-local function ensureTicker(self)
-	if self.ticker or #self.buffer == 0 then return end
-	self.ticker = C().NewTicker(self.RECHECK, function() self:Flush() end)
+-- The one-second recheck runs while hidden messages or rolls waiting for their intent are held.
+function RollListener:EnsureTicker()
+	if self.ticker or (#self.buffer == 0 and #self.waiting == 0) then return end
+	self.ticker = C().NewTicker(self.RECHECK, function()
+		self:Flush()
+		self:Expire()
+	end)
+end
+
+local function maybeStop(self)
+	if #self.buffer == 0 and #self.waiting == 0 then stopTicker(self) end
+end
+
+-- The player's own roll on their own client (M7-2d): typed by hand during an open round of a session with the rule on,
+-- it prints a warning. Nothing is blocked: the game's /roll stays the game's.
+function RollListener:CheckOwn(text)
+	local GR, P = ns.GuildRanks, ns.Protocol
+	if not GR or not P or not P.Session or type(text) ~= "string" then return end
+	local roll = RollListener.Parse(text)
+	if not roll or roll.player ~= GR.Me() or roll.min ~= self.MIN or roll.max ~= self.MAX then return end
+	if P.Session:TakeClick() ~= false then return end
+	if ns.addon and ns.addon.Print and ns.L then ns.addon:Print(ns.L["POPUP_ROLL_TYPED"]) end
+	emit("ROLL_TYPED", roll)
 end
 
 function RollListener:OnSystemMessage(text)
+	if not C().IsSecret(text) then self:CheckOwn(text) end
 	if not self.getSession then return end
 	local ts = C().Now()
 	if C().IsSecret(text) then
+		markLock(self, true)
 		local buffer = self.buffer
 		buffer[#buffer + 1] = { text = text, ts = ts }
 		self.stats.held = self.stats.held + 1
@@ -187,7 +296,7 @@ function RollListener:OnSystemMessage(text)
 			remove(buffer, 1)
 			self.stats.dropped = self.stats.dropped + 1
 		end
-		ensureTicker(self)
+		self:EnsureTicker()
 		return
 	end
 	if type(text) ~= "string" then return end
@@ -196,8 +305,9 @@ end
 
 function RollListener:Flush()
 	local buffer = self.buffer
-	if #buffer == 0 then stopTicker(self) return 0 end
+	if #buffer == 0 then maybeStop(self) return 0 end
 	local isLocked, read, keep = locked(), 0, {}
+	markLock(self, isLocked)
 	for _, e in ipairs(buffer) do
 		if C().IsSecret(e.text) then
 			if isLocked then
@@ -210,17 +320,86 @@ function RollListener:Flush()
 		end
 	end
 	self.buffer = keep
-	if #keep == 0 then stopTicker(self) end
+	maybeStop(self)
 	return read
 end
 
-function RollListener:Pending() return #self.buffer end
+-- A roll intent (M7-2d): { player, i, r, n, ts } for the hosted session's open round (Net/Protocol.lua checked the
+-- session, the item and the round; the player is the sender). Returns true when it was taken, false for a repeat or a
+-- second intent (DUPLICATE).
+function RollListener:OnIntent(intent)
+	local s = self.getSession and self.getSession()
+	if type(s) ~= "table" or type(intent) ~= "table" or type(intent.player) ~= "string" then return false end
+	local player = intent.player
+	local ts = type(intent.ts) == "number" and intent.ts or C().Now()
+	markLock(self, locked())
+	local prev = self.intents[player]
+	if type(prev) == "table" and prev.sid == s.id and prev.i == intent.i and prev.r == intent.r then
+		if prev.n ~= intent.n then
+			self.stats.intentDups = self.stats.intentDups + 1
+			local by = self.stats.byCode
+			by.DUPLICATE_INTENT = (by.DUPLICATE_INTENT or 0) + 1
+		end
+		return false
+	end
+	local mine = { sid = s.id, i = intent.i, r = intent.r, n = intent.n, ts = ts }
+	self.intents[player] = mine
+	self.stats.intents = self.stats.intents + 1
+	-- a roll of the same round that came first and waits for it
+	local keep, matched = {}, false
+	for _, w in ipairs(self.waiting) do
+		local e = w.entry
+		if e.player == player and w.sid == mine.sid and w.i == mine.i and w.r == mine.r then
+			if not matched then
+				matched, mine.used, e.button = true, true, true
+				feed(self, e)
+			else
+				-- a second roll of the player in that round: judged again now that the first one counts (DUPLICATE)
+				e.code = RollListener.Classify(s, e, e.ts)
+				local typed = e.code == "VALID"   -- the first one was refused: this one still has no click of its own
+				if typed then e.code = "NOT_FROM_BUTTON" end
+				feed(self, e, typed)
+			end
+		else
+			keep[#keep + 1] = w
+		end
+	end
+	self.waiting = keep
+	maybeStop(self)
+	return true
+end
+
+-- Gives up on the rolls whose intent did not come within their window (counted only while there is no lockdown): they
+-- go to the session as NOT_FROM_BUTTON. Returns how many were given up.
+function RollListener:Expire()
+	if #self.waiting == 0 then maybeStop(self) return 0 end
+	local t, isLocked = C().Now(), locked()
+	markLock(self, isLocked)
+	local keep, n = {}, 0
+	for _, w in ipairs(self.waiting) do
+		if isLocked then
+			if w.deadline < t + w.window then w.deadline = t + w.window end   -- the window starts again after the lockdown
+			keep[#keep + 1] = w
+		elseif t >= w.deadline then
+			w.entry.code = "NOT_FROM_BUTTON"
+			feed(self, w.entry, true)
+			n = n + 1
+		else
+			keep[#keep + 1] = w
+		end
+	end
+	self.waiting = keep
+	maybeStop(self)
+	return n
+end
+
+function RollListener:Pending() return #self.buffer + #self.waiting end
 
 function RollListener:Stats()
 	local s, by = self.stats, {}
 	for k, v in pairs(s.byCode) do by[k] = v end
 	return { seen = s.seen, fed = s.fed, refused = s.refused, held = s.held, hidden = s.hidden, dropped = s.dropped,
-		byCode = by }
+		intents = s.intents, intentDups = s.intentDups, waited = s.waited, byCode = by }
 end
 
 function RollListener:Attach(getSession, step)
@@ -232,22 +411,27 @@ end
 
 function RollListener:Detach()
 	self.getSession, self.step = nil, nil
-	self.buffer = {}
+	self.buffer, self.waiting, self.intents = {}, {}, {}
 	stopTicker(self)
 end
 
 -- Tests and /reload: forget everything.
 function RollListener:Reset()
 	self:Detach()
-	self.log, self.stats = {}, newStats()
+	self.log, self.stats, self.lockSeenAt = {}, newStats(), nil
 end
 
 function RollListener:OnEvent(event, ...)
 	if event == "CHAT_MSG_SYSTEM" then
 		self:OnSystemMessage((...))
-	elseif #self.buffer > 0 then   -- ADDON_RESTRICTION_STATE_CHANGED, ENCOUNTER_END, PLAYER_REGEN_ENABLED
-		self:Flush()
+	else   -- ADDON_RESTRICTION_STATE_CHANGED, ENCOUNTER_END, PLAYER_REGEN_ENABLED
+		if #self.buffer > 0 then self:Flush() end
+		if #self.waiting > 0 then self:Expire() end
 	end
+end
+
+if ns.Bus then
+	ns.Bus:On("ROLL_INTENT", function(_, intent) RollListener:OnIntent(intent) end, RollListener)
 end
 
 if ns.addon and CreateFrame then

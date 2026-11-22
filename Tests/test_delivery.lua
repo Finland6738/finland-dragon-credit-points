@@ -57,6 +57,7 @@ local function bench(n)
 	function b.kill(id)
 		Mock.encounter.Start(id or 601, "Boss")
 		Mock.encounter.End(id or 601, "Boss", true)
+		if SC().session then SC().session.rules.session.buttonRollsOnly = false end   -- typed rolls (M7-2d: test_button_rolls.lua)
 	end
 	function b.open()
 		b.kill()

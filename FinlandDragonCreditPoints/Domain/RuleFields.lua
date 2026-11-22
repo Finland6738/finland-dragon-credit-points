@@ -69,6 +69,8 @@ add("session", { "session", "autoAdvance" }, "bool", { "RULEF_AUTO_ADVANCE" })
 add("session", { "session", "lockCategoryOnOpen" }, "bool", { "RULEF_LOCK_CATEGORY" })
 add("session", { "session", "interventionSeconds" }, "int", { "RULEF_INTERVENTION_SECONDS" }, { min = 0, max = 600 })
 add("session", { "session", "rollSeconds" }, "int", { "RULEF_ROLL_SECONDS" }, { min = 5, max = 600 })
+add("session", { "session", "buttonRollsOnly" }, "bool", { "RULEF_BUTTON_ROLLS_ONLY" })
+add("session", { "session", "buttonRollWindow" }, "int", { "RULEF_BUTTON_ROLL_WINDOW" }, { min = 2, max = 60 })
 
 -- priority: who wins (§3.3, §3.4, §3.8)
 add("priority", { "priority", "metric" }, "choice", { "RULEF_METRIC" }, { options = METRICS })

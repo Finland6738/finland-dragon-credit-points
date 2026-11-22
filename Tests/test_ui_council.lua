@@ -453,6 +453,7 @@ local function sessionBench(mode)
 	local r = FDCP.Rules.Current(b.L)
 	r.session.awardMode = mode or "council"
 	r.session.autoAdvance = false
+	r.session.buttonRollsOnly = false   -- typed rolls (M7-2d: test_button_rolls.lua)
 	assert(FDCP.Rules.Change(b.L, { author = ME, ts = 5, rules = r, confirmed = true }))
 	SC().Env = function(self)   -- the permission gate is tested in test_permissions.lua; the council is the whole raid here
 		return { ledger = self:Ledger(), isCouncil = function() return true end }
@@ -509,6 +510,7 @@ describe("the item on the table", function()
 		local b = bench()
 		local r = FDCP.Rules.Current(b.L)
 		r.council.vote = true
+		r.session.buttonRollsOnly = false   -- typed rolls (M7-2d: test_button_rolls.lua)
 		assert(FDCP.Rules.Change(b.L, { author = ME, ts = 5, rules = r, confirmed = true }))
 		open()
 		contains(CW().root.status:GetText(), L("COUNCIL_AWARD_VOTE_ADVICE"))
@@ -626,6 +628,7 @@ local function raidToProposal()
 	local r = a.Rules.Current(Ledger)
 	r.session.awardMode = "council"
 	r.session.autoAdvance = false
+	r.session.buttonRollsOnly = false   -- typed rolls (M7-2d: test_button_rolls.lua)
 	assert(a.Rules.Change(Ledger, { author = full("Aurel"), ts = a.Compat.ServerTime(), rules = r, confirmed = true },
 		a.PermissionService:Gate()))
 	-- the guild's ledger reaches every client (its sync is tested elsewhere): the rules are the ones in force everywhere

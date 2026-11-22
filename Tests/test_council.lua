@@ -23,6 +23,7 @@ end
 local function rules(mutate)
 	local r = FDCP.Rules.DefaultConfig()
 	r.session.autoAdvance = false
+	r.session.buttonRollsOnly = false   -- typed rolls: the button rule (M7-2d) is tested in test_button_rolls.lua
 	if mutate then mutate(r) end
 	return r
 end
@@ -443,6 +444,7 @@ local function raidToProposal(mode)
 	local r = a.Rules.Current(L)
 	r.session.awardMode = mode
 	r.session.autoAdvance = false
+	r.session.buttonRollsOnly = false   -- typed rolls (M7-2d's rule is tested in test_button_rolls.lua)
 	assert(a.Rules.Change(L, { author = full("Aurel"), ts = a.Compat.ServerTime(), rules = r, confirmed = true },
 		a.PermissionService:Gate()))
 	assert(a.NightController:Open({ instanceID = 409 }))

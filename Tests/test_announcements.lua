@@ -53,6 +53,7 @@ local function bench(opts)
 	function b.collect()
 		Mock.encounter.Start(601, "Boss")
 		Mock.encounter.End(601, "Boss", true)
+		if SC().session then SC().session.rules.session.buttonRollsOnly = false end   -- typed rolls (M7-2d: test_button_rolls.lua)
 		Mock.loot.Open()
 		assert(SC():Step({ type = "SET_RAID", present = presentAll(), addon = presentAll() }))
 	end

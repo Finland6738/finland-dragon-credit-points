@@ -19,6 +19,9 @@
 -- M7-2b: the label of a main-spec answer follows the guild's mode (rule responses.labelMode): "auto" = the addon sets it from the
 -- player's best-in-slot list and the verdict and the chips are locked; "suggest" = the same, filled in beforehand and the
 -- player may change or clear it; "manual" = the player's own. The answer carries who chose the label (AUTO, CHANGED, MANUAL).
+-- M7-2d: a click on Roll first sends the roll intent (Protocol.Session:RollIntent, SRINT: item, round, nonce, no value)
+-- and then calls RandomRoll; with the rule session.buttonRollsOnly the master looter counts a roll only with its intent
+-- (Adapters/RollListener.lua). The button still works once per round, rerolls included.
 -- Not verified in the real client: how it looks in a raid, the tooltip comparison, RandomRoll from a click.
 local ADDON_NAME, ns = ...
 ns = ns or {}
@@ -745,6 +748,9 @@ function Popup:Roll()
 	if not card or not card.canRoll then return false, "LOCKED" end
 	if card.canAnswer then self:CommitNote() end
 	card = self:Current()
+	-- M7-2d: the intent goes first (it waits out a lockdown in the queue like every message); the roll follows at once.
+	-- A refused intent does not stop the roll: the master looter then discards it as NOT_FROM_BUTTON if the rule is on.
+	if ns.Protocol and ns.Protocol.Session then ns.Protocol.Session:RollIntent() end
 	local state = ns.Compat.Roll.Send(card.rollMin, card.rollMax)
 	if state ~= ns.Compat.AVAILABLE then
 		self.rollErr = card.key
