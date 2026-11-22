@@ -41,4 +41,6 @@ A **Permissions** line says whether the guild roster has been read this session 
 
 A **Sync** line (officers) describes the ledger sync with the other officers: `on` when your game takes part (your rank may write ledger events and the guild roster has been read), how many officers it has heard, how many times it asked for missing events and answered someone else's request (with the number of events sent), how many events it added, refused (their author did not have the rank) or found in conflict (the same event with another content: the one you have is kept), and how many sync messages came from someone who is not an officer and were ignored.
 
+A **Snapshot** line describes the read-only credits table: `officer` or `member` (`off` before the guild roster is read), the size `k` of the ledger of the table you keep, how many tables your game sent to the guild and answered by whisper (officers), how many it received, kept, found older than the one it had, ignored because the sender is not an officer, or refused as malformed.
+
 `/fdcp debug` never prints player names, guild names or item names, so you can paste its output in a bug report. It checks the client again each time you run it.

@@ -2,7 +2,16 @@
 
 > **Costruita, non ancora vista in gioco.** La scheda funziona nei test offline con un client simulato; come appare nel gioco vero è ancora da confermare. [English](Credits)
 
-La scheda **Crediti** è la tabella dei crediti del loot della gilda, come sul sito della community. I crediti non si salvano mai: si ricalcolano ogni volta dal registro, quindi ogni client che ha gli stessi eventi mostra gli stessi numeri. **Meno crediti vuol dire più precedenza.**
+La scheda **Crediti** è la tabella dei crediti del loot della gilda, come sul sito della community. I crediti non si salvano mai: si ricalcolano ogni volta dal registro, quindi ogni client che ha gli stessi eventi mostra gli stessi numeri, e i membri vedono i numeri del registro degli officer (sotto). **Meno crediti vuol dire più precedenza.**
+
+## Officer e membri
+
+Solo il gioco degli officer tiene il registro (lo tengono sincronizzato fra loro). Il gioco di ogni altro membro riceve invece la **tabella** dal gioco di un officer: dopo ogni cambiamento del registro il gioco di un officer la manda a tutta la gilda, e quando fai login o /reload il tuo gioco la chiede e l'officer con il registro più nuovo te la manda in sussurro. Il tuo gioco la conserva, quindi c'è anche quando nessun officer è online.
+
+- La scheda della season dice **sola lettura · inviata da** e il nome dell'officer.
+- Vedi la season in corso (o l'ultima) con le sue ultime 8 serate; le season precedenti sono solo nelle tabelle degli officer.
+- Gli stessi numeri danno i tuoi crediti e il tuo posto in fila nel popup del loot.
+- Si usa solo una tabella mandata da chi ha un rango di gilda che può scrivere eventi del registro; il resto si ignora. Una tabella più vecchia non sostituisce mai una più nuova, quindi un officer rimasto assente non riporta numeri vecchi.
 
 ## Una fisarmonica per season
 

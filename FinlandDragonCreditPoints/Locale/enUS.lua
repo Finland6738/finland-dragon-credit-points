@@ -456,6 +456,7 @@ L["CREDITS_SEASON_SUB"] = "%d nights · %s"
 L["CREDITS_IN_ROSTER"] = "%d in the roster"
 L["CREDITS_EYEBROW_OPEN"] = "%s · in progress"
 L["CREDITS_EYEBROW_CLOSED"] = "%s · closed"
+L["CREDITS_SNAPSHOT"] = "read-only · sent by %s"
 
 -- Progress tab (M3-8b)
 L["PROGRESS_EYEBROW"] = "Progress · first kills"

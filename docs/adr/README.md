@@ -13,3 +13,4 @@ They record *why* the project is built a certain way. A decision that changes is
 | [0003](0003-documentation-languages.md) | Documentation languages: English, Italian, or both | accepted |
 | [0004](0004-interface-style-of-the-community-site.md) | The interface follows the community site's style | accepted |
 | [0005](0005-officer-ledger-sync.md) | Officer ledger sync: pull by heads, gate per event, vouching for unknown authors | accepted |
+| [0006](0006-read-only-credits-snapshot.md) | Read-only credits for members: an officer's snapshot, newest ledger wins | accepted |

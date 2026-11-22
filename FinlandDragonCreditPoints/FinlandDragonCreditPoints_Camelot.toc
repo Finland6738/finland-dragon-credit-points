@@ -35,6 +35,7 @@ Domain\Members.lua
 Domain\Roster.lua
 Domain\Nights.lua
 Domain\CreditTable.lua
+Domain\CreditSnapshot.lua
 Domain\Rotation.lua
 Data\Instances.lua
 Data\Specs.lua
@@ -70,6 +71,7 @@ App\RosterController.lua
 App\ProgressController.lua
 App\SiteExportService.lua
 Net\Sync.lua
+Net\Snapshot.lua
 App\SeasonController.lua
 App\AddonCheck.lua
 App\AddonNotice.lua

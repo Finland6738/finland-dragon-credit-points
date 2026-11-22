@@ -1463,10 +1463,38 @@ tools/ check_docs.py, build/release
   che avrebbe potuto scrivere lui, e un membro nulla; un autore che la storia conosce si giudica sempre con il suo rango.
   **Budget**: al massimo 200 eventi per richiesta, 600 eventi serviti ogni 5 minuti, 1800 byte di testo per messaggio
   (25 eventi al massimo; `Net/Transport.lua` lo spezza in pezzi da 255), `LHEADS` tre al minuto e `LWANT` dieci al
-  minuto, `LEVENTS` in priorità `BULK` (dopo la sessione e gli annunci). Un membro che non è officer non partecipa (la
-  tabella in sola lettura per i membri è M6-6). Evento sul bus: `LEDGER_SYNCED{from, added, refused, pending, conflict}`.
+  minuto, `LEVENTS` in priorità `BULK` (dopo la sessione e gli annunci). Un membro che non è officer non partecipa (riceve la
+  tabella in sola lettura, M6-6). Evento sul bus: `LEDGER_SYNCED{from, added, refused, pending, conflict}`.
   Non verificato nel client: chi riceve i messaggi addon `OFFICER`, il ritmo dei testi lunghi e il CBOR di
   `C_EncodingUtil` sui payload del registro.
+- **Crediti in sola lettura per i membri (M6-6).** `Net/Snapshot.lua` e `Domain/CreditSnapshot.lua`; vedi
+  [ADR 0006](adr/0006-read-only-credits-snapshot.md). Il registro resta solo agli officer: ai membri arriva la **tabella
+  dei crediti** della season in corso (quella aperta, altrimenti la più recente), mai gli eventi, le presenze o l'audit.
+  Messaggi:
+
+  | Tipo | Canale | Campi | Significato |
+  |---|---|---|---|
+  | `CSNAP` | `GUILD` (o `WHISPER` in risposta) | `s`, `sl`, `so`, `up`, `nn`, `n` = `{ {d, i}, … }` (le ultime 8 serate), `r` = `{ {m, c, ro, sp, st, f, al?, t, p?}, … }` (al massimo 200 membri, entrambe le fazioni; `p` = coppie serata, crediti), `k`, `ts` | la tabella: `k` = eventi nel registro dell'officer, `ts` = ora del server |
+  | `CSNAPQ` | `GUILD` | `k` | "chi ha una tabella più nuova della mia?" (`k` della tabella tenuta, 0 = nessuna) |
+  | `CSNAPQ` | `WHISPER` | `k` | "mandami la tua" (all'officer scelto) |
+  | `CSNAPO` | `WHISPER` | `k` | l'offerta di un officer con un registro più nuovo |
+
+  **Invio**: il client di un officer manda `CSNAP` su `GUILD` 30 secondi (più qualche secondo suo, dal nome) dopo che il
+  suo registro è cresciuto, mai due volte in 60 secondi; se prima sente la tabella di un altro officer nuova almeno
+  quanto il suo registro, rinuncia. **Recupero**: il client di un membro, 8 secondi dopo aver letto il roster della gilda
+  (login, `/reload`, ingresso in gilda), chiede su `GUILD`; ogni officer con un registro più nuovo offre in sussurro;
+  dopo 5 secondi il membro chiede in sussurro la migliore offerta (`k` più grande, poi il nome) e, senza risposta in
+  30 secondi, la successiva. **Fiducia** (la "firma"): una tabella conta solo se il mittente, letto dal client e mai da
+  un campo, ha **ora** nel roster di gilda del membro un rango che può scrivere eventi del registro (lo stesso controllo
+  della sincronizzazione fra officer); quella di chiunque altro, o sentita prima di leggere il roster, si ignora e si
+  conta; ogni campo si controlla per tipo e dimensione. **Più nuova**: si tiene una tabella solo se il suo `k` è più
+  grande (un registro cresce soltanto), a parità se è più recente, e una tabella tenuta da più di 7 giorni cede a
+  qualunque più recente (la compattazione di M6-7 può accorciare un registro): un officer rimasto indietro non riporta
+  indietro i membri. La tabella tenuta si salva con i dati della gilda (`creditSnapshot`) e sopravvive a `/reload`; la
+  scheda **Crediti** (con la nota "sola lettura · inviata da …") e il popup del pezzo la leggono su ogni client che non
+  è officer o il cui registro non ha season. Evento sul bus: `CREDIT_SNAPSHOT(from)`. Limite: il membro giudica il
+  mittente con la tabella dei permessi del preset (non riceve `PERMISSIONS_CHANGED`). Non verificato nel client: i
+  messaggi addon `GUILD` e `WHISPER` fra un membro e un officer e il ritmo di una tabella da 2–5 KB.
 - **Coda con lockdown**: se `InChatMessagingLockdown()` o le restrizioni sono attive, i messaggi aspettano
   (riuso del modulo di Accord). Le sessioni partono dopo `ENCOUNTER_END`.
 - **Fiducia**: un evento del registro è accettato solo se l'autore ha il rango richiesto dal permesso (§3.9),

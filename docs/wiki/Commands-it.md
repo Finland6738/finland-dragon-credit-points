@@ -41,4 +41,6 @@ Una riga **Permissions** dice se il roster della gilda è stato letto in questa 
 
 Una riga **Sync** (officer) descrive la sincronizzazione del registro con gli altri officer: `on` quando il tuo gioco partecipa (il tuo rango può scrivere eventi del registro e il roster della gilda è stato letto), quanti officer ha sentito, quante volte ha chiesto gli eventi mancanti e ha risposto alla richiesta di un altro (con il numero di eventi mandati), quanti eventi ha aggiunto, rifiutato (il loro autore non aveva il rango) o trovato in conflitto (lo stesso evento con un altro contenuto: si tiene quello che hai), e quanti messaggi di sincronizzazione sono arrivati da chi non è officer e sono stati ignorati.
 
+Una riga **Snapshot** descrive la tabella dei crediti in sola lettura: `officer` o `member` (`off` prima che il roster della gilda sia letto), la dimensione `k` del registro della tabella che conservi, quante tabelle il tuo gioco ha mandato alla gilda e in sussurro (officer), quante ne ha ricevute, tenute, trovate più vecchie di quella che aveva, ignorate perché il mittente non è officer, o rifiutate perché malformate.
+
 `/fdcp debug` non stampa mai nomi di giocatori, di gilda o di oggetti, quindi puoi incollarne l'output in una segnalazione di errore. Controlla di nuovo il client a ogni esecuzione.

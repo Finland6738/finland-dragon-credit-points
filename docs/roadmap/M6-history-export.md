@@ -97,7 +97,9 @@ Open question 10 ([#3](https://github.com/Finland6738/finland-dragon-credit-poin
 - Analysis: §8.4 (`GUILD`, `WHISPER`)
 - Scope: a credits snapshot on `GUILD` from an officer (season, totals, ledger head), verified against the sender's rank; recovery by `WHISPER` for a member who joined late or reloaded; members' credits table and popup read it.
 - Done when:
-  - [ ] Members converge on the officers' totals in the simulator; a snapshot from a non-officer is ignored.
+  - [x] Members converge on the officers' totals in the simulator; a snapshot from a non-officer is ignored.
+  - [ ] In game: a member who is not an officer sees the officers' totals in the Credits tab and the popup. *(in game)*
+- Note: built as `Domain/CreditSnapshot.lua` (pure: `Build`, `Clean`, `Newer`, `Seasons`, `Table`) and `Net/Snapshot.lua` with three messages: `CSNAP` (the table of the current season: newest eight nights, every member's total and spending per night, `k` = events in the officer's ledger), `CSNAPQ` (on `GUILD`: "who has newer than my `k`?"; by `WHISPER`: "send me yours") and `CSNAPO` (an officer's offer by `WHISPER`). An officer broadcasts 30 s (+ a few seconds by name) after its ledger grew, never twice in 60 s, and drops its plan when another officer's snapshot at least as new comes first; a member asks after its roster is read and takes the best offer. Trust: the sender, as the client names it, must have a rank that writes ledger events in the member's roster (`Sync:Trusted`); the larger `k` wins, so an officer behind cannot take the members back. The kept snapshot is saved with the guild's data (`creditSnapshot`); the Credits tab (marked read-only, with the sender) and the popup read it on every client that is not an officer ([ADR 0006](../adr/0006-read-only-credits-snapshot.md), [`docs/ANALISI.md`](../ANALISI.md) §8.4, "Crediti in sola lettura per i membri (M6-6)").
 - Tests: `Tests/test_snapshot.lua`.
 - Docs: Credits (EN + IT), CHANGELOG.
 - Real client: guild messages in game.

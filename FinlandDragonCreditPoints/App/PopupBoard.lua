@@ -97,20 +97,33 @@ end
 PB.standing = nil   -- cache: { ledger, count, season, rows }
 
 -- The player's credits and estimated place among the raid members who are in the guild's table: { credits, position },
--- or nil when this client has no ledger, no season or no row for the player. The place is `1 + the members in the
+-- or nil when this client has no ledger, no season or no row for the player. A member's client reads the officers'
+-- snapshot instead (Net/Snapshot.lua, M6-6). The place is `1 + the members in the
 -- raid with fewer credits` (a tie is settled by the roll, hence "estimated"). `raid` is the last GROUP_SCANNED snapshot.
 function PB.Standing(name, raid)
-	local NC = ns.NightController
-	local L = NC and NC:Ledger()
-	if not L or not name or not ns.Season or not ns.CreditTable then return nil end
-	local season = ns.Season.Current(L)
-	if not season then return nil end
-	local count = ns.Ledger.Count(L)
+	if not name then return nil end
 	local cache = PB.standing
-	if not cache or cache.ledger ~= L or cache.count ~= count or cache.season ~= season.id then
-		local built = ns.CreditTable.Build(L, season.id)
-		cache = { ledger = L, count = count, season = season.id, rows = built and built.rows or {} }
-		PB.standing = cache
+	local kept = ns.Snapshot and ns.Snapshot:ForView()
+	if kept then
+		-- a member's client: the snapshot an officer sent (M6-6), of the open season only
+		if not kept.data.so then return nil end
+		if not cache or cache.snapshot ~= kept.data then
+			local built = ns.CreditSnapshot.Table(kept.data)
+			cache = { snapshot = kept.data, rows = built and built.rows or {} }
+			PB.standing = cache
+		end
+	else
+		local NC = ns.NightController
+		local L = NC and NC:Ledger()
+		if not L or not ns.Season or not ns.CreditTable then return nil end
+		local season = ns.Season.Current(L)
+		if not season then return nil end
+		local count = ns.Ledger.Count(L)
+		if not cache or cache.ledger ~= L or cache.count ~= count or cache.season ~= season.id then
+			local built = ns.CreditTable.Build(L, season.id)
+			cache = { ledger = L, count = count, season = season.id, rows = built and built.rows or {} }
+			PB.standing = cache
+		end
 	end
 	local function isMine(row)
 		if row.member == name then return true end

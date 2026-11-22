@@ -1,7 +1,9 @@
 -- CreditsWindow: the Credits tab (docs/ANALISI.md §9.3 point 4, docs/specs/ui-style.md §3, §6, M3-8), as the community site's
 -- loot credits table: one accordion per season (the newest open), one column per night with `+N` in mono, the total in a
 -- chip and the queue position ("less credits = more priority"), sortable headers, a filter by role and by class, and the
--- player's own row highlighted. Everything comes from Domain/CreditTable.lua (the local ledger); this file draws.
+-- player's own row highlighted. Everything comes from Domain/CreditTable.lua (the local ledger of an officer) or, on every
+-- other member's client, from the snapshot an officer sent (Domain/CreditSnapshot.lua, Net/Snapshot.lua, M6-6); this
+-- file draws.
 -- Lua 5.1; unprotected frames.
 local ADDON_NAME, ns = ...
 ns = ns or {}
@@ -192,7 +194,9 @@ end
 
 -- The table of a season card, rebuilt when the nights shown change.
 function CreditsWindow:EnsureTable(card, nights)
-	local key = #nights
+	local ids = {}
+	for i, n in ipairs(nights) do ids[i] = tostring(n.id) end
+	local key = table.concat(ids, ",")   -- the night ids: a snapshot's columns are not the ledger's
 	if card.table and card.tableKey == key then return card.table end
 	if card.table then card.table:Hide() end
 	local t = Widgets.DataTable(card, columns(nights), {
@@ -257,11 +261,25 @@ function CreditsWindow:Layout()
 	end
 end
 
--- The data the window shows for a season, filtered: { table = CreditTable.Build, rows }.
-function CreditsWindow:Data(seasonId)
+-- Where the numbers come from: the local ledger (an officer), or the snapshot an officer sent (every other member, M6-6).
+-- { ledger = L } | { snapshot = kept } | nil.
+function CreditsWindow:Source()
+	local kept = ns.Snapshot and ns.Snapshot:ForView()
+	if kept then return { snapshot = kept } end
 	local L0 = RC() and RC():Ledger()
-	if not L0 then return nil end
-	local data = ns.CreditTable.Build(L0, seasonId, { faction = RC():Faction() })
+	return L0 and { ledger = L0 } or nil
+end
+
+-- The data the window shows for a season, filtered: { table = CreditTable.Build, rows }.
+function CreditsWindow:Data(seasonId, src)
+	src = src or self:Source()
+	if not src then return nil end
+	local data
+	if src.snapshot then
+		data = ns.CreditSnapshot.Table(src.snapshot.data, seasonId, RC():Faction())
+	else
+		data = ns.CreditTable.Build(src.ledger, seasonId, { faction = RC():Faction() })
+	end
 	if not data then return nil end
 	return data, ns.CreditTable.Filter(data.rows, self.role, self.class)
 end
@@ -269,15 +287,20 @@ end
 function CreditsWindow:Refresh()
 	local root = self.root
 	if not root then return end
-	local ledger = RC() and RC():Ledger()
+	local src = self:Source()
 	root.faction:Select(RC() and RC():Faction() or "Horde")
 	root.classBtn:SetLabel((self.class and ns.RosterWindow.ClassName(self.class) or L["CREDITS_CLASS"]) .. " ▾")
-	local seasons = ledger and ns.CreditTable.Seasons(ledger) or {}
+	local seasons = {}
+	if src and src.snapshot then
+		seasons = ns.CreditSnapshot.Seasons(src.snapshot.data)
+	elseif src then
+		seasons = ns.CreditTable.Seasons(src.ledger)
+	end
 	for _, c in pairs(root.cards) do c:Hide() end
 	root.order = {}
 	if #seasons == 0 then
 		root.eyebrow:SetText("")
-		root.empty:SetText(L[ledger and "ROSTER_NO_SEASON" or "ROSTER_NOT_READY"])
+		root.empty:SetText(L[src and "ROSTER_NO_SEASON" or "ROSTER_NOT_READY"])
 		return
 	end
 	root.empty:SetText("")
@@ -286,12 +309,15 @@ function CreditsWindow:Refresh()
 		local card = self:SeasonCard(s.id)
 		root.order[#root.order + 1] = s.id
 		local isOpen = s.id == root.openId
-		local data, rows = self:Data(s.id)
+		local data, rows = self:Data(s.id, src)
 		local label = s.label or tostring(s.id)
 		card.title:SetText(label)
 		local state = L[s.open and "CREDITS_STATE_OPEN" or "CREDITS_STATE_CLOSED"]
 		local upd = data and data.updated and L["CREDITS_UPDATED"]:format(shortDate(data.updated)) or ""
-		card.sub:SetText(L["CREDITS_SEASON_SUB"]:format(s.nights, state) .. (upd ~= "" and (" · " .. upd) or ""))
+		local sub = L["CREDITS_SEASON_SUB"]:format(s.nights, state) .. (upd ~= "" and (" · " .. upd) or "")
+		-- locale-key: CREDITS_SNAPSHOT
+		if src.snapshot then sub = sub .. " · " .. L["CREDITS_SNAPSHOT"]:format(ns.RosterWindow.ShortName(src.snapshot.from or "")) end
+		card.sub:SetText(sub)
 		card.count:SetText(L["CREDITS_IN_ROSTER"]:format(data and #data.rows or 0))
 		card.chevron:SetText(isOpen and "^" or "v")
 		card:Show()
@@ -311,7 +337,8 @@ function CreditsWindow:Refresh()
 end
 
 if ns.Bus then
-	for _, ev in ipairs({ "ROSTER_UPDATED", "ROSTER_VIEW_CHANGED", "GUILD_RANKS_READY", "GUILD_KEY_CHANGED", "NIGHT_OPENED", "NIGHT_CLOSED" }) do
+	for _, ev in ipairs({ "ROSTER_UPDATED", "ROSTER_VIEW_CHANGED", "GUILD_RANKS_READY", "GUILD_KEY_CHANGED", "NIGHT_OPENED", "NIGHT_CLOSED",
+	"CREDIT_SNAPSHOT", "LEDGER_SYNCED" }) do
 		ns.Bus:On(ev, function() CreditsWindow:Refresh() end, CreditsWindow)
 	end
 end

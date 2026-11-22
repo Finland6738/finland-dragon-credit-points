@@ -2,7 +2,16 @@
 
 > **Built, not yet seen in the game.** The tab works in the offline tests with a simulated client; how it looks in the real game is still to be confirmed. [Italiano](Credits-it)
 
-The **Credits** tab is the guild's loot credits table, as on the community site. Credits are never stored: they are worked out from the ledger every time, so every client that has the same events shows the same numbers. **Fewer credits means more priority.**
+The **Credits** tab is the guild's loot credits table, as on the community site. Credits are never stored: they are worked out from the ledger every time, so every client that has the same events shows the same numbers, and members see the numbers of the officers' ledger (below). **Fewer credits means more priority.**
+
+## Officers and members
+
+Only the officers' games hold the ledger (they keep it in sync among themselves). Every other member's game gets the **table** from an officer's game instead: after each change of the ledger an officer's game sends it to the whole guild, and when you log in or reload, your game asks for it and the officer with the newest ledger whispers it back. Your game keeps it, so it is there even when no officer is online.
+
+- The season card says **read-only · sent by** and the officer's name.
+- You see the season in progress (or the last one) with its newest 8 nights; older seasons are only in the officers' tables.
+- The same numbers give your credits and your queue place in the loot popup.
+- Only a table sent by someone whose guild rank can write ledger events is used; anything else is ignored. An older table never replaces a newer one, so an officer who was away cannot bring back old numbers.
 
 ## One accordion per season
 
