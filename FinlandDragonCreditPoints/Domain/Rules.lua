@@ -16,6 +16,7 @@
 --   notice    Domain/Notice.lua { text, outdatedText, link, whisper, minutes }: the /raid notice (no addon)  §4.1 (M3-6)
 --   announce  Domain/Announce.lua { enabled, itemText, resultText, reason }: category, cost and result in /raid  §4 (M4-8)
 --   upgrade   Domain/UpgradeScore.lua { enabled, autoPass, useStats, bigThreshold, smallThreshold, ilvlBigThreshold }: the upgrade verdict of the popup  §5.1 (M5-2)
+--   responses Domain/Labels.lua { labelMode }: who picks the optional label of a main-spec response  §5.1 (M7-2b)
 -- Rules.DefaultConfig() is the "Patto" preset (§3.1); Domain/Presets.lua builds the others from it.
 --
 -- The rules live in the ledger, never apart: CONFIG_CHANGED{rules, preset?, confirmed?} carries the whole validated
@@ -33,7 +34,7 @@ local type, pairs, ipairs, tostring, floor, sort = type, pairs, ipairs, tostring
 
 local function Ledger() return ns.Ledger end
 
-Rules.SECTIONS = { "night", "members", "season", "cost", "priority", "session", "council", "legendary", "bench", "site", "notice", "announce", "upgrade" }
+Rules.SECTIONS = { "night", "members", "season", "cost", "priority", "session", "council", "legendary", "bench", "site", "notice", "announce", "upgrade", "responses" }
 Rules.AWARD_MODES = { confirm = true, auto = true, council = true }
 Rules.LEGENDARY_MODES = { council = true, vote = true, roll = true, queue = true }
 Rules.BENCH_EFFECTS = { none = true, bonus = true, malus = true }
@@ -71,6 +72,7 @@ function Rules.DefaultConfig()
 		notice = ns.Notice.DefaultConfig(),
 		announce = ns.Announce.DefaultConfig(),
 		upgrade = ns.UpgradeScore.DefaultRules(),
+		responses = ns.Labels.DefaultConfig(),
 	}
 end
 
@@ -162,6 +164,7 @@ function Rules.Validate(config)
 	if type(c.notice) == "table" then sub(problems, "notice", ns.Notice.ValidateConfig(c.notice)) end
 	if type(c.announce) == "table" then sub(problems, "announce", ns.Announce.ValidateConfig(c.announce)) end
 	if type(c.upgrade) == "table" then sub(problems, "upgrade", ns.UpgradeScore.ValidateRules(c.upgrade)) end
+	if type(c.responses) == "table" then sub(problems, "responses", ns.Labels.ValidateConfig(c.responses)) end
 	sort(problems)
 	return #problems == 0, problems
 end

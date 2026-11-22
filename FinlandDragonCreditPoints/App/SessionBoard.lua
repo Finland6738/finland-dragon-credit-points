@@ -13,7 +13,7 @@
 --   active (index of the item in progress), selected (index the window shows: `selected`, else the active one, else the
 --   first item waiting, else the first),
 --   round = { kind, stage, tier, among, collect, remaining, total, expired, rolls } | nil   (the selected item's open round),
---   candidates = { { player, name, class, credits, response, label, note, tier, roll, flag = { group, code }, proposed,
+--   candidates = { { player, name, class, credits, response, label, labelOrigin (AUTO | CHANGED | MANUAL | nil: who chose the label, M7-2b), note, tier, roll, flag = { group, code }, proposed,
 --                    inRound, upgrade, upgradeMS, upgradeOS, equipped } }   (label = the declared label code, note = the
 --                    player's note, safe to draw: M4-6; upgrade = the verdict the player's client sent for the spec of the
 --                    answer, upgradeMS / upgradeOS = both, each { verdict, usable, code, basis, pct, ilvlDelta } as
@@ -397,6 +397,7 @@ local function hostCandidates(s, item, proposal, env, byPlayer)
 		local row = { player = p, name = short(p), class = env.classOf and env.classOf(p) or nil,
 			credits = item.credits[p] or 0, response = response, tier = response and tiers[response] or nil,
 			label = item.labels and item.labels[p] or nil, note = SB.SafeNote(item.notes and item.notes[p]),
+				labelOrigin = item.labels and item.labels[p] and item.labelOrigins and item.labelOrigins[p] or nil,
 			roll = rollOf(item, p, rollMin, rollMax), proposed = proposal ~= nil and proposal.winner == p,
 			inRound = among == nil or among[p] == true, upgradeMS = upMS, upgradeOS = upOS,
 			upgrade = response == "OS" and (upOS or upMS) or upMS,
@@ -554,7 +555,7 @@ local function viewCandidates(v, env, sel, b)
 			local upMS = vd and U and U.Unpack(vd.m) or nil
 			local upOS = vd and vd.o and U and U.Unpack(vd.o) or nil
 			rows[#rows + 1] = { player = name, name = short(name), class = env.classOf and env.classOf(name) or nil,
-				response = a.rs, tier = tiers[a.rs], label = a.lb, note = SB.SafeNote(a.n),
+				response = a.rs, tier = tiers[a.rs], label = a.lb, labelOrigin = a.lb and a.lo or nil, note = SB.SafeNote(a.n),
 				proposed = p ~= nil and p.winner == name, inRound = true, upgradeMS = upMS, upgradeOS = upOS,
 				upgrade = a.rs == "OS" and (upOS or upMS) or upMS, equipped = a.eq, flags = byPlayer[name] }
 		end

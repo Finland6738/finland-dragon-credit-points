@@ -274,6 +274,77 @@ describe("labels and notes (M4-6)", function()
 	end)
 end)
 
+describe("who chose the label (M7-2b)", function()
+	before_boot(setup)
+
+	local function answers(b)
+		local s = b.s()
+		return function(name, fields)
+			fields.s, fields.i, fields.r = s.id, s.active, s.net.rounds[s.active]
+			Mock.chat.Receive("FDCP1", Codec():Encode("SRESP", fields), "RAID", name)
+		end
+	end
+	local function rowsByName()
+		local rows = {}
+		for _, row in ipairs(ui().card.table.rows) do
+			if row:IsShown() and row.cells[1]:GetText() ~= "" then rows[row.cells[1]:GetText()] = row end
+		end
+		return rows
+	end
+
+	it("says auto or changed next to the label, and nothing for a label the player chose or an older client's", function()
+		local b = bench(1)
+		b.collect()
+		click(ui().main)
+		local answer = answers(b)
+		answer("Aurel", { rs = "MS", lb = "BIG_UPGRADE", lo = "AUTO" })
+		answer("Bryn", { rs = "MS", lb = "SITUATIONAL", lo = "CHANGED" })
+		answer("Corin", { rs = "MS", lb = "BIS", lo = "MANUAL" })
+		assert(PS():Respond("MS", "BIS"))   -- the master looter's own answer, sent without an origin like an older client's
+		eq(b.item().labelOrigins[full("Aurel")], "AUTO")
+		eq(b.item().labelOrigins[full("Bryn")], "CHANGED")
+		local by = {}
+		for _, r in ipairs(ui().card.table:GetData()) do by[r.name] = r end
+		eq(by.Aurel.labelOrigin, "AUTO"); eq(by.Bryn.labelOrigin, "CHANGED"); eq(by.Corin.labelOrigin, "MANUAL"); isNil(by.Dara.labelOrigin)
+		local rows = rowsByName()
+		eq(rows.Aurel.cells[3]:GetText(), "Main-spec · Big upgrade (auto)")
+		eq(rows.Bryn.cells[3]:GetText(), "Main-spec · Situational (changed)")
+		eq(rows.Corin.cells[3]:GetText(), "Main-spec · BiS")
+		eq(rows.Dara.cells[3]:GetText(), "Main-spec · BiS")
+	end)
+
+	it("the row's tooltip names the origin in words, and there is none for a label with no origin", function()
+		local b = bench(1)
+		b.collect()
+		click(ui().main)
+		local answer = answers(b)
+		answer("Aurel", { rs = "MS", lb = "BIG_UPGRADE", lo = "AUTO" })
+		answer("Bryn", { rs = "MS", lb = "SITUATIONAL", lo = "CHANGED" })
+		answer("Corin", { rs = "MS", lb = "BIS" })
+		local rows = rowsByName()
+		Mock.RunScript(rows.Bryn, "OnEnter")
+		truthy(GameTooltip:IsShown())
+		local text = table.concat(GameTooltip._lines, " | ")
+		contains(text, "Situational"); contains(text, "Suggested by the addon, changed by the player")
+		Mock.RunScript(rows.Bryn, "OnLeave")
+		Mock.RunScript(rows.Aurel, "OnEnter")
+		contains(table.concat(GameTooltip._lines, " | "), "Set by the addon")
+		Mock.RunScript(rows.Aurel, "OnLeave")
+		Mock.RunScript(rows.Corin, "OnEnter")
+		falsy(GameTooltip:IsShown() and #GameTooltip._lines > 0 and table.concat(GameTooltip._lines, " | "):find("Suggested"))
+		Mock.RunScript(rows.Corin, "OnLeave")
+	end)
+
+	it("speaks Italian", function()
+		FDCP.Locale.SetActive("itIT")
+		local b = bench(1)
+		b.collect()
+		click(ui().main)
+		answers(b)("Aurel", { rs = "MS", lb = "BIG_UPGRADE", lo = "CHANGED" })
+		eq(rowsByName().Aurel.cells[3]:GetText(), "Main-spec · Upgrade grande (cambiata)")
+	end)
+end)
+
 describe("Modify", function()
 	before_boot(setup)
 

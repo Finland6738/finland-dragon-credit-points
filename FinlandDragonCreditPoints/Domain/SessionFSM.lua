@@ -123,6 +123,12 @@ local function priorityRules(s) return s.rules.priority end
 -- presets then).
 local function upgradeRules(s) return type(s.rules.upgrade) == "table" and s.rules.upgrade or Rules().DefaultConfig().upgrade end
 local function councilRules(s) return type(s.rules.council) == "table" and s.rules.council or Rules().DefaultConfig().council end
+-- The rules' `responses` section (M7-2b: who picks the label of a response), frozen on the session; the presets for a session
+-- saved before.
+local function responsesRules(s)
+	local own = type(s.rules) == "table" and s.rules.responses
+	return type(own) == "table" and own or Rules().DefaultConfig().responses
+end
 
 -- The rules' `legendary` section (M5-6), frozen on the session; the presets for a session saved before.
 local function legendaryRules(s)
@@ -328,7 +334,7 @@ local function openItem(s, index, now, env, effects)
 	item.credits = copy(type(credits) == "table" and credits or {})
 	item.nights = copy(type(env.nights) == "table" and env.nights or nil)
 	item.responses, item.rounds, item.proposal, item.rule = {}, {}, nil, nil
-	item.labels, item.notes, item.verdicts, item.equipped = nil, nil, nil, nil
+	item.labels, item.notes, item.verdicts, item.equipped, item.labelOrigins = nil, nil, nil, nil, nil
 	item.discarded, item.history, item.dropped, item.votes, item.voteClosed = nil, nil, nil, nil, nil
 	item.intervention, item.autoAt, item.autoRemaining, item.flagged, item.autoHeld = nil, nil, nil, nil, nil
 	s.active = index
@@ -822,7 +828,8 @@ end
 -- pass carries neither. `verdict` ({ m, o? }: the upgrade verdicts of main-spec and off-spec, UpgradeScore.Pack) and
 -- `equipped` (a list of "item:..." strings) are what the raider's client says about the piece (§5.1, M5-2): kept as given
 -- for the master looter's table, a pass keeps them too (the "upgrade ignored" flag of M5-4 needs them), the rules never
--- read them.
+-- read them. `labelOrigin` (AUTO, CHANGED or MANUAL: Domain/Labels.lua, M7-2b) says who chose the label; it is kept with a
+-- label and dropped without one or when it is not one of the three (an older client sends none: the origin is unknown).
 function H.RESPONSE(s, input)
 	local item = current(s)
 	if s.state ~= "ROLLING" or not item.round.collect then return nil, "RESPONSES_CLOSED" end
@@ -842,6 +849,8 @@ function H.RESPONSE(s, input)
 	if response == "PASS" or type(note) ~= "string" or note == "" or #note > FSM.MAX_NOTE then note = nil end
 	item.labels, item.notes = item.labels or {}, item.notes or {}
 	item.labels[input.player], item.notes[input.player] = label, note
+	item.labelOrigins = item.labelOrigins or {}
+	item.labelOrigins[input.player] = label and ns.Labels and ns.Labels.Origin(input.labelOrigin) or nil
 	local verdict, equipped = input.verdict, input.equipped
 	if type(verdict) ~= "table" or type(verdict.m) ~= "table" then verdict = nil end
 	if type(equipped) ~= "table" or #equipped == 0 then equipped = nil end
@@ -902,7 +911,7 @@ function H.REJECT(s, input, env, effects)
 	if thenWhat == "PENDING" or thenWhat == "REOPEN" then
 		item.state, item.proposal, item.rule, item.round, item.next = "PENDING", nil, nil, nil, nil
 		item.responses, item.rounds = {}, {}
-		item.labels, item.notes, item.verdicts, item.equipped, item.flagged = nil, nil, nil, nil, nil
+		item.labels, item.notes, item.verdicts, item.equipped, item.flagged, item.labelOrigins = nil, nil, nil, nil, nil, nil
 		item.skipTiers = nil
 		item.hold = true
 		s.active, s.state = nil, "ANNOUNCING"
@@ -1128,7 +1137,8 @@ function FSM.New(params)
 		id = params.id, season = params.season, ml = params.ml, createdAt = params.ts,
 		encounter = isInt(params.encounter) and params.encounter or nil,
 		rules = { session = copy(rules.session), priority = copy(rules.priority), cost = copy(rules.cost),
-			upgrade = copy(rules.upgrade), council = copy(rules.council), legendary = copy(rules.legendary) },
+			upgrade = copy(rules.upgrade), council = copy(rules.council), legendary = copy(rules.legendary),
+			responses = copy(rules.responses) },
 		priceCtx = copy(type(params.priceCtx) == "table" and params.priceCtx or {}),
 		raid = { present = copy(params.present), addon = copy(params.addon) },
 		state = "WAITING", paused = false, lockdown = false,
@@ -1166,6 +1176,12 @@ function FSM.Step(s, input, env)
 	end
 	settle(s, input.ts, env, effects)
 	return true, nil, effects
+end
+
+-- Who picks the label of a response in this session (Domain/Labels.lua MODES, frozen from the rules when it opened).
+function FSM.LabelMode(s)
+	local mode = responsesRules(s).labelMode
+	return ns.Labels and ns.Labels.Mode(mode) or "manual"
 end
 
 -- The item in progress (its index and table), or nil.

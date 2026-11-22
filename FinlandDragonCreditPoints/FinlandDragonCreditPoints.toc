@@ -53,6 +53,7 @@ Data\StatWeights.lua
 Domain\Progress.lua
 Domain\Notice.lua
 Domain\Announce.lua
+Domain\Labels.lua
 Domain\Rules.lua
 Domain\Presets.lua
 Domain\RuleFields.lua

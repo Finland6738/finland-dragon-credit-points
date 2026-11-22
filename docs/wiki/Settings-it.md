@@ -28,7 +28,7 @@ Solo per te: niente di qui viene condiviso con la gilda.
 A sinistra l'elenco delle pagine, a destra i campi della pagina su una card:
 
 - **Serata e sessione**: se una serata deve aprirla un ufficiale, chi conferma un'assegnazione (il master looter, in automatico dopo una pausa, o il council), i passi automatici, i secondi di un giro di roll.
-- **Priorità**: chi ha la precedenza (meno crediti, meno crediti per serata, roll più alto), gli spareggi, i reroll di fila, se l'addon è necessario, quali risposte sono ammesse, cosa succede a un pezzo che nessuno vuole o a un BoE.
+- **Priorità**: chi ha la precedenza (meno crediti, meno crediti per serata, roll più alto), gli spareggi, i reroll di fila, se l'addon è necessario, quali risposte sono ammesse, **chi imposta l'etichetta di una risposta main-spec** (vedi sotto), cosa succede a un pezzo che nessuno vuole o a un BoE.
 - **Costi**: il costo di ogni categoria e qualità, in una griglia (*Council* nella colonna dei leggendari vuol dire che il costo lo decide il council; scrivi la parola per rimetterlo).
 - **Moltiplicatori**: il fattore sul costo di ogni risposta, della dimensione del raid e della difficoltà.
 - **Membri e crediti**: solo i main, da dove partono i nuovi arrivati (media, mediana, il più basso, zero, fisso), l'arrotondamento e i crediti con cui parte una season.
@@ -36,6 +36,16 @@ A sinistra l'elenco delle pagine, a destra i campi della pagina su una card:
 - **Leggendari e panchina**: come si assegna un leggendario, il costo di un pezzo della catena e cosa guadagna la panchina.
 - **Messaggi in /raid**: il testo dell'avviso per chi non ha l'addon e delle righe di pezzo e risultato (segnaposto `{names}`, `{link}`, `{addon}`).
 - **Verdetto di upgrade**: come il popup dice se un pezzo è un upgrade ([[Suggerimenti di upgrade|Upgrade-Hints-it]]).
+
+**Etichetta di una risposta Main-spec** (pagina Priorità). Il popup permette di aggiungere a una risposta Main-spec un'etichetta facoltativa (BiS, Upgrade grande, Upgrade piccolo, Situazionale); informa solo il master looter e il council. Questa regola dice chi la sceglie:
+
+| Scelta | Cosa succede |
+|---|---|
+| **Suggerita (modificabile)** (il predefinito) | L'addon compila l'etichetta da quello che sa (BiS se il pezzo è nella lista best in slot del giocatore, altrimenti Upgrade grande o piccolo dal verdetto main-spec, altrimenti niente) e il giocatore può cambiarla o toglierla. |
+| **Automatica (bloccata)** | L'addon imposta l'etichetta nello stesso modo e il giocatore non può cambiarla. |
+| **Scelta dal giocatore** | Non viene compilato nulla; il giocatore sceglie, come prima. |
+
+La finestra del master looter mostra, accanto all'etichetta, se è *auto* (dell'addon) o *cambiata* (il giocatore ne ha scelta un'altra). La modalità si legge all'apertura di una sessione di loot, quindi una modifica vale dalla sessione successiva; le gilde che hanno scritto le regole prima di questa impostazione hanno *Suggerita*. La cambia solo il Guild Master, come ogni regola. Vedi [[Rollare per il loot|Rolling-for-Loot-it]] e la [[Guida del master looter|Master-Looter-Guide-it]].
 
 Tutti vedono i valori. Il Guild Master li modifica: un'etichetta diventa ambra finché il suo valore è diverso dalle regole in vigore, e la riga in basso conta le modifiche non ancora salvate. Un numero non valido è segnato subito e non arriva mai alla bozza. **Salva** controlla l'intera configurazione (se qualcosa non va apre la pagina e nomina il campo), poi scrive **una** modifica nel registro della gilda; **Annulla modifiche** riporta il modulo alle regole in vigore.
 

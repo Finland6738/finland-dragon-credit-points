@@ -16,6 +16,9 @@
 -- master looter (App/UpgradeAdvisor.lua).
 -- M5-3: an item on the player's own best-in-slot list (/fdcp wish) carries a badge saying so, above the verdicts; the
 -- player's own stat weights (/fdcp weights) feed the verdicts and the tooltip says so.
+-- M7-2b: the label of a main-spec answer follows the guild's mode (rule responses.labelMode): "auto" = the addon sets it from the
+-- player's best-in-slot list and the verdict and the chips are locked; "suggest" = the same, filled in beforehand and the
+-- player may change or clear it; "manual" = the player's own. The answer carries who chose the label (AUTO, CHANGED, MANUAL).
 -- Not verified in the real client: how it looks in a raid, the tooltip comparison, RandomRoll from a click.
 local ADDON_NAME, ns = ...
 ns = ns or {}
@@ -38,6 +41,9 @@ Popup.HINTS = {
 	CHOOSE = "POPUP_HINT_CHOOSE", UNUSABLE = "POPUP_HINT_UNUSABLE", PASSED = "POPUP_HINT_PASSED", LATER = "POPUP_HINT_LATER", ROLL = "POPUP_HINT_ROLL",
 	ROLLED = "POPUP_HINT_ROLLED", REROLL = "POPUP_HINT_REROLL", FREE = "POPUP_HINT_FREE", TURN = "POPUP_HINT_TURN",
 }
+
+-- locale-key: POPUP_LABEL_AUTO POPUP_LABEL_SUGGEST
+Popup.LABEL_HINTS = { AUTO = "POPUP_LABEL_AUTO", SUGGEST = "POPUP_LABEL_SUGGEST" }
 
 local function PS() return ns.Protocol and ns.Protocol.Session end
 local function me() return ns.GuildRanks and ns.GuildRanks.Me() or nil end
@@ -133,6 +139,7 @@ end
 -- Build
 
 local ROW_ITEM, ROW_BADGE, ROW_SEG, ROW_LABELS, ROW_NOTE, ROW_BAR = 40, 24, 32, 26, 28, 4
+local ROW_LABEL_HINT = 16
 local ROW_VERDICT = 24
 local PAD = 16
 
@@ -228,6 +235,9 @@ local function buildCard(self, parent)
 		chip.code = code
 		c.chips[code] = chip
 	end
+	c.labelHint = Theme.NewText(c, "Small", "text-3")   -- says who sets the label (M7-2b)
+	c.labelHint:SetJustifyH("LEFT")
+	c.labelHint:SetWordWrap(true)
 	c.noteCaption = Theme.NewText(c, "Small", "text-3")
 	c.noteCaption:SetText(L["POPUP_NOTE"])
 	c.note = Widgets.EditBox(c, { width = 200, height = ROW_NOTE, maxLetters = PB.MAX_NOTE,
@@ -409,6 +419,16 @@ local function layoutCard(self, c, d, top)
 		end
 	end
 	if d.labels then y = y + ROW_LABELS + 8 end
+	if d.labels and d.labelHint then
+		c.labelHint:ClearAllPoints()
+		c.labelHint:SetPoint("TOPLEFT", c, "TOPLEFT", PAD, -y + 4)
+		c.labelHint:SetWidth(self.width - 2 * PAD)
+		c.labelHint:SetText(L[Popup.LABEL_HINTS[d.labelHint]])
+		c.labelHint:Show()
+		y = y + ROW_LABEL_HINT + 4
+	else
+		c.labelHint:Hide()
+	end
 
 	if d.collect then
 		c.noteCaption:ClearAllPoints()
@@ -655,7 +675,7 @@ end
 -- The answer being built for the card: a draft of this round, started from what the session knows.
 local function draftOf(self, card)
 	if not self.draft or self.draft.key ~= card.key then
-		self.draft = { key = card.key, rs = card.response, lb = card.label, n = card.note }
+		self.draft = { key = card.key, rs = card.response, lb = card.label, lo = card.labelOrigin, n = card.note }
 	end
 	return self.draft
 end
@@ -666,7 +686,8 @@ function Popup:Send(card)
 	if not d or d.key ~= card.key or not d.rs then return false, "NO_RESPONSE" end
 	local ps = PS()
 	if not ps then return false, "NO_SESSION" end
-	local ok, code = ps:Respond(d.rs, d.lb, PB.ClipNote(d.n), card.upgrade and card.upgrade.wire or nil)
+	PB.Settle(card, d)   -- the label and who chose it, by the guild's mode (M7-2b)
+	local ok, code = ps:Respond(d.rs, d.lb, PB.ClipNote(d.n), card.upgrade and card.upgrade.wire or nil, d.lo)
 	if not ok then
 		self.err = card.key
 		self:Refresh()
@@ -685,8 +706,7 @@ function Popup:Choose(code)
 	for _, o in ipairs(card.offered) do if o.code == code then ok = true end end
 	if not ok then return false, "BAD_RESPONSE" end
 	local d = draftOf(self, card)
-	d.rs = code
-	if code ~= card.main then d.lb = nil end
+	d.rs = code   -- a lesser tier or a pass drops the label, and the main-spec gets it back: PB.Settle, in Send
 	return self:Send(card)
 end
 
@@ -695,7 +715,7 @@ function Popup:SetLabel(code)
 	local card = self:Current()
 	if not card or not card.canAnswer or not card.labelsOn then return false, "LOCKED" end
 	local d = draftOf(self, card)
-	d.lb = d.lb ~= code and code or nil
+	PB.Pick(card, d, code)
 	if d.rs == nil then d.rs = card.main end
 	return self:Send(card)
 end

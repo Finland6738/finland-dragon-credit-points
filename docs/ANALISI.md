@@ -1084,6 +1084,46 @@ livello di un pezzo indossato con aggiornamenti.
 - **Da verificare in gioco.** Come sta la riga del badge nel popup in un raid vero, che il link incollato con Maiusc-clic nella
   riga di comando arrivi com'è previsto, e che i nomi delle statistiche delle stringhe Pawn vere corrispondano.
 
+**Come è fatto (M7-2b).** L'etichetta di una risposta main-spec (BiS, upgrade grande, upgrade piccolo, situazionale: §3.3) la sceglieva
+il giocatore a mano; ora la sceglie, a seconda di una regola del Guild Master, l'addon con i dati che ha già:
+
+- **La regola `responses.labelMode`** (nuova sezione `responses` delle regole, `Domain/Labels.lua`, puro): `auto` (l'addon imposta
+  l'etichetta e il giocatore non può cambiarla), `suggest` (**il predefinito**: l'addon la compila prima della risposta e il giocatore
+  può cambiarla o toglierla) e `manual` (la sceglie il giocatore, come prima di M7-2b). La valida `Rules.Validate`
+  (`responses.labelMode`), `Rules.WithDefaults` la riempie con `suggest` per le regole scritte prima, e si modifica dalla pagina
+  **Priorità** della finestra Impostazioni (M7-2), solo dal Guild Master e con la stessa conferma a season aperta. È congelata sulla
+  sessione all'apertura (`session.rules.responses`) come le altre sezioni: una modifica vale dalla sessione dopo.
+- **Cosa suggerisce l'addon** (`Labels.Suggest`): il pezzo è nella lista best in slot del giocatore (M5-3) → **BiS**; altrimenti il
+  verdetto **main-spec** (MS1, M5-2) è *grande* → **Upgrade grande**, *piccolo* → **Upgrade piccolo**; nessun upgrade, non
+  confrontabile, non usabile o nessun verdetto → **nessuna etichetta**. *Situazionale* non si suggerisce mai: è un giudizio del
+  giocatore. Il verdetto è quello che il popup già mostra (con i pesi personali, se accesi).
+- **Il popup** (`App/PopupBoard.lua`, `UI/Windows/MemberLootPopup.lua`). La carta dà `labelMode`, `suggestion`, `label`,
+  `labelOrigin` e `labelHint`. In `suggest`, prima di una risposta il chip suggerito è già selezionato (non si manda nulla: una
+  proposta non è una risposta) e parte con la risposta Main-spec; il giocatore può sceglierne un'altra o togliere la stessa, e
+  **se la toglie l'addon non la rimette** (`cleared` nella bozza); tornando da Off-spec a Main-spec senza averla toccata, la
+  proposta torna. In `auto` i chip sono bloccati (`labelsOn = false`) e l'etichetta è sempre quella dell'addon, ricalcolata a ogni
+  invio (`PB.Settle`); la risposta resta del giocatore. Una riga piccola sotto i chip dice chi decide (*«L'addon imposta questa
+  etichetta…»* / *«Etichetta suggerita dall'addon…»*). Con off-spec, passo o altro tier l'etichetta si toglie, come prima.
+- **Chi l'ha scelta (`lo`).** `AUTO` = quella dell'addon (anche se il giocatore ha cliccato la stessa), `CHANGED` = l'addon ne
+  suggeriva una e il giocatore ne ha scelta un'altra, `MANUAL` = non c'era un suggerimento (o la modalità è `manual`). Senza
+  etichetta non c'è origine. Il gruppo `LABEL_ORIGIN` di `Domain/Reasons.lua` dà le parole (*«Impostata dall'addon»*, *«Suggerita
+  dall'addon, cambiata dal giocatore»*, *«Scelta dal giocatore»*).
+- **Rete (protocollo 5).** `SOPEN` e `SSTATE` portano `lm`, `SRESP` e il `my` di `SSTATE` portano `lo` (tabella in §8.4). Sono campi
+  **facoltativi**: `pv` sale a 5 e `pm` resta 2, quindi un client del 2–4 continua a seguire la sessione e a essere capito. Un ML
+  vecchio non manda `lm` e il popup lascia l'etichetta al giocatore (come prima); un client vecchio non manda `lo` e la tabella del
+  ML non mostra nessuna origine. Un `lm` o un `lo` che non è uno dei valori noti si scarta senza rifiutare il messaggio. La
+  macchina a stati tiene `item.labelOrigins[giocatore]` accanto a `item.labels` (stesso ciclo di vita: la risposta più recente
+  sostituisce, si azzera alla riapertura, sopravvive a `/reload`).
+- **Lato ML.** La colonna **Risposta** dice *«Main-spec · Upgrade grande (auto)»* o *«… Situazionale (cambiata)»*; un'etichetta
+  scelta dal giocatore o di un client vecchio non ha sigla; il tooltip della riga dice l'origine a parole. Il candidato della
+  bacheca ha `labelOrigin`. L'origine **informa** e non cambia mai la proposta, come l'etichetta (§3.3).
+
+Scelte fatte dove il testo non decideva (tutte modificabili): `suggest` è il predefinito (lo ha chiesto il proprietario); la regola
+sta nella pagina **Priorità** (con le risposte ammesse) e non in una pagina sua; il verdetto che decide è solo quello della
+main-spec (§6); `auto` non è imposto dal ML (un client manomesso potrebbe mandare un'altra etichetta: l'etichetta è solo
+un'informazione, §3.3). **Da verificare in gioco:** la riga sotto i chip nel popup vero, i chip bloccati, la colonna più larga
+nella finestra del ML.
+
 ### 5.2 Lato master looter / council
 
 Ogni risposta arriva al ML con: risposta, etichetta dichiarata, verdetto calcolato, `upgrade %`, item level e link
@@ -1447,9 +1487,9 @@ tools/ check_docs.py, build/release
 
   | Tipo | Canale | Campi | Significato |
   |---|---|---|---|
-  | `SOPEN` | `RAID` | `q`, `ml`, `e?`, `rt?`, `it` = `{ {id, ca, cs, co?}, … }` | sessione aperta: oggetti con categoria e costi per risposta (`cs`); `rt` = le risposte offerte con il loro tier (`{ MS = 1, OS = 2 }`, M4-6); rimandato dopo una correzione |
+  | `SOPEN` | `RAID` | `q`, `ml`, `e?`, `rt?`, `lm?`, `it` = `{ {id, ca, cs, co?}, … }` | sessione aperta: oggetti con categoria e costi per risposta (`cs`); `rt` = le risposte offerte con il loro tier (`{ MS = 1, OS = 2 }`, M4-6); `lm` = chi sceglie l'etichetta di una risposta (`auto`, `suggest` o `manual`, la regola della gilda, M7-2b); rimandato dopo una correzione |
   | `SROLL` | `RAID` | `q`, `i`, `r`, `k`, `g?`, `tr?`, `am?`, `cl?`, `de?`, `rm?` | round `r` del pezzo `i` aperto: tipo, fase, tier, fra chi (reroll), `cl` = raccoglie le risposte, `de` = scadenza in ora del server (`rm` = secondi rimasti, in pausa) |
-  | `SRESP` | `RAID` | `i`, `r`, `rs`, `lb?`, `n?`, `vd?`, `eq?` | la risposta di un membro `{risposta, etichetta, nota}` (nota al massimo 80 byte): sempre la propria; il popup (M4-6) la rimanda intera a ogni cambiamento. Da M5-2 porta anche `vd = { m, o? }` (i verdetti per main-spec e off-spec, ognuno `{ v, u?, c?, b?, p?, l? }`) ed `eq` (al massimo quattro stringhe `item:…` dei pezzi indossati usati nel confronto); campi facoltativi, un client più vecchio non li manda e il ML non ne ha bisogno per far contare la risposta |
+  | `SRESP` | `RAID` | `i`, `r`, `rs`, `lb?`, `lo?`, `n?`, `vd?`, `eq?` | la risposta di un membro `{risposta, etichetta, nota}` (nota al massimo 80 byte): sempre la propria; il popup (M4-6) la rimanda intera a ogni cambiamento. Da M5-2 porta anche `vd = { m, o? }` (i verdetti per main-spec e off-spec, ognuno `{ v, u?, c?, b?, p?, l? }`) ed `eq` (al massimo quattro stringhe `item:…` dei pezzi indossati usati nel confronto); campi facoltativi, un client più vecchio non li manda e il ML non ne ha bisogno per far contare la risposta. Da M7-2b `lo` (`AUTO`, `CHANGED` o `MANUAL`) dice chi ha scelto l'etichetta, e viaggia solo con un'etichetta |
   | `SCLOSE` | `RAID` | `q`, `i`, `r` | round chiuso |
   | `SPROP` | `RAID` | `q`, `i`, `k`, `tg`, `w?`, `c?`, `rs?`, `tr?`, `rc?`, `f?`, `m?` | la proposta: a chi, quanto, perché (codici di motivo e segnalazioni); `m` = modificata dal ML |
   | `SRESULT` | `RAID` | `q`, `i`, `o`, `w?`, `c?`, `tg?`, `x?` | `AWARDED` (vincitore, costo, destinatario), `REJECTED` (`x` = cosa succede dopo) o `DELIVERED` |

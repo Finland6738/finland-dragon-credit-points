@@ -40,6 +40,7 @@ local LATE_METHODS = { opt("average", "SEASON_METHOD_AVERAGE"), opt("median", "S
 local ROUNDINGS = { opt("floor", "RULEOPT_FLOOR"), opt("round", "RULEOPT_ROUND"), opt("ceil", "RULEOPT_CEIL") }
 local VERDICTS = { opt("ml", "RULEOPT_VIS_ML"), opt("council", "RULEOPT_VIS_COUNCIL"), opt("officers", "RULEOPT_VIS_OFFICERS") }
 local LEGENDARY = { opt("council", "RULEOPT_COUNCIL"), opt("vote", "RULEOPT_VOTE"), opt("roll", "RULEOPT_ROLL"), opt("queue", "RULEOPT_QUEUE") }
+local LABEL_MODES = { opt("auto", "RULEOPT_LABEL_AUTO"), opt("suggest", "RULEOPT_LABEL_SUGGEST"), opt("manual", "RULEOPT_LABEL_MANUAL") }
 local BENCH = { opt("none", "RULEOPT_NONE"), opt("bonus", "RULEOPT_BONUS"), opt("malus", "RULEOPT_MALUS") }
 
 ---------------------------------------------------------------------------------------------------------------------
@@ -76,6 +77,7 @@ add("priority", { "priority", "maxRerolls" }, "int", { "RULEF_MAX_REROLLS" }, { 
 add("priority", { "priority", "requireAddon" }, "bool", { "RULEF_REQUIRE_ADDON" })
 add("priority", { "priority", "responses", "OS", "enabled" }, "bool", { "RULEF_RESPONSE_ENABLED", "RC_RESPONSE_OS" }, { enabledByDefault = true })
 add("priority", { "priority", "responses", "TMOG", "enabled" }, "bool", { "RULEF_RESPONSE_ENABLED", "RC_RESPONSE_TMOG" }, { enabledByDefault = true })
+add("priority", { "responses", "labelMode" }, "choice", { "RULEF_LABEL_MODE" }, { options = LABEL_MODES })
 add("priority", { "priority", "fallback" }, "choice", { "RULEF_FALLBACK" }, { options = FALLBACKS })
 add("priority", { "priority", "boeFallback" }, "choice", { "RULEF_BOE_FALLBACK" }, { options = BOE_FALLBACKS })
 add("priority", { "priority", "freeRollCost" }, "number", { "RULEF_FREE_ROLL_COST" }, { min = 0, max = 100 })

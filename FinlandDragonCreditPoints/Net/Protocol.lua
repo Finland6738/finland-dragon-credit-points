@@ -29,13 +29,17 @@ ns.Protocol, ns.modules.Protocol = Protocol, Protocol
 local type, ipairs, tostring, tonumber, floor = type, ipairs, tostring, tonumber, math.floor
 local match, gmatch = string.match, string.gmatch
 
-Protocol.VERSION = 4         -- the session protocol this client speaks (raise it when a session message changes);
+Protocol.VERSION = 5         -- the session protocol this client speaks (raise it when a session message changes);
                              -- 2 = the loot session messages of M4-1 (1 = the presence check of M3 only);
                              -- 3 = SRESP carries the upgrade verdicts and the worn pieces (M5-2): optional fields, so
                              --     a client of protocol 2 still understands every message and is understood
                              -- 4 = SVOTE, the council's vote (M5-5), and the optional `vc` of SPROP / `vt` of SSTATE: a
                              --     client of protocol 2 or 3 ignores the new type and fields (an unknown type is dropped
                              --     unread), so it still follows the session; it only cannot vote
+                             -- 5 = who picks the label of a response (M7-2b): the optional `lm` of SOPEN / SSTATE (the
+                             --     guild's mode: auto, suggest, manual) and `lo` of SRESP / `my` (the origin of the label:
+                             --     AUTO, CHANGED, MANUAL). Optional fields: a client of protocol 2 to 4 ignores them, an
+                             --     ML of protocol 4 or less says no mode and the popup keeps the player's own choice
 Protocol.MIN = 2             -- the oldest session protocol this client still understands
 Protocol.MAX_NAMES = 40      -- a HELLOQ names at most this many members; more means "everybody"
 Protocol.MAX_VERSION_LEN = 32
@@ -197,15 +201,17 @@ end
 -- (bus event SESSION_INPUT, stepped by the controller of M4-4).
 --
 --   type     dist      fields (besides s = session id)              meaning
---   SOPEN    RAID      q, ml, e?, rt?, it = { {id, ca, cs, co?} }  session opened: the items with category and costs
+--   SOPEN    RAID      q, ml, e?, rt?, lm?, it = { {id, ca, cs, co?} }  session opened: the items with category and costs
 --                                                                 per response (`cs`); `rt` = the responses on offer
 --                                                                 with their tier ({ MS = 1, OS = 2 }, M4-6: what the
---                                                                 popup shows and who rolls in a tiered round); sent
+--                                                                 popup shows and who rolls in a tiered round); `lm` =
+--                                                                 who picks the label of a response (M7-2b: "auto",
+--                                                                 "suggest" or "manual", the guild's rule); sent
 --                                                                 again after a correction
 --   SROLL    RAID      q, i, r, k, g?, tr?, am?, cl?, de?, rm?      round r of item i opened: kind, stage, tier, among (a
 --                                                                 reroll), cl = it collects the responses, de = the
 --                                                                 deadline in server time (rm = seconds left, paused)
---   SRESP    RAID      i, r, rs, lb?, n?, vd?, eq?                a member's response {response, label, note} to the
+--   SRESP    RAID      i, r, rs, lb?, lo?, n?, vd?, eq?           a member's response {response, label, note} to the
 --                                                                 round r of item i: always the sender's own (the popup
 --                                                                 of M4-6 sends the whole answer again at every change).
 --                                                                 M5-2: vd = { m = verdict, o? = verdict } (main-spec and
@@ -213,7 +219,9 @@ end
 --                                                                 UpgradeScore.Pack) and eq = { "item:..." } (the worn
 --                                                                 pieces it was compared with). Both are information for
 --                                                                 the master looter; a damaged one is dropped and the
---                                                                 response still counts; an older client sends neither
+--                                                                 response still counts; an older client sends neither.
+--                                                                 M7-2b: lo = who chose the label (AUTO, CHANGED or
+--                                                                 MANUAL), sent with a label only
 --   SCLOSE   RAID      q, i, r                                    round closed
 --   SPROP    RAID      q, i, k, tg, w?, c?, rs?, tr?, rc?, f?, m?  the proposal: who, how much, why (reason and flag
 --                                                                 codes); m = modified by the ML
@@ -223,9 +231,9 @@ end
 --   SEND     RAID      q                                          session closed
 --   SSYNCQ   RAID or   s?                                         "send me the session": after a /reload, on joining
 --            WHISPER                                              the raid late (RAID), after a gap (WHISPER to the ML)
---   SSTATE   WHISPER   q, ml, e?, rt?, it (+ st, w, pc, tg), a?,  the whole view, for one member: the active item,
+--   SSTATE   WHISPER   q, ml, e?, rt?, lm?, it (+ st, w, pc, tg), a?, the whole view, for one member: the active item,
 --                      rd?, pr?, pz?, en?, my?, vt?               its round and proposal, paused, ended, the asker's
---                                                                 own response (`my` = { rs, lb?, n? }), the votes on
+--                                                                 own response (`my` = { rs, lb?, lo?, n? }), the votes on
 --                                                                 the proposal (`vt` = { [voter] = choice }, M5-5)
 --   SVOTE    RAID      i, c                                       a council member's vote on the proposal of item i
 --                                                                 (M5-5): c = the player they vote for. Always the
@@ -426,6 +434,13 @@ local function readVotes(t)
 	return out
 end
 
+-- The `lm` of a SOPEN or a SSTATE: who picks the label of a response ("auto" | "suggest" | "manual"); nil when absent or not
+-- one of them (the popup then leaves the label to the player, as before M7-2b).
+local function readLabelMode(m)
+	if type(m) == "string" and ns.Labels and ns.Labels.Mode(m) == m then return m end
+	return nil
+end
+
 Session.MAX_LINKS = 4       -- worn pieces named by a response
 Session.MAX_LINK = 120      -- bytes of one "item:..." string
 
@@ -482,14 +497,15 @@ local function readLinks(eq)
 end
 Session.ReadVerdicts, Session.ReadLinks = readVerdicts, readLinks
 
--- A SRESP from `from`: { s, i, r, rs, lb, n, vd?, eq? }, or nil and a code ("FORGED" when it names another player).
+-- A SRESP from `from`: { s, i, r, rs, lb, lo?, n, vd?, eq? }, or nil and a code ("FORGED" when it names another player).
 function Session.ReadResponse(msg, from)
 	if type(msg) ~= "table" or not from then return nil, "BAD" end
 	if msg.p ~= nil and nameOf(msg.p) ~= from then return nil, "FORGED" end
 	if not isSid(msg.s) or not isInt(msg.i, 1) or not isInt(msg.r, 1) or not isCode(msg.rs) then return nil, "BAD" end
 	if msg.lb ~= nil and not isCode(msg.lb) then return nil, "BAD" end
 	if msg.n ~= nil and (type(msg.n) ~= "string" or #msg.n > Session.MAX_NOTE) then return nil, "BAD" end
-	return { s = msg.s, i = msg.i, r = msg.r, rs = msg.rs, lb = msg.lb, n = msg.n ~= "" and msg.n or nil,
+	local lo = msg.lb ~= nil and ns.Labels and ns.Labels.Origin(msg.lo) or nil   -- an origin without a label means nothing
+	return { s = msg.s, i = msg.i, r = msg.r, rs = msg.rs, lb = msg.lb, lo = lo, n = msg.n ~= "" and msg.n or nil,
 		vd = readVerdicts(msg.vd), eq = readLinks(msg.eq) }
 end
 
@@ -538,6 +554,11 @@ local function wireTiers(s)
 	return out
 end
 
+-- Who picks the label of a response, from the rules frozen on the session (M7-2b).
+local function wireLabelMode(s)
+	return ns.SessionFSM and ns.SessionFSM.LabelMode(s) or nil
+end
+
 local function wireItem(item, withState)
 	local w = { id = item.itemID, ca = item.category, cs = copy(item.costs), co = item.council or nil }
 	if withState then
@@ -579,7 +600,7 @@ function Session.MessageFor(s, e)
 	local n = net(s)
 	if t == "ANNOUNCE_ITEMS" or (t == "ITEM_CORRECTED" and n.open) then
 		n.open = true
-		return { t = "SOPEN", ml = s.ml, e = s.encounter, rt = wireTiers(s), it = wireItems(s, false) }
+		return { t = "SOPEN", ml = s.ml, e = s.encounter, rt = wireTiers(s), lm = wireLabelMode(s), it = wireItems(s, false) }
 	elseif t == "OPEN_ROUND" then
 		n.rounds[e.item] = (n.rounds[e.item] or 0) + 1
 		local item = s.items[e.item]
@@ -643,7 +664,7 @@ end
 -- The SSTATE of session `s` for `asker` ("Name-Realm"): the whole view, with the asker's own response to the open item.
 function Session.StateFor(s, asker)
 	local t, st = now(), serverNow()
-	local msg = { t = "SSTATE", s = s.id, q = net(s).seq, ml = s.ml, e = s.encounter, rt = wireTiers(s), it = wireItems(s, true),
+	local msg = { t = "SSTATE", s = s.id, q = net(s).seq, ml = s.ml, e = s.encounter, rt = wireTiers(s), lm = wireLabelMode(s), it = wireItems(s, true),
 		a = s.active, pz = s.paused or nil, en = s.state == "ENDED" or nil }
 	local item = s.active and s.items[s.active]
 	if item then
@@ -653,7 +674,7 @@ function Session.StateFor(s, asker)
 			if type(item.votes) == "table" and next(item.votes) ~= nil then msg.vt = copy(item.votes) end
 		end
 		if asker and type(item.responses) == "table" and item.responses[asker] ~= nil then
-			msg.my = { rs = item.responses[asker], lb = item.labels and item.labels[asker] or nil,
+			msg.my = { rs = item.responses[asker], lb = item.labels and item.labels[asker] or nil, lo = item.labelOrigins and item.labelOrigins[asker] or nil,
 				n = item.notes and item.notes[asker] or nil }
 		end
 	end
@@ -688,13 +709,13 @@ function Session:OnResponse(msg, from, own)
 	if s and s.id == r.s then
 		if r.i ~= s.active or r.r ~= (net(s).rounds[r.i] or 1) then return refuse("STALE", from) end
 		self.stats.inputs = self.stats.inputs + 1
-		emit("SESSION_INPUT", { type = "RESPONSE", ts = now(), player = from, response = r.rs, label = r.lb,
+		emit("SESSION_INPUT", { type = "RESPONSE", ts = now(), player = from, response = r.rs, label = r.lb, labelOrigin = r.lo,
 			note = r.n, verdict = r.vd, equipped = r.eq })
 	end
 	local v = self.view
 	if v and v.s == r.s and v.round and v.round.i == r.i and v.round.r == r.r and v.round.cl then
 		v.responses[r.i] = v.responses[r.i] or {}
-		v.responses[r.i][from] = { rs = r.rs, lb = r.lb, n = r.n, vd = r.vd, eq = r.eq }
+		v.responses[r.i][from] = { rs = r.rs, lb = r.lb, lo = r.lo, n = r.n, vd = r.vd, eq = r.eq }
 		if from == me() then v.mine[r.i] = r.rs end
 		emit("SESSION_VIEW", v, "RESPONSE", r.i, from)
 	end
@@ -784,7 +805,7 @@ end
 
 local function newView(msg, ml, items, tiers)
 	return { s = msg.s, q = msg.q, ml = ml, e = isInt(msg.e) and msg.e or nil, items = items, tiers = tiers, mine = {},
-		responses = {}, votes = {} }
+		responses = {}, votes = {}, labelMode = readLabelMode(msg.lm) }
 end
 
 -- Applies a SSTATE (from the ML, or built locally by Session:Host). Returns true, or false and a code.
@@ -823,6 +844,7 @@ function Session:ApplyState(msg, from, own)
 		local my = msg.my
 		nv.mine[nv.a] = my.rs
 		nv.responses[nv.a] = { [me() or "?"] = { rs = my.rs, lb = isCode(my.lb) and my.lb or nil,
+				lo = isCode(my.lb) and ns.Labels and ns.Labels.Origin(my.lo) or nil,
 			n = type(my.n) == "string" and #my.n <= Session.MAX_NOTE and my.n ~= "" and my.n or nil } }
 	end
 	if v and v.s == msg.s and nv.a and v.responses[nv.a] and nv.round and v.round and v.round.r == nv.round.r then
@@ -862,6 +884,7 @@ function Session:OnControl(msg, from, own)
 			end
 			v.items, v.q = items, msg.q
 			if tiers then v.tiers = tiers end
+			v.labelMode = readLabelMode(msg.lm) or v.labelMode
 			changed(v, "ITEMS")
 			return true
 		end
@@ -976,14 +999,15 @@ function Session:MyAnswer(index)
 	local mine = me()
 	local a = v and mine and v.responses[index] and v.responses[index][mine]
 	if not a then return nil end
-	return { rs = a.rs, lb = a.lb, n = a.n }
+	return { rs = a.rs, lb = a.lb, lo = a.lo, n = a.n }
 end
 
 -- This player's response {response, label, note} to the open round of the view. `extra` (optional) = { vd, eq }: the
 -- upgrade verdicts and the worn pieces of UpgradeAdvisor (M5-2); a damaged one is left out. Returns the transport item
 -- (or true for the ML, whose own answer is also taken at once), or nil and a code: NO_SESSION, RESPONSES_CLOSED,
--- BAD_RESPONSE, BAD_LABEL, BAD_NOTE, or the transport's reason.
-function Session:Respond(response, label, note, extra)
+-- BAD_RESPONSE, BAD_LABEL, BAD_NOTE, or the transport's reason. `origin` (M7-2b: AUTO, CHANGED or MANUAL) says who chose
+-- the label; it travels with a label only, and an unknown one is left out.
+function Session:Respond(response, label, note, extra, origin)
 	local v = self.view
 	if not v or v.ended then return nil, "NO_SESSION" end
 	local round = v.round
@@ -993,6 +1017,7 @@ function Session:Respond(response, label, note, extra)
 	if note ~= nil and (type(note) ~= "string" or #note > Session.MAX_NOTE) then return nil, "BAD_NOTE" end
 	if note == "" then note = nil end
 	local msg = { t = "SRESP", s = v.s, i = round.i, r = round.r, rs = response, lb = label, n = note }
+	if label ~= nil and ns.Labels then msg.lo = ns.Labels.Origin(origin) end
 	if type(extra) == "table" then
 		msg.vd, msg.eq = readVerdicts(extra.vd), readLinks(extra.eq)
 	end

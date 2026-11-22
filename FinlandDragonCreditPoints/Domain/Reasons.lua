@@ -5,7 +5,7 @@
 -- Groups: REASON (why a player won), FLAG (what to check), DISCARD (a roll set aside), SOURCE (where a cost or a
 -- category comes from), JOIN (a new member's credits), CORRECTION (the master looter's reasons), AUTO (automatic
 -- phases), RANKS (guild rank changes), DELIVERY (where an award is on its way to the winner, M4-7), REFUSAL (an action refused), STATUS (a member of the pool),
--- RESPONSE, LABEL (the optional label of a main-spec response), VERDICT (the upgrade verdicts, M5-2), UPGRADE (why an item
+-- RESPONSE, LABEL (the optional label of a main-spec response), LABEL_ORIGIN (who chose it, M7-2b), VERDICT (the upgrade verdicts, M5-2), UPGRADE (why an item
 -- cannot be used or compared, M5-2), IMPORT (why a weight string was refused, M5-3), KIND (what a proposal does), REJECT, STATE, EVENT (ledger event types), OUTCOME (how a legendary project ended, M5-6) and PRESET
 -- (preset names).
 local ADDON_NAME, ns = ...
@@ -14,7 +14,7 @@ ns.modules = ns.modules or {}
 local Reasons = {}
 ns.Reasons, ns.modules.Reasons = Reasons, Reasons
 
-Reasons.GROUPS = { "REASON", "FLAG", "DISCARD", "SOURCE", "JOIN", "CORRECTION", "AUTO", "RANKS", "DELIVERY", "REFUSAL", "STATUS", "RESPONSE", "LABEL", "VERDICT", "UPGRADE", "IMPORT", "KIND", "REJECT", "STATE", "EVENT", "OUTCOME", "PRESET" }
+Reasons.GROUPS = { "REASON", "FLAG", "DISCARD", "SOURCE", "JOIN", "CORRECTION", "AUTO", "RANKS", "DELIVERY", "REFUSAL", "STATUS", "RESPONSE", "LABEL", "LABEL_ORIGIN", "VERDICT", "UPGRADE", "IMPORT", "KIND", "REJECT", "STATE", "EVENT", "OUTCOME", "PRESET" }
 
 -- KEYS[group][code] = locale key.
 Reasons.KEYS = {
@@ -237,6 +237,11 @@ Reasons.KEYS = {
 		BIG_UPGRADE = "RC_LABEL_BIG_UPGRADE",
 		SMALL_UPGRADE = "RC_LABEL_SMALL_UPGRADE",
 		SITUATIONAL = "RC_LABEL_SITUATIONAL",
+	},
+	LABEL_ORIGIN = {   -- who chose the label of a response (Domain/Labels.lua, M7-2b)
+		AUTO = "RC_LABEL_ORIGIN_AUTO",
+		CHANGED = "RC_LABEL_ORIGIN_CHANGED",
+		MANUAL = "RC_LABEL_ORIGIN_MANUAL",
 	},
 	VERDICT = {   -- the upgrade verdict of an item for a player (Domain/UpgradeScore.lua); UNUSABLE = the character cannot use it
 		BIG = "RC_VERDICT_BIG",

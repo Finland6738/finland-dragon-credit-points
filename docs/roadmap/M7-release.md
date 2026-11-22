@@ -30,6 +30,21 @@
 - Real client: the window in game, GM and officer.
 - Suggested model/effort: `sonnet` / high
 
+### M7-2b — Automatic response labels
+- Branch: `step/m7-2b-auto-labels`
+- Depends on: M7-2, M5-2, M5-3, M4-6
+- Analysis: §5.1 ("Come è fatto (M7-2b)"), §8.4 (protocol 5), §10
+- Scope: today the player picks the optional label of a main-spec response (BiS, big upgrade, small upgrade, situational) by hand in the popup (M4-6). A new rule `responses.labelMode` (Guild Master only, in the Settings window's Priority page) says who picks it: `auto` (the addon sets it and the player cannot change it), `suggest` (the default: the addon fills it in and the player may change or clear it) and `manual` (the player, as before). The addon's choice is the data it already has: the item is on the player's best-in-slot list (M5-3) → BiS; the main-spec verdict (M5-2) is a big upgrade → big upgrade, a small one → small upgrade; no upgrade, not comparable, not usable or no verdict → no label. The origin of the label (automatic, changed by the player, chosen by the player) travels in the response and the master looter's window shows it. Pure `Domain/Labels.lua`; the rule is validated by `Rules.Validate` and older rules are filled with `suggest`; the protocol goes to 5 with optional fields (`lm` of SOPEN / SSTATE, `lo` of SRESP), so an older client still follows the session; words through locale keys and the `LABEL_ORIGIN` group of `Domain/Reasons.lua`.
+- Done when:
+  - [x] The rule is validated, defaults to `suggest`, older rules are filled in, and a non-GM cannot change it (M7-2's gate).
+  - [x] In `auto` the popup shows the addon's label and the chips are locked; in `suggest` it is prefilled and the player may change or clear it; in `manual` nothing changes; the answer carries who chose the label; the master looter's table says "auto" or "changed".
+  - [x] A session from an older client (no `lm`, no `lo`) still works: the popup leaves the label to the player and the table shows no origin.
+  - [ ] The popup and the master looter's window in the game, in the three modes, on a real item with a wishlist entry and a verdict. *(in game)*
+- Tests: `Tests/test_labels.lua`, additions to `Tests/test_rules.lua`, `Tests/test_ui_settings.lua`, `Tests/test_ui_popup.lua`, `Tests/test_protocol_session.lua`, `Tests/test_session_fsm.lua`, `Tests/test_ui_ml_session.lua`.
+- Docs: wiki **Rolling for Loot**, **Settings** and **Master Looter Guide** (EN + IT), analysis §5.1, CHANGELOG.
+- Real client: the popup chips and the line under them, the master looter's column.
+- Suggested model/effort: `sonnet` / medium
+
 ### M7-3 — Profiles and presets
 - Branch: `step/m7-3-profiles`
 - Depends on: M7-2, M6-7

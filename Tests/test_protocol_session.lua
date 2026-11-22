@@ -63,8 +63,8 @@ describe("session messages on one client", function()
 		receive("SOPEN", fields, sender)
 	end
 
-	it("speaks protocol 4 (and still understands 2): the presence check plus the session messages", function()
-		eq(P().VERSION, 4)
+	it("speaks protocol 5 (and still understands 2): the presence check plus the session messages", function()
+		eq(P().VERSION, 5)
 		eq(P().MIN, 2)
 		for _, t in ipairs(S().TYPES) do truthy(Codec().SCHEMA[t], t .. " is registered") end
 		eq(#S().TYPES, 11)
@@ -329,6 +329,101 @@ describe("session messages on one client", function()
 		eq(m.rs, "MS"); eq(m.lb, "BIS"); eq(m.n, "two-hander upgrade"); eq(m.r, 1); isNil(m.p)
 		eq(S():OpenRound().mine, "MS")
 	end)
+
+	-- M7-2b: who picks the label of a response, and who chose the one that was sent (optional fields of protocol 5)
+	it("announces who picks the label (the guild's rule), and the view keeps it", function()
+		local rules = FDCP.Rules.DefaultConfig()
+		local s = { id = "S1-1", ml = full("Aurel"), encounter = 601, state = "ANNOUNCING", rules = rules, items = {
+			{ itemID = 19003, category = "armor", costs = { MS = 1 }, state = "PENDING" } } }
+		eq(S().MessageFor(s, { type = "ANNOUNCE_ITEMS" }).lm, "suggest", "the default of the rules")
+		rules.responses.labelMode = "auto"
+		eq(S().MessageFor(s, { type = "ANNOUNCE_ITEMS" }).lm, "auto")
+		eq(S().StateFor(s, full("Bryn")).lm, "auto", "a late joiner gets it with the state")
+		s.rules = nil
+		s.rules = { session = rules.session, priority = rules.priority, cost = rules.cost }
+		eq(S().MessageFor(s, { type = "ANNOUNCE_ITEMS" }).lm, "suggest", "a session saved before M7-2b: the default of the rules")
+		raid({ "Bryn" })
+		Mock.Advance(3)
+		open(full("Bryn"), 1, { lm = "auto" })
+		eq(S().view.labelMode, "auto")
+		open(full("Bryn"), 2, { lm = "manual" })   -- a correction may say it again
+		eq(S().view.labelMode, "manual")
+		open(full("Bryn"), 3)
+		eq(S().view.labelMode, "manual", "a message without it keeps what was said")
+	end)
+
+	it("an older master looter says no mode, and a mode nobody knows is left out", function()
+		raid({ "Bryn" })
+		Mock.Advance(3)
+		open(full("Bryn"), 1)
+		isNil(S().view.labelMode)
+		S():Reset()
+		raid({ "Bryn" })
+		open(full("Bryn"), 1, { lm = "random" })
+		truthy(S().view, "the session still opens")
+		isNil(S().view.labelMode)
+		S():Reset()
+		raid({ "Bryn" })
+		open(full("Bryn"), 1, { lm = 7 })
+		truthy(S().view); isNil(S().view.labelMode)
+	end)
+
+	it("a response carries who chose the label, only with a label, and only one of the three codes", function()
+		local r = S().ReadResponse({ s = "S1-1", i = 1, r = 1, rs = "MS", lb = "BIS", lo = "AUTO" }, full("Bryn"))
+		eq(r.lb, "BIS"); eq(r.lo, "AUTO")
+		r = S().ReadResponse({ s = "S1-1", i = 1, r = 1, rs = "MS", lb = "BIS", lo = "CHANGED" }, full("Bryn"))
+		eq(r.lo, "CHANGED")
+		r = S().ReadResponse({ s = "S1-1", i = 1, r = 1, rs = "MS", lb = "BIS" }, full("Bryn"))
+		isNil(r.lo, "an older client says nothing")
+		r = S().ReadResponse({ s = "S1-1", i = 1, r = 1, rs = "MS", lo = "AUTO" }, full("Bryn"))
+		isNil(r.lb); isNil(r.lo, "an origin without a label means nothing")
+		r = S().ReadResponse({ s = "S1-1", i = 1, r = 1, rs = "MS", lb = "BIS", lo = "robot" }, full("Bryn"))
+		eq(r.lb, "BIS", "the answer counts"); isNil(r.lo, "an origin nobody knows is dropped")
+		r = S().ReadResponse({ s = "S1-1", i = 1, r = 1, rs = "MS", lb = "BIS", lo = 5 }, full("Bryn"))
+		eq(r.lb, "BIS"); isNil(r.lo)
+	end)
+
+	it("Respond sends the origin with a label and not without one", function()
+		raid({ "Bryn" })
+		Mock.Advance(3)
+		open(full("Bryn"), 1)
+		receive("SROLL", { s = "S1-1", q = 2, i = 1, r = 1, k = "ROLL", cl = true }, full("Bryn"))
+		truthy(S():Respond("MS", "BIS", nil, nil, "AUTO"))
+		Mock.Advance(2)
+		local sent = sentMessages(Mock)
+		local m = sent[#sent].msg
+		eq(m.lb, "BIS"); eq(m.lo, "AUTO")
+		deepEq(S():MyAnswer(1), { rs = "MS", lb = "BIS", lo = "AUTO" })
+		truthy(S():Respond("MS", nil, nil, nil, "AUTO"))
+		Mock.Advance(2)
+		sent = sentMessages(Mock)
+		m = sent[#sent].msg
+		isNil(m.lb); isNil(m.lo, "no label, no origin")
+		truthy(S():Respond("MS", "BIS", nil, nil, "robot"))
+		Mock.Advance(2)
+		sent = sentMessages(Mock)
+		isNil(sent[#sent].msg.lo, "an unknown origin is not sent")
+		truthy(S():Respond("MS", "BIS"))
+		Mock.Advance(2)
+		sent = sentMessages(Mock)
+		isNil(sent[#sent].msg.lo, "a client that sets no origin sends none")
+	end)
+
+	it("the whispered state gives back the origin of the player's own label", function()
+		raid({ "Bryn" })
+		Mock.Advance(3)
+		receive("SSTATE", { s = "S1-1", q = 3, ml = full("Bryn"), rt = { MS = 1, OS = 2 }, lm = "suggest", a = 1,
+			it = { { id = 19003, st = "ROLLING" } }, rd = { i = 1, r = 1, k = "ROLL", g = "TIER", tr = 1, cl = true },
+			my = { rs = "MS", lb = "BIS", lo = "CHANGED", n = "set ring" } }, full("Bryn"), "WHISPER")
+		deepEq(S():MyAnswer(1), { rs = "MS", lb = "BIS", lo = "CHANGED", n = "set ring" })
+		eq(S().view.labelMode, "suggest")
+		local s = { id = "S1-1", ml = full("Aurel"), encounter = 601, state = "ROLLING", active = 1, rules = FDCP.Rules.DefaultConfig(),
+			net = { seq = 4, rounds = { 2 }, open = true }, items = { { itemID = 19003, category = "armor", costs = { MS = 1 },
+				state = "ROLLING", round = { kind = "ROLL", stage = "TIER", tier = 1, collect = true, rolls = {} },
+				responses = { [full("Bryn")] = "MS" }, labels = { [full("Bryn")] = "BIS" },
+				labelOrigins = { [full("Bryn")] = "AUTO" } } } }
+		deepEq(S().StateFor(s, full("Bryn")).my, { rs = "MS", lb = "BIS", lo = "AUTO" })
+	end)
 end)
 
 ---------------------------------------------------------------------------------------------------------------------
@@ -512,11 +607,13 @@ describe("simulated session", function()
 		local round = c.Bryn.addon().Protocol.Session:OpenRound()
 		eq(round.mine, "MS", "their own answer came back")
 		truthy(round.remaining > 20 and round.remaining < 30)
+		-- the state is one whisper, in one or two parts (AceComm splits a message over 250 bytes: first byte 1, then 2 or 3)
 		local whispers = 0
-		for _, e in ipairs(sentMessages(c.Aurel.Mock)) do
-			if e.msg.t == "SSTATE" then
-				whispers = whispers + 1
-				eq(e.chatType, "WHISPER"); eq(e.target, full("Bryn"))
+		for _, e in ipairs(c.Aurel.Mock.chat.SentWithPrefix("FDCP1")) do
+			if e.chatType == "WHISPER" then
+				local first = e.message:byte(1)
+				if first ~= 2 and first ~= 3 then whispers = whispers + 1 end
+				eq(e.target, full("Bryn"))
 			end
 		end
 		eq(whispers, 1, "only the one who reloaded")

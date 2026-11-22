@@ -14,7 +14,12 @@
 --   offered = { { code, tier, cost } } (the responses on offer, best tier first; PASS is not in the list),
 --   main (the code of the best tier: the one a label belongs to), labels = { codes } (the chips; nil in a round that
 --   no longer collects the responses), labelsOn (a label can be set now: the answer is main-spec or still empty),
---   response, label, note (the player's own answer, nil before one),
+--   response, label, note (the player's own answer, nil before one; M7-2b: before an answer the label is the addon's
+--   suggestion, and `labelOrigin` says who chose it: AUTO | CHANGED | MANUAL | nil), labelMode (who picks the label: "auto"
+--   the addon, "suggest" the addon fills it in and the player may change it, "manual" the player; Domain/Labels.lua),
+--   suggestion (the label the addon proposes for this item: BIS when it is on the player's best-in-slot list, else the big or
+--   small upgrade of the main-spec verdict; nil in "manual" mode or when there is none), labelHint (AUTO | SUGGEST | nil:
+--   the line under the chips that says so),
 --   canAnswer (response, label and note can still change), canRoll (the player rolls in this round), rolled,
 --   hint = CHOOSE | UNUSABLE | PASSED | LATER | ROLL | ROLLED | REROLL | FREE | TURN (a locale hint, see the window),
 --   upgrade (M5-2: the verdicts of this player for the item, UpgradeAdvisor.For: { ms, os | nil, specs, autoPass, equipped,
@@ -62,6 +67,38 @@ function PB.ClipNote(text)
 	end
 	if text == "" then return nil end
 	return text
+end
+
+-- What goes with an answer once it is sent (M7-2b): the label and its origin the draft `d` ends up with, settled by the mode
+-- of the card. Only the main-spec answer carries a label. "auto": the addon's suggestion, whatever the draft held;
+-- "suggest": the draft's own label, or the suggestion when the player did not clear it; "manual": the draft's own label.
+-- A label always has an origin (MANUAL when none was recorded). Changes `d` and returns it.
+function PB.Settle(card, d)
+	local Labels = ns.Labels
+	if d.rs ~= card.main then
+		d.lb, d.lo = nil, nil
+		return d
+	end
+	if card.labelMode == "auto" then
+		d.lb, d.lo = card.suggestion, card.suggestion and "AUTO" or nil
+	elseif card.labelMode == "suggest" and d.lb == nil and not d.cleared and card.suggestion then
+		d.lb, d.lo = card.suggestion, "AUTO"
+	end
+	if d.lb == nil then d.lo = nil
+	elseif not (Labels and Labels.Origin(d.lo)) then d.lo = "MANUAL" end
+	return d
+end
+
+-- A label chip was clicked on card `card` for the draft `d`: it toggles (a second click clears it, and the clearing is the
+-- player's: the suggestion does not come back). Sets the label, its origin and the cleared mark.
+function PB.Pick(card, d, code)
+	if d.lb == code then
+		d.lb, d.lo, d.cleared = nil, nil, true
+	else
+		d.lb, d.cleared = code, nil
+		d.lo = ns.Labels and ns.Labels.OriginOf(code, card.suggestion) or "MANUAL"
+	end
+	return d
 end
 
 -- The responses on offer for an item, best tier first: { { code, tier, cost } }.
@@ -152,8 +189,8 @@ end
 ---------------------------------------------------------------------------------------------------------------------
 -- The board
 
--- Build(view, env): env = { me, now (the local clock), draft = { key, rs, lb, n } | nil (the answer being typed in the
--- round `key`), rolled = function(key), dismissed = function(key), standing = function() -> { credits, position },
+-- Build(view, env): env = { me, now (the local clock), draft = { key, rs, lb, lo, n, cleared } | nil (the answer being typed in the
+-- round `key`; `cleared`: the player took the label off, so the suggestion does not come back), rolled = function(key), dismissed = function(key), standing = function() -> { credits, position },
 -- upgrade = function(itemID) -> advice | nil (UpgradeAdvisor.For), wish = function(itemID) -> boolean (the BiS list) }.
 function PB.Build(view, env)
 	env = env or {}
@@ -175,7 +212,7 @@ function PB.Build(view, env)
 	local answer = env.draft and env.draft.key == key and env.draft or nil
 	local mine = answer or (view.responses[index] and view.responses[index][env.me or me()]) or nil
 	local response = mine and (mine.rs) or nil
-	local label, note = mine and mine.lb, mine and mine.n
+	local note = mine and mine.n
 	local tier = response and tiers[response] or nil
 
 	local collect = round.cl == true
@@ -197,6 +234,27 @@ function PB.Build(view, env)
 	if not collect and not canRoll then return board end
 
 	local advice = env.upgrade and env.upgrade(item.id) or nil
+	local wish = env.wish and env.wish(item.id) == true or false
+
+	-- the label (M7-2b): the player's own answer, else the addon's suggestion where the guild's mode asks for one
+	local Labels = ns.Labels
+	local mode = Labels and Labels.Mode(view.labelMode) or "manual"
+	local suggestion = mode ~= "manual" and Labels and Labels.Suggest(wish, advice and advice.ms) or nil
+	local label, labelOrigin
+	if response ~= nil and response ~= main then
+		label = nil
+	elseif mode == "auto" then
+		label = suggestion
+		labelOrigin = suggestion and "AUTO" or nil
+	elseif mine and (mine.rs ~= nil or mine.lb ~= nil) then
+		label = mine.lb
+		labelOrigin = label and ((Labels and Labels.Origin(mine.lo)) or "MANUAL") or nil
+	elseif mode == "suggest" then
+		label = suggestion
+		labelOrigin = suggestion and "AUTO" or nil
+	end
+	local labelHint = mode == "auto" and "AUTO" or (mode == "suggest" and suggestion ~= nil and "SUGGEST") or nil
+
 	local preselect = collect and not rolled and response == nil and advice and advice.autoPass and "PASS" or nil
 
 	local hint
@@ -222,13 +280,14 @@ function PB.Build(view, env)
 		key = key, item = index, round = round.r, count = #view.items, itemID = item.id, category = item.ca,
 		council = item.co == true or cost == nil, cost = cost, encounter = view.e, boss = env.boss and env.boss(view.e) or nil,
 		kind = round.k, stage = round.g, tier = round.tr, collect = collect, offered = offered, main = main,
-		labels = collect and PB.LABELS or nil, labelsOn = collect and not rolled and (response == nil or response == main),
-		response = response, label = label, note = note,
+		labels = collect and PB.LABELS or nil, labelsOn = collect and not rolled and mode ~= "auto" and (response == nil or response == main),
+		response = response, label = label, labelOrigin = labelOrigin, note = note,
+		labelMode = mode, suggestion = suggestion, labelHint = collect and labelHint or nil,
 		canAnswer = collect and not rolled, canRoll = canRoll and not rolled, rolled = rolled, hint = hint,
 		remaining = remaining, paused = view.paused == true, credits = standing and standing.credits or nil,
 		position = standing and standing.position or nil, rollMin = PB.ROLL_MIN, rollMax = PB.ROLL_MAX,
 		upgrade = advice, preselect = preselect,
-		wish = env.wish and env.wish(item.id) == true or false,   -- on the player's own best-in-slot list (M5-3)
+		wish = wish,   -- on the player's own best-in-slot list (M5-3)
 	}
 	return board
 end

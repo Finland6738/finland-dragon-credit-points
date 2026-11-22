@@ -121,6 +121,9 @@ end
 
 local COLUMN_TOKENS = { MS = "accent-text", OS = "text-2", TMOG = "text-2", PASS = "text-3" }
 
+-- locale-key: ML_LABEL_TAG_AUTO ML_LABEL_TAG_CHANGED
+MLSession.LABEL_TAGS = { AUTO = "ML_LABEL_TAG_AUTO", CHANGED = "ML_LABEL_TAG_CHANGED" }
+
 -- The columns of the candidates' table.
 -- locale-key: ML_COL_CANDIDATE ML_COL_CREDITS ML_COL_RESPONSE ML_COL_UPGRADE ML_COL_ROLL ML_COL_NOTES ML_NOTE_PROPOSED ML_NOTE_WAITING
 local function candidateColumns()
@@ -145,11 +148,15 @@ local function candidateColumns()
 			end },
 		{ id = "credits", title = L["ML_COL_CREDITS"], width = 76, align = "CENTER", mono = true,
 			text = function(d) return d.credits or "·" end, value = function(d) return d.credits or -1 end },
-		{ id = "response", title = L["ML_COL_RESPONSE"], width = 176,
+		{ id = "response", title = L["ML_COL_RESPONSE"], width = 224,
 			text = function(d)
 				if not d.response then return "·" end
 				local text = ns.Reasons.Text("RESPONSE", d.response)
-				if d.label then text = text .. " · " .. ns.Reasons.Text("LABEL", d.label) end   -- the declared label (M4-6)
+				if d.label then   -- the declared label (M4-6) and who chose it (M7-2b: auto / changed; a plain choice has no tag)
+					text = text .. " · " .. ns.Reasons.Text("LABEL", d.label)
+					local tag = MLSession.LABEL_TAGS[d.labelOrigin]
+					if tag then text = text .. " (" .. L[tag] .. ")" end
+				end
 				return text
 			end,
 			token = function(d) return COLUMN_TOKENS[d.response] or "text-3" end,
@@ -180,13 +187,20 @@ local function candidateColumns()
 	}
 end
 
--- The tooltip of a candidate's row: the verdict for each spec the player's client sent, what is worn, the limits (M5-2).
+-- The tooltip of a candidate's row: who chose the label (M7-2b), the verdict for each spec the player's client sent, what is
+-- worn, the limits (M5-2).
 function MLSession:ShowCandidateTip(row)
 	local d, tip, A = row.data, GameTooltip, ns.UpgradeAdvisor
-	if not d or not tip or not d.upgradeMS then return end
+	local origin = d and d.label and d.labelOrigin
+	if not d or not tip or not (d.upgradeMS or origin) then return end
 	tip:SetOwner(row, "ANCHOR_RIGHT")
-	local lines = A.Lines(d.upgradeMS, "MS")
 	tip:SetText(d.name)
+	if origin then
+		local words = ns.Reasons.Text("LABEL", d.label) .. " · " .. ns.Reasons.Text("LABEL_ORIGIN", origin)
+		tip:AddLine(L["ML_LABEL_TIP"]:format(words), 1, 1, 1, true)
+	end
+	if not d.upgradeMS then tip:Show() return end
+	local lines = A.Lines(d.upgradeMS, "MS")
 	for _, line in ipairs(lines) do tip:AddLine(line, 1, 1, 1, true) end
 	if d.upgradeOS then
 		for _, line in ipairs(A.Lines(d.upgradeOS, "OS")) do tip:AddLine(line, 1, 1, 1, true) end

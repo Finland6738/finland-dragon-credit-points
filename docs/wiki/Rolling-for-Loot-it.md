@@ -17,7 +17,12 @@ Dall'alto in basso:
 - **Il chip del costo**, per esempio *ARMA · 2 CREDITI*: la categoria che la tabella della gilda ha dato al pezzo e quanto paghi se lo vinci con la risposta che hai scelto (prima di rispondere, il costo pieno). *COUNCIL* vuol dire che il costo lo decide il council. Accanto, quando il tuo client conosce la tabella dei crediti della gilda, **i tuoi crediti e il tuo posto stimato in fila**: *I tuoi crediti 2 · fila ~3ª*. Il posto è "1 + i membri del raid con meno crediti"; è una stima, perché una parità la decide il roll.
 - **Il verdetto di upgrade**, una riga per ognuna delle tue spec: *Main-spec · Upgrade grande +7,4% · ilvl +6*. Vedi [È un upgrade?](#è-un-upgrade) sotto.
 - **La tua risposta:** **Main-spec**, **Off-spec** o **Passo**. Clicca e parte subito. Puoi cambiare idea finché non rolli.
-- **Un'etichetta, facoltativa**, per una risposta main-spec: **BiS**, **Upgrade grande**, **Upgrade piccolo** o **Situazionale**. Cliccala per metterla, cliccala di nuovo per toglierla. Informa solo il master looter e il council; non cambia mai chi vince. Se clicchi un'etichetta prima di rispondere, risponde main-spec al posto tuo. Off-spec e Passo non hanno etichetta.
+- **Un'etichetta, facoltativa**, per una risposta main-spec: **BiS**, **Upgrade grande**, **Upgrade piccolo** o **Situazionale**. Informa solo il master looter e il council; non cambia mai chi vince. Off-spec e Passo non hanno etichetta. Chi la sceglie è una regola della gilda (**Impostazioni › Regole › Priorità**), e una riga sotto i chip dice quale:
+  - **Suggerita** (il modo consueto): l'addon compila l'etichetta prima che tu risponda e parte con la tua risposta Main-spec. Sceglie **BiS** se il pezzo è nella tua lista best in slot ([[Suggerimenti di upgrade|Upgrade-Hints-it]]), altrimenti **Upgrade grande** o **Upgrade piccolo** dal verdetto main-spec del popup; senza upgrade, niente. Puoi cliccarne un'altra (o la stessa di nuovo per toglierla); se la togli, l'addon non la rimette. Se clicchi un'etichetta prima di rispondere, risponde main-spec al posto tuo.
+  - **Automatica**: l'addon imposta l'etichetta nello stesso modo e i chip sono bloccati; tu scegli solo la risposta.
+  - **Scelta dal giocatore**: non viene compilato nulla; clicca un'etichetta per metterla, clicca di nuovo per toglierla.
+
+  Il master looter vede chi ha scelto l'etichetta: *auto* se è dell'addon, *cambiata* se ne hai scelta un'altra.
 - **Una nota, facoltativa.** Al massimo 80 caratteri (qualche parola in meno se usi le lettere accentate). Parte quando esci dalla casella, premi Invio o premi **Tira**.
 - **La barra del timer**, che si svuota con il passare del tempo.
 - **La riga di aiuto** e il pulsante **Tira**.

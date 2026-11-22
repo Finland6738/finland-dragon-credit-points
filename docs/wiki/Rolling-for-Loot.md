@@ -17,7 +17,12 @@ From top to bottom:
 - **The cost chip**, for example *WEAPON · 2 CREDITS*: the category the guild's table gave the item and what you pay if you win it with the answer you have chosen (before you answer, the full cost). *COUNCIL* means the cost is set by the council. Next to it, when this client knows the guild's credits table, **your credits and your estimated place in the queue**: *Your credits 2 · queue ~3*. The place is "1 + the raid members with fewer credits"; it is an estimate, because a tie is decided by the roll.
 - **The upgrade verdict**, one line for each of your specs: *Main-spec · Big upgrade +7.4% · ilvl +6*. See [Is it an upgrade?](#is-it-an-upgrade) below.
 - **Your answer:** **Main-spec**, **Off-spec** or **Pass**. Click one and it is sent at once. You can change your mind until you roll.
-- **A label, optional**, for a main-spec answer: **BiS**, **Big upgrade**, **Small upgrade** or **Situational**. Click one to set it, click it again to clear it. It only informs the master looter and the council; it never changes who wins. If you click a label before answering, it answers main-spec for you. Off-spec and Pass carry no label.
+- **A label, optional**, for a main-spec answer: **BiS**, **Big upgrade**, **Small upgrade** or **Situational**. It only informs the master looter and the council; it never changes who wins. Off-spec and Pass carry no label. Who picks it is a rule of the guild (**Settings › Rules › Priority**), and a line under the chips says which:
+  - **Suggested** (the usual way): the addon fills the label in before you answer, and it goes with your Main-spec answer. It picks **BiS** when the item is on your own best-in-slot list ([[Upgrade Hints|Upgrade-Hints]]), otherwise **Big upgrade** or **Small upgrade** from the main-spec verdict of the popup; with no upgrade, nothing. You may click another label (or the same one again to clear it); if you clear it, the addon does not put it back. If you click a label before answering, it answers main-spec for you.
+  - **Automatic**: the addon sets the label the same way and the chips are locked; you only choose your answer.
+  - **Chosen by the player**: nothing is filled in; click a label to set it, click it again to clear it.
+
+  The master looter sees who chose the label: *auto* when it is the addon's, *changed* when you picked another one.
 - **A note, optional.** Up to 80 characters (a few words fewer if you use accents). It is sent when you leave the box, press Enter, or press **Roll**.
 - **The timer bar**, which empties as the time runs out.
 - **The line of help** and the **Roll** button.

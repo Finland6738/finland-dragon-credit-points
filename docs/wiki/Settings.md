@@ -28,7 +28,7 @@ Only for you: nothing here is shared with the guild.
 A list of pages on the left, the fields of the page on a card:
 
 - **Night and session**: whether an officer must open the night, who confirms an award (the master looter, automatic after a pause, or the council), the automatic steps, the seconds of a roll round.
-- **Priority**: who goes first (fewest credits, fewest credits per night, highest roll), the tie-breaks, the rerolls in a row, whether the addon is required, which responses are allowed, what happens to an item nobody wants or a BoE.
+- **Priority**: who goes first (fewest credits, fewest credits per night, highest roll), the tie-breaks, the rerolls in a row, whether the addon is required, which responses are allowed, **who sets the label of a main-spec answer** (see below), what happens to an item nobody wants or a BoE.
 - **Costs**: the cost of each category and quality, in a grid (*Council* in the legendary column means the council sets the cost; type the word to put it back).
 - **Multipliers**: the cost factor of each response, of the raid size and of the difficulty.
 - **Members and credits**: main characters only, how late joiners start (average, median, lowest, zero, fixed), the rounding, and the credits a season starts with.
@@ -36,6 +36,16 @@ A list of pages on the left, the fields of the page on a card:
 - **Legendaries and bench**: how a legendary is awarded, the cost of a chain piece, and what the bench earns.
 - **Messages in /raid**: the wording of the notice for players without the addon and of the item and result lines (placeholders `{names}`, `{link}`, `{addon}`).
 - **Upgrade verdict**: how the popup says whether an item is an upgrade ([[Upgrade Hints|Upgrade-Hints]]).
+
+**Label of a main-spec response** (Priority page). The popup lets a player add an optional label to a Main-spec answer (BiS, Big upgrade, Small upgrade, Situational); it only informs the master looter and the council. This rule says who picks it:
+
+| Choice | What happens |
+|---|---|
+| **Suggested (editable)** (the default) | The addon fills the label in from what it knows (BiS if the item is on the player's own best-in-slot list, otherwise Big or Small upgrade from the main-spec verdict, otherwise nothing) and the player may change or clear it. |
+| **Automatic (locked)** | The addon sets the label the same way and the player cannot change it. |
+| **Chosen by the player** | Nothing is filled in; the player picks, as before. |
+
+The master looter's window shows, next to the label, whether it is *auto* (the addon's) or *changed* (the player picked another one). The mode is read when a loot session opens, so a change applies from the next session; guilds that wrote their rules before this setting existed get *Suggested*. Only the Guild Master can change it, like every rule. See [[Rolling for Loot|Rolling-for-Loot]] and the [[Master Looter Guide|Master-Looter-Guide]].
 
 Everyone sees the values. The Guild Master edits them: a label turns amber while its value differs from the rules in force, and the line at the bottom counts the changes not saved yet. A number that is not valid is marked at once and never reaches the draft. **Save** checks the whole configuration (if something is not valid it opens the page and names the field), then writes **one** change to the guild's ledger; **Discard changes** brings the form back to the rules in force.
 

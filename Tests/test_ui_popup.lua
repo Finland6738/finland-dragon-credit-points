@@ -762,7 +762,7 @@ describe("the master looter hears the popups", function()
 
 	it("every answer, label and note reaches the master looter as that player's own", function()
 		local net, c, h = started()
-		card1(c.Bryn).chips.BIG_UPGRADE:Click()
+		card1(c.Bryn).chips.SITUATIONAL:Click()   -- the addon may have suggested another: this is the player's pick
 		card1(c.Bryn).note.edit:SetFocus()
 		c.Bryn.Mock.TypeInto(card1(c.Bryn).note.edit, "my set ring")
 		card1(c.Bryn).note.edit:ClearFocus()
@@ -771,7 +771,8 @@ describe("the master looter hears the popups", function()
 		popup(c.Aurel):Choose("MS")
 		net:Advance(3)
 		local item = h.s.items[1]
-		eq(item.responses[full("Bryn")], "MS"); eq(item.labels[full("Bryn")], "BIG_UPGRADE"); eq(item.notes[full("Bryn")], "my set ring")
+		eq(item.responses[full("Bryn")], "MS"); eq(item.labels[full("Bryn")], "SITUATIONAL"); eq(item.notes[full("Bryn")], "my set ring")
+		truthy(item.labelOrigins[full("Bryn")], "and who chose it")
 		eq(item.responses[full("Corin")], "OS"); isNil(item.labels[full("Corin")])
 		eq(item.responses[full("Dara")], "PASS"); isNil(item.notes[full("Dara")])
 		eq(item.responses[full("Aurel")], "MS")
@@ -1084,5 +1085,156 @@ describe("the master looter sees the verdicts of the raid", function()
 			"RAID", full("Corin"))
 		eq(h.s.items[1].responses[full("Corin")], "MS")
 		isNil(h.s.items[1].verdicts[full("Corin")])
+	end)
+end)
+
+---------------------------------------------------------------------------------------------------------------------
+-- Who picks the label (M7-2b): the guild's rule responses.labelMode, as the master looter's SOPEN carries it
+
+describe("the label of a main-spec answer follows the guild's mode", function()
+	before_boot(function(M)
+		M.player.name, M.player.realm = "Bryn", REALM
+		verdictItems(M)
+	end)
+
+	local function raid()
+		Mock.group.Set{ raid = true, members = { { name = "Aurel" }, { name = "Corin" } } }
+		Mock.Advance(3)
+	end
+	local function receive(t, fields) return Mock.chat.Receive("FDCP1", Codec():Encode(t, fields), "RAID", ML) end
+	-- `mode` nil = a master looter of protocol 4 or less, which says nothing
+	local function open(itemID, mode)
+		raid()
+		receive("SOPEN", { s = "S1-1", q = 1, ml = ML, e = 663, rt = { MS = 1, OS = 2 }, lm = mode,
+			it = { { id = itemID, ca = "armor", cs = { MS = 1, OS = 0 } } } })
+		receive("SROLL", { s = "S1-1", q = 2, i = 1, r = 1, k = "ROLL", g = "TIER", tr = 1, cl = true,
+			de = FDCP.Compat.ServerTime() + 30 })
+	end
+	local function lastAnswer()
+		Mock.Advance(2)
+		return lastOf(sentMessages(Mock), "SRESP")
+	end
+	local BIG, WAND = 19101, 19120   -- a big upgrade for the player, an item the character cannot use
+
+	it("auto: the addon sets the label from the verdict, the chips are locked and the hint says so", function()
+		open(BIG, "auto")
+		local c = card()
+		eq(c.data.labelMode, "auto"); eq(c.data.label, "BIG_UPGRADE"); eq(c.data.labelOrigin, "AUTO")
+		truthy(c.chips.BIG_UPGRADE:IsSelected())
+		for _, chip in pairs(c.chips) do falsy(chip:IsEnabled()) end
+		truthy(c.labelHint:IsShown()); eq(c.labelHint:GetText(), L("POPUP_LABEL_AUTO"))
+		c.chips.BIS:Click()
+		isNil(lastAnswer(), "a locked chip sends nothing")
+		seg().buttons.MS:Click()
+		local m = lastAnswer()
+		eq(m.rs, "MS"); eq(m.lb, "BIG_UPGRADE"); eq(m.lo, "AUTO")
+		seg().buttons.OS:Click()
+		m = lastAnswer()
+		eq(m.rs, "OS"); isNil(m.lb); isNil(m.lo)
+		falsy(card().chips.BIG_UPGRADE:IsSelected(), "off-spec carries no label")
+		seg().buttons.MS:Click()
+		m = lastAnswer()
+		eq(m.lb, "BIG_UPGRADE"); eq(m.lo, "AUTO", "main-spec again: the addon's label comes back")
+	end)
+
+	it("auto: an item on the wishlist is BiS, and one with nothing to say has no label", function()
+		FDCP.PersonalUpgrade.WishAdd(BIG)
+		open(BIG, "auto")
+		eq(card().data.label, "BIS")
+		seg().buttons.MS:Click()
+		eq(lastAnswer().lb, "BIS")
+	end)
+
+	it("auto: an item with no verdict to speak of is answered without a label", function()
+		open(WAND, "auto")
+		isNil(card().data.label)
+		truthy(card().labelHint:IsShown(), "the player still learns why the chips are locked")
+		seg().buttons.MS:Click()
+		local m = lastAnswer()
+		eq(m.rs, "MS"); isNil(m.lb); isNil(m.lo)
+	end)
+
+	it("suggest: the label is filled in beforehand and goes with the main-spec answer as the addon's", function()
+		open(BIG, "suggest")
+		local c = card()
+		eq(c.data.label, "BIG_UPGRADE"); truthy(c.chips.BIG_UPGRADE:IsSelected())
+		for _, chip in pairs(c.chips) do truthy(chip:IsEnabled()) end
+		eq(c.labelHint:GetText(), L("POPUP_LABEL_SUGGEST"))
+		Mock.Advance(2)
+		isNil(lastOf(sentMessages(Mock), "SRESP"), "a suggestion is not an answer: nothing is sent by itself")
+		seg().buttons.MS:Click()
+		local m = lastAnswer()
+		eq(m.rs, "MS"); eq(m.lb, "BIG_UPGRADE"); eq(m.lo, "AUTO")
+	end)
+
+	it("suggest: another label is a change, the same one is not, clearing it is final", function()
+		open(BIG, "suggest")
+		card().chips.SITUATIONAL:Click()
+		local m = lastAnswer()
+		eq(m.rs, "MS"); eq(m.lb, "SITUATIONAL"); eq(m.lo, "CHANGED")
+		truthy(card().chips.SITUATIONAL:IsSelected()); falsy(card().chips.BIG_UPGRADE:IsSelected())
+		card().chips.BIG_UPGRADE:Click()
+		m = lastAnswer()
+		eq(m.lb, "BIG_UPGRADE"); eq(m.lo, "AUTO", "the player picked what the addon had suggested")
+		card().chips.BIG_UPGRADE:Click()
+		m = lastAnswer()
+		isNil(m.lb); isNil(m.lo)
+		falsy(card().chips.BIG_UPGRADE:IsSelected(), "taken off: the suggestion does not come back by itself")
+		seg().buttons.OS:Click()
+		seg().buttons.MS:Click()
+		m = lastAnswer()
+		eq(m.rs, "MS"); isNil(m.lb, "the player took the label off, and says no again")
+	end)
+
+	it("suggest: back to main-spec from off-spec brings the suggestion back if the player never touched it", function()
+		open(BIG, "suggest")
+		seg().buttons.OS:Click()
+		isNil(lastAnswer().lb)
+		seg().buttons.MS:Click()
+		local m = lastAnswer()
+		eq(m.lb, "BIG_UPGRADE"); eq(m.lo, "AUTO")
+	end)
+
+	it("suggest: with nothing to suggest the player's own pick is a plain choice", function()
+		open(WAND, "suggest")
+		isNil(card().data.label)
+		falsy(card().labelHint:IsShown())
+		card().chips.BIS:Click()
+		local m = lastAnswer()
+		eq(m.lb, "BIS"); eq(m.lo, "MANUAL")
+	end)
+
+	local function playersOwn(mode)
+		open(BIG, mode)
+		local c = card()
+		isNil(c.data.label); falsy(c.labelHint:IsShown())
+		for _, chip in pairs(c.chips) do truthy(chip:IsEnabled()) end
+		c.chips.SITUATIONAL:Click()
+		local m = lastAnswer()
+		eq(m.rs, "MS"); eq(m.lb, "SITUATIONAL"); eq(m.lo, "MANUAL")
+	end
+
+	it("manual: as before, the player's own", function() playersOwn("manual") end)
+
+	it("a master looter that says nothing (protocol 4 or less) leaves the label to the player too", function() playersOwn(nil) end)
+
+	it("a player who reloads gets the card back with the label and who chose it", function()
+		open(BIG, "suggest")
+		card().chips.SITUATIONAL:Click()
+		Mock.Advance(2)
+		local v = FDCP.Protocol.Session.view
+		eq(v.labelMode, "suggest")
+		local mine = FDCP.Protocol.Session:MyAnswer(1)
+		eq(mine.lb, "SITUATIONAL"); eq(mine.lo, "CHANGED")
+		P().draft = nil
+		P():Refresh()
+		eq(card().data.label, "SITUATIONAL"); eq(card().data.labelOrigin, "CHANGED")
+	end)
+
+	it("speaks Italian", function()
+		FDCP.Locale.SetActive("itIT")
+		open(BIG, "auto")
+		eq(card().labelHint:GetText(), "L'addon imposta questa etichetta dal tuo equipaggiamento e dalla tua lista BiS.")
+		eq(card().chips.BIG_UPGRADE.label:GetText(), "Upgrade grande")
 	end)
 end)
