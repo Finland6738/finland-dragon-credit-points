@@ -13,6 +13,7 @@
 - [[Upgrade Hints|Upgrade-Hints]]
 - [[Council|Council]]
 - [[History|History]]
+- [[Seasons|Seasons]]
 
 **Italiano**
 - [[Home|Home-it]]
@@ -29,3 +30,4 @@
 - [[Suggerimenti di upgrade|Upgrade-Hints-it]]
 - [[Council|Council-it]]
 - [[Storico|History-it]]
+- [[Season|Seasons-it]]

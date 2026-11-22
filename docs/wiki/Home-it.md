@@ -17,6 +17,7 @@
 | Aggiornare il sito della community dall'addon | [[Esportazione per il sito|Site-Export-it]] |
 | Vedere chi nel raid non ha l'addon e avvisarlo | [[Controllo dell'addon|Addon-Check-it]] |
 | Gestire il pool e condurre una serata di raid | [[Roster e Serate|Roster-and-Nights-it]] |
+| Aprire e chiudere una season (Guild Master), vedere quella corrente | [[Season|Seasons-it]] |
 | Leggere la tabella dei crediti e il tuo posto in fila | [[Tabella crediti|Credits-it]] |
 | Condurre una sessione di loot da master looter | [[Guida del master looter|Master-Looter-Guide-it]] |
 | Rispondere e rollare per un pezzo da raider | [[Rollare per il loot|Rolling-for-Loot-it]] |

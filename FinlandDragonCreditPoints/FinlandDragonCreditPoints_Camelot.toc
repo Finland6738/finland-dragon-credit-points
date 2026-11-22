@@ -66,6 +66,7 @@ App\PermissionService.lua
 App\NightController.lua
 App\RosterController.lua
 App\ProgressController.lua
+App\SeasonController.lua
 App\AddonCheck.lua
 App\AddonNotice.lua
 App\Announcer.lua
@@ -93,5 +94,6 @@ UI\Windows\MemberLootPopup.lua
 UI\Windows\Member.lua
 UI\Windows\Item.lua
 UI\Windows\History.lua
+UI\Windows\Season.lua
 UI\MainWindow.lua
 UI\Minimap.lua

@@ -17,6 +17,7 @@
 | Update the community site from the addon | [[Site Export|Site-Export]] |
 | See who in the raid lacks the addon and notify them | [[Addon Check|Addon-Check]] |
 | Manage the pool and run a raid night | [[Roster and Nights|Roster-and-Nights]] |
+| Open and close a season (Guild Master), see the current one | [[Seasons|Seasons]] |
 | Read the credits table and your place in the queue | [[Credits Table|Credits]] |
 | Run a loot session as the master looter | [[Master Looter Guide|Master-Looter-Guide]] |
 | Answer and roll for an item as a raider | [[Rolling for Loot|Rolling-for-Loot]] |
