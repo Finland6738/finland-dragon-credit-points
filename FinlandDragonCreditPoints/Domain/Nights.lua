@@ -288,8 +288,12 @@ function Nights.Compacted(L, season)
 	end
 	for _, rec in ipairs(c.payload.nights) do
 		if type(rec) == "table" and type(rec.n) == "string" then
-			out[rec.n] = { played = names(rec.p, {}), benched = names(rec.b, {}), bosses = counts(rec.bo, {}),
-				possible = counts(rec.po, {}) }
+			local bosses, possible = counts(rec.bo, {}), counts(rec.po, {})
+			-- a summary written since M7-5 leaves out a member whose possible kills equal the kills played
+			for name, n in pairs(bosses) do
+				if possible[name] == nil then possible[name] = n end
+			end
+			out[rec.n] = { played = names(rec.p, {}), benched = names(rec.b, {}), bosses = bosses, possible = possible }
 		end
 	end
 	c.nightsCache = out

@@ -107,7 +107,7 @@
 - Analysis: §11 (SavedVariables size, item cache)
 - Scope: a simulated long season (20 nights, 40 raiders, hundreds of awards) for ledger compute time, snapshot effectiveness, SavedVariables size and network budget; fixes where the budgets are exceeded.
 - Done when:
-  - [ ] Documented budgets hold in CI.
+  - [x] Documented budgets hold in CI.
 - Tests: `Tests/test_perf.lua`.
 - Docs: CHANGELOG.
 - Real client: load time and memory in game.

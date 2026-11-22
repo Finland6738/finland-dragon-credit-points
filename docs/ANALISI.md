@@ -1794,7 +1794,7 @@ regole (hanno la loro stringa e i preset); importare un profilo cambia quello in
 | Due officer che modificano insieme | Medio | Registro a eventi con autore: niente sovrascritture, solo eventi in più |
 | Addon modificato che manda dati falsi | Basso | Roll dal server; risposte accettate solo dal mittente stesso; registro accettato solo da ranghi abilitati |
 | Cache oggetti vuota (`GetItemInfo` restituisce nil) | Basso | `ItemCache` con attesa di `ITEM_DATA_LOAD_RESULT` |
-| SavedVariables troppo grandi in una season lunga | Basso | Snapshot e compattazione del registro a fine season, archivio esportabile (M6-7: le formazioni di una season chiusa; dimensione stimata in `/fdcp debug`) |
+| SavedVariables troppo grandi in una season lunga | Basso | Snapshot e compattazione del registro a fine season, archivio esportabile (M6-7: le formazioni di una season chiusa; dimensione stimata in `/fdcp debug`; M7-5: budget verificati in CI da `Tests/test_perf.lua` su una season simulata di 20 serate e 40 raider, circa 250 KB stimati contro il limite di 1 MiB, compattazione al 89%) |
 
 ---
 

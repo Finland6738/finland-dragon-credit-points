@@ -220,6 +220,10 @@ function Backup.Summary(L, season)
 			for _, name in ipairs(k.bench) do possible[name] = (possible[name] or 0) + 1 end
 			for _, name in ipairs(k.absent) do possible[name] = (possible[name] or 0) + 1 end
 		end
+		-- a member whose possible kills equal the kills played is stored once (in `bo`): the reader fills `po` in (M7-5)
+		for name, n in pairs(possible) do
+			if bosses[name] == n then possible[name] = nil end
+		end
 		local function pairsList(map)
 			local names, out = {}, {}
 			for name in pairs(map) do names[#names + 1] = name end
