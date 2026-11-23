@@ -7,7 +7,7 @@ with the upgrade badge, the master looter's session, the council with its flags,
 with permissions, the season window and the Info page. Each scene is drawn twice, in English and in Italian, with the
 addon's own texts (Locale/enUS.lua and itIT.lua). Nothing has run in the WoW client yet, so every image carries a strip
 that says "mockup, not an in-game screenshot". Invented characters; original shapes and icons; the only picture is the
-guild logo of assets/. Never Blizzard art.
+guild logo and the NEBULA community logo of assets/. Never Blizzard art.
 
 The files are docs/specs/mockups/fdcp-<scene>-en.webp and fdcp-<scene>-it.webp (unique names, because the wiki
 publishes every image in one flat folder).
@@ -434,6 +434,7 @@ def season_scene():
 # ---- About / credits ----------------------------------------------------------------------------------------------------
 def about_scene():
     logo = "file:///" + LOGO.replace("\\", "/")
+    nebula = "file:///" + os.path.join(ROOT, "assets", "nebula-logo-dark.png").replace("\\", "/")   # the dark art: this scene is the Nebula theme
     links = [(t("Source code and downloads (GitHub)", "Codice e download (GitHub)"), "https://github.com/Finland6738/finland-dragon-credit-points"),
              (t("Report a bug or suggest something", "Segnala un errore o proponi qualcosa"), "https://github.com/Finland6738/finland-dragon-credit-points/issues"),
              (t("The NEBULA community site", "Il sito della community NEBULA"), "https://nebula-community.github.io/giochi/wow-forever/"),
@@ -441,7 +442,7 @@ def about_scene():
     lb = "".join(f'<div class="lbox"><span class="l">{a}</span><span class="u">{b}</span></div>' for a, b in links)
     left = f"""<div class="card" style="padding:20px;display:flex;flex-direction:column;gap:12px;flex:1.1">
 <div class="row" style="gap:14px"><img src="{logo}" alt="" style="width:56px;height:56px;border-radius:50%;box-shadow:0 0 18px var(--glow-accent)">
-<div><div style="font:600 18px/1.1 var(--display);letter-spacing:.1em;text-transform:uppercase">Finland Dragon Credit Points</div><div class="mono dim" style="margin-top:6px">{t("Version 1.0.0", "Versione 1.0.0")}</div></div></div>
+<div><div style="font:600 18px/1.1 var(--display);letter-spacing:.1em;text-transform:uppercase">Finland Dragon Credit Points</div><div class="mono dim" style="margin-top:6px">{t("Version 1.0.0", "Versione 1.0.0")}</div></div><img src="{nebula}" alt="NEBULA" style="margin-left:auto;width:104px;height:104px;object-fit:contain"></div>
 <div>{t("Conceived and made by <b>Finland</b> for the Italian guild <b>NEBULA</b>.", "Ideato e realizzato da <b>Finland</b> per la gilda italiana <b>NEBULA</b>.")}</div>
 <div class="dim" style="font-size:13px">{t("It runs the guild's loot by credits: every raid night, every drop and every award is written in a ledger the whole guild can check, and the credits are always computed from it.",
                                          "Gestisce il loot della gilda a crediti: ogni serata di raid, ogni drop e ogni assegnazione finiscono in un registro che tutta la gilda può controllare, e i crediti si calcolano sempre da lì.")}</div>

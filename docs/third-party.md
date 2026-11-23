@@ -32,6 +32,15 @@ The rounded rectangles, rings, shadows, glows, pill, circle and radial fall-off 
 Made from `assets/logo-source.webp`, the guild's own logo, supplied by the repository owner as the addon's emblem. The
 GPL-3.0 of the code does not by itself grant a right to use the logo for another purpose.
 
+## The NEBULA community logo (`Media/nebula_dark_256.tga`, `nebula_light_256.tga`, `assets/nebula-logo-*.png`)
+
+The logo of the NEBULA community, in a dark-theme version (orange-magenta-purple swirl, white word) and a light-theme
+version (blue-green swirl, black word), supplied by the repository owner and used with the permission of the community
+owner. It is shown in the credits only: the Info page (dark art on the Nebula and Drago themes, light art on Aurora),
+the README, the manual and the CurseForge page. The textures are made from `assets/nebula-logo-dark.png` and
+`assets/nebula-logo-light.png` by `tools/make_media.py` without recolouring. As with the guild logo, the GPL-3.0 of the
+code does not by itself grant a right to use it for another purpose.
+
 ## Game art
 
 No Blizzard artwork is copied into the repository. The Progress tab shows the Encounter Journal's own image of a raid

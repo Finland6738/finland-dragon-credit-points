@@ -280,7 +280,7 @@ describe("assets table", function()
 			end
 			if t.slice then truthy(t.slice * 2 <= math.max(t.w, t.h), key) end
 		end
-		eq(#A.AllPaths(), 15 + 6)
+		eq(#A.AllPaths(), 17 + 6)
 		local seen = {}
 		for _, p in ipairs(A.AllPaths()) do falsy(seen[p], "duplicate " .. p); seen[p] = true end
 	end)

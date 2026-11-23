@@ -57,7 +57,16 @@ Players can pick their own language with `/fdcp language` (it needs a `/reload`)
 
 ## Credits
 
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/nebula-logo-dark.png">
+    <img src="assets/nebula-logo-light.png" alt="NEBULA community logo" width="200">
+  </picture>
+</p>
+
 Conceived and made by **Finland** for the Italian guild **NEBULA**, whose community site is at <https://nebula-community.github.io/giochi/wow-forever/>. The addon is free and open source ([GPL-3.0](LICENSE), source at <https://github.com/Finland6738/finland-dragon-credit-points>). If it helps your guild and you would like to support it, you can buy a coffee on Ko-fi, <https://ko-fi.com/finland6738>; a bug report or an idea in the [issues](https://github.com/Finland6738/finland-dragon-credit-points/issues) helps just as much. The same page is in the game (**Settings › Info**, or `/fdcp about`) and in the manual ([About](docs/wiki/About.md)).
+
+The NEBULA community logo is used with the community owner's permission and is not covered by the code's licence (see [docs/third-party.md](docs/third-party.md)).
 
 ## Licence
 

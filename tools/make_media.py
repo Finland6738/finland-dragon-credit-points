@@ -13,6 +13,8 @@ file belongs to a theme. All files are 32-bit uncompressed TGA with power-of-two
   icons             256x256  16 px cells, 40 drawn (ICON_NAMES): chevron, check, cross, skull, shield, sword, info, search, ...
                              all drawn for this addon with Pillow shapes (no third-party artwork; docs/third-party.md)
   logo_256, logo_64          the guild logo from assets/logo-source.webp
+  nebula_dark_256, nebula_light_256   the NEBULA community logo with its word, from assets/nebula-logo-dark.png (dark
+                             themes) and assets/nebula-logo-light.png (Aurora): the credits on the Info page
 
 Usage: python -X utf8 tools/make_media.py   (needs Pillow; rewrites the files; the committed result is what ships)
 The list of files and their slice margins is mirrored in FinlandDragonCreditPoints/UI/Assets.lua, which
@@ -263,6 +265,9 @@ def main():
     logo = Image.open(os.path.join(ROOT, "assets", "logo-source.webp")).convert("RGBA")
     for size in (256, 64):
         made.append(save(logo.resize((size, size), Image.LANCZOS), f"logo_{size}"))
+    for variant in ("dark", "light"):
+        nebula = Image.open(os.path.join(ROOT, "assets", f"nebula-logo-{variant}.png")).convert("RGBA")
+        made.append(save(nebula.resize((256, 256), Image.LANCZOS), f"nebula_{variant}_256"))
     total = 0
     for p in made:
         n = os.path.getsize(p)

@@ -53,6 +53,32 @@ describe("the Info page", function()
 		contains(lines, "GPL-3.0")
 	end)
 
+	it("shows the NEBULA logo of the theme: dark art on Nebula and Drago, light art on Aurora, live on a change", function()
+		Mock.Slash("/fdcp about")
+		local logo = AW().card.nebulaLogo
+		truthy(logo, "the logo is on the page")
+		eq(AW().LogoKey("nebula"), "nebula_dark_256")
+		eq(AW().LogoKey("drago"), "nebula_dark_256")
+		eq(AW().LogoKey("aurora"), "nebula_light_256")
+		local function shows(name) contains(logo:GetTexture(), name .. ".tga") end
+		truthy(FDCP.Theme.Set("nebula")); shows("nebula_dark_256")
+		truthy(FDCP.Theme.Set("aurora")); shows("nebula_light_256")
+		truthy(FDCP.Theme.Set("drago")); shows("nebula_dark_256")
+		truthy(logo:IsShown()); truthy(not logo.fallback:IsShown())
+		FDCP.Theme.Set("nebula")
+	end)
+
+	it("shows the word NEBULA instead of the logo when the client cannot load the picture", function()
+		Mock.Slash("/fdcp about")
+		local logo = AW().card.nebulaLogo
+		Mock.missingTextures[FDCP.Assets.textures.nebula_dark_256.path] = true
+		AW().ApplyLogo(logo, "nebula")
+		truthy(not logo:IsShown()); truthy(logo.fallback:IsShown()); eq(logo.fallback:GetText(), "NEBULA")
+		Mock.missingTextures[FDCP.Assets.textures.nebula_dark_256.path] = nil
+		AW().ApplyLogo(logo, "nebula")
+		truthy(logo:IsShown()); truthy(not logo.fallback:IsShown())
+	end)
+
 	it("keeps the personal data out: the author is the public handle only", function()
 		for _, text in pairs(AW().Lines()) do
 			truthy(not text:find("@", 1, true), "no email in " .. text)

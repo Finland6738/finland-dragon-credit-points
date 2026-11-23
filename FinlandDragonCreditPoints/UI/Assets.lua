@@ -27,6 +27,9 @@ Assets.textures = {
 	icons      = { path = MEDIA .. "icons.tga",      w = 256, h = 256, cell = 16 },
 	logo_256   = { path = MEDIA .. "logo_256.tga",   w = 256, h = 256 },
 	logo_64    = { path = MEDIA .. "logo_64.tga",    w = 64,  h = 64 },
+	-- The NEBULA community logo (own colours, not tinted): the dark-theme art and the light-theme art (Info page).
+	nebula_dark_256  = { path = MEDIA .. "nebula_dark_256.tga",  w = 256, h = 256 },
+	nebula_light_256 = { path = MEDIA .. "nebula_light_256.tga", w = 256, h = 256 },
 }
 
 -- Cells of the icon sheet, in the order of tools/make_media.py (16 per row).

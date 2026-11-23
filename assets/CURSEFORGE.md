@@ -116,7 +116,7 @@ If a step does not work, the addon says so and the item waits in a list for a tr
 
 ## Credits and licence
 
-Conceived and made by **Finland** for the Italian guild **NEBULA**. Libraries: **Ace3**, **LibDataBroker-1.1** and **LibDBIcon-1.0**, each under its own free licence. Fonts: **Outfit**, **JetBrains Mono** and **Orbitron**, under the SIL Open Font License 1.1. The guild's logo is used with the owner's permission; the interface art is original. The full list is in `docs/third-party.md` of the repository.
+Conceived and made by **Finland** for the Italian guild **NEBULA**. Libraries: **Ace3**, **LibDataBroker-1.1** and **LibDBIcon-1.0**, each under its own free licence. Fonts: **Outfit**, **JetBrains Mono** and **Orbitron**, under the SIL Open Font License 1.1. The guild's logo and the NEBULA community logo are used with the owners' permission; the interface art is original. The full list is in `docs/third-party.md` of the repository.
 
 Finland Dragon Credit Points is free software under the **GNU General Public License v3.0**: you may use, study, change and share it under the terms of that licence. Full text: <https://www.gnu.org/licenses/gpl-3.0.html>
 
@@ -190,7 +190,7 @@ Se un passo non funziona, l'addon lo dice e l'oggetto aspetta in una lista per u
 
 ## Crediti e licenza
 
-Ideato e realizzato da **Finland** per la gilda italiana **NEBULA**. Librerie: **Ace3**, **LibDataBroker-1.1** e **LibDBIcon-1.0**, ciascuna con la propria licenza libera. Font: **Outfit**, **JetBrains Mono** e **Orbitron**, con licenza SIL Open Font License 1.1. Il logo della gilda è usato con il permesso del proprietario; la grafica dell'interfaccia è originale. L'elenco completo è in `docs/third-party.md` del repository.
+Ideato e realizzato da **Finland** per la gilda italiana **NEBULA**. Librerie: **Ace3**, **LibDataBroker-1.1** e **LibDBIcon-1.0**, ciascuna con la propria licenza libera. Font: **Outfit**, **JetBrains Mono** e **Orbitron**, con licenza SIL Open Font License 1.1. Il logo della gilda e il logo della community NEBULA sono usati con il permesso dei proprietari; la grafica dell'interfaccia è originale. L'elenco completo è in `docs/third-party.md` del repository.
 
 Finland Dragon Credit Points è software libero con licenza **GNU General Public License v3.0**: puoi usarlo, studiarlo, modificarlo e condividerlo alle condizioni di quella licenza. Testo completo: <https://www.gnu.org/licenses/gpl-3.0.html>
 <!-- END DESCRIPTION EN -->

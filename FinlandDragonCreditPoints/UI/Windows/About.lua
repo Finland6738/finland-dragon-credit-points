@@ -23,6 +23,23 @@ AboutWindow.LINKS = {
 	{ id = "kofi", url = "https://ko-fi.com/finland6738" },
 }
 
+-- The NEBULA community logo: the dark-theme art (own colours, white word) on Nebula and Drago, the light-theme art
+-- (black word) on Aurora. Returns the key of Assets.textures. The logo belongs to the community (docs/third-party.md).
+function AboutWindow.LogoKey(themeId)
+	local theme = Theme.themes[themeId or Theme.Current()]
+	if theme and theme.dark == false then return "nebula_light_256" end
+	return "nebula_dark_256"
+end
+
+-- Puts the logo of the current theme on `tex`. When the client cannot load the file, the texture is hidden and the word
+-- NEBULA takes its place (`tex.fallback`).
+function AboutWindow.ApplyLogo(tex, themeId)
+	local ok, loaded = pcall(tex.SetTexture, tex, Assets.textures[AboutWindow.LogoKey(themeId)].path)
+	local shown = ok and loaded ~= false and tex:GetTexture() ~= nil
+	tex:SetShown(shown)
+	if tex.fallback then tex.fallback:SetShown(not shown) end
+end
+
 -- The lines of the page, as text: used by the window, by `/fdcp about` and by the tests.
 -- locale-key: ABOUT_MADE_BY ABOUT_PURPOSE ABOUT_GUILD ABOUT_LICENSE ABOUT_SUPPORT ABOUT_THIRD ABOUT_DISCLAIMER ABOUT_VERSION
 -- locale-key: ABOUT_LINK_REPO ABOUT_LINK_ISSUES ABOUT_LINK_SITE ABOUT_LINK_KOFI
@@ -60,6 +77,15 @@ function AboutWindow:Build(pane)
 		fs:SetJustifyV("TOP")
 		return fs
 	end
+	-- the NEBULA logo, top right; it follows the theme (dark art on dark themes, light art on Aurora)
+	local nebula = card:CreateTexture(nil, "ARTWORK")
+	nebula:SetSize(112, 112)
+	nebula:SetPoint("TOPRIGHT", card, "TOPRIGHT", -16, -16)
+	nebula.fallback = Theme.NewText(card, "H2", "text-2")
+	nebula.fallback:SetPoint("CENTER", nebula, "CENTER", 0, 0)
+	nebula.fallback:SetText(self.GUILD)
+	card.nebulaLogo = nebula
+	Theme.Call(nebula, function(tex, themeId) AboutWindow.ApplyLogo(tex, themeId) end)
 	card.title = Theme.NewText(card, "H2", "text-1")
 	card.title:SetPoint("TOPLEFT", logo, "TOPRIGHT", 14, -6)
 	card.version = text("Small", "text-3", card.title, -4)
@@ -67,6 +93,9 @@ function AboutWindow:Build(pane)
 	card.madeBy:SetPoint("TOPLEFT", logo, "BOTTOMLEFT", 0, -14)
 	card.purpose = text("Body", "text-2", card.madeBy)
 	card.guild = text("Body", "text-2", card.purpose)
+	for _, fs in ipairs({ card.madeBy, card.purpose, card.guild }) do   -- the text stops at the logo
+		fs:SetPoint("RIGHT", nebula, "LEFT", -16, 0)
+	end
 	card.support = text("Body", "text-2", card.guild, -10)
 	-- the copy boxes, two columns of two
 	card.links = {}
