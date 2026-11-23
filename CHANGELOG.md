@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-11-23
+
 ### Added
 
 - docs/feat: the NEBULA community logo in the credits (owner request of 2026-11-23). The two logos supplied by the owner (dark-theme art with the white word, light-theme art with the black word) are trimmed to 512 px in `assets/nebula-logo-dark.png` and `assets/nebula-logo-light.png` (not recoloured) and made into the 256 px textures `Media/nebula_dark_256.tga` and `nebula_light_256.tga` by `tools/make_media.py` (registered in `UI/Assets.lua`; +0.5 MB in the package). The **Info** page shows the logo top right, next to the NEBULA text: the dark art on Nebula and Drago, the light art on Aurora, switching live on a theme change through the Theme registry (`AboutWindow.LogoKey`, `AboutWindow.ApplyLogo`); if the client cannot load the picture the word NEBULA is shown instead. `README.md`, `README.it.md` and the wiki **About** (EN + IT) show it with `<picture>` and `prefers-color-scheme` (dark logo on dark, light on light); `tools/sync_wiki.py` now also publishes the images of HTML `src`/`srcset`; `docs/third-party.md` and the CurseForge credits say the logo is used with the community owner's permission and is not covered by the code's licence. The Info mockups (EN + IT) are redrawn with the logo. Tests: the logo per theme, live on a theme change, and the fallback word (`Tests/test_ui_about.lua`).

@@ -28,6 +28,10 @@ Apri **Impostazioni › Info**, oppure scrivi `/fdcp about` (`/fdcp about chat` 
 | Il sito della community NEBULA | <https://nebula-community.github.io/giochi/wow-forever/> |
 | Sostieni il progetto | La pagina Ko-fi, <https://ko-fi.com/finland6738> |
 
+## Versione
+
+**1.0.1** è la prima versione pubblicata: tutto l'addon (roster e serate, crediti, sessioni di loot, council, storico ed esportazione, impostazioni, tre temi, italiano e inglese) con il logo della community NEBULA nei crediti. È stato costruito e provato offline; le verifiche nel gioco vero sono nella checklist di rilascio del repository, quindi segnala ogni stranezza con una issue. L'elenco completo delle modifiche è nel [changelog](https://github.com/Finland6738/finland-dragon-credit-points/blob/main/CHANGELOG.md).
+
 ## Sostegno
 
 L'addon è gratuito. Se aiuta la tua gilda e ti va di sostenerlo, un caffè su Ko-fi è sempre gradito; anche una segnalazione o un'idea su GitHub aiutano molto.
