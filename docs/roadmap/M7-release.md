@@ -190,7 +190,7 @@
 - Analysis: §12 (M7 exit)
 - Scope: `docs/checklists/release.md` (every earlier checklist plus a full raid night), README status; the `v1.0.0` section and tag only after the owner's confirmation.
 - Done when:
-  - [ ] The checklist exists and is linked from both READMEs.
+  - [x] The checklist exists and is linked from both READMEs.
   - [ ] The owner confirms the release in game; `v1.0.0` is tagged. *(in game)*
 - Docs: checklist, README (EN + IT), CHANGELOG.
 - Real client: the whole checklist.
