@@ -106,6 +106,15 @@ Two flags help you and the council spot the cases the guild's rules say must be 
 - **Who sees them.** You always do. Besides you, the guild decides who sees the badges and the flags: the **council** (the preset: the rank with the *council member* permission, who then gets the read-only window even without being an officer), **all officers**, or **only the master looter**. Others see only the codes of the proposal, without names. The flags can be turned off by the guild.
 - **What they cannot know.** A raider who never answers sends no badge, so a silent player is flagged only if their addon has already sent one. The badge is computed by the player's own addon from colour and item level (see [[Upgrade Hints|Upgrade-Hints]]).
 
+## Possible roll cheating
+
+Besides the two council flags, the addon raises **Possible cheating** (*Cheating?* in the Notes column) when a raider's addon reports one of the guild's four cases (see [Loot Rules](Loot-Rules.md#roll-cheating)): gear swapped for a lower item level after the fight, a piece taken off, a pass on a medium or major main-spec upgrade (a pass on a major one is the *Upgrade ignored* flag and counts as this case), or an off-spec piece that hides the upgrade. The line under the candidates names the player and the evidence: *Possible cheating, piece taken off: Bryn wore Helm of Embers (ilvl 226) in the fight, the slot is empty at the roll.*
+
+- **Penalize +2.** The button appears in the session window and on the Council page for the first flag not yet penalized. The first click asks *Confirm +2 to Bryn?*; a second click within five seconds writes the penalty. Nothing is written on the first click. With the Guild Master's automatic penalties on, your addon writes it by itself when the proposal is made.
+- **It never changes the winner**, and an automatic award waits for you, like the other flags.
+- **Inspection.** When the flagged player is in range, your addon inspects them (one at a time, never in combat) and adds *the gear worn now matches* or *does NOT match what their addon reported*. The gear of the fight is only their addon's word: a modified addon could lie.
+- **Taking it back.** The penalty is a credit correction with the reason *Roll cheating*: cancel it from the Council page like any correction. It is never proposed again for the same case on the same item.
+
 ## The council: interventions and the vote
 
 **Who is on the council.** By default, the guild ranks with the *council member* permission (officers) who are **in the raid**. The guild may instead write an **explicit list of characters** in its rules: then the list replaces the rank (still only those in the raid, unless the guild turns the presence rule off). Type `/fdcp council` to see whether you are on it. The **Loot › Council** page does the same from the window, with buttons and dialogs: see [[Council|Council]].

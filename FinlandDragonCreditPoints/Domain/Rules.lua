@@ -17,8 +17,9 @@
 --   notice    Domain/Notice.lua { text, outdatedText, link, whisper, minutes }: the /raid notice (no addon)  §4.1 (M3-6)
 --   announce  Domain/Announce.lua { enabled, itemText, resultText, reason }: category, cost and result in /raid  §4 (M4-8)
 --   upgrade   Domain/UpgradeScore.lua { enabled, autoPass }: the upgrade badge of the popup  §5.1 (M5-2, M7-5c)
---   penalties Domain/Absence.lua { absence, autoApply }: the credits added for a missed official night and whether
---             they are written at the close without the officer's confirmation  §3.5, §6 (M7-5b)
+--   penalties Domain/Absence.lua { absence, cheat, autoApply }: the credits added for a missed official night, for roll
+--             cheating (Domain/Cheat.lua, M7-5d), and whether they are written without the officer's confirmation
+--             §3.5, §3.6, §6 (M7-5b, M7-5d)
 -- Retired (M7-5c, owner decision of 2026-11-22): the section `responses` (the label mode of M7-2b) and the stat-weight
 -- thresholds of `upgrade` (useStats, bigThreshold, smallThreshold, ilvlBigThreshold). Rules written before carry them:
 -- Rules.WithDefaults drops them on read, so an old CONFIG_CHANGED is still valid and the ledger is never rewritten.

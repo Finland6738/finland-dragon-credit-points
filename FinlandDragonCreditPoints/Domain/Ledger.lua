@@ -225,6 +225,9 @@ CHECKS.CREDITS_ADJUSTED = function(p)
 	if not isCode(p.reason) then return "reason" end
 	if p.night ~= nil and not Ledger.SplitId(p.night) then return "night" end   -- the absence penalty's night (M7-5b)
 	if p.cause ~= nil and not isCode(p.cause) then return "cause" end
+	-- the roll-cheating penalty's item and session (M7-5d)
+	if p.item ~= nil and (not isInt(p.item) or p.item <= 0) then return "item" end
+	if p.sid ~= nil and (type(p.sid) ~= "string" or p.sid == "" or #p.sid > 40) then return "sid" end
 end
 
 CHECKS.AWARD_VOIDED = function(p)

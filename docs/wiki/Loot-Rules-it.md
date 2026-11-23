@@ -12,6 +12,7 @@ L'addon fa i conti, il master looter decide. Queste sono le regole della gilda (
 - Meno crediti significa una posizione migliore: **vince chi ha meno crediti**, e il roll serve solo a sciogliere le parità.
 - Il roster è **dinamico**: si può entrare a season iniziata. Un nuovo arrivato parte con **i crediti del giocatore che ne ha meno** (fra i membri che hanno giocato almeno una serata), così non salta la fila e non parte nemmeno dietro all'ultimo. Il numero si scrive una volta e resta stabile.
 - **Saltare una serata ufficiale costa +1 credito** (vedi [Assenze](#assenze) più sotto).
+- **Imbrogliare sul tiro costa +2 crediti** (vedi [Imbrogli sul tiro](#imbrogli-sul-tiro) più sotto).
 
 ## Quanto costa un oggetto
 
@@ -150,6 +151,21 @@ Un membro del roster della season riceve **+1 credito** (vince chi ne ha meno, q
 
 Alla chiusura della serata l'addon elenca le penalità proposte e un officer le conferma con **un clic**; prima non si scrive nulla, a meno che il Guild Master non accenda *Scrivi le penalità di assenza alla chiusura, senza conferma*. Ogni penalità è una correzione dei crediti con il motivo *Assenza da una serata ufficiale*: si vede nel log e nell'audit, e un officer la può annullare come ogni correzione (i crediti tornano quelli di prima). Se il calendario non ha un evento raid per la serata, l'assente è penalizzato lo stesso (*assente, iscrizioni non note*). L'importo (1) e la conferma sono regole della gilda, in Impostazioni › Regole › Membri.
 
+## Imbrogli sul tiro
+
+Imbrogliare sul tiro costa **+2 crediti** (vince chi ha meno crediti, quindi è una penalità). La gilda considera imbroglio:
+
+- **cambiare equipaggiamento** per sembrare meno equipaggiato: il pezzo che indossi nello slot dell'oggetto quando rispondi ha un item level più basso di quello che avevi durante lo scontro col boss;
+- **togliersi un pezzo** per fingere di non averlo: lo slot era pieno durante lo scontro ed è vuoto quando rispondi;
+- **passare su un upgrade importante** (medio o grande per la tua spec principale) per aspettare il BiS;
+- **indossare un pezzo di valore di un'altra spec** (che non va bene per la spec principale dichiarata) così che l'oggetto sembri un upgrade piccolo, e poi non chiederlo a costo pieno.
+
+Il tuo addon confronta l'oggetto con l'equipaggiamento che avevi **durante lo scontro** (preso all'inizio dell'incontro) e manda quello che ha visto con la tua risposta. Il master looter e il council vedono una riga di **possibile imbroglio** con le prove (i pezzi e il loro item level). L'addon non decide mai da solo: guardano loro, e il master looter o un membro del council applica la penalità con **Penalizza +2** e un secondo clic per confermare. Se il Guild Master non accende le penalità automatiche, senza quella conferma non si scrive niente. Una segnalazione non cambia mai chi vince l'oggetto.
+
+Ogni penalità è una correzione dei crediti con il motivo *Imbroglio sul tiro*: si vede nel registro e nell'audit, e un officer può annullarla come ogni correzione (i crediti tornano com'erano). Lo stesso caso sullo stesso oggetto non si penalizza mai due volte. L'importo (2) è una regola della gilda, in Impostazioni › Regole › Membri (0 la spegne).
+
+**Cosa non può dimostrare.** Le prove le dà il tuo addon; un addon modificato potrebbe mentire. Quando sei a portata, l'addon del master looter ti ispeziona e dice se l'equipaggiamento che indossi **ora** corrisponde a quello dichiarato dal tuo addon; quello dello scontro così non si può controllare.
+
 ## Le parole nel gioco
 
 Il motore non scrive mai frasi: registra codici brevi, e l'addon li trasforma nelle frasi qui sotto nella tua lingua, così la proposta, il log e questo manuale dicono la stessa cosa. Il codice si vede nell'audit accanto alla frase.
@@ -182,6 +198,7 @@ Il motore non scrive mai frasi: registra codici brevi, e l'addon li trasforma ne
 | Code | Frase |
 |---|---|
 | `DISCARDED_ROLLS` | Alcuni roll sono stati scartati: controlla l'elenco. |
+| `CHEAT` | Possibile imbroglio sul tiro: controlla le prove prima di penalizzare. |
 | `COST_BY_COUNCIL` | Il costo lo decide il council. |
 | `NO_BANK_CHARACTER` | Non c'è un personaggio banca: scegli chi lo riceve. |
 | `NO_DISENCHANTER` | Non c'è un disincantatore: scegli chi lo riceve. |
@@ -259,6 +276,7 @@ Il motore non scrive mai frasi: registra codici brevi, e l'addon li trasforma ne
 | `PENALTY` | Una penalità decisa dal council. |
 | `BONUS` | Un bonus deciso dal council. |
 | `ABSENCE` | Assenza da una serata ufficiale. |
+| `CHEAT` | Imbroglio sul tiro. |
 
 Gli ultimi quattro, e alcuni degli altri, sono i motivi di un'assegnazione annullata o di una correzione dei crediti a mano.
 

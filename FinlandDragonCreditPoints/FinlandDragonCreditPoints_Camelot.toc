@@ -43,6 +43,7 @@ Domain\UpgradeScore.lua
 Domain\Flags.lua
 Domain\Council.lua
 Domain\Absence.lua
+Domain\Cheat.lua
 Domain\History.lua
 Domain\Export.lua
 Domain\SiteExport.lua
@@ -64,6 +65,7 @@ Adapters\Calendar.lua
 Adapters\ItemCache.lua
 Adapters\Inventory.lua
 Adapters\GearSnapshot.lua
+Adapters\InspectCheck.lua
 Adapters\LootSource.lua
 Adapters\RollListener.lua
 Adapters\MasterLoot.lua
@@ -85,6 +87,7 @@ App\UpgradeAdvisor.lua
 App\SessionController.lua
 App\SessionBoard.lua
 App\CouncilService.lua
+App\CheatService.lua
 App\LegendaryService.lua
 App\BankService.lua
 App\PopupBoard.lua

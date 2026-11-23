@@ -151,6 +151,27 @@ function CouncilWindow:BuildTable(root)
 	c.correct = Widgets.Button(c, { text = L["ML_CORRECT"], style = "secondary", width = 100, height = 36,
 		onClick = function() CouncilWindow:OnIntervene("correct") end })
 	c.correct:SetPoint("LEFT", c.modify, "RIGHT", 8, 0)
+	c.penalize = Widgets.Button(c, { text = "", style = "secondary", width = 150, height = 36,
+		onClick = function() CouncilWindow:OnPenalize() end })   -- possible roll cheating (M7-5d)
+	c.penalize:SetPoint("LEFT", c.correct, "RIGHT", 8, 0)
+	c.penalize:Hide()
+end
+
+-- The "Penalize +2" button (M7-5d, App/CheatService.lua): one click arms, the second writes the penalty.
+-- locale-key: ML_PENALIZED
+function CouncilWindow:OnPenalize()
+	local CheatS = ns.CheatService
+	local board = SC() and SC():Board(ML() and ML().selected or nil)
+	local target = board and board.cheat
+	if not CheatS or not target then return end
+	local r, code = CheatS:Click(target)
+	if r == "ARMED" then
+		self.card.penalize:SetLabel(CheatS:Label(target))
+		return
+	end
+	if not r then return self:SetMessage(L["COUNCIL_REFUSED"]:format(SB().ErrorText(code)), true) end
+	self:SetMessage(L["ML_PENALIZED"]:format(tostring(target.amount or CheatS:Amount()), short(target.member)))
+	self:Refresh()
 end
 
 -- A table whose rows can be selected: the selected one carries an accent bar.
@@ -322,6 +343,7 @@ local function paintTable(self, board)
 		c.choices:SetChoices({})
 		c.voteHint:SetText("")
 		for _, b in ipairs({ c.vote, c.modify, c.correct }) do enable(b, false) end
+		c.penalize:Hide()
 		return
 	end
 	local sel = board.selectedItem
@@ -345,6 +367,10 @@ local function paintTable(self, board)
 	Theme.Text(c.flags, #lines > 0 and "warn" or "text-3")
 	if #lines == 0 and sel then c.flags:SetText(L["COUNCIL_FLAGS_NONE"]) end
 	c.votes:SetText(SB().VoteText(board.votes))
+	local CheatS = ns.CheatService
+	local cheat = CheatS and board.cheat and (board.cheat.amount or 0) > 0 and CheatS:CanPenalize() and board.cheat or nil
+	c.penalize:SetShown(cheat ~= nil)
+	if cheat then c.penalize:SetLabel(CheatS:Label(cheat)) end
 	-- the vote
 	local open = cs:CanVote(board)
 	Theme.GlowShow(c.glow, open)

@@ -12,6 +12,7 @@ The addon does the arithmetic, the master looter decides. These are the guild's 
 - Fewer credits means a better position: **the player with the fewest credits wins**, and the roll only breaks ties.
 - The roster is **dynamic**: a player can join in the middle of a season. A newly arrived member starts with **the credits of the player who has the fewest** (among the members who played at least one night), so they do not jump the queue and do not start behind the last in line either. The number is written down once and stays stable.
 - **Missing an official night costs +1 credit** (see [Absences](#absences) below).
+- **Cheating on a roll costs +2 credits** (see [Roll cheating](#roll-cheating) below).
 
 ## What an item costs
 
@@ -150,6 +151,21 @@ A member of the season's roster gets **+1 credit** (remember: fewer credits wins
 
 At the close of the night the addon lists the proposed penalties and an officer confirms them with **one click**; nothing is written before that, unless the Guild Master turns on *Write the absence penalties at the close, without confirmation*. Each penalty is a credit correction with the reason *Absence from an official night*: it shows in the log and in the audit, and an officer can cancel it like any correction (the credits go back to what they were). When the calendar has no raid event for the night, an absent member is still penalized (*absent, sign-ups unknown*). The amount (1) and the confirmation are guild rules, under Settings › Rules › Members.
 
+## Roll cheating
+
+Cheating on a roll costs **+2 credits** (fewer credits wins, so this is a penalty). The guild counts as cheating:
+
+- **swapping gear** to look under-geared: the piece you wear in the item's slot when you answer has a lower item level than the one you wore during the boss fight;
+- **taking a piece off** to pretend you lack it: the slot was filled during the fight and is empty when you answer;
+- **passing on an important upgrade** (a medium or major upgrade for your main spec) to wait for your best-in-slot;
+- **wearing a valuable piece of another spec** (one that does not fit your declared main spec) so that the item looks like a small upgrade, and then not asking for it at full cost.
+
+Your addon compares the item with the gear you wore **during the fight** (taken at the start of the encounter) and sends what it saw with your answer. The master looter and the council see a **possible cheating** line with the evidence (the pieces and their item levels). The addon never decides by itself: they look, and the master looter or a council member applies the penalty with **Penalize +2** and a second click to confirm. Unless the Guild Master turns on the automatic penalties, nothing is written without that confirmation. A flag never changes who wins the item.
+
+Each penalty is a credit correction with the reason *Roll cheating*: it shows in the log and in the audit, and an officer can cancel it like any correction (the credits go back). The same case on the same item is never penalized twice. The amount (2) is a guild rule, under Settings › Rules › Members (0 turns it off).
+
+**What it cannot prove.** The evidence comes from your own addon; a modified addon could lie. When you are in range, the master looter's addon inspects you and says whether the gear you wear **now** matches what your addon reported; the gear of the fight cannot be checked that way.
+
 ## Words in the game
 
 The engine never writes sentences: it records short codes, and the addon turns them into the sentences below in your language, so the proposal, the log and this manual say the same thing. The code is shown in the audit next to the sentence.
@@ -182,6 +198,7 @@ The engine never writes sentences: it records short codes, and the addon turns t
 | Code | Sentence |
 |---|---|
 | `DISCARDED_ROLLS` | Some rolls were discarded: check the list. |
+| `CHEAT` | Possible roll cheating: check the evidence before penalizing. |
 | `COST_BY_COUNCIL` | The council sets the cost. |
 | `NO_BANK_CHARACTER` | No bank character is set: choose who receives it. |
 | `NO_DISENCHANTER` | No disenchanter is set: choose who receives it. |
@@ -259,6 +276,7 @@ The engine never writes sentences: it records short codes, and the addon turns t
 | `PENALTY` | A penalty decided by the council. |
 | `BONUS` | A bonus decided by the council. |
 | `ABSENCE` | Absence from an official night. |
+| `CHEAT` | Roll cheating. |
 
 The last four, and some of the others, are the reasons of a cancelled award or of a manual credit correction.
 

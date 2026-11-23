@@ -982,6 +982,40 @@ function Item.Request(itemID)
 end
 
 ---------------------------------------------------------------------------------------------------------------------
+-- Inspection (M7-5d: the master looter's cross-check of a flagged player's gear; checked against the Forever API dump:
+-- CanInspect, NotifyInspect, ClearInspectPlayer, CheckInteractDistance, GetInventoryItemLink, event INSPECT_READY)
+---------------------------------------------------------------------------------------------------------------------
+local Inspect = {}
+Compat.Inspect = Inspect
+
+-- May this client inspect `unit` now (in range, not in combat lockdown for the call)? false when unknown or secret.
+function Inspect.Can(unit)
+	if type(unit) ~= "string" then return false end
+	local can = first("CanInspect", unit)
+	if can ~= true then return false end
+	local near, state = first("CheckInteractDistance", unit, 1)
+	if state == AVAILABLE and not near then return false end
+	return true
+end
+
+-- Asks the server for `unit`'s gear; INSPECT_READY(guid) comes when it has. Returns the call state.
+function Inspect.Notify(unit)
+	local _, state = first("NotifyInspect", unit)
+	return state
+end
+
+function Inspect.Clear()
+	local _, state = first("ClearInspectPlayer")
+	return state
+end
+
+-- The link of what an inspected unit wears in `slot`, or nil (empty, not loaded or secret).
+function Inspect.Link(unit, slot)
+	if type(unit) ~= "string" or type(slot) ~= "number" then return nil end
+	return str((first("GetInventoryItemLink", unit, slot)))
+end
+
+---------------------------------------------------------------------------------------------------------------------
 -- Specializations (spike S6)
 ---------------------------------------------------------------------------------------------------------------------
 local Spec = {}
@@ -1223,6 +1257,10 @@ local CAPS = {
 	{ "item.C_Item.GetItemSpecInfo", "item", "C_Item.GetItemSpecInfo", note = "[verify S5c]" },
 	{ "item.C_Item.RequestLoadItemDataByID", "item", "C_Item.RequestLoadItemDataByID" },
 	{ "item.GetInventoryItemLink", "item", "GetInventoryItemLink" },
+	{ "inspect.CanInspect", "inspect", "CanInspect", note = "[verify] M7-5d cross-check" },
+	{ "inspect.NotifyInspect", "inspect", "NotifyInspect", note = "[verify] M7-5d cross-check" },
+	{ "inspect.ClearInspectPlayer", "inspect", "ClearInspectPlayer" },
+	{ "inspect.CheckInteractDistance", "inspect", "CheckInteractDistance" },
 	{ "spec.GetSpecialization", "spec", "C_SpecializationInfo.GetSpecialization", call = true, note = "[verify S6a]" },
 	{ "spec.GetSpecializationInfo", "spec", "C_SpecializationInfo.GetSpecializationInfo", note = "[verify S6a]" },
 	{ "spec.GetNumSpecializations", "spec", "GetNumSpecializations", call = true },

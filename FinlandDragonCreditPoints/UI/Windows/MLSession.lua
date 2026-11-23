@@ -379,6 +379,27 @@ function MLSession:BuildSession(pane)
 		MLSession:OnRemove()
 	end })
 	s.remove:SetPoint("LEFT", s.correct, "RIGHT", 8, 0)
+	-- possible roll cheating (M7-5d): one click arms, the second writes the penalty
+	s.penalize = Widgets.Button(card, { text = "", style = "secondary", width = 170, height = 36, onClick = function()
+		MLSession:OnPenalize()
+	end })
+	s.penalize:SetPoint("LEFT", s.remove, "RIGHT", 8, 0)
+end
+
+-- The "Penalize +2" button of a possible roll cheating (M7-5d, App/CheatService.lua).
+-- locale-key: ML_PENALIZED
+function MLSession:OnPenalize()
+	local CS = ns.CheatService
+	local target = self.board and self.board.cheat
+	if not CS or not target then return end
+	local r, code = CS:Click(target)
+	if r == "ARMED" then
+		self.ui.penalize:SetLabel(CS:Label(target))
+		return
+	end
+	if not r then return self:SetMessage(SB().ErrorText(code), true) end
+	self:SetMessage(L["ML_PENALIZED"]:format(tostring(target.amount or CS:Amount()), (tostring(target.member):gsub("%-.*$", ""))))
+	self:Refresh()
 end
 
 -- The "to deliver" sub-tab (M4-7): the awarded items that have not reached their winner yet, how each one stands
@@ -558,6 +579,10 @@ local function paintButtons(self, board)
 	s.reject:SetShown(a.reject == true)
 	s.correct:SetShown(a.correct == true)
 	s.remove:SetShown(a.remove == true)
+	local CS = ns.CheatService
+	local cheat = CS and board.cheat and (board.cheat.amount or 0) > 0 and CS:CanPenalize() and board.cheat or nil
+	s.penalize:SetShown(cheat ~= nil)
+	if cheat then s.penalize:SetLabel(CS:Label(cheat)) end
 	s.pause:SetShown(a.pause == true or a.resume == true)
 	s.pause:SetLabel(L[a.resume and "ML_RESUME" or "ML_PAUSE"])
 	s.finish:SetShown(a.finish == true and board.host)
@@ -679,7 +704,7 @@ function MLSession:Refresh()
 		s.empty:SetText(L["ML_NONE_HELP"])
 		for _, r in ipairs(s.rows) do r:Hide() end
 		s.card:Hide()
-		for _, b in ipairs({ s.pause, s.finish, s.notify, s.missing, s.main, s.modify, s.reject, s.correct, s.remove }) do b:Hide() end
+		for _, b in ipairs({ s.pause, s.finish, s.notify, s.missing, s.main, s.modify, s.reject, s.correct, s.remove, s.penalize }) do b:Hide() end
 		return
 	end
 	local status = ns.Reasons.Text("STATE", board.state)

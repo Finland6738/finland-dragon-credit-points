@@ -362,6 +362,17 @@ mostra a parole i rifiuti (rango, motivo, season, oggetto). Scelte fatte dove il
   gioco in Lua e non è nel dump delle API), la vista in sola lettura di un membro del council. Tutto è nella checklist
   `docs/checklists/M5.md`.
 
+**Imbrogli sul tiro (regola del proprietario del 2026-11-22, M7-5d).** Chi imbroglia sul tiro prende **+2 crediti** (vince chi ha
+meno crediti, quindi la penalità aggiunge). Sono imbrogli: (1) **cambiare equipaggiamento** per sembrare meno equipaggiato (al tiro
+l'item level del pezzo nello slot è più basso di quello indossato nello scontro); (2) **togliersi un pezzo** per fingere di non
+averlo (slot pieno nello scontro, vuoto al tiro); (3) **passare su un upgrade importante** (medio o grande per la spec principale)
+per aspettare il BiS, che estende l'"upgrade ignorato" di M5-4; (4) **indossare un pezzo di valore di un'altra spec** (non adatto
+alla MS1 dichiarata) per schivare un pezzo non BiS: il pezzo nello slot non va bene per la spec principale e nasconde un upgrade.
+L'addon **rileva e segnala** con le prove; **il ML o il council applicano il +2 con un clic** e una conferma (regola GM
+`penalties.cheat`, preset 2; `penalties.autoApply` di M7-5b, spento, lo scrive da solo). La penalità è un `CREDITS_ADJUSTED` con
+motivo `CHEAT` e il caso, passa dal cancello dei permessi, va nell'audit e si annulla. Le segnalazioni non cambiano mai il
+vincitore. Il come e il limite di fiducia sono in §5.2.
+
 ### 3.7 Leggendari
 
 `legendary.mode` configurabile:
@@ -1147,6 +1158,41 @@ può rollare e la fila, e restituisce codici (`UPGRADE_IGNORED`, `POSSIBLE_WASTE
   `ML_FLAG_IGNORED_SILENT`, `ML_FLAG_WASTE`, `ML_FLAG_SHORT_*` (colonna Note), inglese e italiano.
 - **Da verificare in gioco:** come stanno le righe delle segnalazioni nella striscia della finestra in un raid vero, e la
   finestra in sola lettura di un membro del council che non è officer.
+
+**Come è fatto (M7-5d).** Gli imbrogli sul tiro (§3.6) sono `Domain/Cheat.lua`, puro: riceve risposta, badge della MS1 e le
+**prove** e restituisce la segnalazione `CHEAT` con un `cause` (gruppo `CHEAT` di `Reasons`: `GEAR_SWAP`, `UNEQUIPPED`,
+`UPGRADE_PASSED`, `OFFSPEC_HIDE`) e i dati che la sostengono, mai frasi. Scelte fatte (tutte reversibili):
+
+- **Le prove.** Le prepara l'addon del giocatore (`UpgradeAdvisor.Evidence`) e viaggiano nel campo facoltativo `cg` dell'`SRESP`
+  (un client più vecchio lo ignora, il protocollo resta 7): per ogni slot con cui il pezzo è stato confrontato (al massimo 3)
+  l'item level nello scontro (`f`, dallo snapshot di M7-5c; 0 = vuoto), quello al momento della risposta (`n`), gli id dei pezzi e
+  `x = 1` se il pezzo confrontato non va bene per la MS1 (`UpgradeScore.CanUse` con le spec del pezzo); più `h`, il badge della MS1
+  calcolato **senza** quei pezzi. Il ML le ricontrolla campo per campo (`Cheat.ReadGear`): una prova danneggiata si scarta e la
+  risposta conta lo stesso.
+- **I quattro casi.** `GEAR_SWAP`: `0 < n < f`. `UNEQUIPPED`: `f > 0` e `n = 0`. Senza snapshot (`f` assente) i due casi non si
+  dicono. `UPGRADE_PASSED`: un **passo** (non una mancata risposta, mai imbroglio) su un badge MS1 medio o grande e usabile; il
+  passo su un *grande* resta l'`UPGRADE_IGNORED` di M5-4 (una riga sola) e vale come questo caso (`Flags.CheatCause`).
+  `OFFSPEC_HIDE`: un pezzo `x`, il badge mostrato è piccolo / nessuno / non confrontabile, quello senza il pezzo (`h`) è medio o
+  grande, e il giocatore non ha chiesto il pezzo a costo pieno (passo o off-spec). Una segnalazione per caso e per giocatore.
+- **Nella sessione.** `SessionFSM.Flags` passa le prove a `Flags.Evaluate`; il codice `CHEAT` va in `proposal.flags` (quindi
+  nell'`ITEM_AWARDED` e nell'`SPROP`) e blocca l'assegnazione `auto` come le altre segnalazioni; **non cambia il vincitore, il costo
+  o la fila**. Si spegne con `council.flags`.
+- **La penalità.** Nella finestra Sessione del ML e nella pagina Council: la riga con le prove (*"Possibile imbroglio, pezzo tolto:
+  Bryn aveva Elmo di Brace (ilvl 226) nello scontro, lo slot è vuoto al tiro."*) e **Penalizza +2**: il primo clic chiede *"Confermi
+  +2 a Bryn?"* (5 secondi), il secondo scrive `CREDITS_ADJUSTED{member, delta = penalties.cheat, reason = CHEAT, cause, item, sid}`
+  con `Council.Adjust` e il cancello dei permessi (`night.run` durante una serata, `credits.adjust` fuori). Lo stesso caso sullo
+  stesso pezzo della stessa sessione non si scrive mai due volte (anche annullato: l'officer l'ha tolto apposta). Con
+  `penalties.autoApply` il client del ML lo scrive da solo alla proposta. Si annulla con `AWARD_VOIDED` come ogni correzione.
+  Regola `penalties.cheat` (0–100, preset 2; 0 negli altri preset, come l'assenza).
+- **Limite di fiducia.** Le prove le dà l'addon del giocatore: un client modificato può mentire (o non mandarle). Le segnalazioni
+  sono indizi per il ML e il council, non verdetti. Dove si può, il client del ML **ispeziona** il giocatore segnalato quando è a
+  portata (`Adapters/InspectCheck.lua`: `CanInspect`, `NotifyInspect`, `GetInventoryItemLink` sull'unità, `INSPECT_READY`, tutto
+  da `Core/Compat.lua`, uno ogni 2 secondi, mai in combattimento o nel blocco della chat) e dice se l'equipaggiamento indossato
+  **ora** corrisponde a quello dichiarato (`Cheat.CrossCheck`). Quello dello scontro resta la parola del giocatore.
+- **Parole.** `RC_FLAG_CHEAT`, `RC_CORRECTION_CHEAT`, `RC_CHEAT_*`, `ML_CHEAT_*`, `ML_FLAG_SHORT_CHEAT`, `ML_PENALIZE*`,
+  `RULEF_PENALTY_CHEAT`, inglese e italiano.
+- **Da verificare in gioco:** le prove dopo un vero cambio d'equipaggiamento dopo un boss, l'ispezione in un raid (portata,
+  tempi di `INSPECT_READY`), il pulsante nelle due finestre.
 
 ### 5.3 Limiti da dichiarare al raid
 

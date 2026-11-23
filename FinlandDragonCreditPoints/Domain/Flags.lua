@@ -8,6 +8,10 @@
 --                    same tier has a major one: "spreco palese". When both carry an item-level gain, the other's must be at
 --                    least `wasteRatio` times the first's.
 --
+--   CHEAT            possible roll cheating (M7-5d, Domain/Cheat.lua): a `cause` says which of the four cases
+--                    (GEAR_SWAP, UNEQUIPPED, UPGRADE_PASSED, OFFSPEC_HIDE) and the flag carries the evidence. The
+--                    master looter or the council may add the `penalties.cheat` credits with one click.
+--
 -- Both look only at the main-spec badge (`m` of the SRESP `vd`), never at the off-spec one. A badge is the one the
 -- raider's client computed (Domain/UpgradeScore.lua: the quality tiers of M7-5c against the gear of the fight). A piece
 -- the player cannot use never counts. Flags inform the master looter and the council: they never change the winner, the
@@ -26,7 +30,7 @@ ns.Flags, ns.modules.Flags = Flags, Flags
 local type, pairs, ipairs, tostring, sort = type, pairs, ipairs, tostring, table.sort
 local huge = math.huge
 
-Flags.CODES = { "UPGRADE_IGNORED", "POSSIBLE_WASTE" }
+Flags.CODES = { "UPGRADE_IGNORED", "CHEAT", "POSSIBLE_WASTE" }
 Flags.VISIBILITY = { ml = true, council = true, officers = true }
 Flags.RATIO_MIN, Flags.RATIO_MAX = 1, 100
 
@@ -110,12 +114,13 @@ end
 --   verdicts  = {[p] = { m, o? }}  the wire verdicts of the SRESP (only `m` is read),
 --   main      = {[code] = true}    the responses of the full-cost tier (MS in the preset),
 --   players   = {[p] = true} | nil who may count (present with the addon); nil = everybody,
+--   gear      = {[p] = cg}        the roll-cheating evidence of the SRESP (Domain/Cheat.lua ReadGear), optional,
 --   credits, rolls, head          for the line (Flags.Line); `decided` = true when the rules have already chosen
 --                                 (`head` is then the rules' winner, or nil / outside the line when the item went
 --                                 elsewhere: no waste is said then),
 -- }, council = the rules' `council` section (the second argument, the `upgrade` section, is not read since M7-5c).
--- Returns a list of { code, player, other?, response?, ilvl?, otherIlvl? }: UPGRADE_IGNORED by player name, then
--- POSSIBLE_WASTE. Empty when `council.flags` is false.
+-- Returns a list of { code, player, other?, response?, ilvl?, otherIlvl? }: UPGRADE_IGNORED by player name, then CHEAT
+-- (by player, then cause; with the fields of Cheat.Detect), then POSSIBLE_WASTE. Empty when `council.flags` is false.
 function Flags.Evaluate(input, _, council)
 	local out = {}
 	if type(input) ~= "table" then return out end
@@ -139,6 +144,17 @@ function Flags.Evaluate(input, _, council)
 	end
 	sort(ignored, function(a, b) return a.player < b.player end)
 	for _, f in ipairs(ignored) do out[#out + 1] = f end
+
+	-- Possible roll cheating (M7-5d): the four cases of Domain/Cheat.lua. A pass on a major upgrade is already the
+	-- UPGRADE_IGNORED above (Flags.CheatCause makes it the case UPGRADE_PASSED): no second flag for it.
+	if ns.Cheat then
+		local passed = {}
+		for _, f in ipairs(ignored) do if f.response == "PASS" then passed[f.player] = true end end
+		for _, f in ipairs(ns.Cheat.Evaluate({ responses = responses, verdicts = verdicts, gear = input.gear,
+			main = input.main, players = players })) do
+			if not (f.cause == "UPGRADE_PASSED" and passed[f.player]) then out[#out + 1] = f end
+		end
+	end
 
 	-- Possible waste: the first in line has little or nothing, another main-spec candidate a big upgrade.
 	local line = Flags.Line({ responses = responses, main = input.main or {}, players = players, credits = input.credits,
@@ -168,6 +184,15 @@ function Flags.Evaluate(input, _, council)
 		end
 	end
 	return out
+end
+
+-- The roll-cheating case a flag stands for (M7-5d), or nil: a CHEAT flag's cause, and UPGRADE_PASSED for an
+-- UPGRADE_IGNORED that is a pass (a missing answer is never cheating).
+function Flags.CheatCause(f)
+	if type(f) ~= "table" then return nil end
+	if f.code == "CHEAT" then return f.cause end
+	if f.code == "UPGRADE_IGNORED" and f.response == "PASS" then return "UPGRADE_PASSED" end
+	return nil
 end
 
 -- The distinct codes of a list of flags, in order.

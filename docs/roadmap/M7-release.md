@@ -145,6 +145,21 @@
 - Real client: the quality and item level of worn links, `ENCOUNTER_START` and the snapshot, the popup's buttons.
 - Suggested model/effort: `opus` / high
 
+### M7-5d — Roll-cheating detection and the +2 penalty
+- Branch: `step/m7-5d-cheat-penalty`
+- Depends on: M7-5c, M7-5b, M7-2d, M5-4, M5-5
+- Analysis: §3.6 ("Imbrogli sul tiro"), §5.2 ("Come è fatto (M7-5d)", with the trust limit)
+- Scope: owner rule of 2026-11-22: **roll cheating is punished with +2 credits** (fewest credits wins, so a penalty adds). The addon **detects and flags** four cases with evidence, from the gear snapshot of the fight (M7-5c) against the gear worn when the response is sent: **gear swapped** for a lower item level (`GEAR_SWAP`), **a piece taken off** (`UNEQUIPPED`), **a pass on a medium or major main-spec upgrade** (`UPGRADE_PASSED`, extending M5-4's `UPGRADE_IGNORED`, which keeps flagging a pass on a major one and counts as this case), **an off-spec piece that hides the upgrade** (`OFFSPEC_HIDE`: the compared piece does not fit the declared MS1 and without it the item would be a medium or major upgrade, and the player did not ask for it at full cost). The evidence travels in the optional `cg` of SRESP (an older client ignores it); `Domain/Cheat.lua` detects, `Domain/Flags.lua` puts the `CHEAT` flag (with its cause) on the proposal; flags never change the winner (an `auto` award waits for the master looter). The master looter or a council member applies the penalty with **Penalize +2** and a second click to confirm (GM rules `penalties.cheat`, default 2, 0 in the other presets; `penalties.autoApply` from M7-5b, default off): a `CREDITS_ADJUSTED{reason = CHEAT, cause, item, sid}` through the permission gate, audited, voidable, never written twice for the same case, item and session. The master looter's client inspects a flagged player in range (`Adapters/InspectCheck.lua`, guarded and throttled through `Core/Compat.lua`) and says whether the gear worn now matches what their addon reported. Trust limit: the evidence comes from the player's own addon; only the gear worn now can be cross-checked.
+- Done when:
+  - [x] Each of the four cases is flagged with its sub-code; an honest player is not flagged; a pass on a major upgrade stays `UPGRADE_IGNORED` and counts as `UPGRADE_PASSED` (offline tests).
+  - [x] The penalty is written only on the confirmation (second click), by itself only with `autoApply`; a duplicate is refused; a void restores the credits; a typed `/roll` is still discarded as `NOT_FROM_BUTTON` (M7-2d).
+  - [x] The ML session window and the Council page show the evidence and **Penalize +2**; words through locale keys (enUS + itIT) and `Domain/Reasons.lua` (groups `FLAG`, `CORRECTION`, `CHEAT`).
+  - [ ] In the game: the evidence of a real swap after a kill, `CanInspect` / `NotifyInspect` / `INSPECT_READY` in a raid, the button in both windows. *(in game)*
+- Tests: `Tests/test_cheat.lua`; `Tests/test_absence.lua` (the `penalties` section).
+- Docs: analysis §3.6, §5.2; wiki **Loot Rules**, **Master Looter Guide** (EN + IT); README; CHANGELOG.
+- Real client: the inspection API in a raid, the snapshot against the gear at the response.
+- Suggested model/effort: `opus` / high
+
 ### M7-6 — Packaging and the release workflow
 - Branch: `step/m7-6-packaging`
 - Depends on: M1-1

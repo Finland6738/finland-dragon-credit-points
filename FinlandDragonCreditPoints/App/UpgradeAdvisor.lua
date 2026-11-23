@@ -11,7 +11,8 @@
 --                      autoPass (every badge says "cannot use it" and the rules ask for the preselection),
 --                      snapshot (true: compared with the gear of the fight), band = { min, max } | nil,
 --                      equipped = { "item:..." } (the worn pieces the item was compared with),
---                      wire = { vd = { m = packed, o = packed | nil }, eq = { ... } } (what the response carries) },
+--                      wire = { vd = { m = packed, o = packed | nil }, eq = { ... }, cg = evidence | nil } (what the
+--                      response carries; cg = the roll-cheating evidence of M7-5d, Advisor.Evidence) },
 --                      or nil and a code: DISABLED (the rules turn the badge off), NO_CLASS, UNKNOWN, NOT_LOADED. The
 --                      answer is kept until the gear, the snapshot, the spec, the band, the ledger or the rules change; an
 --                      item whose data is not loaded is not kept (the popup asks for it and redraws).
@@ -135,6 +136,35 @@ local function wornLinks(ctx, results)
 	return out
 end
 
+-- The roll-cheating evidence of M7-5d (Domain/Cheat.lua ReadGear): for each slot the item was compared with, the item
+-- level in the fight (the snapshot; only when there is one) and now (0 = empty), the item ids, and x = 1 when the compared
+-- piece does not fit the main spec (Inventory.Piece with its specs, UpgradeScore.CanUse); then `h`, the main-spec badge
+-- without those pieces. A piece not loaded yet leaves its level out. nil when there is nothing to say.
+function Advisor.Evidence(ctx, piece, ms, opts)
+	local U, Cheat = ns.UpgradeScore, ns.Cheat
+	if not Cheat or type(ms) ~= "table" or type(ms.slots) ~= "table" or #ms.slots == 0 then return nil end
+	local nowEq = ctx.snap and ns.Inventory.Equipped() or ctx.equipped
+	local fit, g, unfit = {}, {}, false
+	for slot, p in pairs(ctx.equipped) do fit[slot] = p end
+	for i, slot in ipairs(ms.slots) do
+		if i > Cheat.MAX_SLOTS then break end
+		local compared, now = ctx.equipped[slot], nowEq[slot]
+		local e = { s = slot, fi = compared and compared.itemID or nil, ni = now and now.itemID or nil }
+		if ctx.snap then e.f = compared and compared.level or (compared == nil and 0 or nil) end
+		e.n = now and now.level or (now == nil and 0 or nil)
+		if compared and compared.link then
+			local full = ns.Inventory.Piece(compared.link, { classID = ctx.player.classID, classFile = ctx.class })
+			if full and U.CanUse(full, ctx.class, ctx.ms) == false then
+				e.x, fit[slot], unfit = 1, nil, true
+			end
+		end
+		g[#g + 1] = e
+	end
+	local cg = { g = g }
+	if unfit then cg.h = U.Pack(U.Evaluate(piece, fit, { class = ctx.class, spec = ctx.ms }, opts)) end
+	return Cheat.ReadGear(cg)
+end
+
 function Advisor.For(itemID)
 	local ctx = context()
 	if not ctx.rules.enabled then return nil, "DISABLED" end
@@ -154,7 +184,8 @@ function Advisor.For(itemID)
 		ms = ms, os = os, specs = { ms = ctx.ms, os = ctx.os }, snapshot = ctx.snap ~= nil, band = ctx.band,
 		autoPass = ctx.rules.autoPass == true and ms.usable == false and (os == nil or os.usable == false),
 		equipped = links,
-		wire = { vd = { m = U.Pack(ms), o = os and U.Pack(os) or nil }, eq = links },
+		wire = { vd = { m = U.Pack(ms), o = os and U.Pack(os) or nil }, eq = links,
+			cg = Advisor.Evidence(ctx, piece, ms, opts) },
 	}
 	Advisor.cache[itemID] = { ctx = ctx, advice = advice }
 	return advice

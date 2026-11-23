@@ -106,6 +106,16 @@ Due segnalazioni aiutano te e il council a vedere i casi che il regolamento dice
 - **Chi le vede.** Tu sempre. Oltre a te, la gilda decide chi vede badge e segnalazioni: il **council** (il preset: il rango con il permesso *membro del council*, che riceve la finestra in sola lettura anche se non è officer), **tutti gli officer**, oppure **solo il master looter**. Gli altri vedono solo i codici della proposta, senza nomi. La gilda può spegnere le segnalazioni.
 - **Cosa non possono sapere.** Chi non risponde mai non manda nessun badge, quindi un giocatore in silenzio è segnalato solo se il suo addon ne ha già mandato uno. Il badge lo calcola l'addon del giocatore da colore e item level (vedi [[Suggerimenti di upgrade|Upgrade-Hints-it]]).
 
+
+## Possibili imbrogli sul tiro
+
+Oltre alle due segnalazioni del council, l'addon segnala un **Possibile imbroglio** (*Imbroglio?* nella colonna Note) quando l'addon di un raider riporta uno dei quattro casi della gilda (vedi [Regole del loot](Loot-Rules-it.md#imbrogli-sul-tiro)): equipaggiamento cambiato con un item level più basso dopo lo scontro, un pezzo tolto, un passo su un upgrade medio o grande per la spec principale (un passo su un grande è la segnalazione *Upgrade ignorato* e vale come questo caso), o un pezzo di un'altra spec che nasconde l'upgrade. La riga sotto i candidati nomina il giocatore e le prove: *Possibile imbroglio, pezzo tolto: Bryn aveva Elmo di Brace (ilvl 226) nello scontro, lo slot è vuoto al tiro.*
+
+- **Penalizza +2.** Il pulsante compare nella finestra della sessione e nella pagina Council per la prima segnalazione non ancora penalizzata. Il primo clic chiede *Confermi +2 a Bryn?*; un secondo clic entro cinque secondi scrive la penalità. Al primo clic non si scrive niente. Con le penalità automatiche del Guild Master accese, il tuo addon la scrive da solo quando si fa la proposta.
+- **Non cambia mai il vincitore**, e un'assegnazione automatica ti aspetta, come per le altre segnalazioni.
+- **Ispezione.** Quando il giocatore segnalato è a portata, il tuo addon lo ispeziona (uno alla volta, mai in combattimento) e aggiunge *l'equipaggiamento indossato ora corrisponde* oppure *NON corrisponde a quello dichiarato dal suo addon*. Quello dello scontro è solo la parola del suo addon: un addon modificato potrebbe mentire.
+- **Tornare indietro.** La penalità è una correzione dei crediti con il motivo *Imbroglio sul tiro*: annullala dalla pagina Council come ogni correzione. Per lo stesso caso sullo stesso oggetto non viene mai riproposta.
+
 ## Il council: interventi e voto
 
 **Chi è il council.** Di base, i ranghi di gilda con il permesso *membro del council* (gli officer) che sono **nel raid**. La gilda può invece scrivere nelle sue regole una **lista esplicita di personaggi**: allora la lista sostituisce il rango (sempre solo chi è nel raid, salvo che la gilda spenga la regola della presenza). Scrivi `/fdcp council` per sapere se ne fai parte. La pagina **Loot › Council** fa lo stesso dalla finestra, con pulsanti e finestre di dialogo: vedi [[Council|Council-it]].

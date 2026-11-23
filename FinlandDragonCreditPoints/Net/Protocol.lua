@@ -222,7 +222,7 @@ end
 --   SROLL    RAID      q, i, r, k, g?, tr?, am?, cl?, de?, rm?      round r of item i opened: kind, stage, tier, among (a
 --                                                                 reroll), cl = it collects the responses, de = the
 --                                                                 deadline in server time (rm = seconds left, paused)
---   SRESP    RAID      i, r, rs, vd?, eq?                         a member's response (MS, OS, PASS) to the round r of
+--   SRESP    RAID      i, r, rs, vd?, eq?, cg?                       a member's response (MS, OS, PASS) to the round r of
 --                                                                 item i: always the sender's own (the popup sends it
 --                                                                 again when the player changes it).
 --                                                                 vd = { m = badge, o? = badge } (main-spec and off-spec;
@@ -231,7 +231,9 @@ end
 --                                                                 compared with). Both are information for the master
 --                                                                 looter; a damaged one is dropped and the response still
 --                                                                 counts; an older client sends neither. The `lb`, `lo`
---                                                                 and `n` of a client older than M7-5c are ignored
+--                                                                 and `n` of a client older than M7-5c are ignored.
+--                                                                 cg (M7-5d, optional: an older client ignores it) =
+--                                                                 the roll-cheating evidence, Domain/Cheat.lua ReadGear
 --   SCLOSE   RAID      q, i, r                                    round closed
 --   SPROP    RAID      q, i, k, tg, w?, c?, rs?, tr?, rc?, f?, m?  the proposal: who, how much, why (reason and flag
 --                                                                 codes); m = modified by the ML
@@ -514,7 +516,8 @@ function Session.ReadResponse(msg, from)
 	if type(msg) ~= "table" or not from then return nil, "BAD" end
 	if msg.p ~= nil and nameOf(msg.p) ~= from then return nil, "FORGED" end
 	if not isSid(msg.s) or not isInt(msg.i, 1) or not isInt(msg.r, 1) or not isCode(msg.rs) then return nil, "BAD" end
-	return { s = msg.s, i = msg.i, r = msg.r, rs = msg.rs, vd = readVerdicts(msg.vd), eq = readLinks(msg.eq) }
+	return { s = msg.s, i = msg.i, r = msg.r, rs = msg.rs, vd = readVerdicts(msg.vd), eq = readLinks(msg.eq),
+		cg = ns.Cheat and ns.Cheat.ReadGear(msg.cg) or nil }
 end
 
 -- A SVOTE from `from`: { s, i, c }, or nil and a code ("FORGED" when it names another voter).
@@ -734,12 +737,13 @@ function Session:OnResponse(msg, from, own)
 	if s and s.id == r.s then
 		if r.i ~= s.active or r.r ~= (net(s).rounds[r.i] or 1) then return refuse("STALE", from) end
 		self.stats.inputs = self.stats.inputs + 1
-		emit("SESSION_INPUT", { type = "RESPONSE", ts = now(), player = from, response = r.rs, verdict = r.vd, equipped = r.eq })
+		emit("SESSION_INPUT", { type = "RESPONSE", ts = now(), player = from, response = r.rs, verdict = r.vd, equipped = r.eq,
+			gear = r.cg })
 	end
 	local v = self.view
 	if v and v.s == r.s and v.round and v.round.i == r.i and v.round.r == r.r and v.round.cl then
 		v.responses[r.i] = v.responses[r.i] or {}
-		v.responses[r.i][from] = { rs = r.rs, vd = r.vd, eq = r.eq }
+		v.responses[r.i][from] = { rs = r.rs, vd = r.vd, eq = r.eq, cg = r.cg }
 		if from == me() then v.mine[r.i] = r.rs end
 		emit("SESSION_VIEW", v, "RESPONSE", r.i, from)
 	end
@@ -1051,6 +1055,7 @@ function Session:Respond(response, extra)
 	local msg = { t = "SRESP", s = v.s, i = round.i, r = round.r, rs = response }
 	if type(extra) == "table" then
 		msg.vd, msg.eq = readVerdicts(extra.vd), readLinks(extra.eq)
+		msg.cg = ns.Cheat and ns.Cheat.ReadGear(extra.cg) or nil   -- the roll-cheating evidence (M7-5d)
 	end
 	local item, why
 	if ns.Transport then

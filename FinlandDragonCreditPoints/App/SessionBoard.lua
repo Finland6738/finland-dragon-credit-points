@@ -26,6 +26,7 @@
 --                 Empty where the verdicts may not be seen.
 --   proposal = { kind, target, winner, cost, response, tier, roll, credits, reasons, flags, modified, mlReason,
 --                ruleWinner, ruleCost, autoIn } | nil   (the selected item's proposal, or its award once assigned),
+--   sid = the session's id, gear = {[player] = the roll-cheating evidence, Domain/Cheat.lua} | nil (M7-5d),
 --   pool = { names } (everybody the selected item's roll counted as present: who the master looter can pick instead),
 --   missing = { names }  (raid members who cannot roll: no addon, §4.1) | nil,
 --   votes = { open, total, tally = { { choice, name, n } } (most votes first), voters = { [voter] = choice } } | nil
@@ -146,11 +147,48 @@ function SB.FlagLine(f)
 	local function up(u) return (u and A and A.Text(u)) or "·" end
 	if f.code == "UPGRADE_IGNORED" then
 		local key = f.response == "PASS" and "ML_FLAG_IGNORED_PASS" or "ML_FLAG_IGNORED_SILENT"
-		return L()[key]:format(short(f.player), up(f.verdict))
+		local text = L()[key]:format(short(f.player), up(f.verdict))
+		if f.applied then text = text .. " " .. L()["ML_CHEAT_APPLIED"] end   -- penalized as roll cheating (M7-5d)
+		return text
 	elseif f.code == "POSSIBLE_WASTE" then
 		return L()["ML_FLAG_WASTE"]:format(short(f.player), up(f.verdict), short(f.other), up(f.otherVerdict))
+	elseif f.code == "CHEAT" then
+		return SB.CheatLine(f)
 	end
 	return ns.Reasons.Text("FLAG", f.code)
+end
+
+-- The name of an item for a cheating flag's evidence ("Helm of Embers"), "#19003" while it is not loaded, "?" without one.
+local function itemName(id)
+	if type(id) ~= "number" then return "?" end
+	local entry = ns.ItemCache and ns.ItemCache.Lookup(id) or nil
+	return entry and entry.name or ("#" .. id)
+end
+
+-- The sentence of a possible roll-cheating flag (M7-5d, Domain/Cheat.lua) with its evidence, the inspection's cross-check
+-- (`f.inspect` = "MATCH" | "MISMATCH") and whether it was penalized (`f.applied`):
+-- "Possible cheating, gear swapped: Bryn wore Helm of Embers (ilvl 226) in the fight and Old Cap (ilvl 200) at the roll."
+-- locale-key: ML_CHEAT_GEAR_SWAP ML_CHEAT_UNEQUIPPED ML_CHEAT_UPGRADE_PASSED ML_CHEAT_OFFSPEC_HIDE ML_CHEAT_INSPECT_MATCH ML_CHEAT_INSPECT_MISMATCH ML_CHEAT_APPLIED
+function SB.CheatLine(f)
+	if type(f) ~= "table" then return "" end
+	local A = ns.UpgradeAdvisor
+	local who, text = short(f.player), nil
+	if f.cause == "GEAR_SWAP" then
+		text = L()["ML_CHEAT_GEAR_SWAP"]:format(who, itemName(f.fightItem), f.fight or 0, itemName(f.nowItem), f.now or 0)
+	elseif f.cause == "UNEQUIPPED" then
+		text = L()["ML_CHEAT_UNEQUIPPED"]:format(who, itemName(f.fightItem), f.fight or 0)
+	elseif f.cause == "UPGRADE_PASSED" then
+		local badge = (f.verdict and A and A.Text(f.verdict)) or ns.Reasons.Text("VERDICT", f.shown)
+		text = L()["ML_CHEAT_UPGRADE_PASSED"]:format(who, badge)
+	elseif f.cause == "OFFSPEC_HIDE" then
+		text = L()["ML_CHEAT_OFFSPEC_HIDE"]:format(who, itemName(f.nowItem), ns.Reasons.Text("VERDICT", f.honest))
+	else
+		text = ns.Reasons.Text("FLAG", "CHEAT")
+	end
+	if f.inspect == "MATCH" then text = text .. " " .. L()["ML_CHEAT_INSPECT_MATCH"]
+	elseif f.inspect == "MISMATCH" then text = text .. " " .. L()["ML_CHEAT_INSPECT_MISMATCH"] end
+	if f.applied then text = text .. " " .. L()["ML_CHEAT_APPLIED"] end
+	return text
 end
 
 function SB.FlagLines(flags)
@@ -160,7 +198,7 @@ function SB.FlagLines(flags)
 end
 
 -- The short name of a council flag for a candidate's row ("Upgrade ignored", "Possible waste").
--- locale-key: ML_FLAG_SHORT_UPGRADE_IGNORED ML_FLAG_SHORT_POSSIBLE_WASTE
+-- locale-key: ML_FLAG_SHORT_UPGRADE_IGNORED ML_FLAG_SHORT_POSSIBLE_WASTE ML_FLAG_SHORT_CHEAT
 function SB.FlagShort(code)
 	local key = "ML_FLAG_SHORT_" .. tostring(code)
 	if L()[key] ~= key then return L()[key] end
@@ -466,7 +504,7 @@ local function buildHost(s, env, selected, readOnly)
 	local now = env.now or 0
 	local b = { host = true, readOnly = readOnly or nil, state = s.state, paused = s.paused == true,
 		lockdown = s.lockdown == true, held = env.held == true, encounter = s.encounter, count = #items, items = items,
-		active = s.active, selected = sel, missing = missingPlayers(s) }
+		active = s.active, selected = sel, missing = missingPlayers(s), sid = s.id }
 	if item then
 		b.round = hostRound(s, item, now)
 		b.proposal = hostProposal(item, now)
@@ -485,6 +523,7 @@ local function buildHost(s, env, selected, readOnly)
 			return vd and U and U.Unpack(vd.m) or nil
 		end)
 		b.candidates = hostCandidates(s, item, b.proposal, env, ns.Flags.ByPlayer(b.flags))
+		b.gear = item.gear   -- the roll-cheating evidence by player (M7-5d), for the inspection's cross-check
 		b.pool = {}
 		for p in pairs(type(item.present) == "table" and item.present or {}) do
 			if item.present[p] == true then b.pool[#b.pool + 1] = p end
@@ -523,16 +562,17 @@ local function viewCandidates(v, env, sel, b)
 	if type(answers) ~= "table" then return {}, {} end
 	local U = ns.UpgradeScore
 	local main, tiers = mainResponses(env.priority)
-	local responses, verdicts = {}, {}
+	local responses, verdicts, gear = {}, {}, {}
 	for p, a in pairs(answers) do
 		if type(p) == "string" and type(a) == "table" then
 			responses[p] = a.rs
 			verdicts[p] = type(a.vd) == "table" and a.vd or nil
+			gear[p] = type(a.cg) == "table" and a.cg or nil   -- the roll-cheating evidence (M7-5d)
 		end
 	end
 	local p = b.proposal
 	local decided = p ~= nil
-	local raw = ns.Flags.Evaluate({ responses = responses, verdicts = verdicts, main = decided and main or {},
+	local raw = ns.Flags.Evaluate({ responses = responses, verdicts = verdicts, gear = gear, main = decided and main or {},
 		head = decided and p.winner or nil, decided = decided }, env.upgrade, env.council)
 	local flags = withVerdicts(raw, function(name)
 		local vd = verdicts[name]
@@ -556,7 +596,7 @@ local function viewCandidates(v, env, sel, b)
 		if tx ~= ty then return tx < ty end
 		return x.player < y.player
 	end)
-	return rows, flags
+	return rows, flags, gear
 end
 
 local function buildView(v, env, selected)
@@ -569,7 +609,7 @@ local function buildView(v, env, selected)
 	end
 	local sel = pickSelected(items, v.a, selected)
 	local state = v.ended and "ENDED" or (v.proposal and "PROPOSAL") or (v.round and "ROLLING") or "ANNOUNCING"
-	local b = { host = false, readOnly = true, state = state, paused = v.paused == true, encounter = v.e, count = #items,
+	local b = { host = false, readOnly = true, sid = v.s, state = state, paused = v.paused == true, encounter = v.e, count = #items,
 		items = items, active = v.a, selected = sel, candidates = {}, actions = {},
 		selectedItem = sel and items[sel] or nil }
 	if v.round and sel == v.round.i then
@@ -587,7 +627,7 @@ local function buildView(v, env, selected)
 		if votes or p.vc then b.votes = votesOf(votes or {}, not p.vc) end
 	end
 	b.flags = {}
-	if env.verdicts and sel then b.candidates, b.flags = viewCandidates(v, env, sel, b) end
+	if env.verdicts and sel then b.candidates, b.flags, b.gear = viewCandidates(v, env, sel, b) end
 	return b
 end
 

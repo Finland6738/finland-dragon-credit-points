@@ -11,7 +11,7 @@
 --                 shows its proposal and the rolls as a hint.
 --   EPGP_SIMPLE   "EPGP semplice": credits are the gear points and the nights played the effort, so the lowest credits
 --                 per night played wins; costs as in Patto; late joiners at the average.
--- Only Patto has the absence penalty and the late joiners at the minimum (M7-5b); the others keep what they had.
+-- Only Patto has the absence and roll-cheating penalties (M7-5d) and the late joiners at the minimum (M7-5b); the others keep what they had.
 -- Every preset passes Rules.Validate; the rank permissions are not part of a preset (Domain/Permissions.lua).
 local ADDON_NAME, ns = ...
 ns = ns or {}
@@ -43,6 +43,7 @@ local BUILD = {
 		free(r.cost)
 		r.members.lateJoin.method = "zero"
 		r.penalties.absence = 0
+		r.penalties.cheat = 0
 		r.legendary.mode = "roll"
 		r.priority.fallback = "freeroll"
 		return r
@@ -53,6 +54,7 @@ local BUILD = {
 		free(r.cost)
 		r.members.lateJoin.method = "zero"
 		r.penalties.absence = 0
+		r.penalties.cheat = 0
 		r.legendary.mode = "vote"
 		return r
 	end,
@@ -60,6 +62,7 @@ local BUILD = {
 		r.priority.metric = "creditsPerNight"
 		r.members.lateJoin.method = "average"
 		r.penalties.absence = 0
+		r.penalties.cheat = 0
 		return r
 	end,
 }

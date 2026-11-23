@@ -4,7 +4,7 @@
 -- A code is only meaningful inside its group: NOT_PRESENT is a discarded roll in one and a refused action in another.
 -- Groups: REASON (why a player won), FLAG (what to check), DISCARD (a roll set aside), SOURCE (where a cost or a
 -- category comes from), JOIN (a new member's credits), CORRECTION (the master looter's reasons), ABSENCE (why a missed
--- night is penalized, M7-5b), AUTO (automatic
+-- night is penalized, M7-5b), CHEAT (the case of a roll-cheating flag, M7-5d), AUTO (automatic
 -- phases), RANKS (guild rank changes), DELIVERY (where an award is on its way to the winner, M4-7), REFUSAL (an action refused), STATUS (a member of the pool),
 -- RESPONSE, LABEL (the optional label of a main-spec response), LABEL_ORIGIN (who chose it, M7-2b), VERDICT (the upgrade verdicts, M5-2), UPGRADE (why an item
 -- cannot be used or compared, M5-2), IMPORT (why a weight string was refused, M5-3), KIND (what a proposal does), REJECT, STATE, EVENT (ledger event types), OUTCOME (how a legendary project ended, M5-6) and PRESET
@@ -15,7 +15,7 @@ ns.modules = ns.modules or {}
 local Reasons = {}
 ns.Reasons, ns.modules.Reasons = Reasons, Reasons
 
-Reasons.GROUPS = { "REASON", "FLAG", "DISCARD", "SOURCE", "JOIN", "CORRECTION", "ABSENCE", "AUTO", "RANKS", "DELIVERY", "REFUSAL", "STATUS", "RESPONSE", "VERDICT", "UPGRADE", "KIND", "REJECT", "STATE", "EVENT", "OUTCOME", "PRESET" }
+Reasons.GROUPS = { "REASON", "FLAG", "DISCARD", "SOURCE", "JOIN", "CORRECTION", "ABSENCE", "CHEAT", "AUTO", "RANKS", "DELIVERY", "REFUSAL", "STATUS", "RESPONSE", "VERDICT", "UPGRADE", "KIND", "REJECT", "STATE", "EVENT", "OUTCOME", "PRESET" }
 
 -- KEYS[group][code] = locale key.
 Reasons.KEYS = {
@@ -56,6 +56,7 @@ Reasons.KEYS = {
 		NO_BUILDER = "RC_FLAG_NO_BUILDER",   -- a legendary chain piece nobody receives by the project (M5-6)
 		BUILDER_ABSENT = "RC_FLAG_BUILDER_ABSENT",
 		QUEUE_EMPTY = "RC_FLAG_QUEUE_EMPTY",
+		CHEAT = "RC_FLAG_CHEAT",   -- possible roll cheating, with a cause of group CHEAT (Domain/Cheat.lua, M7-5d)
 	},
 	DISCARD = {
 		NOT_1_100 = "RC_DISCARD_NOT_1_100",
@@ -107,6 +108,13 @@ Reasons.KEYS = {
 		PENALTY = "RC_CORRECTION_PENALTY",
 		BONUS = "RC_CORRECTION_BONUS",
 		ABSENCE = "RC_CORRECTION_ABSENCE",   -- a missed official night (Domain/Absence.lua, M7-5b)
+		CHEAT = "RC_CORRECTION_CHEAT",   -- roll cheating (Domain/Cheat.lua, M7-5d)
+	},
+	CHEAT = {   -- the case of a roll-cheating flag and penalty (Domain/Cheat.lua, M7-5d)
+		GEAR_SWAP = "RC_CHEAT_GEAR_SWAP",
+		UNEQUIPPED = "RC_CHEAT_UNEQUIPPED",
+		UPGRADE_PASSED = "RC_CHEAT_UPGRADE_PASSED",
+		OFFSPEC_HIDE = "RC_CHEAT_OFFSPEC_HIDE",
 	},
 	ABSENCE = {   -- why a member gets the absence penalty (Domain/Absence.lua, M7-5b)
 		NOT_SIGNED_UP = "RC_ABSENCE_NOT_SIGNED_UP",

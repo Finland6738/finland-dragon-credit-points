@@ -324,7 +324,7 @@ local function openItem(s, index, now, env, effects)
 	item.credits = copy(type(credits) == "table" and credits or {})
 	item.nights = copy(type(env.nights) == "table" and env.nights or nil)
 	item.responses, item.rounds, item.proposal, item.rule = {}, {}, nil, nil
-	item.verdicts, item.equipped = nil, nil
+	item.verdicts, item.equipped, item.gear = nil, nil, nil
 	item.discarded, item.history, item.dropped, item.votes, item.voteClosed = nil, nil, nil, nil, nil
 	item.intervention, item.autoAt, item.autoRemaining, item.flagged, item.autoHeld = nil, nil, nil, nil, nil
 	s.active = index
@@ -380,14 +380,19 @@ end
 -- { code, player, other?, response?, pct?, otherPct?, basis? }; empty for an item whose roll has not opened.
 function FSM.Flags(s, index)
 	local item = type(s) == "table" and type(s.items) == "table" and s.items[index] or nil
-	if type(item) ~= "table" or not item.opened or type(item.verdicts) ~= "table" then return {} end
+	if type(item) ~= "table" or not item.opened or (type(item.verdicts) ~= "table" and type(item.gear) ~= "table") then
+		return {}
+	end
 	local first = firstTier(s)
 	local main = {}
 	for code, t in pairs(responseTiers(s)) do
 		if t == first then main[code] = true end
 	end
 	local players = {}
-	for p in pairs(item.verdicts) do
+	for p in pairs(item.verdicts or {}) do
+		if eligible(s, item, p) then players[p] = true end
+	end
+	for p in pairs(item.gear or {}) do
 		if eligible(s, item, p) then players[p] = true end
 	end
 	for p in pairs(item.responses or {}) do
@@ -401,7 +406,8 @@ function FSM.Flags(s, index)
 		if rolls[r.player] == nil and r.min == rollMin and r.max == rollMax and not r.nb then rolls[r.player] = r.value end
 	end
 	local decided = type(item.rule) == "table"
-	return ns.Flags.Evaluate({ responses = item.responses, verdicts = item.verdicts, main = main, players = players,
+	return ns.Flags.Evaluate({ responses = item.responses, verdicts = item.verdicts or {}, gear = item.gear, main = main,
+		players = players,
 		credits = item.credits, rolls = rolls, head = decided and item.rule.winner or nil, decided = decided },
 		nil, councilRules(s))
 end
@@ -816,7 +822,8 @@ end
 -- badges of main-spec and off-spec, UpgradeScore.Pack) and `equipped` (a list of "item:..." strings) are what the raider's
 -- client says about the piece (§5.1, M5-2, M7-5c): kept as given for the master looter's table, a pass keeps them too (the
 -- "upgrade ignored" flag of M5-4 needs them), the rules never read them. The label and the note of the responses before
--- M7-5c are gone: an input that still carries them has them ignored.
+-- M7-5c are gone: an input that still carries them has them ignored. `gear` (M7-5d) is the roll-cheating evidence
+-- (Domain/Cheat.lua ReadGear): read by the flags only.
 function H.RESPONSE(s, input)
 	local item = current(s)
 	if s.state ~= "ROLLING" or not item.round.collect then return nil, "RESPONSES_CLOSED" end
@@ -836,6 +843,9 @@ function H.RESPONSE(s, input)
 	if type(equipped) ~= "table" or #equipped == 0 then equipped = nil end
 	item.verdicts, item.equipped = item.verdicts or {}, item.equipped or {}
 	item.verdicts[input.player], item.equipped[input.player] = copy(verdict), copy(equipped)
+	-- the roll-cheating evidence (M7-5d): the gear of the fight against the gear now, checked again here
+	item.gear = item.gear or {}
+	item.gear[input.player] = ns.Cheat and ns.Cheat.ReadGear(input.gear) or nil
 	return true
 end
 
@@ -894,7 +904,7 @@ function H.REJECT(s, input, env, effects)
 	if thenWhat == "PENDING" or thenWhat == "REOPEN" then
 		item.state, item.proposal, item.rule, item.round, item.next = "PENDING", nil, nil, nil, nil
 		item.responses, item.rounds = {}, {}
-		item.verdicts, item.equipped, item.flagged = nil, nil, nil
+		item.verdicts, item.equipped, item.flagged, item.gear = nil, nil, nil, nil
 		item.skipTiers = nil
 		item.hold = true
 		s.active, s.state = nil, "ANNOUNCING"

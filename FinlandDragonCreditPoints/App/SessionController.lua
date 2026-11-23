@@ -608,7 +608,9 @@ function SC:Board(selected)
 		env.verdicts = self:SeesVerdicts()
 		env.priority, env.upgrade, env.council = rules.priority, rules.upgrade, rules.council
 	end
-	return ns.SessionBoard.Build(view, env, selected)
+	local board = ns.SessionBoard.Build(view, env, selected)
+	if board and ns.CheatService then ns.CheatService:Decorate(board) end   -- roll cheating (M7-5d)
+	return board
 end
 
 -- What MODIFY{change} would give (the Modify dialog's live difference from the rules); nothing is changed. Returns the

@@ -33,7 +33,7 @@ Absence.MAX_AMOUNT = 100
 
 -- The `penalties` section of the "Patto" preset. A fresh copy on every call.
 function Absence.DefaultConfig()
-	return { absence = 1, autoApply = false }
+	return { absence = 1, cheat = 2, autoApply = false }   -- cheat: Domain/Cheat.lua (M7-5d)
 end
 
 local function isNum(n) return type(n) == "number" and n == n and n > -math.huge and n < math.huge end
@@ -42,6 +42,9 @@ local function isNum(n) return type(n) == "number" and n == n and n > -math.huge
 function Absence.Validate(config)
 	if type(config) ~= "table" then return false, "config" end
 	if not isNum(config.absence) or config.absence < 0 or config.absence > Absence.MAX_AMOUNT then return false, "absence" end
+	if config.cheat ~= nil and (not isNum(config.cheat) or config.cheat < 0 or config.cheat > Absence.MAX_AMOUNT) then
+		return false, "cheat"
+	end
 	if type(config.autoApply) ~= "boolean" then return false, "autoApply" end
 	return true
 end

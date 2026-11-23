@@ -275,7 +275,7 @@ describe("late joiners and the presets", function()
 		deepEq(problems, { "penalties.autoApply" })
 		local old = FDCP.Rules.DefaultConfig()
 		old.penalties = nil
-		deepEq(FDCP.Rules.WithDefaults(old).penalties, { absence = 1, autoApply = false })
+		deepEq(FDCP.Rules.WithDefaults(old).penalties, { absence = 1, cheat = 2, autoApply = false })
 	end)
 end)
 

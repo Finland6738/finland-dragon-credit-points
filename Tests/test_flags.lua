@@ -61,7 +61,9 @@ describe("upgrade ignored", function()
 	end)
 
 	it("never fires on a medium or minor upgrade, nor on an old client's BIG", function()
-		deepEq(codes(eval({ responses = { Bryn = "PASS" }, verdicts = { Bryn = { m = { v = "MEDIUM", l = 30 } } } })), {})
+		-- a pass on a medium one is M7-5d's roll-cheating case UPGRADE_PASSED (Tests/test_cheat.lua), not this flag
+		deepEq(codes(eval({ responses = { Bryn = "PASS" }, verdicts = { Bryn = { m = { v = "MEDIUM", l = 30 } } } })),
+			{ "CHEAT:Bryn" })
 		deepEq(codes(eval({ responses = { Bryn = "PASS" }, verdicts = { Bryn = { m = small(40) } } })), {})
 		deepEq(codes(eval({ responses = { Bryn = "PASS" }, verdicts = { Bryn = { m = { v = "BIG", p = 120 } } } })), {},
 			"a verdict of a client older than M7-5c is not read")
