@@ -52,7 +52,7 @@ Open question 10 ([#3](https://github.com/Finland6738/finland-dragon-credit-poin
 - Branch: `step/m6-3-export`
 - Depends on: M6-1
 - Analysis: §7 (export), §8.5 (numbers, dates, guild language)
-- Scope: `Domain/Export.lua` (credits table as Markdown ready for Discord, CSV, JSON; attendance never in public exports), a copy window with the text already selected; numbers and dates in the guild language; `export.public` permission; the copy window is the **History › Export** sub-tab, look per `ui-style.md` (preview `fdcp-site-export.webp`).
+- Scope: `Domain/Export.lua` (credits table as Markdown ready for Discord, CSV, JSON; attendance never in public exports), a copy window with the text already selected; numbers and dates in the guild language; `export.public` permission; the copy window is the **History › Export** sub-tab, look per `ui-style.md` (preview `fdcp-site-export-en.webp`).
 - Done when:
   - [x] Exports are deterministic and match golden files in tests.
   - [ ] In game: the copy box selects the text and Ctrl+C copies it. *(in game)*

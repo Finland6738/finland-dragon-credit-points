@@ -8,7 +8,9 @@ You need the addon active: only raiders with the addon can answer and roll, and 
 
 ## The popup
 
-![Item popup](../specs/mockups/fdcp-roll-popup.webp)
+![Roll popup: three buttons and the upgrade badge](../specs/mockups/fdcp-roll-popup-en.webp)
+
+*Mockup, not an in-game screenshot.*
 
 From top to bottom:
 

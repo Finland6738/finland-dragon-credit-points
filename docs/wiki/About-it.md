@@ -2,6 +2,10 @@
 
 > **Costruita, non ancora vista in gioco.** La pagina funziona nei test offline; come appare nel gioco vero è ancora da confermare. [English](About)
 
+![La pagina Info](../specs/mockups/fdcp-about-it.webp)
+
+*Mockup, non uno screenshot del gioco.*
+
 **Finland Dragon Credit Points** è stato ideato e realizzato da **Finland** per la gilda italiana **NEBULA**. Gestisce il loot della gilda a crediti: ogni serata di raid, ogni drop e ogni assegnazione finiscono in un registro che tutta la gilda può controllare, e i crediti si calcolano sempre da lì.
 
 NEBULA è una gilda e community italiana su WoW Forever; il suo sito, <https://nebula-community.github.io/giochi/wow-forever/>, ha il roster, il loot e i progressi su cui questo addon esporta ([[Esportazione per il sito|Site-Export-it]]).

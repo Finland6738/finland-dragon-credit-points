@@ -8,6 +8,10 @@ The addon also has a small entry in the game's own settings window (**Options â€
 
 ## Personal
 
+![Personal preferences](../specs/mockups/fdcp-settings-en.webp)
+
+*Mockup, not an in-game screenshot.*
+
 Only for you: nothing here is shared with the guild.
 
 | Setting | What it does |
@@ -60,6 +64,10 @@ Everyone sees the values. The Guild Master edits them: a label turns amber while
 A change is a signed event of the ledger, not a setting of your game: another player cannot make one by any means. The addon refuses it when you ask, and the rest of the guild's addons refuse it if it ever arrives from someone who was not the Guild Master when it was written.
 
 ## Permissions
+
+![The permissions table](../specs/mockups/fdcp-permissions-en.webp)
+
+*Mockup, not an in-game screenshot.*
 
 The table of **who may do what**, by guild rank: for each permission, the **lowest rank** that holds it (that rank and every higher one have it). The ranks are the guild's own, by position, so renaming a rank changes nothing. *Change the rules* and *Change the permissions* are fixed at the Guild Master. Like the rules, only the Guild Master edits the table, and a change with a season open asks for the same confirmation.
 

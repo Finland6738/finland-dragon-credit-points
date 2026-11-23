@@ -2,6 +2,10 @@
 
 > **Costruito, non ancora visto in gioco.** La finestra della sessione funziona nei test offline con un raid simulato; come appare e come si usa in un raid vero, e la consegna del pezzo, sono ancora da confermare in gioco. [English](Master-Looter-Guide)
 
+![La finestra della sessione del master looter](../specs/mockups/fdcp-loot-session-it.webp)
+
+*Mockup, non uno screenshot del gioco.*
+
 Questa pagina è per il **master looter**: chi apre il corpo del boss e guida il roll. L'addon fa i conti e scrive la proposta; **tu confermi, rifiuti o modifichi**. Non calcoli mai i crediti a mano e non scrivi mai il motivo di un'assegnazione normale: lo fa l'addon. Scrivi un motivo solo quando ti discosti dalla regola.
 
 ## Prima del raid

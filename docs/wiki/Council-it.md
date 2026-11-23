@@ -2,6 +2,10 @@
 
 > **Costruito, non ancora visto in gioco.** La pagina del council funziona nei test offline con un raid simulato; come appare e come si usa in un raid vero è ancora da confermare. [English](Council)
 
+![La pagina Council](../specs/mockups/fdcp-council-it.webp)
+
+*Mockup, non uno screenshot del gioco.*
+
 Questa pagina è per il **loot council**: gli officer (o i personaggi che la gilda elenca) che guardano le assegnazioni, votano quando la gilda lo chiede e correggono ciò che è andato storto. Tutto quello che fa il council ha la sua pagina nella finestra principale: **Loot › Council**, la terza sotto-scheda dopo *Sessione* e *Da consegnare*. I compiti del master looter (far girare il roll, confermare) sono nella [[Guida del master looter|Master-Looter-Guide-it]]; le regole che ci stanno dietro sono in [[Regole del loot|Loot-Rules-it]].
 
 La pagina mostra quello che l'addon già sa e manda i tuoi clic alle stesse regole dei comandi in chat: non decide mai niente da sola. Ogni azione che cambia il registro chiede un **motivo**, e senza motivo non si scrive nulla.

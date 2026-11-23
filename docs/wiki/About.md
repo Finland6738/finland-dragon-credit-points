@@ -2,6 +2,10 @@
 
 > **Built, not yet seen in the game.** The page works in the offline tests; how it looks in the real game is still to be confirmed. [Italiano](About-it)
 
+![The Info page](../specs/mockups/fdcp-about-en.webp)
+
+*Mockup, not an in-game screenshot.*
+
 **Finland Dragon Credit Points** was conceived and made by **Finland** for the Italian guild **NEBULA**. It runs the guild's loot by credits: every raid night, every drop and every award is written in a ledger the whole guild can check, and the credits are always computed from it.
 
 NEBULA is an Italian guild and community on WoW Forever; its site, <https://nebula-community.github.io/giochi/wow-forever/>, has the roster, the loot and the progress that this addon exports to ([[Site Export|Site-Export]]).

@@ -2,6 +2,10 @@
 
 > **Built, not yet seen in the game.** The window works in the offline tests with a simulated client; how it looks in the real game is still to be confirmed. [Italiano](Seasons-it)
 
+![The Season page](../specs/mockups/fdcp-season-en.webp)
+
+*Mockup, not an in-game screenshot.*
+
 A **season** is the guild's unit of credits: one pack of raids (the instances released with one content update), one credit table, and a start. A loot session can only run inside an **open season**. Only one season is open at a time.
 
 ## Where it is

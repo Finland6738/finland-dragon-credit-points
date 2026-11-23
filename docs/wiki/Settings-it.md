@@ -8,6 +8,10 @@ L'addon ha anche una piccola voce nella finestra delle impostazioni del gioco (*
 
 ## Personali
 
+![Preferenze personali](../specs/mockups/fdcp-settings-it.webp)
+
+*Mockup, non uno screenshot del gioco.*
+
 Solo per te: niente di qui viene condiviso con la gilda.
 
 | Impostazione | Cosa fa |
@@ -60,6 +64,10 @@ Tutti vedono i valori. Il Guild Master li modifica: un'etichetta diventa ambra f
 Una modifica è un evento firmato del registro, non un'impostazione del tuo gioco: nessun altro giocatore può farne una in nessun modo. L'addon la rifiuta quando glielo chiedi, e gli addon del resto della gilda la rifiutano se mai arrivasse da chi non era il Guild Master quando è stata scritta.
 
 ## Permessi
+
+![La tabella dei permessi](../specs/mockups/fdcp-permissions-it.webp)
+
+*Mockup, non uno screenshot del gioco.*
 
 La tabella di **chi può fare cosa**, per rango di gilda: per ogni permesso, il **rango più basso** che lo ha (lo ha quel rango e tutti quelli sopra). I ranghi sono quelli della gilda, per posizione, quindi rinominare un rango non cambia nulla. *Cambiare le regole* e *Cambiare i permessi* sono fissi sul Guild Master. Come le regole, la tabella la modifica solo il Guild Master, e con una season aperta una modifica chiede la stessa conferma.
 

@@ -23,6 +23,15 @@
 | **Esportazione** | La tabella dei crediti per Discord, CSV, JSON, e i file `roster.json`, `loot.json` e `progress.json` del sito della community pronti da mettere nel sito ([specifica](docs/specs/site-export.md)) |
 | **Interfaccia** | Lo stile del sito della community (tema scuro "Nebula", più un tema chiaro e i colori del logo), schede Roster · Crediti · Progress · Loot · Storico · Impostazioni ([stile e anteprime](docs/specs/ui-style.md)); italiano e inglese, altre lingue aggiungendo un file |
 
+## Anteprime dell'interfaccia
+
+> **Mockup, non screenshot del gioco.** Disegnati dal layout e dai testi dell'addon (`tools/make_mockups.py`), con nomi inventati; nulla è ancora stato verificato in gioco. Altre nel [Giro dell'interfaccia](docs/wiki/Interface-Tour-it.md).
+
+|   |   |   |
+|---|---|---|
+| [<img src="docs/specs/mockups/fdcp-roll-popup-it.webp" alt="Popup del roll" width="380">](docs/specs/mockups/fdcp-roll-popup-it.webp)<br>**Popup del roll** | [<img src="docs/specs/mockups/fdcp-loot-session-it.webp" alt="Sessione del master looter" width="380">](docs/specs/mockups/fdcp-loot-session-it.webp)<br>**Sessione del master looter** | [<img src="docs/specs/mockups/fdcp-council-it.webp" alt="Council" width="380">](docs/specs/mockups/fdcp-council-it.webp)<br>**Council** |
+| [<img src="docs/specs/mockups/fdcp-credits-it.webp" alt="Crediti" width="380">](docs/specs/mockups/fdcp-credits-it.webp)<br>**Crediti** | [<img src="docs/specs/mockups/fdcp-night-it.webp" alt="Serata con assenze" width="380">](docs/specs/mockups/fdcp-night-it.webp)<br>**Serata con assenze** | [<img src="docs/specs/mockups/fdcp-permissions-it.webp" alt="Permessi" width="380">](docs/specs/mockups/fdcp-permissions-it.webp)<br>**Permessi** |
+
 ## Requisiti
 
 - Client di World of Warcraft: Forever (Interface 16001).

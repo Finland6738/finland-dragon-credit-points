@@ -2,6 +2,10 @@
 
 > **Costruita, non ancora vista in gioco.** La scheda funziona nei test offline con un client simulato; come appare nel gioco vero è ancora da confermare. [English](Credits)
 
+![La scheda Crediti](../specs/mockups/fdcp-credits-it.webp)
+
+*Mockup, non uno screenshot del gioco.*
+
 La scheda **Crediti** è la tabella dei crediti del loot della gilda, come sul sito della community. I crediti non si salvano mai: si ricalcolano ogni volta dal registro, quindi ogni client che ha gli stessi eventi mostra gli stessi numeri, e i membri vedono i numeri del registro degli officer (sotto). **Meno crediti vuol dire più precedenza.**
 
 ## Officer e membri

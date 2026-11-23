@@ -6,6 +6,10 @@ The **Roster** tab has three sub-tabs: **Pool**, **Night** and **Addon** ([[Addo
 
 ## Pool
 
+![The Pool sub-tab](../specs/mockups/fdcp-roster-en.webp)
+
+*Mockup, not an in-game screenshot.*
+
 The raiders of the season, as on the site: one card each for **Tank**, **Healer** and **DPS**.
 
 - The top right switch picks the faction (**Horde** / **Alliance**); it starts on your own.
@@ -23,6 +27,10 @@ Anyone with the permission *manage the roster* (officers by default) also sees:
 Members see the pool but no buttons and no requests.
 
 ## Night
+
+![The Night sub-tab, after the close](../specs/mockups/fdcp-night-en.webp)
+
+*Mockup, not an in-game screenshot.*
 
 The official raid night.
 

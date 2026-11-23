@@ -2,6 +2,10 @@
 
 > **Costruita, non ancora vista in gioco.** La finestra funziona nei test offline con un client simulato; come appare nel gioco vero è ancora da confermare. [English](Seasons)
 
+![La pagina Season](../specs/mockups/fdcp-season-it.webp)
+
+*Mockup, non uno screenshot del gioco.*
+
 Una **season** è l'unità dei crediti della gilda: un gruppo di raid (le istanze uscite con un aggiornamento), una tabella di crediti e un inizio. Una sessione di loot può girare solo dentro una **season aperta**. Ce n'è una sola aperta alla volta.
 
 ## Dove si trova

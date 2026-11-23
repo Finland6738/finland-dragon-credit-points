@@ -1,10 +1,10 @@
 # Interface Tour
 
-> **Design previews, not screenshots.** The window is not built yet: these images show how it is planned, in the style of the guild community site's WoW Forever page. They are drawn from the design specification with invented names, and nothing has run in the game. The previews are in Italian, the guild's language. [Italiano](Interface-Tour-it)
+> **Mockups, not screenshots.** The images on this page are drawn by `tools/make_mockups.py` from the addon's own layout and texts, with invented names, in the style of the guild community site's WoW Forever page. Nothing has been verified in the game yet, so the real window may differ in small details. The images are in English here; the Italian page has the Italian ones. [Italiano](Interface-Tour-it)
 
 ## What exists now
 
-The window itself is built: `/fdcp`, the minimap button (the guild logo) or the AddOn Compartment entry opens it. It has the title bar, the six tabs below, **themes** (Nebula, Aurora, Drago: `/fdcp theme`), and the tabs fill in as the versions arrive: Roster, Credits, Progress and **Loot › Session** (the master looter's window, see the [[Master Looter Guide|Master-Looter-Guide]]) and **Loot › Council** (see [[Council|Council]]) already work; **History › Nights** (see [[History|History]]) already work; **Settings** (see [[Settings|Settings]]) has your preferences, the guild's rules and permissions (read-only unless you are the Guild Master), the site key and the **Season** (see [[Seasons|Seasons]]). You can drag it by the title bar, resize it from the corner grip (not below 900 × 560), and it remembers where it was for each character; **Esc** closes it. The fonts are Outfit, JetBrains Mono and Orbitron, shipped with the addon (free fonts, SIL Open Font License); if one cannot load, the game's own font is used. The images below are still design previews: the real window has not been seen in the game yet.
+The window itself is built: `/fdcp`, the minimap button (the guild logo) or the AddOn Compartment entry opens it. It has the title bar, the six tabs below, **themes** (Nebula, Aurora, Drago: `/fdcp theme`), and the tabs fill in as the versions arrive: Roster, Credits, Progress and **Loot › Session** (the master looter's window, see the [[Master Looter Guide|Master-Looter-Guide]]) and **Loot › Council** (see [[Council|Council]]) already work; **History › Nights** (see [[History|History]]) already work; **Settings** (see [[Settings|Settings]]) has your preferences, the guild's rules and permissions (read-only unless you are the Guild Master), the site key and the **Season** (see [[Seasons|Seasons]]). You can drag it by the title bar, resize it from the corner grip (not below 900 × 560), and it remembers where it was for each character; **Esc** closes it. The fonts are Outfit, JetBrains Mono and Orbitron, shipped with the addon (free fonts, SIL Open Font License); if one cannot load, the game's own font is used. The images below are mockups: the real window has not been seen in the game yet.
 
 ## One window, six tabs
 
@@ -27,17 +27,69 @@ One card per raid, as on the community site: the cover (the picture of the raid 
 
 Your first kills are recorded by themselves: during an official night, or in a guild group outside one. Officers (the ranks allowed `progress.edit`, by default the Guild Master and the officers) can also **enter or correct a date**: click the boss row, pick the guild, write the date as `YYYY-MM-DD` (not in the future) and press **Save**. **Remove entered date** deletes a value entered by hand; a kill the addon recorded is never removed this way. Everyone else sees the tab read-only. Every change is a line of the audit.
 
-## Previews
+## Mockups
 
-![Roster tab](../specs/mockups/fdcp-roster.webp)
+Ten of the windows, as planned. Each is explained on its own page of this manual.
 
-![Credits tab](../specs/mockups/fdcp-credits.webp)
+### The roll popup
 
-![Progress tab](../specs/mockups/fdcp-progress.webp)
+![The roll popup: three buttons and the upgrade badge](../specs/mockups/fdcp-roll-popup-en.webp)
 
-![Loot tab, master looter](../specs/mockups/fdcp-loot-session.webp)
+*Mockup, not an in-game screenshot.*
 
-![Item popup](../specs/mockups/fdcp-roll-popup.webp)
+### The master looter's session
+
+![Loot › Session, the master looter's window](../specs/mockups/fdcp-loot-session-en.webp)
+
+*Mockup, not an in-game screenshot.*
+
+### The council
+
+![Loot › Council: flags, cheating evidence, vote, awards](../specs/mockups/fdcp-council-en.webp)
+
+*Mockup, not an in-game screenshot.*
+
+### Credits
+
+![The Credits tab](../specs/mockups/fdcp-credits-en.webp)
+
+*Mockup, not an in-game screenshot.*
+
+### Roster
+
+![Roster › Pool](../specs/mockups/fdcp-roster-en.webp)
+
+*Mockup, not an in-game screenshot.*
+
+### A night
+
+![Roster › Night, with the absence penalties](../specs/mockups/fdcp-night-en.webp)
+
+*Mockup, not an in-game screenshot.*
+
+### Progress
+
+![The Progress tab](../specs/mockups/fdcp-progress-en.webp)
+
+*Mockup, not an in-game screenshot.*
+
+### Permissions
+
+![Settings › Permissions](../specs/mockups/fdcp-permissions-en.webp)
+
+*Mockup, not an in-game screenshot.*
+
+### Season
+
+![Settings › Season, with the item-level band](../specs/mockups/fdcp-season-en.webp)
+
+*Mockup, not an in-game screenshot.*
+
+### Info
+
+![Settings › Info](../specs/mockups/fdcp-about-en.webp)
+
+*Mockup, not an in-game screenshot.*
 
 ## Themes
 
@@ -57,7 +109,9 @@ Two preferences change how the window looks, both on by default and both set at 
 
 The same two switches are in **Settings › Personal** (see [[Settings|Settings]]).
 
-![Settings: theme](../specs/mockups/fdcp-settings-theme.webp)
+![Settings: personal preferences, with the three themes](../specs/mockups/fdcp-settings-en.webp)
+
+*Mockup, not an in-game screenshot.*
 
 ## What will differ from the site
 

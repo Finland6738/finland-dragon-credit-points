@@ -6,6 +6,10 @@ La scheda **Roster** ha tre sotto-schede: **Pool**, **Serata** e **Addon** ([[Co
 
 ## Pool
 
+![La sotto-scheda Pool](../specs/mockups/fdcp-roster-it.webp)
+
+*Mockup, non uno screenshot del gioco.*
+
 I raider della season, come sul sito: una card per **Tank**, **Healer** e **DPS**.
 
 - Il selettore in alto a destra sceglie la fazione (**Orda** / **Alleanza**); parte dalla tua.
@@ -23,6 +27,10 @@ Chi ha il permesso *gestire il roster* (gli officer, di default) vede anche:
 I membri vedono il pool ma nessun pulsante e nessuna richiesta.
 
 ## Serata
+
+![La sotto-scheda Serata, dopo la chiusura](../specs/mockups/fdcp-night-it.webp)
+
+*Mockup, non uno screenshot del gioco.*
 
 La serata di raid ufficiale.
 

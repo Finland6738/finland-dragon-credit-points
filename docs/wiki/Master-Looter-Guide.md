@@ -2,6 +2,10 @@
 
 > **Built, not yet seen in the game.** The session window works in the offline tests with a simulated raid; how it looks and feels in a real raid, and the delivery of the item, are still to be confirmed. [Italiano](Master-Looter-Guide-it)
 
+![The master looter's session window](../specs/mockups/fdcp-loot-session-en.webp)
+
+*Mockup, not an in-game screenshot.*
+
 This page is for the **master looter**: the player who opens the boss's body and runs the roll. The addon does the sums and writes the proposal; **you confirm, reject or modify it**. You never calculate credits by hand and you never write the reason of a normal award: the addon does. You write a reason only when you depart from the rule.
 
 ## Before the raid

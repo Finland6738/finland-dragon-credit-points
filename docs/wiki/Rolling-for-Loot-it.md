@@ -8,7 +8,9 @@ Ti serve l'addon attivo: solo i raider con l'addon possono rispondere e rollare,
 
 ## Il popup
 
-![Popup del pezzo](../specs/mockups/fdcp-roll-popup.webp)
+![Popup del roll: tre pulsanti e badge di upgrade](../specs/mockups/fdcp-roll-popup-it.webp)
+
+*Mockup, non uno screenshot del gioco.*
 
 Dall'alto in basso:
 

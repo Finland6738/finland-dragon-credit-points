@@ -2,6 +2,10 @@
 
 > **Built, not yet seen in the game.** The council's page works in the offline tests with a simulated raid; how it looks and feels in a real raid is still to be confirmed. [Italiano](Council-it)
 
+![The Council page](../specs/mockups/fdcp-council-en.webp)
+
+*Mockup, not an in-game screenshot.*
+
 This page is for the **loot council**: the officers (or the characters the guild lists) who watch the awards, vote when the guild asks for it and correct what went wrong. Everything the council does has its own page in the main window: **Loot › Council**, the third sub-tab after *Session* and *To deliver*. The master looter's own tasks (running the roll, confirming) are in the [[Master Looter Guide|Master-Looter-Guide]]; the rules behind them are in [[Loot Rules|Loot-Rules]].
 
 The page shows what the addon already knows and sends your clicks to the same rules as the chat commands: it never decides anything by itself. Every action that changes the log asks for a **reason**, and without a reason nothing is written.

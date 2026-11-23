@@ -97,7 +97,7 @@
 - Scope: `UI/Widgets/DataTable.lua` (sortable, ScrollBox with pooled rows, fixed first and last columns, header outside the list, as in `ui-style.md` §3), the **Roster** tab: `UI/Windows/Roster.lua` (sub-tab Pool: the site's three role columns with class tags, counts against the targets, the 4 px gradient bar, Trial badges and free slots, the faction switch; declarations, alts and approvals), `UI/Windows/Nights.lua` as the sub-tab **Serata** (open / close a night, lineup, proposed bench, attendance only for officers per `view.attendance`).
 - Done when:
   - [x] Officers can manage the pool and run a night from the windows in the mock; members see no attendance.
-  - [ ] The Roster and Night sub-tabs look like the preview `docs/specs/mockups/fdcp-roster.webp` in game. *(in game)*
+  - [ ] The Roster and Night sub-tabs look like the preview `docs/specs/mockups/fdcp-roster-en.webp` in game. *(in game)*
 - Tests: `Tests/test_ui_roster.lua`.
 - Docs: wiki **Roster and Nights** page (EN + IT), CHANGELOG.
 - Real client: the windows in game.
@@ -110,7 +110,7 @@
 - Scope: `UI/Windows/Credits.lua`, the **Credits** tab as on the site ([`docs/specs/ui-style.md`](../specs/ui-style.md) §3, §6): one accordion per season (newest open), one column per night with `+N` in mono, the total chip and the queue position, sortable headers, filters by role and class, the player's own row highlighted; computed from the local ledger.
 - Done when:
   - [x] The table matches the ledger totals in tests; sorting and filters work.
-  - [ ] The tab looks like the preview `docs/specs/mockups/fdcp-credits.webp` in game. *(in game)*
+  - [ ] The tab looks like the preview `docs/specs/mockups/fdcp-credits-en.webp` in game. *(in game)*
 - Tests: `Tests/test_ui_credits.lua`.
 - Docs: wiki **Credits** page (EN + IT), README features, CHANGELOG.
 - Real client: the window in game.
@@ -123,7 +123,7 @@
 - Scope: `UI/Windows/Progress.lua`, the **Progress** tab as on the site: one card per instance of `Data/Instances.lua` (cover from `EJ_GetInstanceInfo` when the client has it, a generated cover otherwise; masked corners; size eyebrow and name in the display font), a `kills/total` bar per faction, the bosses in two columns with index, name, skull or dashed circle and the first-kill date per faction (the other faction's column shows only what an officer entered with `PROGRESS_SET`, since the two guilds never exchange data), the legend; officers with `progress.edit` add or correct a date from the boss row.
 - Done when:
   - [x] The tab shows the expected kills and dates for a simulated season in the mock; members cannot edit.
-  - [ ] The tab looks like the preview `docs/specs/mockups/fdcp-progress.webp` in game. *(in game)*
+  - [ ] The tab looks like the preview `docs/specs/mockups/fdcp-progress-en.webp` in game. *(in game)*
 - Tests: `Tests/test_ui_progress.lua`.
 - Docs: wiki **Interface Tour** Progress section (EN + IT), CHANGELOG.
 - Real client: covers, icons, the window in game.

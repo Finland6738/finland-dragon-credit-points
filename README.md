@@ -23,6 +23,15 @@
 | **Export** | The credits table for Discord, CSV, JSON, and the community site's `roster.json`, `loot.json` and `progress.json` ready to drop in ([spec](docs/specs/site-export.md)) |
 | **Interface** | The look of the guild community site (dark "Nebula" theme, plus a light theme and the logo's colours), tabs Roster · Credits · Progress · Loot · History · Settings ([style and previews](docs/specs/ui-style.md)); English and Italian, more languages by adding one file |
 
+## Interface previews
+
+> **Mockups, not in-game screenshots.** Drawn from the addon's own layout and texts (`tools/make_mockups.py`), with invented names; nothing has been verified in the game yet. More in the [Interface Tour](docs/wiki/Interface-Tour.md).
+
+|   |   |   |
+|---|---|---|
+| [<img src="docs/specs/mockups/fdcp-roll-popup-en.webp" alt="Roll popup" width="380">](docs/specs/mockups/fdcp-roll-popup-en.webp)<br>**Roll popup** | [<img src="docs/specs/mockups/fdcp-loot-session-en.webp" alt="Master looter session" width="380">](docs/specs/mockups/fdcp-loot-session-en.webp)<br>**Master looter session** | [<img src="docs/specs/mockups/fdcp-council-en.webp" alt="Council" width="380">](docs/specs/mockups/fdcp-council-en.webp)<br>**Council** |
+| [<img src="docs/specs/mockups/fdcp-credits-en.webp" alt="Credits" width="380">](docs/specs/mockups/fdcp-credits-en.webp)<br>**Credits** | [<img src="docs/specs/mockups/fdcp-night-en.webp" alt="Night with absences" width="380">](docs/specs/mockups/fdcp-night-en.webp)<br>**Night with absences** | [<img src="docs/specs/mockups/fdcp-permissions-en.webp" alt="Permissions" width="380">](docs/specs/mockups/fdcp-permissions-en.webp)<br>**Permissions** |
+
 ## Requirements
 
 - World of Warcraft: Forever client (Interface 16001).

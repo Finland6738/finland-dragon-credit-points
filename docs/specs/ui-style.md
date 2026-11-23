@@ -231,20 +231,29 @@ del 9-slice a scala frazionaria, propagazione del colore degli oggetti font, nom
 
 Generate da `tools/make_mockups.py` (`python -X utf8 tools/make_mockups.py`; servono Chrome o Edge in modalità
 headless e Pillow) con i token di `tools/mockup_lib.py`. **Non sono screenshot**: i font sono approssimati con
-quelli del computer che le genera, i nomi sono inventati e nulla è stato provato nel client.
+quelli del computer che le genera, i nomi sono inventati e nulla è stato provato nel client. Dopo M7 sono state
+ridisegnate sulle finestre reali (popup a tre pulsanti con badge di upgrade, sessione del master looter, council con
+segnali e prove di imbroglio, serata con penalità di assenza, impostazioni con permessi, season con fascia di item
+level, pagina Info) e ogni scena esiste in **due lingue**: `fdcp-<scena>-it.webp` e `fdcp-<scena>-en.webp`.
+L'elenco con titoli e descrizioni per la galleria di CurseForge è in [assets/CURSEFORGE.md](../../assets/CURSEFORGE.md).
 
-| Anteprima | Cosa mostra |
+| Anteprima (italiano) | Cosa mostra |
 |---|---|
-| ![Roster](mockups/fdcp-roster.webp) | **Roster**: colonne per ruolo, posti liberi, Trial, selettore di fazione |
-| ![Crediti](mockups/fdcp-credits.webp) | **Crediti**: season a fisarmonica, run come colonne, totale e precedenza; la propria riga evidenziata |
-| ![Progress](mockups/fdcp-progress.webp) | **Progress**: prima uccisione per boss e per fazione, come sul sito |
-| ![Loot](mockups/fdcp-loot-session.webp) | **Loot** (master looter): pezzi, candidati, roll, proposta, council |
-| ![Popup](mockups/fdcp-roll-popup.webp) | **Popup del pezzo** per il giocatore |
-| ![Esporta](mockups/fdcp-site-export.webp) | **Storico › Esporta**: i file del sito pronti da copiare |
-| ![Impostazioni](mockups/fdcp-settings-theme.webp) | **Impostazioni**: tema Nebula, Aurora o Drago, effetti, font |
-| ![Aurora](mockups/fdcp-credits-aurora.webp) | Crediti nel tema chiaro **Aurora** |
-| ![Drago](mockups/fdcp-roster-drago.webp) | Roster nel tema **Drago** (palette del logo) |
-| ![Design system](mockups/fdcp-design-system.webp) | Token, componenti e tipografia del tema Nebula |
+| ![Popup](mockups/fdcp-roll-popup-it.webp) | **Popup del roll**: Passo / Tira Main-spec / Tira Off-spec, badge di upgrade, crediti e fila; sotto, un pezzo non utilizzabile con Passo preselezionato |
+| ![Loot](mockups/fdcp-loot-session-it.webp) | **Loot › Sessione** (master looter): pezzi, candidati, roll, colonna Upgrade, proposta e segnali del council |
+| ![Council](mockups/fdcp-council-it.webp) | **Loot › Council**: segnali, prove di imbroglio con Penalizza +2, voto, assegnazioni |
+| ![Crediti](mockups/fdcp-credits-it.webp) | **Crediti**: season a fisarmonica, serate come colonne, totale e fila; la propria riga evidenziata |
+| ![Roster](mockups/fdcp-roster-it.webp) | **Roster › Pool**: colonne per ruolo, posti liberi, Trial, selettore di fazione |
+| ![Serata](mockups/fdcp-night-it.webp) | **Roster › Serata**: formazione, panchina (anche da soli) e penalità di assenza proposte |
+| ![Progress](mockups/fdcp-progress-it.webp) | **Progress**: prima uccisione per boss e per fazione, come sul sito |
+| ![Impostazioni](mockups/fdcp-settings-it.webp) | **Impostazioni › Personali**: tema Nebula, Aurora o Drago, effetti, suoni, lingua |
+| ![Permessi](mockups/fdcp-permissions-it.webp) | **Impostazioni › Permessi**: il grado più basso per ogni permesso |
+| ![Season](mockups/fdcp-season-it.webp) | **Impostazioni › Season**: la season aperta e la fascia di item level |
+| ![Info](mockups/fdcp-about-it.webp) | **Impostazioni › Info**: autore, link da copiare, licenza e crediti |
+| ![Esporta](mockups/fdcp-site-export-it.webp) | **Storico › Esporta**: i file del sito pronti da copiare |
+| ![Aurora](mockups/fdcp-credits-aurora-it.webp) | Crediti nel tema chiaro **Aurora** |
+| ![Drago](mockups/fdcp-roster-drago-it.webp) | Roster nel tema **Drago** (palette del logo) |
+| ![Design system](mockups/fdcp-design-system-it.webp) | Token, componenti e tipografia del tema Nebula |
 
 ## 9. Stato dopo M7-1 (rifinitura)
 

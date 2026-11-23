@@ -1,6 +1,6 @@
 # Giro dell'interfaccia
 
-> **Anteprime di progetto, non screenshot.** La finestra non è ancora costruita. Queste immagini mostrano come è progettata, nello stile della pagina WoW Forever del sito della community. Sono disegnate dalla specifica con nomi inventati e nulla è stato provato in gioco. [English](Interface-Tour)
+> **Mockup, non screenshot.** Le immagini di questa pagina sono disegnate da `tools/make_mockups.py` dal layout e dai testi dell'addon, con nomi inventati, nello stile della pagina WoW Forever del sito della community. Nulla è ancora stato verificato in gioco, quindi la finestra vera può differire in piccoli dettagli. Qui le immagini sono in italiano; la pagina inglese ha quelle in inglese. [English](Interface-Tour)
 
 ## Cosa esiste ora
 
@@ -27,17 +27,69 @@ Una card per raid, come sul sito: la copertina (l'immagine del raid dal Diario d
 
 Le tue prime uccisioni si registrano da sole: durante una serata ufficiale o, fuori da una serata, in un gruppo di gilda. Gli officer (i ranghi con il permesso `progress.edit`, di norma il Guild Master e gli officer) possono anche **inserire o correggere una data**: clicca la riga del boss, scegli la gilda, scrivi la data come `AAAA-MM-GG` (non nel futuro) e premi **Salva**. **Rimuovi la data inserita** toglie un valore messo a mano; un'uccisione registrata dall'addon non si toglie così. Per gli altri la scheda è di sola lettura. Ogni modifica è una riga dell'audit.
 
-## Anteprime
+## Mockup
 
-![Scheda Roster](../specs/mockups/fdcp-roster.webp)
+Dieci delle finestre, come sono progettate. Ognuna è spiegata nella sua pagina di questo manuale.
 
-![Scheda Crediti](../specs/mockups/fdcp-credits.webp)
+### Il popup del roll
 
-![Scheda Progress](../specs/mockups/fdcp-progress.webp)
+![Il popup del roll: tre pulsanti e il badge di upgrade](../specs/mockups/fdcp-roll-popup-it.webp)
 
-![Scheda Loot, master looter](../specs/mockups/fdcp-loot-session.webp)
+*Mockup, non uno screenshot del gioco.*
 
-![Popup del pezzo](../specs/mockups/fdcp-roll-popup.webp)
+### La sessione del master looter
+
+![Loot › Sessione, la finestra del master looter](../specs/mockups/fdcp-loot-session-it.webp)
+
+*Mockup, non uno screenshot del gioco.*
+
+### Il council
+
+![Loot › Council: segnali, prove di imbroglio, voto, assegnazioni](../specs/mockups/fdcp-council-it.webp)
+
+*Mockup, non uno screenshot del gioco.*
+
+### Crediti
+
+![La scheda Crediti](../specs/mockups/fdcp-credits-it.webp)
+
+*Mockup, non uno screenshot del gioco.*
+
+### Roster
+
+![Roster › Pool](../specs/mockups/fdcp-roster-it.webp)
+
+*Mockup, non uno screenshot del gioco.*
+
+### Una serata
+
+![Roster › Serata, con le penalità di assenza](../specs/mockups/fdcp-night-it.webp)
+
+*Mockup, non uno screenshot del gioco.*
+
+### Progress
+
+![La scheda Progress](../specs/mockups/fdcp-progress-it.webp)
+
+*Mockup, non uno screenshot del gioco.*
+
+### Permessi
+
+![Impostazioni › Permessi](../specs/mockups/fdcp-permissions-it.webp)
+
+*Mockup, non uno screenshot del gioco.*
+
+### Season
+
+![Impostazioni › Season, con la fascia di item level](../specs/mockups/fdcp-season-it.webp)
+
+*Mockup, non uno screenshot del gioco.*
+
+### Info
+
+![Impostazioni › Info](../specs/mockups/fdcp-about-it.webp)
+
+*Mockup, non uno screenshot del gioco.*
 
 ## Temi
 
@@ -57,7 +109,9 @@ Due preferenze cambiano l'aspetto della finestra, entrambe attive di default e a
 
 Gli stessi due interruttori sono in **Impostazioni › Personali** (vedi [[Impostazioni|Settings-it]]).
 
-![Impostazioni: tema](../specs/mockups/fdcp-settings-theme.webp)
+![Impostazioni: preferenze personali, con i tre temi](../specs/mockups/fdcp-settings-it.webp)
+
+*Mockup, non uno screenshot del gioco.*
 
 ## Che cosa sarà diverso dal sito
 
