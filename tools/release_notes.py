@@ -37,6 +37,19 @@ def sections(text):
     return out
 
 
+# GitHub refuses a release body above 125000 characters; the first release holds the whole history, so the notes are cut
+# at a line boundary well below that and point to the changelog for the rest.
+MAX_NOTES = 60000
+CHANGELOG_URL = "https://github.com/Finland6738/finland-dragon-credit-points/blob/main/CHANGELOG.md"
+
+
+def cap(body):
+    if len(body) <= MAX_NOTES:
+        return body
+    cut = body[:MAX_NOTES].rsplit("\n", 1)[0].rstrip()
+    return cut + "\n\n...\n\nThe list is long: the complete notes are in [CHANGELOG.md](" + CHANGELOG_URL + ").\n"
+
+
 def notes_for(tag, text):
     """(notes, which section was used) for a version tag."""
     m = TAG.match(tag)
@@ -47,7 +60,7 @@ def notes_for(tag, text):
     for name in (exact, base, "Unreleased"):
         body = found.get(name, "").strip()
         if body:
-            return body + "\n", name
+            return cap(body + "\n"), name
     return f"See [CHANGELOG.md](https://github.com/Finland6738/finland-dragon-credit-points/blob/main/CHANGELOG.md) for what changed.\n", None
 
 

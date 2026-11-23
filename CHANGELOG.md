@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Fixed
+
+- release: the notes of a GitHub Release are cut at 60000 characters (`tools/release_notes.py`), with a pointer to `CHANGELOG.md`: GitHub refuses a body above 125000 characters and the first release holds the whole history, so the `v1.0.1` run failed at *Create the GitHub Release*.
+
 ## [1.0.1] - 2026-11-23
 
 ### Added
