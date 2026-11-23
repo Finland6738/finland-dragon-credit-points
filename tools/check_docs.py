@@ -199,6 +199,7 @@ def main():
     check_wiki_languages(problems)
     check_optional("check_addon", problems)
     check_optional("check_package", problems)
+    check_optional("release_notes", problems)
     check_optional("check_locale", problems)
     check_optional("make_mockups", problems)
     for p in problems:

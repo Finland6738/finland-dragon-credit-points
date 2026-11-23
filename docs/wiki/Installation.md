@@ -2,6 +2,10 @@
 
 > **Test versions only.** There is no download of Finland Dragon Credit Points yet: the addon is still being built and nothing has been run in the game. Until the first release you install it from the source with the script below. [Italiano](Installation-it)
 
+## Install from the release zip
+
+When a version is released, download `FinlandDragonCreditPoints-<version>.zip` from the [Releases page](https://github.com/Finland6738/finland-dragon-credit-points/releases) and unpack it so that the folder `FinlandDragonCreditPoints` sits in `<WoW folder>/_forever_/Interface/AddOns/`. The zip already contains the libraries. Then follow step 4 below. The release is built by a workflow from the tag (see `docs/RELEASING.md` in the repository).
+
 ## For testers: install from the source
 
 You need [Python](https://www.python.org/) 3.9 or newer and a copy of the repository (`git clone` or the zip of the repository).

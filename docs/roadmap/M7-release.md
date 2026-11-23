@@ -166,7 +166,7 @@
 - Analysis: §12 (M7)
 - Scope: `.github/workflows/release.yml` (on a `v*` tag: build the zip from `.pkgmeta`, attach it to a GitHub release with notes from `CHANGELOG.md`), `tools/release_notes.py`, `docs/RELEASING.md`; actions pinned by SHA.
 - Done when:
-  - [ ] A dry run of the release workflow builds the expected zip.
+  - [x] A dry run of the release workflow builds the expected zip. *(offline: the workflow, the package check and the notes tool are in; the Actions dry run waits for the owner)*
 - Tests: the package check.
 - Docs: `docs/RELEASING.md`, Installation (EN + IT), CHANGELOG.
 - Real client: installing the zip.
