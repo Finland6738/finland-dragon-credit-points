@@ -178,7 +178,7 @@
 - Analysis: §8.5 (documentation)
 - Scope: every wiki page reviewed in both languages (Home, Installation, Interface Tour, Commands, Rolling for Loot, Credits, Master Looter Guide, Council, Loot Rules, Export, Settings, FAQ, Privacy and Data, Reporting Bugs), with design previews drawn from the addon's own layout and invented names until real screenshots exist.
 - Done when:
-  - [ ] Every page has its twin, is in the sidebar and matches the addon's behaviour.
+  - [x] Every page has its twin, is in the sidebar and matches the addon's behaviour.
 - Tests: `check_docs.py`.
 - Docs: wiki (EN + IT), both READMEs.
 - Real client: nothing.

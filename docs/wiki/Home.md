@@ -4,12 +4,14 @@
 
 **The guild's credit-based loot system for World of Warcraft: Forever.** Finland Dragon Credit Points (FDCP, command `/fdcp`) helps the master looter run each roll: it reads the drops, shows every raider a popup to answer main-spec or off-spec and roll, picks the winner by the guild's rules (fewest credits wins, then the highest roll, then a reroll among the tied), and keeps a ledger of credits, nights and awards that everyone can read.
 
-> **Status: in development, no download yet.** The addon is being planned and built one step at a time; the pages of this manual are filled in as each feature arrives. [Italiano](Home-it)
+> **Status: feature-complete offline, not yet seen in the game.** Every feature is built and tested offline; the owner's in-game checks come before the first release (v1.0.0), so there is no download yet and this manual may still change after them. [Italiano](Home-it)
 
 ## Start here
 
 | I want to… | Read |
 |---|---|
+| Get started as a raider (short version) | [[Quick Start: Raider|Quick-Start-Raider]] |
+| Get started as an officer or the Guild Master (short version) | [[Quick Start: Officers|Quick-Start-Officer]] |
 | Install the addon | [[Installation|Installation]] |
 | Know the commands | [[Commands|Commands]] |
 | Know how credits, costs, rolls and ties work | [[Loot Rules|Loot-Rules]] |
@@ -26,10 +28,10 @@
 | Vote, cancel an award, correct credits or run a legendary project as the council | [[Council|Council]] |
 | Read the nights, a member's history or an item's history | [[History|History]] |
 | Change my preferences, or (Guild Master) the rules and the permissions | [[Settings|Settings]] |
+| Find a quick answer | [[FAQ|FAQ]] |
+| Know what the addon keeps and sends | [[Privacy and Data|Privacy-and-Data]] |
 | Report a bug (the bug report window) | [[Reporting Bugs|Reporting-Bugs]] |
 | Find out who made the addon, the licence and the links | [[About|About]] |
-
-More pages are added as the features are built.
 
 ## For developers
 

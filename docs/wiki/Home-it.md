@@ -4,12 +4,14 @@
 
 **Il sistema di loot a crediti della gilda per World of Warcraft: Forever.** Finland Dragon Credit Points (FDCP, comando `/fdcp`) aiuta il master looter a gestire ogni roll: legge i drop, mostra a ogni raider un popup per rispondere main-spec o off-spec e rollare, sceglie il vincitore secondo le regole della gilda (meno crediti vince, poi il roll più alto, poi un reroll fra i pari) e tiene un registro di crediti, serate e assegnazioni consultabile da tutti.
 
-> **Stato: in sviluppo, nessun download ancora.** L'addon si progetta e si costruisce un passo alla volta; le pagine di questo manuale si riempiono man mano che arrivano le funzioni. [English](Home)
+> **Stato: completo offline, non ancora visto in gioco.** Ogni funzione è costruita e provata offline; le verifiche in gioco del proprietario vengono prima della prima versione (v1.0.0), quindi non c'è ancora un download e questo manuale può cambiare dopo di esse. [English](Home)
 
 ## Da dove iniziare
 
 | Voglio… | Leggi |
 |---|---|
+| Iniziare come raider (versione breve) | [[Guida rapida: raider|Quick-Start-Raider-it]] |
+| Iniziare come ufficiale o Guild Master (versione breve) | [[Guida rapida: ufficiali|Quick-Start-Officer-it]] |
 | Installare l'addon | [[Installazione|Installation-it]] |
 | Conoscere i comandi | [[Comandi|Commands-it]] |
 | Sapere come funzionano crediti, costi, roll e parità | [[Regole del loot|Loot-Rules-it]] |
@@ -25,6 +27,8 @@
 | Votare, annullare un'assegnazione, correggere i crediti o seguire un progetto leggendario come council | [[Council|Council-it]] |
 | Leggere le serate, lo storico di un membro o di un oggetto | [[Storico|History-it]] |
 | Cambiare le mie preferenze o (Guild Master) le regole e i permessi | [[Impostazioni|Settings-it]] |
+| Trovare una risposta veloce | [[FAQ|FAQ-it]] |
+| Sapere cosa conserva e manda l'addon | [[Privacy e dati|Privacy-and-Data-it]] |
 | Segnalare un bug (la finestra del rapporto bug) | [[Segnalare un bug|Reporting-Bugs-it]] |
 | Sapere chi ha fatto l'addon, la licenza e i link | [[Crediti e info|About-it]] |
 | Incollare la tabella crediti su Discord, o averla in CSV o JSON | [[Esporta|Export-it]] |

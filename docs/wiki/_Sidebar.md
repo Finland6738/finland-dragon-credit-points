@@ -1,6 +1,8 @@
 **English**
 - [[Home|Home]]
 - [[Installation|Installation]]
+- [[Quick Start: Raider|Quick-Start-Raider]]
+- [[Quick Start: Officers|Quick-Start-Officer]]
 - [[Commands|Commands]]
 - [[Loot Rules|Loot-Rules]]
 - [[Interface Tour|Interface-Tour]]
@@ -17,12 +19,16 @@
 - [[Seasons|Seasons]]
 - [[Backup and Seasons|Backup-and-Seasons]]
 - [[Settings|Settings]]
+- [[FAQ|FAQ]]
+- [[Privacy and Data|Privacy-and-Data]]
 - [[Reporting Bugs|Reporting-Bugs]]
 - [[About|About]]
 
 **Italiano**
 - [[Home|Home-it]]
 - [[Installazione|Installation-it]]
+- [[Guida rapida: raider|Quick-Start-Raider-it]]
+- [[Guida rapida: ufficiali|Quick-Start-Officer-it]]
 - [[Comandi|Commands-it]]
 - [[Regole del loot|Loot-Rules-it]]
 - [[Giro dell'interfaccia|Interface-Tour-it]]
@@ -39,5 +45,7 @@
 - [[Season|Seasons-it]]
 - [[Backup e season|Backup-and-Seasons-it]]
 - [[Impostazioni|Settings-it]]
+- [[FAQ|FAQ-it]]
+- [[Privacy e dati|Privacy-and-Data-it]]
 - [[Segnalare un bug|Reporting-Bugs-it]]
 - [[Crediti e info|About-it]]
