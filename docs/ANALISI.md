@@ -1074,6 +1074,41 @@ mangiano, quindi il cibo per il pet vale solo per il cacciatore (il GM può aggi
 leggono: un client precedente a M8-2 non conosce la sezione e rifiuterebbe l'intero `CONFIG_CHANGED`. Una gilda che
 cambia questi requisiti deve quindi avere tutti gli officer su una versione con M8-2.
 
+**La scheda e il pulsante "Avvisa" (M8-3).** Fatti: `UI/ReadinessPanel.lua` è la sotto-scheda **Roster › Preparazione**
+(accanto ad **Addon**), visibile solo a chi può chiedere al raid (`ReadinessCheck:CanManage()`: chi conduce la serata o chi
+ha `raid.addonCheck`); per gli altri la sotto-scheda non c'è. Sopra la tabella ci sono il riassunto ("31 ok · 5 warn · 3
+mancanti · 1 ignoto", "36/40 risposte") e due pulsanti.
+
+- **Controlla.** Chiama `ReadinessCheck:Request()`; durante l'attesa di 30 secondi mostra i secondi che mancano; ogni
+  rifiuto (`NOT_IN_RAID`, `DISABLED`, `TOO_SOON`, i codici dei permessi) è un messaggio tradotto. Il controllo non parte mai
+  in combattimento: la fotografia del raider aspetta la fine del combattimento (§4.2 sopra).
+- **Tabella.** Una riga per membro del raid (`DataTable`, stile del sito): nome nel colore della classe, stato (OK /
+  Scarso / Manca / Ignoto nei colori del tema), gli slot senza incantamento per nome, e una colonna per ogni categoria
+  (cibo con buff, cibo, flask, pozioni, acqua, munizioni, cibo pet) con "OK", "ha/serve" (arancio se scarso, rosso se
+  manca), "?" (illeggibile o senza risposta) o "-" (non richiesto a quel raider). Una riga senza risposta dice il motivo
+  (`NOT_ASKED`, `WAITING`, `NO_ADDON`, `OFFLINE`, `NO_ANSWER`). Ordine: i peggiori per primi, poi per nome. Si ridisegna a
+  ogni `READINESS_CHANGED`.
+- **Avvisa** (`App/ReadinessNotifier.lua`, le parole in `Domain/ReadinessNotice.lua`, pura). Riusa le protezioni dell'avviso
+  di M3-6 (§4.1): solo da un clic, mai durante un boss, un avviso ogni `notice.minutes` minuti (la stessa impostazione), il
+  lockdown della chat. Prima chiede conferma nella scheda ("Scrivere N righe in /raid e sussurrare a M giocatori?"). Poi:
+  (1) **una riga di riassunto in `/raid`** ("[FDCP] Preparazione: 2 con mancanze, 1 con scorte basse. Controllate i
+  sussurri.", con gli ignoti se ce ne sono) seguita dai **nomi raggruppati per cosa manca** ("[FDCP] pozioni: Aurel,
+  Corin"; al massimo 8 voci, le più mancanti per prime), spezzati a 255 byte senza tagliare un nome; (2) **un sussurro a
+  ogni raider con stato MANCA o SCARSO** che elenca quel che manca e dove ("[FDCP] Ti manca: incantamento polsi, mani;
+  pozioni 0/2; flask 0/1"), spezzato a 255 byte. Chi è "ignoto" non riceve sussurri; un valore illeggibile non si elenca.
+  Le righe sono nella lingua di chi clicca.
+- **Coda.** I messaggi partono uno ogni 0,4 secondi (quaranta sussurri di fila li scarterebbe la chat). Durante un boss o il
+  lockdown della chat l'avviso **non si perde**: aspetta in coda e parte alla fine (fine dell'incontro, o il controllo ogni 2
+  secondi); dopo 10 minuti si butta (la tabella è vecchia), come se si lasciasse il raid. Un secondo clic durante l'invio dà
+  `BUSY`; l'attesa dei minuti parte al clic.
+- **Testi del GM.** Le righe stanno nelle chiavi di lingua (`READY_NOTICE_*`, `READY_PART_*`); il GM le sostituisce con i
+  campi `readiness.texts.raid` e `readiness.texts.whisper` (segnaposto `{missing} {low} {unknown} {total}` nella riga `/raid`,
+  `{list} {name}` nel sussurro; vuoto = il testo della lingua). Fanno parte della sezione `readiness`, quindi restano fuori
+  dall'evento finché sono quelli di partenza.
+- **Registro.** Ogni avviso va nel registro del personaggio (`readinessNotices`: chi, quando, quante righe e sussurri,
+  quanti sono partiti, se ha aspettato, i nomi) e nel registro di debug (canale e lunghezza, mai un nome); evento
+  `READINESS_NOTICE_SENT`. Niente nel registro eventi.
+
 **Il verdetto (M8-2, `Domain/Readiness.lua`, Lua puro).** Per ogni raider:
 
 - un incantamento richiesto e assente è **mancante** sul suo slot; uno slot illeggibile è **sconosciuto**;
@@ -1084,19 +1119,14 @@ cambia questi requisiti deve quindi avere tutti gli officer su una versione con 
   risposta), altrimenti **mancante** se manca qualcosa, **attenzione** se qualcosa è basso o illeggibile, **ok**.
 
 Il risultato è una lista per slot e per categoria (`{ slot, status }`, `{ cat, status, have, need }`): M8-3 la trasforma
-in una riga per il riassunto in `/raid` e in un sussurro per giocatore.
+in una riga per il riassunto in `/raid` e in un sussurro per giocatore (`Domain/ReadinessNotice.lua`).
 
 **La tabella degli ID (`Data/Readiness.lua`).** ID degli oggetti consumabili e degli incantesimi dei buff del gioco
 originale, **da verificare su Forever** ([`docs/checklists/M8.md`](checklists/M8.md)). Un ID sbagliato non rompe niente:
 un oggetto che il client non conosce conta 0, un buff con l'ID sbagliato non si vede e la categoria si giudica dalle
 borse; al peggio dà un "basso" o un "mancante" falso finché la tabella non si corregge.
 
-**La scheda e il pulsante (M8-3).** Una scheda per chi può chiedere (chi guida la serata o ha `raid.addonCheck`): il
-pulsante "Controlla" manda la richiesta (con l'attesa di 30 secondi), una riga per membro del raid con stato, slot e
-categorie che mancano, un riepilogo ("31 ok, 5 attenzione, 3 mancanti, 1 sconosciuto"). Il pulsante "Avvisa" riusa
-l'avviso in `/raid` di M3-6 (§4.1): un riassunto breve in `/raid` e un sussurro a ognuno con quello che gli manca, nella
-lingua di chi preme, con le stesse protezioni (mai durante un boss, una volta ogni N minuti, sempre da un clic). Il
-modulo delle regole guadagna la pagina dei requisiti.
+La scheda, il pulsante "Avvisa" e la pagina delle regole sono M8-3 (fatti: vedi **La scheda e il pulsante "Avvisa"** più sopra).
 
 ---
 
@@ -1914,8 +1944,12 @@ M7-3 (sotto); il campo "Pezzo che nessuno vuole" e simili sono liste di codici c
 oggetto (`cost.overrides`) e la lista dei token **non** hanno ancora una pagina (sono elenchi di id, non valori: restano
 nel dominio e nell'esportazione delle regole di M6-7); le regole importate che li contengono si conservano intatte
 quando il GM salva da qui.
-La sezione `readiness` (requisiti del controllo di prontezza, §4.2, M8-2) non ha ancora una pagina: arriva con la
-scheda di M8-3. Fino ad allora vale quella di partenza, che il modulo conserva intatta quando il GM salva.
+La sezione `readiness` (requisiti del controllo di prontezza, §4.2, M8-2) ha la sua pagina **Preparazione del raid**
+(M8-3, 24 campi in tre colonne): l'interruttore del controllo, un interruttore per ogni slot incantabile (lo slot a
+distanza resta dei cacciatori), il minimo di ogni categoria (0 = non richiesto), tre interruttori di filtro (acqua solo per
+le classi con mana; munizioni e cibo del pet solo per i cacciatori) e i due testi dell'avviso. Gli altri filtri che le
+regole del GM già hanno (classi, ruoli) si conservano; un minimo cambia il primo requisito della categoria. Il salvataggio
+passa da `SettingsController:ApplyRules` come ogni altra pagina.
 
 **Come è fatto (M7-3).** La sotto-scheda **Profili** (`UI/Windows/Profiles.lua`, sopra `SettingsController`) riunisce tre
 cose, senza duplicare quel che c'era già. **Profili personali (AceDB)**: `Config:ProfileNames / SelectProfile /

@@ -45,7 +45,7 @@ Each player's own client sees everything about its player: its gear (the enchant
 
 ## Consequences
 
-- The master looter sees a table with one verdict per raid member: OK, WARN, MISSING or UNKNOWN, with the slots and categories that fail. Step M8-3 draws it as a tab and turns each row into a `/raid` summary line and a whisper.
+- The master looter sees a table with one verdict per raid member: OK, WARN, MISSING or UNKNOWN, with the slots and categories that fail. Step M8-3 draws it as a tab (`UI/ReadinessPanel.lua`) and turns each row into a `/raid` summary line and a whisper (`Domain/ReadinessNotice.lua`, `App/ReadinessNotifier.lua`).
 - The verdict is only as honest as the raider's client: a modified addon could say it is enchanted. Readiness is advice for the raid, not a rule with a penalty, so self-reporting is enough.
 - The item and spell ids are those of the original game and must be checked on WoW Forever (`docs/checklists/M8.md`). A wrong id never breaks the check. At worst it gives a false "low" or "missing" until the table is fixed.
 - Offline tests (`Tests/test_readiness.lua`) cover the verdict, the snapshot built on the mock client, and the round trip on the network simulator, including trust, combat and throttling.

@@ -12,6 +12,10 @@
 --         "choice"          options = { { value, key } }          one of a list (`list = true`: a list of codes joined by ",")
 --         "text"            max                                   a line of text (the wording of a notice)
 --         "names"                                                 a list of character names, separated by commas
+--   The readiness page (M8-3) edits the requirement lists of the section `readiness` through one field per value: a slot
+--   field (`slot` = an inventory slot: a switch, on while a requirement for the slot exists), a minimum field (`cat` = a
+--   consumable category: the minimum count, 0 = not required) and a filter field (`cat` and `filter` = "mana" or "hunter": the
+--   requirement is for the mana users / the hunters only). Every other filter a requirement carries is kept as it is.
 --
 -- RuleFields.Get / Set read and write the value in a rules table (a copy the window edits), RuleFields.Parse turns what the
 -- player typed into a value; the validity of the whole table is still Rules.Validate's, run before anything is written.
@@ -23,7 +27,7 @@ ns.RuleFields, ns.modules.RuleFields = RuleFields, RuleFields
 
 local type, pairs, ipairs, tostring, tonumber, floor = type, pairs, ipairs, tostring, tonumber, math.floor
 
-RuleFields.PAGES = { "session", "priority", "costs", "multipliers", "members", "council", "legendary", "messages", "upgrade", "site" }
+RuleFields.PAGES = { "session", "priority", "costs", "multipliers", "members", "council", "legendary", "messages", "readiness", "upgrade", "site" }
 RuleFields.COUNCIL_WORD = "council"   -- what a cost cell holds when the council decides (Domain/Pricing.lua)
 
 local function opt(value, key) return { value = value, key = key } end
@@ -55,7 +59,7 @@ local function add(page, path, kind, keys, extra)
 	f.page, f.path, f.kind, f.keys = page, path, kind, keys
 	local id = {}
 	for i, p in ipairs(path) do id[i] = tostring(p) end
-	f.id = table.concat(id, ".")
+	f.id = f.id or table.concat(id, ".")
 	FIELDS[#FIELDS + 1] = f
 	BY_ID[f.id] = f
 	return f
@@ -143,6 +147,29 @@ add("messages", { "announce", "itemText" }, "text", { "RULEF_ANNOUNCE_ITEM_TEXT"
 add("messages", { "announce", "resultText" }, "text", { "RULEF_ANNOUNCE_RESULT_TEXT" }, { wide = true, max = 200 })
 add("messages", { "announce", "reason" }, "bool", { "RULEF_ANNOUNCE_REASON" })
 
+-- readiness: the raid readiness check (§4.2, M8-3): which slots need an enchant, how many of each consumable, who needs them
+-- locale-key: RULEF_READY_ENABLED RULEF_READY_SLOT RULEF_READY_MIN RULEF_READY_MANA RULEF_READY_HUNTER RULEF_READY_TEXT_RAID RULEF_READY_TEXT_WHISPER
+-- locale-key: READY_SLOT_1 READY_SLOT_3 READY_SLOT_5 READY_SLOT_7 READY_SLOT_8 READY_SLOT_9 READY_SLOT_10 READY_SLOT_15 READY_SLOT_16
+-- locale-key: READY_SLOT_17 READY_SLOT_18 READY_CAT_FOOD_BUFF READY_CAT_FOOD READY_CAT_WATER READY_CAT_POTION READY_CAT_FLASK
+-- locale-key: READY_CAT_AMMO READY_CAT_PET_FOOD
+add("readiness", { "readiness", "enabled" }, "bool", { "RULEF_READY_ENABLED" })
+for _, slot in ipairs(ns.ReadinessData.SLOTS) do
+	add("readiness", { "readiness", "slots" }, "bool", { "RULEF_READY_SLOT", "READY_SLOT_" .. slot },
+		{ id = "readiness.slot." .. slot, slot = slot })
+end
+for _, c in ipairs(ns.ReadinessData.CATEGORIES) do
+	add("readiness", { "readiness", "needs" }, "int", { "RULEF_READY_MIN", "READY_CAT_" .. c.code },
+		{ id = "readiness.need." .. c.code, cat = c.code, min = 0, max = ns.Readiness.MAX_MIN })
+end
+add("readiness", { "readiness", "needs" }, "bool", { "RULEF_READY_MANA", "READY_CAT_WATER" },
+	{ id = "readiness.filter.WATER", cat = "WATER", filter = "mana" })
+add("readiness", { "readiness", "needs" }, "bool", { "RULEF_READY_HUNTER", "READY_CAT_AMMO" },
+	{ id = "readiness.filter.AMMO", cat = "AMMO", filter = "hunter" })
+add("readiness", { "readiness", "needs" }, "bool", { "RULEF_READY_HUNTER", "READY_CAT_PET_FOOD" },
+	{ id = "readiness.filter.PET_FOOD", cat = "PET_FOOD", filter = "hunter" })
+add("readiness", { "readiness", "texts", "raid" }, "text", { "RULEF_READY_TEXT_RAID" }, { wide = true, max = 120 })
+add("readiness", { "readiness", "texts", "whisper" }, "text", { "RULEF_READY_TEXT_WHISPER" }, { wide = true, max = 120 })
+
 -- upgrade: the badge of the popup (§5.1; M7-5c: the stat-weight thresholds are gone, the rule is fixed)
 add("upgrade", { "upgrade", "enabled" }, "bool", { "RULEF_UPGRADE_ENABLED" })
 add("upgrade", { "upgrade", "autoPass" }, "bool", { "RULEF_UPGRADE_AUTO_PASS" })
@@ -176,9 +203,114 @@ local function walk(rules, path, upTo)
 	return node
 end
 
+---------------------------------------------------------------------------------------------------------------------
+-- The readiness requirements (slot, minimum and filter fields)
+
+local function requirements(rules, field)
+	local section = type(rules) == "table" and rules.readiness
+	local list = type(section) == "table" and section[field.slot and "slots" or "needs"]
+	return type(list) == "table" and list or nil
+end
+
+local function isMine(r, field)
+	return type(r) == "table" and ((field.slot and r.slot == field.slot) or (field.cat and r.cat == field.cat))
+end
+
+-- The first requirement of the field's slot or category, or nil.
+local function first(list, field)
+	for _, r in ipairs(list or {}) do if isMine(r, field) then return r end end
+	return nil
+end
+
+local function isHunters(r) return type(r.classes) == "table" and #r.classes == 1 and r.classes[1] == "HUNTER" end
+
+-- The value of a slot field (is a requirement there?), a minimum field (the first requirement's minimum, 0 when none) or a
+-- filter field (does the first requirement carry the filter?).
+function RuleFields.GetRequirement(rules, field)
+	local r = first(requirements(rules, field), field)
+	if field.slot then return r ~= nil end
+	if field.filter == "mana" then return r ~= nil and r.mana == true end
+	if field.filter == "hunter" then return r ~= nil and isHunters(r) end
+	return r and r.min or 0
+end
+
+-- What the defaults require for a slot or a category: the requirement that starts a new one (its filters).
+local function defaultOf(field)
+	local d = ns.Readiness.DefaultConfig()
+	local r = first(field.slot and d.slots or d.needs, field)
+	local out = {}
+	if r then
+		for k, v in pairs(r) do if k ~= "min" then out[k] = v end end
+	end
+	return out
+end
+
+local function slotOrder()
+	local order = {}
+	for i, s in ipairs(ns.ReadinessData.SLOTS) do order[s] = i end
+	return order
+end
+
+-- Writes a slot, minimum or filter field into `rules`. Writing what is there already changes nothing. Returns true, or false
+-- and "MISSING" (the rules lack the section).
+function RuleFields.SetRequirement(rules, field, value)
+	local list = requirements(rules, field)
+	if not list then return false, "MISSING" end
+	if field.slot then
+		local mine = first(list, field)
+		if value == true and not mine then
+			local r = defaultOf(field)
+			r.slot = field.slot
+			list[#list + 1] = r
+			local order, decorated = slotOrder(), {}
+			for i, e in ipairs(list) do decorated[i] = { e = e, i = i } end
+			table.sort(decorated, function(a, b)
+				local oa, ob = order[a.e.slot] or 99, order[b.e.slot] or 99
+				if oa ~= ob then return oa < ob end
+				return a.i < b.i
+			end)
+			for i, d in ipairs(decorated) do list[i] = d.e end
+		elseif value ~= true and mine then
+			for i = #list, 1, -1 do if isMine(list[i], field) then table.remove(list, i) end end
+		end
+		return true
+	end
+	local mine = first(list, field)
+	if field.filter then
+		if value == true and not mine then
+			local r = defaultOf(field)
+			r.cat, r.min = field.cat, 0
+			list[#list + 1] = r
+			mine = r
+		end
+		if not mine then return true end
+		for _, r in ipairs(list) do
+			if isMine(r, field) then
+				if field.filter == "mana" then
+					if value == true then r.mana = true elseif r.mana == true then r.mana = nil end
+				elseif value == true then
+					r.classes = { "HUNTER" }
+				elseif isHunters(r) then
+					r.classes = nil
+				end
+			end
+		end
+		return true
+	end
+	if mine then
+		mine.min = value
+	elseif type(value) == "number" and value > 0 then
+		local r = defaultOf(field)
+		r.cat, r.min = field.cat, value
+		list[#list + 1] = r
+	end
+	return true
+end
+
 -- The value of a field in `rules`, as the window shows it: a boolean, a number, a code ("roll,reroll" for a list), a line of
 -- text, "council" for a cell the council decides. nil when the rules lack it.
 function RuleFields.Get(rules, field)
+	if field.slot or field.cat then return RuleFields.GetRequirement(rules, field) end
 	local v = walk(rules, field.path, #field.path)
 	if field.kind == "bool" then
 		if v == nil and field.enabledByDefault then return true end
@@ -196,6 +328,7 @@ end
 -- Writes `value` (as Get returns it) into `rules` (a copy the window edits). Returns true, or false and "MISSING" (the rules
 -- lack the table the value belongs in).
 function RuleFields.Set(rules, field, value)
+	if field.slot or field.cat then return RuleFields.SetRequirement(rules, field, value) end
 	local parent = walk(rules, field.path, #field.path - 1)
 	if type(parent) ~= "table" then return false, "MISSING" end
 	local key = field.path[#field.path]

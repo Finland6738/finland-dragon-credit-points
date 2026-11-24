@@ -19,6 +19,7 @@
 | Paste the credits table into Discord, or get it as CSV or JSON | [[Export|Export]] |
 | Update the community site from the addon | [[Site Export|Site-Export]] |
 | See who in the raid lacks the addon and notify them | [[Addon Check|Addon-Check]] |
+| See who in the raid lacks enchants or consumables and notify them | [[Raid Readiness|Raid-Readiness]] |
 | Manage the pool and run a raid night | [[Roster and Nights|Roster-and-Nights]] |
 | Open and close a season (Guild Master), see the current one | [[Seasons|Seasons]] |
 | Read the credits table and your place in the queue | [[Credits Table|Credits]] |

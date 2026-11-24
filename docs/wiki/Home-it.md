@@ -18,6 +18,7 @@
 | Vedere come sarà la finestra | [[Giro dell'interfaccia|Interface-Tour-it]] |
 | Aggiornare il sito della community dall'addon | [[Esportazione per il sito|Site-Export-it]] |
 | Vedere chi nel raid non ha l'addon e avvisarlo | [[Controllo dell'addon|Addon-Check-it]] |
+| Vedere chi nel raid non ha incantamenti o consumabili e avvisarlo | [[Preparazione del raid|Raid-Readiness-it]] |
 | Gestire il pool e condurre una serata di raid | [[Roster e Serate|Roster-and-Nights-it]] |
 | Aprire e chiudere una season (Guild Master), vedere quella corrente | [[Season|Seasons-it]] |
 | Leggere la tabella dei crediti e il tuo posto in fila | [[Tabella crediti|Credits-it]] |

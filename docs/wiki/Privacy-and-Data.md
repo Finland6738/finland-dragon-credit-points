@@ -19,10 +19,11 @@ Only **addon messages inside the game**, on the channels the game offers, never 
 | Channel | What | Who |
 |---|---|---|
 | Raid | The loot session (items, costs, rounds, answers, result) and the presence answer with the addon version | raiders with the addon |
+| Raid and whisper | The readiness check: a request from the master looter or an officer, and your own small answer (which slots have an enchant, which buffs are active, how many of each consumable you carry) whispered back to them only | the person who asked |
 | Officer | The ledger sync between officers | officers |
 | Guild and whisper | The read-only credits table | everybody in the guild |
 
-A raider can only send their own answer. Rolls are made by the game itself. The announcements written in `/raid` are ordinary chat lines.
+A raider can only send their own answer, and the readiness answer is never saved by the one who receives it. Rolls are made by the game itself. The announcements written in `/raid` are ordinary chat lines.
 
 ## What leaves the game
 

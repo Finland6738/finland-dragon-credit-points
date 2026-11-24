@@ -16,7 +16,7 @@ local Theme, Widgets = ns.Theme, ns.Widgets
 local L = ns.L
 
 RulesForm.ROW_H, RulesForm.MAX_ROWS = 32, 24
-RulesForm.COLUMNS = { costs = 3 }   -- the matrix: one row per category, a column per quality
+RulesForm.COLUMNS = { costs = 3, readiness = 3 }   -- the matrix: one row per category, a column per quality; the readiness page: many short switches
 RulesForm.MAX_LISTED = 8            -- changes listed in the confirmation
 
 local Form = {}
@@ -53,7 +53,7 @@ end
 
 -- opts: pages (list of page ids), host (the SettingsWindow: Confirm and Say), list (true: the page list on the left).
 -- locale-key: RULEPAGE_SESSION RULEPAGE_PRIORITY RULEPAGE_COSTS RULEPAGE_MULTIPLIERS RULEPAGE_MEMBERS RULEPAGE_COUNCIL
--- locale-key: RULEPAGE_LEGENDARY RULEPAGE_MESSAGES RULEPAGE_UPGRADE RULEPAGE_SITE
+-- locale-key: RULEPAGE_LEGENDARY RULEPAGE_MESSAGES RULEPAGE_READINESS RULEPAGE_UPGRADE RULEPAGE_SITE
 function RulesForm.New(parent, opts)
 	local f = setmetatable({ parent = parent, pages = opts.pages, host = opts.host, bad = {}, rows = {} }, Form)
 	local root = CreateFrame("Frame", nil, parent)
@@ -143,7 +143,7 @@ end
 -- Pages and rows
 
 -- locale-key: RULEHINT_SESSION RULEHINT_PRIORITY RULEHINT_COSTS RULEHINT_MULTIPLIERS RULEHINT_MEMBERS RULEHINT_COUNCIL
--- locale-key: RULEHINT_LEGENDARY RULEHINT_MESSAGES RULEHINT_UPGRADE RULEHINT_SITE
+-- locale-key: RULEHINT_LEGENDARY RULEHINT_MESSAGES RULEHINT_READINESS RULEHINT_UPGRADE RULEHINT_SITE
 function Form:SetPage(id)
 	self.page = id
 	self.fields = RF.Page(id)
@@ -324,11 +324,16 @@ end
 
 -- The confirmation text of a season in progress: the count and the first changes, by name.
 local function changesText(paths)
-	local names = {}
+	local names, listed = {}, {}
 	for i, path in ipairs(paths) do
 		if i > RulesForm.MAX_LISTED then break end
 		local field = RF.Field(path)
-		names[#names + 1] = field and RulesForm.LabelOf(field) or path
+		-- the requirement lists of the readiness section change by index ("readiness.needs.2.min"): the page names them
+		local label = field and RulesForm.LabelOf(field) or (path:find("^readiness%.") and L["RULEPAGE_READINESS"]) or path
+		if not listed[label] then
+			listed[label] = true
+			names[#names + 1] = label
+		end
 	end
 	local text = table.concat(names, "\n")
 	if #paths > RulesForm.MAX_LISTED then text = text .. "\n" .. L["SETTINGS_AND_MORE"]:format(#paths - RulesForm.MAX_LISTED) end

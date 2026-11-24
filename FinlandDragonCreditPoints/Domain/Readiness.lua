@@ -18,7 +18,9 @@
 -- The rules (section `readiness` of Domain/Rules.lua, written by the Guild Master like every rule):
 --   { enabled = bool,
 --     slots = { { slot, classes?, roles?, mana? }, ... }   the slots that must carry an enchant
---     needs = { { cat, min, classes?, roles?, mana? }, ... }  the consumables, with a minimum count (0 = not required) }
+--     needs = { { cat, min, classes?, roles?, mana? }, ... }  the consumables, with a minimum count (0 = not required)
+--     texts = { raid, whisper }   the wording of the notify button (M8-3): "" = the default of the player's language;
+--             {missing} {low} {unknown} in the /raid line, {list} {name} in a whisper (Domain/ReadinessNotice.lua) }
 --   A requirement applies to a raider when every filter it has matches: `classes` (class files), `roles` (TANK, HEALER,
 --   DAMAGER; a raider whose role is unknown is not concerned by a requirement with roles), `mana` (true: only the classes
 --   that use mana, false: only the others). Two requirements of one category that both apply: the larger minimum wins.
@@ -49,6 +51,7 @@ Readiness.MAX_NEEDS = 24
 Readiness.MAX_MIN = 10000       -- the largest minimum count (ammunition is counted by the piece)
 Readiness.MAX_COUNT = 1000000   -- a reported count above this is damaged
 Readiness.MAX_FILTER = 9        -- classes or roles in one filter
+Readiness.TEXT_MAX = 120        -- the longest wording of the notify button
 
 local function copy(v)
 	if type(v) ~= "table" then return v end
@@ -82,6 +85,7 @@ function Readiness.DefaultConfig()
 			{ cat = "AMMO", min = 1000, classes = { "HUNTER" } },
 			{ cat = "PET_FOOD", min = 10, classes = { "HUNTER" } },
 		},
+		texts = { raid = "", whisper = "" },
 	}
 end
 
@@ -140,6 +144,16 @@ function Readiness.ValidateConfig(c)
 			end
 		end
 	end
+	if type(c.texts) ~= "table" then
+		problems[#problems + 1] = "texts"
+	else
+		for _, key in ipairs({ "raid", "whisper" }) do
+			local text = c.texts[key]
+			if type(text) ~= "string" or #text > Readiness.TEXT_MAX or text:find("[%c|]") then
+				problems[#problems + 1] = "texts." .. key
+			end
+		end
+	end
 	sort(problems)
 	return #problems == 0, problems
 end
@@ -159,6 +173,20 @@ function Readiness.Applies(r, who)
 		if (D().MANA[who.class] == true) ~= r.mana then return false end
 	end
 	return true
+end
+
+-- The minimum count of each category that applies to `who` ({ class, role }): { [CATEGORY] = min } (the larger minimum
+-- of the requirements that apply; a category without a minimum above 0 is not listed). Evaluate counts the same way.
+function Readiness.Needs(config, who)
+	local need = {}
+	if type(config) ~= "table" then return need end
+	who = who or {}
+	for _, r in ipairs(config.needs or {}) do
+		if type(r.min) == "number" and r.min > 0 and Readiness.Applies(r, who) then
+			if not need[r.cat] or r.min > need[r.cat] then need[r.cat] = r.min end
+		end
+	end
+	return need
 end
 
 -- The categories a readiness check asks the raiders to count: every category with a minimum above 0, in the order of

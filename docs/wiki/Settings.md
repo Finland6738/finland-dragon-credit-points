@@ -53,6 +53,7 @@ A list of pages on the left, the fields of the page on a card:
 - **Loot council**: whether its members must be in the raid, the vote, the flags for wasteful requests, who sees the upgrade badges, and the list of council names (empty: whoever has the rank).
 - **Legendaries and bench**: how a legendary is awarded, the cost of a chain piece, and what the bench earns.
 - **Messages in /raid**: the wording of the notice for players without the addon and of the item and result lines (placeholders `{names}`, `{link}`, `{addon}`).
+- **Raid readiness**: the enchants and consumables the readiness check asks for: a switch per slot, the minimum of each consumable (0 = not asked), who needs water, ammunition and pet food, and the wording of the notice and of the whispers ([[Raid Readiness|Raid-Readiness]]).
 - **Upgrade badge**: whether the popup shows the upgrade badge, and whether an item the player cannot use comes with Pass preselected. The badge itself follows a fixed rule ([[Upgrade Hints|Upgrade-Hints]]); the season's item-level band it uses is set in **Season** ([[Seasons|Seasons]]).
 
 The label of a main-spec response and its rule (M7-2b) and the personal stat weights and wishlist are gone: the popup has three buttons and the addon computes the upgrade badge. Rules written before keep working: the retired settings are ignored.

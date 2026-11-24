@@ -53,6 +53,7 @@ A sinistra l'elenco delle pagine, a destra i campi della pagina su una card:
 - **Loot council**: se i membri devono essere nel raid, il voto, le segnalazioni per le richieste dispendiose, chi vede i badge di upgrade e l'elenco dei nomi del council (vuoto: chi ha il rango).
 - **Leggendari e panchina**: come si assegna un leggendario, il costo di un pezzo della catena e cosa guadagna la panchina.
 - **Messaggi in /raid**: il testo dell'avviso per chi non ha l'addon e delle righe di pezzo e risultato (segnaposto `{names}`, `{link}`, `{addon}`).
+- **Preparazione del raid**: gli incantamenti e i consumabili che il controllo di preparazione chiede: un interruttore per slot, il minimo di ogni consumabile (0 = non richiesto), a chi servono acqua, munizioni e cibo del pet, e il testo dell'avviso e dei sussurri ([[Preparazione del raid|Raid-Readiness-it]]).
 - **Badge di upgrade**: se il popup mostra il badge di upgrade, e se un pezzo che il giocatore non può usare arriva con Passo preselezionato. Il badge segue una regola fissa ([[Suggerimenti di upgrade|Upgrade-Hints-it]]); la fascia di item level della season che usa si imposta in **Season** ([[Season|Seasons-it]]).
 
 L'etichetta di una risposta main-spec con la sua regola (M7-2b), i pesi delle statistiche personali e la wishlist non ci sono più: il popup ha tre pulsanti e il badge di upgrade lo calcola l'addon. Le regole scritte prima continuano a funzionare: le impostazioni tolte si ignorano.

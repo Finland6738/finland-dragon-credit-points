@@ -1,13 +1,14 @@
 -- ReadinessCheck: the master looter's readiness table (docs/ANALISI.md §4.2, ADR 0010, M8-2). Lua 5.1. The messages are
 -- Net/Readiness.lua's (RDYQ / RDY), the verdicts Domain/Readiness.lua's, the requirements the `readiness` section of the
 -- rules in force (App/SettingsController.lua); the raid is App/AddonCheck.lua's (GROUP_SCANNED) and so is "who has no
--- addon". M8-3 draws this table in a tab and turns its rows into the /raid summary and the whispers of the notify button.
+-- addon". M8-3 draws this table in a tab (UI/ReadinessPanel.lua) and turns its rows into the /raid summary and the whispers
+-- of the notify button (App/ReadinessNotifier.lua).
 --
 -- Who asks: the runner of the open night (its officer or master looter) or anyone whose guild rank holds `raid.addonCheck`
 -- (the same people who run the addon check). A request asks the whole raid; the previous answers are dropped, because
 -- readiness is transient: it is never saved, never written to the ledger and lost at /reload (ADR 0010).
 --
--- A row per raid member (Rows): { name, status, result, reason? }
+-- A row per raid member (Rows): { name, status, result, class?, role?, reason? }
 --   status  OK | WARN | MISSING | UNKNOWN (Domain/Readiness.lua Evaluate, against the rules in force)
 --   result  the verdict: enchants and items missing, by slot and by category
 --   reason  why a row is UNKNOWN: NOT_ASKED (no check yet, or joined after it), WAITING (asked less than TIMEOUT seconds
@@ -139,7 +140,7 @@ function ReadinessCheck:Row(name)
 	local snap = reply and reply.snap
 	local who = { class = (snap and snap.class) or (row and row.classFile), role = roleOf(snap) }
 	local result = ns.Readiness.Evaluate(snap, self:Rules(), who)
-	local out = { name = name, status = result.status, result = result }
+	local out = { name = name, status = result.status, result = result, class = who.class, role = who.role }
 	if not snap then out.reason = self:ReasonOf(name, row) end
 	return out
 end

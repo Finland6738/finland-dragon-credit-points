@@ -19,10 +19,11 @@ Solo **messaggi dell'addon dentro il gioco**, sui canali che il gioco offre, mai
 | Canale | Cosa | Chi |
 |---|---|---|
 | Raid | La sessione di loot (oggetti, costi, giri, risposte, esito) e la risposta di presenza con la versione dell'addon | i raider con l'addon |
+| Raid e sussurro | Il controllo di preparazione: una richiesta del master looter o di un ufficiale e la tua piccola risposta (quali slot hanno un incantamento, quali buff sono attivi, quanti consumabili hai) sussurrata solo a chi ha chiesto | chi ha chiesto |
 | Ufficiali | La sincronizzazione del registro tra ufficiali | gli ufficiali |
 | Gilda e sussurro | La tabella crediti in sola lettura | tutta la gilda |
 
-Un raider può mandare solo la propria risposta. I roll li fa il gioco. Gli annunci scritti in `/raid` sono normali righe di chat.
+Un raider può mandare solo la propria risposta, e la risposta di preparazione non la salva mai chi la riceve. I roll li fa il gioco. Gli annunci scritti in `/raid` sono normali righe di chat.
 
 ## Cosa esce dal gioco
 

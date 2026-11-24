@@ -21,7 +21,7 @@ local Theme, Widgets = ns.Theme, ns.Widgets
 local L = ns.L
 
 SettingsWindow.SUBTABS = { "personal", "profiles", "rules", "permissions", "site", "season", "about" }
-SettingsWindow.RULE_PAGES = { "session", "priority", "costs", "multipliers", "members", "council", "legendary", "messages", "upgrade" }
+SettingsWindow.RULE_PAGES = { "session", "priority", "costs", "multipliers", "members", "council", "legendary", "messages", "readiness", "upgrade" }
 SettingsWindow.ROW_H = 36
 
 local function SC() return ns.SettingsController end

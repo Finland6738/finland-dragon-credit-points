@@ -1,5 +1,5 @@
 -- RosterWindow: the Roster tab (docs/ANALISI.md §6, §9.3, docs/specs/ui-style.md §3, §6, M3-7). It hosts the sub-tabs
--- Pool, Night and Addon and draws the first one: the site's three role columns (Tank, Healer, DPS) with the class colour
+-- Pool, Night, Addon and Readiness (M8-3: shown only to who may ask the raid) and draws the first one: the site's three role columns (Tank, Healer, DPS) with the class colour
 -- square, the declared spec, the Trial badge, the count against the target, the 4 pt gradient bar and the free slots, the
 -- faction switch, and for the officers the status button of each row and the inbox of the players' requests.
 -- Reads App/RosterController.lua; it never touches the ledger itself. Lua 5.1; unprotected frames.
@@ -13,7 +13,7 @@ local Theme, Widgets = ns.Theme, ns.Widgets
 local L = ns.L
 
 RosterWindow.ROW_H, RosterWindow.ROWS, RosterWindow.INBOX_ROWS = 22, 11, 3
-RosterWindow.SUBTABS = { "pool", "night", "addon" }
+RosterWindow.SUBTABS = { "pool", "night", "addon", "readiness" }
 
 -- The game's own class colours (the spec lists them; the client's table wins when it has the class).
 local CLASS_COLORS = {
@@ -71,6 +71,7 @@ function RosterWindow:Build(page, titleBar)
 		{ id = "pool", text = L["ROSTER_SUBTAB_POOL"] },
 		{ id = "night", text = L["NIGHT_SUBTAB"] },
 		{ id = "addon", text = L["ADDON_PANEL_SUBTAB"] },
+		{ id = "readiness", text = L["READY_SUBTAB"] },
 	}
 	root.sub = Widgets.Segmented(root, items, function(id) RosterWindow:ShowSub(id) end)
 	root.sub:SetPoint("TOPLEFT", root, "TOPLEFT", 0, -4)
@@ -86,6 +87,7 @@ function RosterWindow:Build(page, titleBar)
 	self:BuildPool(root.panes.pool)
 	if ns.NightsWindow then ns.NightsWindow:Build(root.panes.night) end
 	if ns.AddonPanel then ns.AddonPanel:Build(root.panes.addon, titleBar) end
+	if ns.ReadinessPanel then ns.ReadinessPanel:Build(root.panes.readiness) end
 	root.sub:Select("pool")
 	self:Refresh()
 	return root
@@ -327,11 +329,23 @@ function RosterWindow:RefreshPool()
 	end
 end
 
+-- The Readiness sub-tab is for who may ask the raid; for everybody else it is not there (and is left if it was open).
+function RosterWindow:UpdateSubtabs()
+	local seg = self.root and self.root.sub
+	local button = seg and seg.buttons.readiness
+	if not button then return end
+	local ok = ns.ReadinessCheck and ns.ReadinessCheck:CanManage() == true
+	button:SetShown(ok)
+	if not ok and seg:Active() == "readiness" then seg:Select("pool") end
+end
+
 function RosterWindow:Refresh()
 	if not self.root then return end
+	self:UpdateSubtabs()
 	self:RefreshPool()
 	if ns.NightsWindow then ns.NightsWindow:Refresh() end
 	if ns.AddonPanel and ns.AddonPanel.root then ns.AddonPanel:Refresh() end
+	if ns.ReadinessPanel and ns.ReadinessPanel.root then ns.ReadinessPanel:Refresh() end
 end
 
 if ns.Bus then

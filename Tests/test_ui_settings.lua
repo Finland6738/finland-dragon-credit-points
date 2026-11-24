@@ -82,9 +82,7 @@ describe("the form of the rules", function()
 	it("covers every section of the rules, the ones that had no window included", function()
 		local seen = {}
 		for _, f in ipairs(RF().LIST) do seen[f.path[1]] = true end
-		-- `readiness` (M8-2) gets its page with the readiness tab, step M8-3, which removes this exception
-		local later = { readiness = true }
-		for _, section in ipairs(FDCP.Rules.SECTIONS) do truthy(seen[section] or later[section], section) end
+		for _, section in ipairs(FDCP.Rules.SECTIONS) do truthy(seen[section], section) end
 		for _, page in ipairs(RF().PAGES) do truthy(#RF().Page(page) > 0, page) end
 	end)
 
