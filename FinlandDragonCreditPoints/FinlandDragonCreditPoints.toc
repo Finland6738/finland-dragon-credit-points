@@ -91,6 +91,7 @@ App\CheatService.lua
 App\LegendaryService.lua
 App\BankService.lua
 App\PopupBoard.lua
+App\PublicAPI.lua
 UI\Assets.lua
 UI\Theme.lua
 UI\Motion.lua

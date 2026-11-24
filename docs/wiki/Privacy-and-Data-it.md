@@ -28,6 +28,10 @@ Un raider può mandare solo la propria risposta. I roll li fa il gioco. Gli annu
 
 Niente, a meno che non lo porti fuori **tu**: le pagine **Esporta** e **Sito** dello Storico e la sotto-scheda **Backup** producono testo che copi (Ctrl+C) e incolli tu; la tabella crediti per Discord e i file del sito della community sono solo per gli ufficiali, e le presenze non ci sono mai. L'addon non ha accesso alla rete e non raccoglie statistiche.
 
+## Altri addon
+
+Un altro addon che gira nel tuo gioco, come Azeroth Accord, può **leggere** una parte dei dati di FDCP con un'API in sola lettura: la season, il pool, i crediti e i posti in coda, il raid e la panchina della serata aperta, e un riassunto delle regole. Riceve solo quello che FDCP ti mostra già su questo client. Sul client di un membro è la tabella dei crediti che ha mandato un ufficiale. Presenze e assenze non si condividono mai. Nessun altro addon può cambiare i dati di FDCP. FDCP non legge mai i dati degli altri addon. Vedi [[API per altri addon|API-for-Addons-it]].
+
 ## Il rapporto sul bug
 
 `/fdcp debug` costruisce un rapporto senza nomi di giocatori, gilda, reame od oggetti, fatto per essere incollato in una issue pubblica. Leggilo prima di incollarlo: [[Segnalare un bug|Reporting-Bugs-it]].

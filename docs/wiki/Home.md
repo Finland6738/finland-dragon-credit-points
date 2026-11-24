@@ -30,6 +30,7 @@
 | Change my preferences, or (Guild Master) the rules and the permissions | [[Settings|Settings]] |
 | Find a quick answer | [[FAQ|FAQ]] |
 | Know what the addon keeps and sends | [[Privacy and Data|Privacy-and-Data]] |
+| Read FDCP's data from another addon (for addon authors) | [[API for Other Addons|API-for-Addons]] |
 | Report a bug (the bug report window) | [[Reporting Bugs|Reporting-Bugs]] |
 | Find out who made the addon, the licence and the links | [[About|About]] |
 

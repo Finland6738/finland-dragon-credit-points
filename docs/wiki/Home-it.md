@@ -29,6 +29,7 @@
 | Cambiare le mie preferenze o (Guild Master) le regole e i permessi | [[Impostazioni|Settings-it]] |
 | Trovare una risposta veloce | [[FAQ|FAQ-it]] |
 | Sapere cosa conserva e manda l'addon | [[Privacy e dati|Privacy-and-Data-it]] |
+| Leggere i dati di FDCP da un altro addon (per chi scrive addon) | [[API per altri addon|API-for-Addons-it]] |
 | Segnalare un bug (la finestra del rapporto bug) | [[Segnalare un bug|Reporting-Bugs-it]] |
 | Sapere chi ha fatto l'addon, la licenza e i link | [[Crediti e info|About-it]] |
 | Incollare la tabella crediti su Discord, o averla in CSV o JSON | [[Esporta|Export-it]] |

@@ -4,6 +4,26 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+
+- M8-1: a public read-only API for other addons (owner decision of 2026-11-24, Accord SPEC-10 Q10; [ADR 0009](docs/adr/0009-public-read-only-api.md), analysis §8.6; question 6 of §13 revised). New `App/PublicAPI.lua` defines the global `FinlandDragonCreditPointsAPI`, which never changes its name:
+  - `API_VERSION` (1), `IsReady`, `GetVersion` and `GetSource`. `GetSource` gives `LEDGER` on an officer's client and `SNAPSHOT` on a member's client, which holds the credits table an officer sent;
+  - `GetSeason`;
+  - `GetPool` and `GetMember`: character, faction, class, role, MS1, MS2, OS, status, alts, the other-faction main and the availability days; an alt resolves to its main;
+  - `GetCredits` and `GetCreditList`: credits and the Credits tab's queue place;
+  - `GetNight`: instance, size, difficulty, and the raid and bench lists;
+  - `GetRules`: the preset, whether the guild changed it, the main costs and the penalties;
+  - `RegisterCallback` and `UnregisterCallback` for `READY`, `SEASON_CHANGED`, `POOL_CHANGED`, `CREDITS_CHANGED`, `NIGHT_CHANGED` and `RULES_CHANGED`.
+
+  Every getter returns a copy and never raises; the table ignores writes. A member's client gives only what its credits table carries: no MS2, OS, availability or night, and the Patto defaults as the rules, marked `DEFAULT`. **Attendance, absences, the player's roster note, the audit and the council are never exposed.** Callbacks run protected and are counted in `/fdcp debug`. A once-a-second check runs only while a callback is registered and fires an event once per change of its own data. FDCP never depends on another addon and never reads another addon's data.
+  - Docs: new wiki page **API for Other Addons** (EN + IT), a section in **Privacy and Data**, links in Home and the sidebar; README (EN + IT); new roadmap milestone M8 (`docs/roadmap/M8-integrations.md`).
+  - Tests: `Tests/test_public_api.lua`. It checks the global table and its version, the answers before the client is ready, an officer's client against a member's client on the network simulator, that the copies cannot change state, the callbacks, and a failing callback being isolated.
+  - **Not verified in the game:**
+    - another addon (Azeroth Accord, or a `/run` script) reading the table on an officer's client and on a member's client;
+    - the order in which the two addons load;
+    - the callbacks after a real night;
+    - the cost of the once-a-second check during a raid.
+
 ### Fixed
 
 - release: the notes of a GitHub Release are cut at 60000 characters (`tools/release_notes.py`), with a pointer to `CHANGELOG.md`: GitHub refuses a body above 125000 characters and the first release holds the whole history, so the `v1.0.1` run failed at *Create the GitHub Release*.

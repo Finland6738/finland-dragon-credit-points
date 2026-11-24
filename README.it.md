@@ -20,6 +20,7 @@
 | **Badge di upgrade** | Il client di ogni raider confronta il drop con il pezzo indossato durante lo scontro col boss (upgrade piccolo, medio o grande, con la differenza di item level); il council vede "upgrade grande, ha passato" o "possibile spreco" — un indizio, mai una decisione automatica |
 | **Council** | Interventi con motivazione obbligatoria, voto facoltativo, annullamenti come eventi di compensazione |
 | **Progress** | Prima uccisione di ogni boss per fazione della gilda, come nella scheda Progress del sito della community |
+| **API per altri addon** | Un'API in sola lettura e versionata (`FinlandDragonCreditPointsAPI`) per addon come Azeroth Accord: season, pool, crediti e posto in coda, raid e panchina della serata aperta, riassunto delle regole, avvisi di cambiamento; mai le presenze ([wiki](docs/wiki/API-for-Addons-it.md), [ADR 0009](docs/adr/0009-public-read-only-api.md)) |
 | **Esportazione** | La tabella dei crediti per Discord, CSV, JSON, e i file `roster.json`, `loot.json` e `progress.json` del sito della community pronti da mettere nel sito ([specifica](docs/specs/site-export.md)) |
 | **Interfaccia** | Lo stile del sito della community (tema scuro "Nebula", più un tema chiaro e i colori del logo), schede Roster · Crediti · Progress · Loot · Storico · Impostazioni ([stile e anteprime](docs/specs/ui-style.md)); italiano e inglese, altre lingue aggiungendo un file |
 
@@ -43,7 +44,7 @@
 - Controlli: `python -I -X utf8 tools/check_docs.py`.
 - La checklist di verifica in gioco di ogni milestone sta in [docs/checklists/](docs/checklists/): [M1](docs/checklists/M1.md), [M3](docs/checklists/M3.md), [M4](docs/checklists/M4.md), [M5](docs/checklists/M5.md) e [M6](docs/checklists/M6.md), e il percorso del proprietario verso v1.0.0 in [docs/checklists/release.md](docs/checklists/release.md) (ognuna con le voci aperte di ogni passo della sua milestone; quella di M4 è un boss intero, piano A e piano B).
 - Il manuale utente è in [docs/wiki/](docs/wiki/Home-it.md) in italiano e inglese e va sulla wiki di GitHub in automatico ([ADR 0002](docs/adr/0002-github-wiki-generated-from-docs-wiki.md)).
-- Le fondamenta si copiano e si adattano dal progetto gemello Azeroth Accord (stesso autore, GPL-3.0); in gioco i due addon restano indipendenti.
+- Le fondamenta si copiano e si adattano dal progetto gemello Azeroth Accord (stesso autore, GPL-3.0); in gioco i due addon restano indipendenti, e Accord legge FDCP solo dalla sua API pubblica in sola lettura ([ADR 0009](docs/adr/0009-public-read-only-api.md)).
 
 ## Aggiungere una lingua
 

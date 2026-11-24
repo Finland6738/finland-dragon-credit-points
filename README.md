@@ -20,6 +20,7 @@
 | **Upgrade badge** | Each raider's client compares the drop with the piece worn during the boss fight (minor, medium or major upgrade, with the item-level difference); the council sees "major upgrade, passed" or "possible waste" — a hint, never an automatic decision |
 | **Council** | Interventions with a mandatory reason, an optional vote, voided awards as compensating events |
 | **Progress** | First kill of every boss per guild faction, as on the community site's Progress tab |
+| **API for other addons** | A read-only, versioned API (`FinlandDragonCreditPointsAPI`) for addons such as Azeroth Accord: season, pool, credits and queue place, the open night's raid and bench, a rules summary, change notifications; never attendance ([wiki](docs/wiki/API-for-Addons.md), [ADR 0009](docs/adr/0009-public-read-only-api.md)) |
 | **Export** | The credits table for Discord, CSV, JSON, and the community site's `roster.json`, `loot.json` and `progress.json` ready to drop in ([spec](docs/specs/site-export.md)) |
 | **Interface** | The look of the guild community site (dark "Nebula" theme, plus a light theme and the logo's colours), tabs Roster · Credits · Progress · Loot · History · Settings ([style and previews](docs/specs/ui-style.md)); English and Italian, more languages by adding one file |
 
@@ -43,7 +44,7 @@
 - Checks: `python -I -X utf8 tools/check_docs.py`.
 - The in-game checklist of each milestone is in [docs/checklists/](docs/checklists/): [M1](docs/checklists/M1.md), [M3](docs/checklists/M3.md), [M4](docs/checklists/M4.md), [M5](docs/checklists/M5.md) and [M6](docs/checklists/M6.md), and the owner's path to v1.0.0 in [docs/checklists/release.md](docs/checklists/release.md) (each one with the open items of every step of its milestone; M4's is a whole boss, plan A and plan B).
 - The user manual lives in [docs/wiki/](docs/wiki/Home.md) in English and Italian and is published to the GitHub wiki automatically ([ADR 0002](docs/adr/0002-github-wiki-generated-from-docs-wiki.md)).
-- Foundations are copied and adapted from the sister project Azeroth Accord (same owner, GPL-3.0); the two addons stay independent in game.
+- Foundations are copied and adapted from the sister project Azeroth Accord (same owner, GPL-3.0); the two addons stay independent in game, and Accord reads FDCP only through its public read-only API ([ADR 0009](docs/adr/0009-public-read-only-api.md)).
 
 ## Adding a language
 

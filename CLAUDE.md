@@ -17,7 +17,7 @@ Finland Dragon Credit Points (FDCP, `/fdcp`) is a WoW: Forever addon (Interface 
 - User manual: `docs/wiki/` (the only source of the GitHub wiki, [ADR 0002](docs/adr/0002-github-wiki-generated-from-docs-wiki.md)).
 - Spike: `docs/spike/` (in-game procedure and results) and the probe addon in `tools/probe/` (from M0-1).
 - WoW Forever API dump: `../WoW-Addons/docs/api.json` (build 1.60.1.70170). **Consult only**, never copy it into this repository. Every new API is checked there and guarded by `Core/Compat.lua`.
-- Sister project to copy foundations from: `../azeroth-accord` (same owner, GPL-3.0): `Core/Compat.lua` (guarded calls, secret values, restrictions), the send queue with lockdown wait, the versioned protocol, the offline test rig with `lupa` and the mock client, `tools/` and CI. Copy and adapt (rename identifiers, prefixes, SavedVariables, env vars); the two addons stay independent in game.
+- Sister project to copy foundations from: `../azeroth-accord` (same owner, GPL-3.0): `Core/Compat.lua` (guarded calls, secret values, restrictions), the send queue with lockdown wait, the versioned protocol, the offline test rig with `lupa` and the mock client, `tools/` and CI. Copy and adapt (rename identifiers, prefixes, SavedVariables, env vars); the two addons stay independent in game. Accord reads FDCP only through the public read-only API `FinlandDragonCreditPointsAPI` ([ADR 0009](docs/adr/0009-public-read-only-api.md), `App/PublicAPI.lua`); keep it backward compatible and bump `API_VERSION` only on a breaking change.
 
 ## Git automation (authorized by the owner, [ADR 0001](docs/adr/0001-git-flow-and-automated-shipping.md))
 

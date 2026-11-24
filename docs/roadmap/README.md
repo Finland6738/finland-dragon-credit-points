@@ -12,6 +12,7 @@ One file per milestone; each file lists the **development steps** of that milest
 | **M5** | [M5-upgrades-council.md](M5-upgrades-council.md) | Upgrade hints, council flags and interventions, vote, legendaries, BoE and bank | 8 | final check |
 | **M6** | [M6-history-export.md](M6-history-export.md) | History views, season window (M6-1b), log and audit, exports, officer sync, read-only credits for members | 8 | final check |
 | **M7** | [M7-release.md](M7-release.md) | Site-style polish, settings, profiles, diagnostics, packaging, manual, v1.0.0 | 8 | beta and release checklist |
+| **M8** | [M8-integrations.md](M8-integrations.md) | A public read-only API for other addons (Azeroth Accord) | 1 | another addon reading it |
 
 ## Order and dependencies
 
@@ -23,7 +24,7 @@ flowchart LR
   M2 --> M4[M4 Loot session]
   M3 --> M4
   M0 -. results .-> M4
-  M4 --> M5[M5 Upgrades and council] --> M6[M6 History and export] --> M7[M7 Release]
+  M4 --> M5[M5 Upgrades and council] --> M6[M6 History and export] --> M7[M7 Release] --> M8[M8 Integrations]
 ```
 
 M2 and M3 may run in either order after M1 (`docs/ANALISI.md` §12); the files are numbered in the order sessions take them (M2 first, because M3 writes ledger events). M4 depends on M0, M2 and M3.

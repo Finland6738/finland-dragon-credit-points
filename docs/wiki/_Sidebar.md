@@ -21,6 +21,7 @@
 - [[Settings|Settings]]
 - [[FAQ|FAQ]]
 - [[Privacy and Data|Privacy-and-Data]]
+- [[API for Other Addons|API-for-Addons]]
 - [[Reporting Bugs|Reporting-Bugs]]
 - [[About|About]]
 
@@ -47,5 +48,6 @@
 - [[Impostazioni|Settings-it]]
 - [[FAQ|FAQ-it]]
 - [[Privacy e dati|Privacy-and-Data-it]]
+- [[API per altri addon|API-for-Addons-it]]
 - [[Segnalare un bug|Reporting-Bugs-it]]
 - [[Crediti e info|About-it]]

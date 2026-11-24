@@ -28,6 +28,10 @@ A raider can only send their own answer. Rolls are made by the game itself. The 
 
 Nothing, unless **you** take it out: the **Export** and **Site** pages of History and the **Backup** sub-tab build text that you copy (Ctrl+C) and paste yourself; the credits table for Discord and the files of the community site are produced by officers only, and the attendance is never in them. The addon has no network access and collects no statistics.
 
+## Other addons
+
+Another addon running in your game, such as Azeroth Accord, can **read** part of FDCP's data through a read-only API: the season, the pool, the credits and queue places, the open night's raid and bench, and a summary of the rules. It gets only what FDCP already shows you on this client. On a member's client that is the credits table an officer sent. Attendance and absences are never shared. No other addon can change FDCP's data. FDCP never reads other addons' data. See [[API for Other Addons|API-for-Addons]].
+
 ## The bug report
 
 `/fdcp debug` builds a report with no player, guild, realm or item names, made to be pasted in a public issue. Read it before you paste it: [[Reporting Bugs|Reporting-Bugs]].

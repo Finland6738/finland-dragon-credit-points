@@ -56,7 +56,7 @@ esportato il 01/10/2026). Il client installato è `<cartella WoW>/_forever_`, ve
 Riferimenti interni già pronti e da riusare (stesso autore, GPL-3.0):
 
 - **`../azeroth-accord`**: stessa piattaforma. In gioco i due addon restano indipendenti (nessuna
-  dipendenza); dal codice sorgente si copiano `Core/Compat.lua` (chiamate protette,
+  dipendenza; dal 24/11/2026 Accord legge i dati di FDCP solo dall'API pubblica in sola lettura, §8.6); dal codice sorgente si copiano `Core/Compat.lua` (chiamate protette,
   secret values, restrizioni), la coda di invio con attesa del lockdown, il protocollo versionato, l'impianto dei
   test offline con `lupa` e il client finto, ADR, CI e `check_docs`.
 - **`../WoW-Addons`**: dump API, definizioni LSP (`types/WowForeverAPI.lua`), `deploy.ps1` per
@@ -1672,6 +1672,46 @@ deve voler dire solo aggiungere un file, senza toccare il codice.
 Documentazione: come in Accord, codice, commenti, commit e ADR in inglese; specifiche e analisi in italiano;
 README e manuale utente in entrambe le lingue.
 
+### 8.6 API pubblica per altri addon
+
+Decisione del proprietario del 24/11/2026 (domanda 6 del §13 rivista, [ADR 0009](adr/0009-public-read-only-api.md),
+step M8-1). Azeroth Accord, l'hub di gilda dello stesso autore, mostra i dati di FDCP quando gli ufficiali scelgono FDCP
+come fonte del loot e del roster del raid: il pool della season (MS1, MS2, OS), formazione e panchina, i crediti e il posto
+in coda di un membro sulla sua scheda, un riassunto delle regole accanto alla pagina del loot del manuale di gilda. Le
+regole di Accord (M10, M11): una fonte per dato, integrazioni solo in lettura e solo da un'API pubblica documentata e
+versionata, mai dalle SavedVariables di un altro addon.
+
+- **Una tabella globale, `FinlandDragonCreditPointsAPI`** (`App/PublicAPI.lua`), dal caricamento dell'addon; il nome non
+  cambia mai. FDCP non dipende da chi la legge e non legge i suoi dati.
+- **Versione.** `API_VERSION` è un intero (oggi `1`) che sale solo per un cambio che rompe (un campo o una funzione tolti,
+  un campo che cambia significato); campi e funzioni nuovi non lo cambiano, chi legge ignora quello che non conosce.
+- **Sola lettura, per copie.** Ogni funzione restituisce una tabella nuova di stringhe, numeri e booleani, mai una tabella
+  interna; la tabella dell'API ignora le scritture e nasconde la sua metatabella. **Niente errori**: ogni funzione gira
+  protetta; un argomento sbagliato, un dato che il client non ha o un errore interno danno `nil` (o una lista vuota).
+- **Solo quello che il client mostra al suo giocatore**, dalla stessa fonte della scheda Crediti (`GetSource()`):
+
+  | Funzione | Client di un ufficiale (`LEDGER`, il registro) | Client di un membro (`SNAPSHOT`, la tabella in sola lettura, §8.4 M6-6) |
+  |---|---|---|
+  | `IsReady()` | vero dopo la lettura del roster di gilda | uguale |
+  | `GetVersion()` | versione dell'addon, `API_VERSION` | uguale |
+  | `GetSeason()` | `id`, `name`, `state` (`OPEN` / `CLOSED`), `updated` (data dell'ultima serata) | uguale, più `asOf` (ora del server in cui l'ufficiale l'ha fatta) |
+  | `GetPool()`, `GetMember(nome)` | ogni main della season: `name`, `faction`, `class`, `role`, `ms1`, `ms2`, `os`, `status` (`ACTIVE`, `TRIAL`, `INACTIVE`), `alts`, `twin` (il main dell'altra fazione), `avail` (giorni); un alt dà il suo main con `viaAlt` | i main che giocano (attivi e trial): `name`, `faction`, `class`, `role`, `ms1`, `status`, `alts`; `ms2`, `os`, `twin`, `avail` sono `nil` (la tabella non li porta) |
+  | `GetCredits(nome)`, `GetCreditList()` | `credits`, `place` (posto in coda della scheda Crediti: meno crediti prima, poi il nome, fra i main che giocano della fazione), `of` | uguale, dai numeri della tabella |
+  | `GetNight()` | la serata aperta: data, istanza, dimensione, difficoltà, fazione, liste `raid` e `bench` | `nil` (un membro non ha le serate) |
+  | `GetRules()` | il preset, se la gilda l'ha cambiato (`custom`), metrica, crediti iniziali, costi per categoria e qualità, moltiplicatori di risposta, nuovi arrivati, panchina, penalità, modo di assegnazione (`source = GUILD`) | i valori del preset Patto (`source = DEFAULT`): un membro non riceve le regole della gilda |
+
+  Un client che non è ufficiale non legge mai un registro suo, nemmeno uno vecchio. **Presenze e assenze non si
+  espongono mai** (solo per gli ufficiali, §6), e nemmeno la nota libera del giocatore, l'audit, il log e il council; della
+  serata si danno solo le liste `raid` e `bench`, mai gli assenti.
+- **Avvisi di cambiamento.** `RegisterCallback(evento, fn)` / `UnregisterCallback(evento, fn)` per `READY`,
+  `SEASON_CHANGED`, `POOL_CHANGED`, `CREDITS_CHANGED`, `NIGHT_CHANGED`, `RULES_CHANGED`; `fn(evento)` gira protetta (un errore
+  si conta in `/fdcp debug` e si registra nel log; FDCP e le altre callback vanno avanti), al massimo 32 per evento. Solo
+  mentre c'è almeno una callback, un timer ogni secondo confronta una chiave economica (dimensione del registro, tabella
+  tenuta, gilda, fonte) e, quando cambia, quello che danno le funzioni: un evento parte una volta per cambiamento e solo
+  se i suoi dati sono cambiati.
+- Non verificato nel client: un altro addon che legge la tabella, l'ordine di caricamento dei due addon, il costo del
+  timer in raid.
+
 ---
 
 ## 9. Interfaccia: lo stile del sito della community
@@ -1826,6 +1866,7 @@ regole (hanno la loro stringa e i preset); importare un profilo cambia quello in
 | **M5 Upgrade e council** | UpgradeScore, pesi, verdetti, segnalazioni, interventi del council, voto, leggendari, BoE e banca | Il council lavora dall'addon |
 | **M6 Storico ed export** | Viste serate/membro/oggetto, log, audit, export Discord/CSV/JSON e i tre file del sito (`roster`, `loot`, `progress`), sync fra officer | La tabella su Discord esce dall'addon |
 | **M7 Rifinitura e rilascio** | Stile del sito completo (bagliori, ombre, icone, temi), impostazioni, profili, manuale, versione 1.0 | Prima release per la gilda |
+| **M8 Integrazioni** | API pubblica in sola lettura e versionata per altri addon (Azeroth Accord), §8.6 | L'API completa offline e documentata nelle due lingue |
 
 M2 e M3 possono procedere in parallelo dopo M1; M4 dipende da M0, M2 e M3.
 
@@ -1849,9 +1890,12 @@ l'indice è [`ROADMAP.md`](../ROADMAP.md).
 5. **Chi scrive il registro** **Risolta (19/11/2026)**: le assegnazioni le scrive l'addon del master looter
    quando lui conferma. Chi può fare correzioni fuori dalla serata, e ogni altro permesso, è configurabile per
    rango di gilda; la configurazione la cambia **solo il GM** (§3.9).
-6. **Integrazione con Azeroth Accord** **Risolta (19/11/2026)**: addon **indipendente**, nessuna dipendenza né
-   integrazione in gioco. Da Accord si riusa solo il codice sorgente (Compat, coda dei messaggi, impianto dei
-   test), copiato e adattato come Accord ha fatto con Azeroth Guild Finder.
+6. **Integrazione con Azeroth Accord** ~~**Risolta (19/11/2026)**: addon **indipendente**, nessuna dipendenza né
+   integrazione in gioco.~~ **Rivista dal proprietario il 24/11/2026** (Accord SPEC-10 Q10, [ADR 0009](adr/0009-public-read-only-api.md)):
+   FDCP espone un'**API pubblica in sola lettura e versionata** (`FinlandDragonCreditPointsAPI`, §8.6, step M8-1) che
+   Accord legge quando i due addon sono caricati. FDCP resta indipendente: non dipende da Accord e non legge mai i suoi
+   dati; Accord non legge mai le SavedVariables di FDCP. Da Accord si riusa ancora il codice sorgente (Compat, coda dei
+   messaggi, impianto dei test), copiato e adattato come Accord ha fatto con Azeroth Guild Finder.
 7. **Nome e licenza** **Risolto (19/11/2026)**: Finland Dragon Credit Points, sigla FDCP, comando `/fdcp`;
    licenza **GPL-3.0** (file `LICENSE`), come Accord; repository **pubblico** su GitHub (`Finland6738/finland-dragon-credit-points`).
    Come in Accord: nessun dato personale nel repository (nomi reali, email, percorsi personali) e commit firmati con
