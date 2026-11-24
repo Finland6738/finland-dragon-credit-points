@@ -12,7 +12,7 @@ One file per milestone; each file lists the **development steps** of that milest
 | **M5** | [M5-upgrades-council.md](M5-upgrades-council.md) | Upgrade hints, council flags and interventions, vote, legendaries, BoE and bank | 8 | final check |
 | **M6** | [M6-history-export.md](M6-history-export.md) | History views, season window (M6-1b), log and audit, exports, officer sync, read-only credits for members | 8 | final check |
 | **M7** | [M7-release.md](M7-release.md) | Site-style polish, settings, profiles, diagnostics, packaging, manual, v1.0.0 | 8 | beta and release checklist |
-| **M8** | [M8-integrations.md](M8-integrations.md) | A public read-only API for other addons (Azeroth Accord) | 1 | another addon reading it |
+| **M8** | [M8-integrations.md](M8-integrations.md) | A public read-only API for other addons (Azeroth Accord); the raid readiness check (enchants and consumables) with its tab and notify button | 3 | another addon reading it; the readiness check in a raid |
 
 ## Order and dependencies
 

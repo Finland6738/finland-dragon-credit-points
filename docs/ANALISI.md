@@ -1007,6 +1007,97 @@ preset; il GM può riattivare il roll a mano con `ms`/`os` in chat per altre gil
 - se il giocatore installa o attiva l'addon e fa `/reload`, risponde al controllo successivo e rientra dal **pezzo
   dopo**: un roll già aperto non si riapre per lui.
 
+### 4.2 Controllo di prontezza del raid (M8-2, M8-3)
+
+Richiesta del proprietario del 24/11/2026 ([ADR 0010](adr/0010-self-reported-transient-readiness.md)). Uno strumento
+per il master looter e gli officer: per ogni membro del raid mostra **gli incantamenti mancanti** (e su quale slot) e **i
+consumabili mancanti** (cibo con buff, cibo, acqua, pozioni, flask o elisir, munizioni per i cacciatori, cibo per il
+pet). Un pulsante "Avvisa" scrive un riassunto breve in `/raid` e sussurra a ognuno quello che gli manca.
+
+**Da dove vengono i dati: ognuno parla di sé.** Il client del ML non vede le borse degli altri e l'ispezione dell'equip è
+lenta (uno alla volta, da vicino, con un limite), quindi è il **client FDCP di ogni raider** a costruire una piccola
+fotografia di sé stesso e a mandarla a chi l'ha chiesta:
+
+- per ogni slot che si può incantare e che contiene un oggetto, se è incantato (sì / no / sconosciuto): l'incantamento è
+  il secondo campo del link dell'oggetto indossato (`GetInventoryItemLink`); non viaggiano né l'oggetto né l'incantamento.
+  Uno slot vuoto, un oggetto "tenuto in mano secondaria", una reliquia, un'arma da lancio o una bacchetta non contano
+  (non c'è niente da incantare); nello slot a distanza contano solo archi, fucili e balestre (il mirino);
+- i buff di prontezza attivi, dalle **proprie** aure (`C_UnitAuras.GetBuffDataByIndex`): Ben nutrito, flask, elisir;
+- il **conteggio nelle borse** delle sole categorie chieste, sommato sugli ID della tabella `Data/Readiness.lua`
+  (`C_Item.GetItemCount`). Nient'altro delle borse viene letto né mandato.
+
+La fotografia si legge **solo fuori dal combattimento e mai durante un boss**: una richiesta arrivata in quel momento
+aspetta la fine del combattimento (si riprova ogni 2 secondi, si lascia perdere dopo 3 minuti). Un valore segreto o
+illeggibile diventa "sconosciuto", mai indovinato né confrontato. Chi non ha FDCP (o ha una versione precedente a M8-2,
+che scarta i messaggi nuovi senza leggerli) risulta "sconosciuto".
+
+**I messaggi (M8-2, `Net/Readiness.lua`).** Due tipi nuovi, fuori dalla sessione di loot (la versione del protocollo di
+sessione non cambia):
+
+| Tipo | Canale | Campi | Significato |
+|---|---|---|---|
+| `RDYQ` | `RAID` | `q`, `rv`, `k?` | "controllo di prontezza": `q` = la richiesta (ora del server di chi chiede), `rv` = versione dei campi, `k` = le categorie da contare |
+| `RDY` | sussurro a chi ha chiesto | `q`, `rv`, `c?`, `sp?`, `ey?`, `en?`, `eu?`, `b?`, `bu?`, `n?` | classe, specializzazione attiva, slot incantati / non incantati / illeggibili, tipi di buff attivi (`bu` = qualche aura illeggibile), conteggio per categoria |
+
+- **Chi riceve risposta.** Il mittente è quello che dà il client, mai un campo. Un raider risponde solo a una richiesta
+  arrivata su `RAID` da un membro del suo raid che sia capo raid, assistente, master looter, o che abbia per rango di
+  gilda `raid.addonCheck`; il resto si rifiuta e si conta in `/fdcp debug`.
+- **Limiti.** Chi chiede manda al massimo una richiesta ogni 30 secondi; un raider risponde allo stesso richiedente al
+  massimo una volta ogni 20 secondi; il trasporto limita anche i due tipi. Una richiesta o una risposta trattenuta dal
+  lockdown della chat per più di 60 secondi si butta: una fotografia vecchia non parte mai dopo.
+- **Transitorio.** Le risposte stanno solo nella memoria di chi ha chiesto (`App/ReadinessCheck.lua`): una nuova
+  richiesta, l'uscita dal raid o un `/reload` le cancellano. Niente nel registro eventi, nei dati salvati, nel backup,
+  negli export o nell'API pubblica (§8.6): la prontezza non fa parte dei crediti.
+
+**Le regole.** Quali slot vanno incantati, quali categorie servono e con quale minimo stanno nella nuova sezione
+`readiness` delle regole, come ogni altra regola: la cambia solo il GM, con un `CONFIG_CHANGED` che passa dal controllo
+dei permessi e finisce nell'audit. Ogni requisito si può limitare a certe classi, a certi ruoli (tank, healer, dps: chi
+non ha un ruolo noto non è interessato da un requisito con ruoli) o alle classi che usano il mana; se due requisiti della
+stessa categoria valgono per lo stesso giocatore vince il minimo più alto. Il ruolo è quello della specializzazione
+attiva che il client del raider dichiara. Valori di partenza (reversibili, il GM li cambia):
+
+| Requisito | Chi | Minimo |
+|---|---|---|
+| Incantamenti: petto, piedi, polsi, mani, mantello, mano principale, mano secondaria (scudo o arma) | tutti | — |
+| Incantamento dello slot a distanza (mirino) | cacciatori | — |
+| Cibo con buff (`FOOD_BUFF`, oppure Ben nutrito attivo) | tutti | 1 |
+| Cibo (`FOOD`) | tutti | 5 |
+| Acqua (`WATER`) | classi con mana | 10 |
+| Pozioni di cura o di mana (`POTION`) | tutti | 2 |
+| Flask o elisir (`FLASK`, oppure un flask o un elisir attivo) | tutti | 1 |
+| Munizioni (`AMMO`, a pezzi) | cacciatori | 1000 |
+| Cibo per il pet (`PET_FOOD`) | cacciatori | 10 |
+
+Testa, spalle e gambe (incantamenti di reputazione o di raid) sono spenti di partenza; i demoni dello stregone non
+mangiano, quindi il cibo per il pet vale solo per il cacciatore (il GM può aggiungere altre classi). La sezione resta
+**fuori dall'evento** finché è uguale ai valori di partenza (`Rules.Stored`) e torna al suo posto quando le regole si
+leggono: un client precedente a M8-2 non conosce la sezione e rifiuterebbe l'intero `CONFIG_CHANGED`. Una gilda che
+cambia questi requisiti deve quindi avere tutti gli officer su una versione con M8-2.
+
+**Il verdetto (M8-2, `Domain/Readiness.lua`, Lua puro).** Per ogni raider:
+
+- un incantamento richiesto e assente è **mancante** sul suo slot; uno slot illeggibile è **sconosciuto**;
+- una categoria è soddisfatta se è attivo un buff del suo tipo o se nelle borse c'è almeno il minimo; **bassa** se ce
+  n'è qualcuno ma meno del minimo; **mancante** se non ce n'è e non c'è il buff; **sconosciuta** se il conteggio non si è
+  potuto leggere (o se non ce n'è e le aure non erano tutte leggibili: il buff potrebbe esserci);
+- lo stato del raider: **sconosciuto** senza risposta (motivo: non chiesto, in attesa, senza addon, offline, nessuna
+  risposta), altrimenti **mancante** se manca qualcosa, **attenzione** se qualcosa è basso o illeggibile, **ok**.
+
+Il risultato è una lista per slot e per categoria (`{ slot, status }`, `{ cat, status, have, need }`): M8-3 la trasforma
+in una riga per il riassunto in `/raid` e in un sussurro per giocatore.
+
+**La tabella degli ID (`Data/Readiness.lua`).** ID degli oggetti consumabili e degli incantesimi dei buff del gioco
+originale, **da verificare su Forever** ([`docs/checklists/M8.md`](checklists/M8.md)). Un ID sbagliato non rompe niente:
+un oggetto che il client non conosce conta 0, un buff con l'ID sbagliato non si vede e la categoria si giudica dalle
+borse; al peggio dà un "basso" o un "mancante" falso finché la tabella non si corregge.
+
+**La scheda e il pulsante (M8-3).** Una scheda per chi può chiedere (chi guida la serata o ha `raid.addonCheck`): il
+pulsante "Controlla" manda la richiesta (con l'attesa di 30 secondi), una riga per membro del raid con stato, slot e
+categorie che mancano, un riepilogo ("31 ok, 5 attenzione, 3 mancanti, 1 sconosciuto"). Il pulsante "Avvisa" riusa
+l'avviso in `/raid` di M3-6 (§4.1): un riassunto breve in `/raid` e un sussurro a ognuno con quello che gli manca, nella
+lingua di chi preme, con le stesse protezioni (mai durante un boss, una volta ogni N minuti, sempre da un clic). Il
+modulo delle regole guadagna la pagina dei requisiti.
+
 ---
 
 ## 5. Rilevamento upgrade e "chi passa per fare il furbo"
@@ -1702,7 +1793,8 @@ versionata, mai dalle SavedVariables di un altro addon.
 
   Un client che non è ufficiale non legge mai un registro suo, nemmeno uno vecchio. **Presenze e assenze non si
   espongono mai** (solo per gli ufficiali, §6), e nemmeno la nota libera del giocatore, l'audit, il log e il council; della
-  serata si danno solo le liste `raid` e `bench`, mai gli assenti.
+  serata si danno solo le liste `raid` e `bench`, mai gli assenti. Nemmeno la prontezza del raid (§4.2, M8-2): è transitoria e non fa
+  parte dei crediti ([ADR 0010](adr/0010-self-reported-transient-readiness.md)).
 - **Avvisi di cambiamento.** `RegisterCallback(evento, fn)` / `UnregisterCallback(evento, fn)` per `READY`,
   `SEASON_CHANGED`, `POOL_CHANGED`, `CREDITS_CHANGED`, `NIGHT_CHANGED`, `RULES_CHANGED`; `fn(evento)` gira protetta (un errore
   si conta in `/fdcp debug` e si registra nel log; FDCP e le altre callback vanno avanti), al massimo 32 per evento. Solo
@@ -1822,6 +1914,8 @@ M7-3 (sotto); il campo "Pezzo che nessuno vuole" e simili sono liste di codici c
 oggetto (`cost.overrides`) e la lista dei token **non** hanno ancora una pagina (sono elenchi di id, non valori: restano
 nel dominio e nell'esportazione delle regole di M6-7); le regole importate che li contengono si conservano intatte
 quando il GM salva da qui.
+La sezione `readiness` (requisiti del controllo di prontezza, §4.2, M8-2) non ha ancora una pagina: arriva con la
+scheda di M8-3. Fino ad allora vale quella di partenza, che il modulo conserva intatta quando il GM salva.
 
 **Come è fatto (M7-3).** La sotto-scheda **Profili** (`UI/Windows/Profiles.lua`, sopra `SettingsController`) riunisce tre
 cose, senza duplicare quel che c'era già. **Profili personali (AceDB)**: `Config:ProfileNames / SelectProfile /
@@ -1850,6 +1944,10 @@ regole (hanno la loro stringa e i preset); importare un profilo cambia quello in
 | Due officer che modificano insieme | Medio | Registro a eventi con autore: niente sovrascritture, solo eventi in più |
 | Addon modificato che manda dati falsi | Basso | Roll dal server; risposte accettate solo dal mittente stesso; registro accettato solo da ranghi abilitati |
 | Cache oggetti vuota (`GetItemInfo` restituisce nil) | Basso | `ItemCache` con attesa di `ITEM_DATA_LOAD_RESULT` |
+| Prontezza del raid: ID di consumabili e buff diversi su Forever (§4.2) | Basso | Tabella `Data/Readiness.lua` marcata "da verificare"; un ID sbagliato dà al peggio un "basso" o "mancante" falso, mai un errore; la verifica è in `docs/checklists/M8.md` |
+| Prontezza del raid: aure segrete o conteggi illeggibili (§4.2) | Basso | Il valore diventa "sconosciuto", mai indovinato; senza aure leggibili la categoria si giudica dalle borse |
+| Prontezza del raid: un client che mente sul proprio stato (§4.2) | Basso | La prontezza è un consiglio senza penalità e non entra nel registro; si risponde solo a chi può chiedere |
+| Regole: un officer con una versione precedente a M8-2 rifiuta un `CONFIG_CHANGED` con la sezione `readiness` (§4.2) | Medio | La sezione non si scrive finché è quella di partenza; chi la cambia chiede prima a tutti gli officer di aggiornare (README, CHANGELOG) |
 | SavedVariables troppo grandi in una season lunga | Basso | Snapshot e compattazione del registro a fine season, archivio esportabile (M6-7: le formazioni di una season chiusa; dimensione stimata in `/fdcp debug`; M7-5: budget verificati in CI da `Tests/test_perf.lua` su una season simulata di 20 serate e 40 raider, circa 250 KB stimati contro il limite di 1 MiB, compattazione al 89%) |
 
 ---
@@ -1866,7 +1964,7 @@ regole (hanno la loro stringa e i preset); importare un profilo cambia quello in
 | **M5 Upgrade e council** | UpgradeScore, pesi, verdetti, segnalazioni, interventi del council, voto, leggendari, BoE e banca | Il council lavora dall'addon |
 | **M6 Storico ed export** | Viste serate/membro/oggetto, log, audit, export Discord/CSV/JSON e i tre file del sito (`roster`, `loot`, `progress`), sync fra officer | La tabella su Discord esce dall'addon |
 | **M7 Rifinitura e rilascio** | Stile del sito completo (bagliori, ombre, icone, temi), impostazioni, profili, manuale, versione 1.0 | Prima release per la gilda |
-| **M8 Integrazioni** | API pubblica in sola lettura e versionata per altri addon (Azeroth Accord), §8.6 | L'API completa offline e documentata nelle due lingue |
+| **M8 Integrazioni** | API pubblica in sola lettura e versionata per altri addon (Azeroth Accord), §8.6; controllo di prontezza del raid (incantamenti e consumabili) con scheda e avviso, §4.2 | L'API completa offline e documentata nelle due lingue; il ML vede chi non è pronto e lo avvisa |
 
 M2 e M3 possono procedere in parallelo dopo M1; M4 dipende da M0, M2 e M3.
 

@@ -433,12 +433,14 @@ function Group.Members()
 	return out
 end
 
--- GetRaidRosterInfo(i) as a table: { name, rank, subgroup, level, classFile, zone, online, isDead }; nil when missing.
+-- GetRaidRosterInfo(i) as a table: { name, rank, subgroup, level, classFile, zone, online, isDead, isML }; nil when
+-- missing. `rank` is the raid rank (2 leader, 1 assistant, 0 member); `isML` the 11th value, the master looter.
 function Group.RaidRosterRow(i)
 	local values = readable("GetRaidRosterInfo", i)
 	if not values or not str(values[1]) then return nil end
 	return { name = values[1], rank = num(values[2]), subgroup = num(values[3]), level = num(values[4]), classFile = str(values[6]),
-		zone = str(values[7]), online = values[8] and true or false, isDead = values[9] and true or false }
+		zone = str(values[7]), online = values[8] and true or false, isDead = values[9] and true or false,
+		isML = values[11] == true }
 end
 
 ---------------------------------------------------------------------------------------------------------------------
@@ -981,6 +983,64 @@ function Item.Request(itemID)
 	return state
 end
 
+-- The link in an inventory slot of the player and the state of the call (M8-2, the readiness check): nil and "available"
+-- is an empty slot; nil and "restricted", "error" or "missing" is a slot that could not be read.
+function Item.EquippedLinkState(slot)
+	if type(slot) ~= "number" then return nil, MISSING end
+	local v, state = first("GetInventoryItemLink", "player", slot)
+	if state ~= AVAILABLE then return nil, state end
+	return str(v), AVAILABLE
+end
+
+-- How many of an item the player carries in the bags (M8-2): C_Item.GetItemCount(itemID, false, false), the bags only, not
+-- the bank, not the charges; the old global GetItemCount as the fallback [verify, not in the dump]. nil when the client
+-- does not say (missing, failing, hidden).
+function Item.Count(itemID)
+	if not num(itemID) then return nil end
+	local v, state = first("C_Item.GetItemCount", itemID, false, false)
+	if state == MISSING then v, state = first("GetItemCount", itemID, false, false) end
+	if state ~= AVAILABLE then return nil end
+	v = num(v)
+	if v == nil or v < 0 then return nil end
+	return math.floor(v)
+end
+
+---------------------------------------------------------------------------------------------------------------------
+-- The player's own auras (M8-2, the readiness check). C_UnitAuras.GetBuffDataByIndex(unit, index, filter) and
+-- C_UnitAuras.GetAuraDataByIndex are in the Forever dump (an AuraData table); the dump also has
+-- C_UnitAuras.ShouldUnitAuraIndexBeSecret: an aura may be a secret value. A secret aura, or one without a readable
+-- spellId, is skipped and counted as hidden: never read, never compared. [verify in game: which auras are secret]
+---------------------------------------------------------------------------------------------------------------------
+local Aura = {}
+Compat.Aura = Aura
+Aura.MAX = 40   -- the rows read at most
+
+-- The spell ids of the player's helpful auras: a list and the number of rows that could not be read. nil and the state
+-- when the client has neither function or the first row fails.
+function Aura.PlayerBuffSpellIDs()
+	local path = "C_UnitAuras.GetBuffDataByIndex"
+	if type(Resolve(path)) ~= "function" then path = "C_UnitAuras.GetAuraDataByIndex" end
+	if type(Resolve(path)) ~= "function" then return nil, MISSING end
+	local ids, hidden = {}, 0
+	for i = 1, Aura.MAX do
+		local v, state = first(path, "player", i, "HELPFUL")
+		if state == RESTRICTED then
+			hidden = hidden + 1
+		elseif state ~= AVAILABLE then
+			if i == 1 then return nil, state end
+			hidden = hidden + 1
+			break
+		elseif v == nil then
+			break
+		else
+			local row = readableCopy(v)
+			local id = row and num(row.spellId)
+			if id then ids[#ids + 1] = id else hidden = hidden + 1 end
+		end
+	end
+	return ids, hidden
+end
+
 ---------------------------------------------------------------------------------------------------------------------
 -- Inspection (M7-5d: the master looter's cross-check of a flagged player's gear; checked against the Forever API dump:
 -- CanInspect, NotifyInspect, ClearInspectPlayer, CheckInteractDistance, GetInventoryItemLink, event INSPECT_READY)
@@ -1257,6 +1317,9 @@ local CAPS = {
 	{ "item.C_Item.GetItemSpecInfo", "item", "C_Item.GetItemSpecInfo", note = "[verify S5c]" },
 	{ "item.C_Item.RequestLoadItemDataByID", "item", "C_Item.RequestLoadItemDataByID" },
 	{ "item.GetInventoryItemLink", "item", "GetInventoryItemLink" },
+	{ "item.C_Item.GetItemCount", "item", "C_Item.GetItemCount", note = "[verify] M8-2 readiness: bag counts" },
+	{ "aura.GetBuffDataByIndex", "aura", "C_UnitAuras.GetBuffDataByIndex", note = "[verify] M8-2 readiness: secret auras" },
+	{ "aura.GetAuraDataByIndex", "aura", "C_UnitAuras.GetAuraDataByIndex", note = "[verify] M8-2 readiness: fallback" },
 	{ "inspect.CanInspect", "inspect", "CanInspect", note = "[verify] M7-5d cross-check" },
 	{ "inspect.NotifyInspect", "inspect", "NotifyInspect", note = "[verify] M7-5d cross-check" },
 	{ "inspect.ClearInspectPlayer", "inspect", "ClearInspectPlayer" },

@@ -17,6 +17,7 @@
 | **Ledger** | Credits are computed from a ledger of signed events: history, log and audit for free, and officers sync without overwriting each other |
 | **Roster and nights** | Season pool with declared main-spec and off-spec, mains and alts, lineup, fair bench rotation, attendance per boss (officers only) |
 | **Mandatory addon** | Who in the raid lacks the addon, and a one-click notice in `/raid` with their names |
+| **Raid readiness** *(in progress, M8-2 data done)* | Each raider's own client reports its missing enchants (by slot) and its consumables (buff food, food, water, potions, flasks or elixirs, hunter ammunition and pet food) when the master looter asks; the requirements are guild rules; nothing is stored. The tab and the notify button come with M8-3 ([ADR 0010](docs/adr/0010-self-reported-transient-readiness.md)) |
 | **Upgrade badge** | Each raider's client compares the drop with the piece worn during the boss fight (minor, medium or major upgrade, with the item-level difference); the council sees "major upgrade, passed" or "possible waste" — a hint, never an automatic decision |
 | **Council** | Interventions with a mandatory reason, an optional vote, voided awards as compensating events |
 | **Progress** | First kill of every boss per guild faction, as on the community site's Progress tab |
@@ -42,7 +43,7 @@
 
 - One roadmap step per session and per pull request, shipped by `tools/ship_step.py` when the checks are green ([ADR 0001](docs/adr/0001-git-flow-and-automated-shipping.md)); see [CLAUDE.md](CLAUDE.md) and [ROADMAP.md](ROADMAP.md).
 - Checks: `python -I -X utf8 tools/check_docs.py`.
-- The in-game checklist of each milestone is in [docs/checklists/](docs/checklists/): [M1](docs/checklists/M1.md), [M3](docs/checklists/M3.md), [M4](docs/checklists/M4.md), [M5](docs/checklists/M5.md) and [M6](docs/checklists/M6.md), and the owner's path to v1.0.0 in [docs/checklists/release.md](docs/checklists/release.md) (each one with the open items of every step of its milestone; M4's is a whole boss, plan A and plan B).
+- The in-game checklist of each milestone is in [docs/checklists/](docs/checklists/): [M1](docs/checklists/M1.md), [M3](docs/checklists/M3.md), [M4](docs/checklists/M4.md), [M5](docs/checklists/M5.md), [M6](docs/checklists/M6.md) and [M8](docs/checklists/M8.md), and the owner's path to v1.0.0 in [docs/checklists/release.md](docs/checklists/release.md) (each one with the open items of every step of its milestone; M4's is a whole boss, plan A and plan B).
 - The user manual lives in [docs/wiki/](docs/wiki/Home.md) in English and Italian and is published to the GitHub wiki automatically ([ADR 0002](docs/adr/0002-github-wiki-generated-from-docs-wiki.md)).
 - Foundations are copied and adapted from the sister project Azeroth Accord (same owner, GPL-3.0); the two addons stay independent in game, and Accord reads FDCP only through its public read-only API ([ADR 0009](docs/adr/0009-public-read-only-api.md)).
 

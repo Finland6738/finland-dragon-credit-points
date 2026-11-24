@@ -4,7 +4,8 @@
 -- PLAYER_ENTERING_WORLD.
 --
 -- What it gives: a snapshot of the raid, and two bus events.
---   Group.Snapshot() -> { inRaid, size, members = { ["Name-Realm"] = { subgroup, online, classFile, level } }, read,
+--   Group.Snapshot() -> { inRaid, size, members = { ["Name-Realm"] = { subgroup, online, classFile, level, raidRank,
+--     isML? } }, read,
 --     complete, me }. `complete` is false when a row could not be read (a secret name inside an instance, spike S7): then a
 --     name that is missing does not mean "left the raid". Names are written as the ledger writes them (GuildRanks.FullName).
 --   "GROUP_SCANNED"(snapshot)  one scan DEBOUNCE seconds after a group event (the client fires them in bursts).
@@ -40,7 +41,8 @@ function Group.Snapshot()
 		local row = G.RaidRosterRow(i)
 		local full = row and ns.GuildRanks and ns.GuildRanks.FullName(row.name)
 		if full then
-			members[full] = { subgroup = row.subgroup, online = row.online, classFile = row.classFile, level = row.level }
+			members[full] = { subgroup = row.subgroup, online = row.online, classFile = row.classFile, level = row.level,
+				raidRank = row.rank, isML = row.isML or nil }
 			read = read + 1
 		end
 	end

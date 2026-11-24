@@ -20,6 +20,9 @@
 --   penalties Domain/Absence.lua { absence, cheat, autoApply }: the credits added for a missed official night, for roll
 --             cheating (Domain/Cheat.lua, M7-5d), and whether they are written without the officer's confirmation
 --             §3.5, §3.6, §6 (M7-5b, M7-5d)
+--   readiness Domain/Readiness.lua { enabled, slots, needs }: the enchants and consumables of the raid readiness check
+--             §4.2 (M8-2). Written only when it differs from its defaults (Rules.Change): a client older than M8-2 does not
+--             know the section and would refuse the whole CONFIG_CHANGED (ADR 0010)
 -- Retired (M7-5c, owner decision of 2026-11-22): the section `responses` (the label mode of M7-2b) and the stat-weight
 -- thresholds of `upgrade` (useStats, bigThreshold, smallThreshold, ilvlBigThreshold). Rules written before carry them:
 -- Rules.WithDefaults drops them on read, so an old CONFIG_CHANGED is still valid and the ledger is never rewritten.
@@ -40,7 +43,7 @@ local type, pairs, ipairs, tostring, floor, sort = type, pairs, ipairs, tostring
 
 local function Ledger() return ns.Ledger end
 
-Rules.SECTIONS = { "night", "members", "season", "cost", "priority", "session", "council", "legendary", "bench", "site", "notice", "announce", "upgrade", "penalties" }
+Rules.SECTIONS = { "night", "members", "season", "cost", "priority", "session", "council", "legendary", "bench", "site", "notice", "announce", "upgrade", "penalties", "readiness" }
 -- What Rules.WithDefaults drops from rules written by an older addon: a whole section (true) or some keys of a section.
 Rules.RETIRED = { responses = true }
 Rules.AWARD_MODES = { confirm = true, auto = true, council = true }
@@ -87,6 +90,7 @@ function Rules.DefaultConfig()
 		announce = ns.Announce.DefaultConfig(),
 		upgrade = ns.UpgradeScore.DefaultRules(),
 		penalties = ns.Absence.DefaultConfig(),
+		readiness = ns.Readiness.DefaultConfig(),
 	}
 end
 
@@ -192,6 +196,7 @@ function Rules.Validate(config)
 	if type(c.announce) == "table" then sub(problems, "announce", ns.Announce.ValidateConfig(c.announce)) end
 	if type(c.upgrade) == "table" then sub(problems, "upgrade", ns.UpgradeScore.ValidateRules(c.upgrade)) end
 	if type(c.penalties) == "table" then sub(problems, "penalties", ns.Absence.Validate(c.penalties)) end
+	if type(c.readiness) == "table" then sub(problems, "readiness", ns.Readiness.ValidateConfig(c.readiness)) end
 	sort(problems)
 	return #problems == 0, problems
 end
@@ -227,6 +232,19 @@ function Rules.Current(L, at)
 	return Rules.WithDefaults(Ledger().Payload(e).rules), e.id
 end
 
+-- The rules as a CONFIG_CHANGED stores them: a section newer than the clients of the guild may run is left out while it
+-- equals its defaults (Rules.WithDefaults puts it back on read), so a guild that never changes it stays readable by an
+-- older addon. Today only `readiness` (M8-2, ADR 0010). Returns a new table.
+Rules.OPTIONAL_SECTIONS = { "readiness" }
+function Rules.Stored(rules)
+	local out = copy(rules)
+	local defaults = Rules.DefaultConfig()
+	for _, name in ipairs(Rules.OPTIONAL_SECTIONS) do
+		if type(out[name]) == "table" and #Rules.Diff(out[name], defaults[name]) == 0 then out[name] = nil end
+	end
+	return out
+end
+
 -- Writes a CONFIG_CHANGED. draft = { author, ts, rules, preset?, confirmed? }; `preset` is the code of the preset the
 -- rules started from (Domain/Presets.lua), `confirmed` the GM's explicit confirmation, required while a season is open.
 -- opts goes to Ledger.Append (the trust gate: only the GM). Returns the event, or nil and a code: "RULES:<code>",
@@ -242,7 +260,7 @@ function Rules.Change(L, draft, opts)
 	if ns.Season and ns.Season.Current(L) and not confirmed then return nil, "CONFIRM_REQUIRED" end
 	return Ledger().Append(L, {
 		author = draft.author, ts = draft.ts, type = "CONFIG_CHANGED",
-		payload = { rules = rules, preset = draft.preset, confirmed = confirmed or nil },
+		payload = { rules = Rules.Stored(rules), preset = draft.preset, confirmed = confirmed or nil },
 	}, opts)
 end
 

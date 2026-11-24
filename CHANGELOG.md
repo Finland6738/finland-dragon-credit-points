@@ -4,6 +4,23 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+
+- M8-2: the data of the raid readiness check (owner request of 2026-11-24; [ADR 0010](docs/adr/0010-self-reported-transient-readiness.md), analysis §4.2). No window yet: the tab and the notify button are step M8-3.
+  - Each raider's own client builds a small snapshot of itself on request (`Adapters/SelfCheck.lua`): for each enchantable slot holding an item, whether it is enchanted; the readiness buffs active (Well Fed, flask, elixir); and the bag count of each consumable category asked. Nothing else from the bags is read or sent. It is never read in combat or during a boss encounter, and an unreadable value is "unknown".
+  - New messages `RDYQ` (on `RAID`) and `RDY` (whispered to the asker) in `Net/Readiness.lua`. A raider answers only the raid leader, an assistant, the master looter or a rank with `raid.addonCheck`. The asker waits 30 seconds between requests, a raider answers the same asker once per 20 seconds, and a message waiting longer than 60 seconds is dropped. The session protocol does not change; an older client ignores the new messages and shows as "unknown".
+  - `Domain/Readiness.lua` (pure) evaluates a snapshot against the guild's requirements: OK, WARN, MISSING or UNKNOWN, with the missing slots and categories. `App/ReadinessCheck.lua` keeps the master looter's table, one row per raid member, with the reason of an unknown row. Readiness is transient: it is never in the ledger, the saved data, the backup, the exports or the public API.
+  - The requirements are a new section `readiness` of the guild's rules: the slots to enchant and the minimum count per category, each limited by class, role or mana use if needed. The defaults can be undone: chest, feet, wrist, hands, back and both weapon slots enchanted (the ranged scope for hunters); 1 buff food, 5 food, 2 potions, 1 flask or elixir for everyone; 10 water for mana users; 1000 ammunition and 10 pet food for hunters. While the section equals its defaults it is left out of `CONFIG_CHANGED`, so officers on an older version still read the rules. **A guild that changes it needs every officer on this version.**
+  - `Data/Readiness.lua` holds the item ids of the consumables and the spell ids of the buffs, those of the original game, **to verify on Forever**.
+  - `Core/Compat.lua`: `Item.Count` (`C_Item.GetItemCount`), `Item.EquippedLinkState`, `Aura.PlayerBuffSpellIDs` (`C_UnitAuras.GetBuffDataByIndex`, `GetAuraDataByIndex` as a fallback; a secret aura is skipped), and the master-looter flag of `GetRaidRosterInfo`. The API probe lists the new calls.
+  - Docs: ADR 0010; analysis §4.2, §8.6, §10, §11, §12; the roadmap steps M8-2 and M8-3; the new checklist [`docs/checklists/M8.md`](docs/checklists/M8.md); README (EN + IT). No wiki page yet: nothing is visible to players until M8-3.
+  - Tests: `Tests/test_readiness.lua` (the rules, the verdict, links and slots, the wire form, the snapshot on the mock client, the round trip on the network simulator with trust, combat and throttling). The mock client gains `C_Item.GetItemCount`, `C_UnitAuras` and the raid rank and master looter of `GetRaidRosterInfo`.
+  - **Not verified in the game:**
+    - the item and spell ids of `Data/Readiness.lua` on WoW Forever;
+    - `C_Item.GetItemCount` and `C_UnitAuras.GetBuffDataByIndex` in the real client, and which auras Forever hides;
+    - the enchant field of the item links of worn gear;
+    - the whispered answers of a full 40-player raid, and their timing after combat.
+
 ## [1.0.2] - 2026-11-24
 
 ### Added

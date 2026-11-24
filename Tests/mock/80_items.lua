@@ -1,6 +1,6 @@
 -- Mock client, part 9: items, stats and specializations (M1-3).
 --
--- Imitates: C_Item.{GetItemInfo, GetItemInfoInstant, GetDetailedItemLevelInfo, GetItemQualityByID, GetItemStats, GetItemStatDelta,
+-- Imitates: C_Item.{GetItemCount (M8-2), GetItemInfo, GetItemInfoInstant, GetDetailedItemLevelInfo, GetItemQualityByID, GetItemStats, GetItemStatDelta,
 -- IsEquippableItem, DoesItemContainSpec, GetItemSpecInfo, RequestLoadItemDataByID}, GetInventoryItemLink,
 -- C_SpecializationInfo.{GetSpecialization, GetSpecializationInfo, GetInspectSpecialization}, GetNumSpecializations,
 -- GetSpecializationRole, the event GET_ITEM_INFO_RECEIVED.
@@ -13,6 +13,7 @@
 --       specs={ specID, ... }, cached = true }
 --   Mock.items.equipped = { [slot] = link }
 --   Mock.items.noStats / Mock.items.secret   behaviours for the degradation tests (see below)
+--   Mock.items.counts = { [itemID] = n }  the bag counts (M8-2); Mock.items.countSecret; Mock.items.secretSlots = { [slot] = true }
 --   Mock.specs.Set{ active = 2, list = { { id=, name=, role=, primaryStat= }, ... }, inspect = { [unit] = specID } }
 local Mock, H = ...
 local W = Mock.world
@@ -114,7 +115,19 @@ end
 
 function GetInventoryItemLink(unit, slot)
 	if unit ~= "player" then return nil end
+	if items.secretSlots and items.secretSlots[slot] then return Mock.SECRET end
 	return items.equipped[slot]
+end
+
+-- M8-2: the bag count of an item (C_Item.GetItemCount(itemInfo, includeBank, includeUses, ...) in the dump): 0 for an item
+-- the player does not carry. Mock.items.counts = { [itemID] = n }; Mock.items.countSecret hides every answer;
+-- Mock.items.noCount removes the function (an older client).
+items.counts = items.counts or {}
+function C_Item.GetItemCount(item, includeBank, includeUses)
+	if items.countSecret then return Mock.SECRET end
+	local id = type(item) == "number" and item or tonumber(tostring(item):match("item:(%d+)") or "")
+	items.countCalls = (items.countCalls or 0) + 1
+	return items.counts[id] or 0
 end
 
 -- Specializations.

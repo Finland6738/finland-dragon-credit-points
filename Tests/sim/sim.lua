@@ -14,6 +14,7 @@
 --   local net = Sim.new{ realm = "Camelot" }
 --   local a = net:Client("Aurel", { version = "1.2.0", setup = function(Mock) ... end, after = function(client) ... end })
 --   net:Raid({ "Aurel", "Bryn", "Corin" }, { offline = { Corin = true } })   -- fires GROUP_ROSTER_UPDATE everywhere
+--                                                                            (also ranks = { Aurel = 2 }, ml = "Aurel")
 --   net:Advance(5)                                                           -- 0.1-second steps, delivery after each
 --   a.addon()                                                                -- the client's FDCP table (fresh after a reload)
 --   net:Reload("Aurel")   net:Drop("Bryn")   -- /reload, or the client goes away (its player stays in the raid)
@@ -58,7 +59,8 @@ local function rosterFor(net, c)
 	for i, name in ipairs(net.raid or {}) do
 		if name ~= c.name then
 			members[#members + 1] = { name = name, subgroup = math.floor((i - 1) / 5) + 1,
-				online = not (net.raidOpts.offline and net.raidOpts.offline[name]) }
+				online = not (net.raidOpts.offline and net.raidOpts.offline[name]),
+				raidRank = net.raidOpts.ranks and net.raidOpts.ranks[name] or 0, isML = net.raidOpts.ml == name }
 		end
 	end
 	return members
@@ -121,7 +123,8 @@ function Net:Client(name, opts)
 	return c
 end
 
--- The raid: `names` in order (clients and players without the addon). opts.offline = { [name] = true }.
+-- The raid: `names` in order (clients and players without the addon). opts.offline = { [name] = true };
+-- opts.ranks = { [name] = 2 leader | 1 assistant } and opts.ml = name (the master looter), as GetRaidRosterInfo gives them.
 -- Every client's roster changes at once (GROUP_ROSTER_UPDATE); a client not named leaves the raid.
 function Net:Raid(names, opts)
 	self.raid = names

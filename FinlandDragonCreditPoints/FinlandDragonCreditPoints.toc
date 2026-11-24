@@ -39,6 +39,7 @@ Domain\CreditSnapshot.lua
 Domain\Rotation.lua
 Data\Instances.lua
 Data\Specs.lua
+Data\Readiness.lua
 Domain\UpgradeScore.lua
 Domain\Flags.lua
 Domain\Council.lua
@@ -52,6 +53,7 @@ Domain\GuildBank.lua
 Domain\Progress.lua
 Domain\Notice.lua
 Domain\Announce.lua
+Domain\Readiness.lua
 Domain\Rules.lua
 Domain\Presets.lua
 Domain\Profiles.lua
@@ -65,6 +67,7 @@ Adapters\Calendar.lua
 Adapters\ItemCache.lua
 Adapters\Inventory.lua
 Adapters\GearSnapshot.lua
+Adapters\SelfCheck.lua
 Adapters\InspectCheck.lua
 Adapters\LootSource.lua
 Adapters\RollListener.lua
@@ -80,6 +83,8 @@ Net\Snapshot.lua
 App\SeasonController.lua
 App\BackupService.lua
 App\AddonCheck.lua
+Net\Readiness.lua
+App\ReadinessCheck.lua
 App\Diagnostics.lua
 App\AddonNotice.lua
 App\Announcer.lua

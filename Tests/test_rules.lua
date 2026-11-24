@@ -216,7 +216,9 @@ describe("the rules in the ledger", function()
 		eq(e.payload.preset, "PATTO"); isNil(e.payload.confirmed)
 		local rules, from = R().Current(L)
 		eq(rules.cost.matrix.weapon[4], 3); eq(from, e.id)
-		truthy(R().Validate(e.payload.rules))
+		-- M8-2 (ADR 0010): an optional section equal to its defaults is left out of the event, and read back filled
+		isNil(e.payload.rules.readiness)
+		truthy(R().Validate(R().WithDefaults(e.payload.rules)))
 		eq(price(rules, SWORD, "MS"), 3)
 	end)
 
