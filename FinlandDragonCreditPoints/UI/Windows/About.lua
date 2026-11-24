@@ -1,6 +1,7 @@
 -- AboutWindow: the Info sub-tab of Settings and `/fdcp about` (docs/ANALISI.md §3.9, docs/specs/ui-style.md §6, M7-2c).
 -- Tells who made the addon and for whom (Finland, for the Italian guild NEBULA), what it is for, the licence, the third-party
--- fonts and libraries, and how to support the project. The game cannot open a web page, so every link is a read-only copy box
+-- fonts and libraries, and how to support the project. The only link is the Ko-fi page (owner rule of 2026-11-24: no links
+-- to the community site or to GitHub inside the addon). The game cannot open a web page, so it is a read-only copy box
 -- (click it, Ctrl+C). Words come from locale keys; the links and names are constants of this file. Lua 5.1; unprotected frames.
 -- Not verified in the real client: the look of the page and the copy boxes (M7-2c "in game").
 local ADDON_NAME, ns = ...
@@ -15,11 +16,9 @@ local L = ns.L
 AboutWindow.AUTHOR = "Finland"
 AboutWindow.GUILD = "NEBULA"
 AboutWindow.LICENSE = "GPL-3.0"
--- The links, in the order of the page. `key` names the label (locale key ABOUT_LINK_<KEY>).
+-- The links, in the order of the page. `id` names the label (locale key ABOUT_LINK_<ID>). Only Ko-fi: the addon carries
+-- no link to the community site or to GitHub (owner rule of 2026-11-24).
 AboutWindow.LINKS = {
-	{ id = "repo", url = "https://github.com/Finland6738/finland-dragon-credit-points" },
-	{ id = "issues", url = "https://github.com/Finland6738/finland-dragon-credit-points/issues" },
-	{ id = "site", url = "https://nebula-community.github.io/giochi/wow-forever/" },
 	{ id = "kofi", url = "https://ko-fi.com/finland6738" },
 }
 
@@ -42,7 +41,7 @@ end
 
 -- The lines of the page, as text: used by the window, by `/fdcp about` and by the tests.
 -- locale-key: ABOUT_MADE_BY ABOUT_PURPOSE ABOUT_GUILD ABOUT_LICENSE ABOUT_SUPPORT ABOUT_THIRD ABOUT_DISCLAIMER ABOUT_VERSION
--- locale-key: ABOUT_LINK_REPO ABOUT_LINK_ISSUES ABOUT_LINK_SITE ABOUT_LINK_KOFI
+-- locale-key: ABOUT_LINK_KOFI
 function AboutWindow.Lines()
 	local version = ns.Protocol and ns.Protocol.AddonVersion() or "dev"
 	return {
@@ -97,7 +96,7 @@ function AboutWindow:Build(pane)
 		fs:SetPoint("RIGHT", nebula, "LEFT", -16, 0)
 	end
 	card.support = text("Body", "text-2", card.guild, -10)
-	-- the copy boxes, two columns of two
+	-- the copy boxes, two per row
 	card.links = {}
 	for i, link in ipairs(self.LINKS) do
 		local col, row = (i - 1) % 2, math.floor((i - 1) / 2)
@@ -115,7 +114,8 @@ function AboutWindow:Build(pane)
 		card.links[link.id] = box
 	end
 	card.license = Theme.NewText(card, "Body", "text-2")
-	card.license:SetPoint("TOPLEFT", card.support, "BOTTOMLEFT", 0, -10 - 2 * 58 - 6)
+	local rows = math.floor((#self.LINKS + 1) / 2)
+	card.license:SetPoint("TOPLEFT", card.support, "BOTTOMLEFT", 0, -10 - rows * 58 - 6)
 	card.license:SetPoint("RIGHT", card, "RIGHT", -16, 0)
 	card.license:SetJustifyH("LEFT")
 	card.third = text("Small", "text-3", card.license)

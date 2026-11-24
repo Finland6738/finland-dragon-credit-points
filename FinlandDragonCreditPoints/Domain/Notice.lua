@@ -2,7 +2,7 @@
 -- calls the game. The rules' section "notice" holds what the Guild Master can edit:
 --   text          the notice for members without the addon; "" = the default of the player's language
 --   outdatedText  the notice for members with an older version; "" = the default
---   link          where to download the addon ("" = the project's releases page)
+--   link          where to download the addon ("" = the word "CurseForge": the addon carries no web link but Ko-fi)
 --   whisper       true = one whisper to each name instead of one /raid message
 --   minutes       at most one notice every `minutes` minutes (0 = no limit), per night
 -- Placeholders in a text: {names} (the list), {link} (the download link), {addon} (the addon's name).
@@ -18,7 +18,7 @@ local type, pairs, tostring, floor, sort = type, pairs, tostring, math.floor, ta
 
 Notice.LINE_MAX = 255
 Notice.TAG = "[FDCP] "
-Notice.DEFAULT_LINK = "https://github.com/Finland6738/finland-dragon-credit-points/releases"
+Notice.DEFAULT_LINK = "CurseForge"
 Notice.TEXT_MAX, Notice.LINK_MAX, Notice.MINUTES_MAX = 120, 80, 60
 Notice.KINDS = { MISSING = true, OUTDATED = true }
 

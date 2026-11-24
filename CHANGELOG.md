@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Changed
+
+- The addon carries no link to the NEBULA community site or to GitHub any more; the only link left is the Ko-fi page (owner rule of 2026-11-24).
+  - **Settings › Info** and `/fdcp about chat` show only the Ko-fi copy box. The GitHub repository, issues and community-site boxes are gone, with their locale keys, and the support text no longer points to GitHub.
+  - The default download link of the "addon missing" notice is now the word **CurseForge** instead of the GitHub releases page. The Guild Master can still set a link in the rules.
+  - The `X-Website` line is removed from both TOC files.
+  - Docs: wiki **About** and **Addon Check** (EN + IT); the mockup script `tools/make_mockups.py` (the About mockup images are not regenerated).
+  - **Not verified in the game:** the Info page with a single copy box (the licence line moves up).
+
 ## [1.0.3] - 2026-11-24
 
 ### Added

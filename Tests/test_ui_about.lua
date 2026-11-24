@@ -20,11 +20,9 @@ describe("the Info page", function()
 		contains(card.third:GetText(), "Ace3")
 	end)
 
-	it("shows every link as a copy box that puts an edit back and selects its text on focus", function()
+	it("shows only the Ko-fi link, as a copy box that puts an edit back and selects its text on focus", function()
 		Mock.Slash("/fdcp about")
 		local want = {
-			repo = "https://github.com/Finland6738/finland-dragon-credit-points",
-			site = "https://nebula-community.github.io/giochi/wow-forever/",
 			kofi = "https://ko-fi.com/finland6738",
 		}
 		for id, url in pairs(want) do
@@ -37,7 +35,10 @@ describe("the Info page", function()
 			box.edit:GetScript("OnEditFocusGained")(box.edit)
 			truthy(box.edit._highlighted, id .. " is selected")
 		end
-		truthy(AW().card.links.issues)
+		eq(#AW().LINKS, 1)
+		for _, id in ipairs({ "repo", "issues", "site" }) do
+			truthy(not AW().card.links[id], id .. " is not on the page")
+		end
 	end)
 
 	it("opens on /fdcp about and prints on /fdcp about chat", function()
@@ -51,6 +52,8 @@ describe("the Info page", function()
 		contains(lines, "Finland")
 		contains(lines, "ko-fi.com/finland6738")
 		contains(lines, "GPL-3.0")
+		truthy(not lines:find("github", 1, true), "no GitHub link in the chat")
+		truthy(not lines:find("nebula-community", 1, true), "no community-site link in the chat")
 	end)
 
 	it("shows the NEBULA logo of the theme: dark art on Nebula and Drago, light art on Aurora, live on a change", function()

@@ -10,7 +10,6 @@
 ## AddonCompartmentFuncOnEnter: FinlandDragonCreditPoints_OnAddonCompartmentEnter
 ## AddonCompartmentFuncOnLeave: FinlandDragonCreditPoints_OnAddonCompartmentLeave
 ## IconTexture: Interface\Icons\INV_Misc_Coin_01
-## X-Website: https://github.com/Finland6738/finland-dragon-credit-points
 ## X-License: GPL-3.0
 
 embeds.xml

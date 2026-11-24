@@ -35,7 +35,7 @@ Il messaggio è fatto così (nella tua lingua):
 > [FDCP] Corin, Dara: vi manca l'addon del loot (Finland Dragon Credit Points). Scaricatelo da <link> prima del prossimo boss, serve per rollare.
 
 - Se i nomi non stanno in un messaggio di chat (255 caratteri), vengono divisi su più righe.
-- Il Guild Master può cambiare il testo dei due avvisi, il link di download, ogni quanto un avviso può partire, e scegliere il **sussurro** al posto di /raid (un sussurro a ognuno). Nel testo, `{names}`, `{link}` e `{addon}` diventano l'elenco, il link e il nome dell'addon.
+- Il Guild Master può cambiare il testo dei due avvisi, il link di download (di serie l'avviso dice solo **CurseForge**: l'addon non contiene link web), ogni quanto un avviso può partire, e scegliere il **sussurro** al posto di /raid (un sussurro a ognuno). Nel testo, `{names}`, `{link}` e `{addon}` diventano l'elenco, il link e il nome dell'addon.
 - Al massimo **un avviso ogni 5 minuti** (il Guild Master può cambiarlo), contato per serata.
 - Mai durante un boss: il pulsante risponde "un boss è in corso" e si riclicca dopo.
 - Parte solo dal clic di chi ha il permesso: l'addon non lo scrive mai da solo.

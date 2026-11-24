@@ -19,13 +19,10 @@ NEBULA è una gilda e community italiana su WoW Forever; il suo sito, <https://n
 
 ## In gioco
 
-Apri **Impostazioni › Info**, oppure scrivi `/fdcp about` (`/fdcp about chat` scrive le stesse informazioni in chat). Il gioco non può aprire una pagina web, quindi ogni link sta in una casella: **cliccaci e premi Ctrl+C** per copiarlo, poi incollalo nel browser. La casella non si può modificare.
+Apri **Impostazioni › Info**, oppure scrivi `/fdcp about` (`/fdcp about chat` scrive le stesse informazioni in chat). L'unico link nell'addon è la pagina Ko-fi. Il gioco non può aprire una pagina web, quindi sta in una casella: **cliccaci e premi Ctrl+C** per copiarlo, poi incollalo nel browser. La casella non si può modificare.
 
 | Casella | Cos'è |
 |---|---|
-| Codice e download | Il repository GitHub, <https://github.com/Finland6738/finland-dragon-credit-points> |
-| Segnala un errore o proponi qualcosa | Le issues del repository |
-| Il sito della community NEBULA | <https://nebula-community.github.io/giochi/wow-forever/> |
 | Sostieni il progetto | La pagina Ko-fi, <https://ko-fi.com/finland6738> |
 
 ## Versione

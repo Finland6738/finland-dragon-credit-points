@@ -35,7 +35,7 @@ The message looks like this (in your language):
 > [FDCP] Corin, Dara: you are missing the loot addon (Finland Dragon Credit Points). Download it from <link> before the next boss, it is needed to roll.
 
 - If the names do not fit in one chat message (255 characters), they are split over several lines.
-- The Guild Master can change the text of both notices, the download link, how often a notice may go out, and choose **whisper** instead of /raid (one whisper to each name). In the text, `{names}`, `{link}` and `{addon}` are replaced by the list, the link and the addon's name.
+- The Guild Master can change the text of both notices, the download link (by default the notice just says **CurseForge**: the addon carries no web link), how often a notice may go out, and choose **whisper** instead of /raid (one whisper to each name). In the text, `{names}`, `{link}` and `{addon}` are replaced by the list, the link and the addon's name.
 - At most **one notice every 5 minutes** (the Guild Master can change it), counted per night.
 - Never during a boss fight: the button answers "a boss fight is in progress" and you click again after it.
 - It only goes out when someone with the permission clicks: the addon never writes it by itself.
