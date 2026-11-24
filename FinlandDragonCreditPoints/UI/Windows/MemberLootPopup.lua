@@ -17,6 +17,8 @@
 -- looter takes the name from the sender, §8.4). The roll is the game's: the addon never writes a roll value; the master
 -- looter's client reads it from the chat (Adapters/RollListener.lua). With the rule session.buttonRollsOnly the master
 -- looter counts a roll only with its intent. A button rolls once per round, rerolls included. Lua 5.1; unprotected frames.
+-- Layout (fix/loot-popup-layout): every row takes the room its text needs (the hint wraps, the eyebrow stops before the
+-- timer), the buttons share their row by their texts (Popup.ButtonWidths); Tests/test_ui_layout.lua checks it.
 -- Not verified in the real client: how it looks in a raid, the tooltip comparison, RandomRoll from a click.
 local ADDON_NAME, ns = ...
 ns = ns or {}
@@ -157,6 +159,8 @@ local function buildCard(self, parent)
 	c:SetScript("OnDragStop", function() parent:StopMovingOrSizing(); Popup:SavePlacement() end)
 
 	c.eyebrow = Theme.NewText(c, "Eyebrow", "accent-text")
+	c.eyebrow:SetJustifyH("LEFT")
+	c.eyebrow:SetWordWrap(false)   -- a long boss name is cut before the timer
 	c.timer = Theme.NewText(c, "Mono", "text-2")
 	c.close = CreateFrame("Button", nil, c)
 	c.close:SetSize(22, 22)
@@ -200,6 +204,7 @@ local function buildCard(self, parent)
 	c.badge = Widgets.Badge(c, "", "accent")
 	c.credits = Theme.NewText(c, "Small", "text-2")
 	c.credits:SetJustifyH("RIGHT")
+	c.credits:SetWordWrap(false)
 
 	-- the upgrade badge (M7-5c); the tooltip says how it was read and what is worn
 	c.verdict = Widgets.Badge(c, "", "neutral")
@@ -304,16 +309,45 @@ function Popup:ShowVerdictTip(owner, d)
 	tip:Show()
 end
 
+-- The widths of the buttons in a row of `avail` points: the same share each when every text fits in it; else each gets
+-- what its text needs and the rest is shared out (Pass is short, the roll buttons are long, above all in Italian); else,
+-- when even that is too wide, one button a row at the full width. Returns the widths and the number of rows (1 or #buttons).
+function Popup.ButtonWidths(buttons, avail)
+	local n = #buttons
+	if n == 0 then return {}, 1 end
+	local gaps = (n - 1) * BUTTON_GAP
+	local share = math.floor((avail - gaps) / n)
+	local need, total, fits = {}, 0, true
+	for i, b in ipairs(buttons) do
+		need[i] = math.ceil(b.label:GetStringWidth() + 28)
+		total = total + need[i]
+		if need[i] > share then fits = false end
+	end
+	local widths = {}
+	if fits then
+		for i = 1, n do widths[i] = share end
+		return widths, 1
+	end
+	if total + gaps <= avail then
+		local extra = math.floor((avail - gaps - total) / n)
+		for i = 1, n do widths[i] = need[i] + extra end
+		return widths, 1
+	end
+	for i = 1, n do widths[i] = avail end
+	return widths, n
+end
+
 -- Puts one card's rows in place (a row that does not apply is hidden and takes no room). Returns the card's height.
 local function layoutCard(self, c, d, top)
 	local y = 14
 	c:SetWidth(self.width)
-	c.eyebrow:ClearAllPoints()
-	c.eyebrow:SetPoint("TOPLEFT", c, "TOPLEFT", PAD, -y)
 	c.close:ClearAllPoints()
 	c.close:SetPoint("TOPRIGHT", c, "TOPRIGHT", -10, -y + 4)
 	c.timer:ClearAllPoints()
 	c.timer:SetPoint("TOPRIGHT", c, "TOPRIGHT", -38, -y)
+	c.eyebrow:ClearAllPoints()
+	c.eyebrow:SetPoint("TOPLEFT", c, "TOPLEFT", PAD, -y)
+	c.eyebrow:SetPoint("TOPRIGHT", c.timer, "TOPLEFT", -10, 0)   -- follows the timer's text ("0:27", "Paused")
 	y = y + 26
 	c.hit:ClearAllPoints()
 	c.hit:SetPoint("TOPLEFT", c, "TOPLEFT", PAD, -y)
@@ -350,20 +384,27 @@ local function layoutCard(self, c, d, top)
 	c.hint:ClearAllPoints()
 	c.hint:SetPoint("TOPLEFT", c, "TOPLEFT", PAD, -y)
 	c.hint:SetWidth(self.width - 2 * PAD)
-	y = y + ROW_HINT + 10
+	-- a long hint wraps: the buttons go under its last line
+	y = y + math.max(ROW_HINT, math.ceil(c.hint:GetStringHeight() or 0)) + 10
 
-	-- the buttons share the width: Pass, then the roll buttons the session offers
+	-- the buttons: Pass, then the roll buttons the session offers
 	local shown = {}
 	for _, code in ipairs(Popup.BUTTON_ORDER) do
 		if d.buttonsByCode and d.buttonsByCode[code] then shown[#shown + 1] = c.buttons[code] else c.buttons[code]:Hide() end
 	end
-	local n = #shown
-	local w = n > 0 and math.floor((self.width - 2 * PAD - (n - 1) * BUTTON_GAP) / n) or 0
+	local widths, rows = Popup.ButtonWidths(shown, self.width - 2 * PAD)
+	local x = PAD
 	for i, b in ipairs(shown) do
+		if rows > 1 and i > 1 then
+			y = y + ROW_BUTTONS + 6
+			x = PAD
+		end
 		b:ClearAllPoints()
-		b:SetPoint("TOPLEFT", c, "TOPLEFT", PAD + (i - 1) * (w + BUTTON_GAP), -y)
-		b:SetWidth(w)
+		b:SetPoint("TOPLEFT", c, "TOPLEFT", x, -y)
+		b.minWidth = widths[i]
+		b:SetWidth(widths[i])
 		b:Show()
+		x = x + widths[i] + BUTTON_GAP
 	end
 	y = y + ROW_BUTTONS + 14
 	c:SetHeight(y)

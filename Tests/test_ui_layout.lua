@@ -274,3 +274,113 @@ describe("the disabled look of the buttons", function()
 		eq(b:GetWidth(), 80, "back to its width with a short text")
 	end)
 end)
+
+-- The player's loot popup (UI/Windows/MemberLootPopup.lua): every hint, with and without the upgrade badge and the
+-- player's place in the queue, two cards stacked, at the narrowest and the default width, in English and in Italian.
+-- The board is stubbed (App/PopupBoard.lua is tested in test_ui_popup.lua): the cards are the ones it can give.
+local function P() return FDCP.MemberLootPopup end
+
+local LONG_ITEM = { id = 19501, link = "|cffa335ee|Hitem:19501::::::::70:::::|h[Stormrider's Eternal Crown of the Burning Legion]|h|r", name = "Stormrider's Eternal Crown of the Burning Legion", quality = 4,
+	equipLoc = "INVTYPE_HEAD", classID = 4, subclassID = 4, type = "Armor", subType = "Plate", level = 76 }
+local SHORT_ITEM = { id = 19502, link = "|cff0070dd|Hitem:19502::::::::70:::::|h[Band]|h|r", name = "Band", quality = 3, equipLoc = "INVTYPE_FINGER", classID = 4, subclassID = 0,
+	type = "Armor", subType = "Miscellaneous", level = 60 }
+
+local function popupCard(over)
+	local d = { key = "1:1", itemID = LONG_ITEM.id, kind = "ROLL", stage = "TIER", boss = "High Priestess Arlokk of the Old Ones",
+		hint = "CHOOSE", rollMin = 1, rollMax = 100, credits = 12.5, position = 3, cost = 2, category = "weapon",
+		remaining = 27, upgrade = { ms = { verdict = "MAJOR", code = "EMPTY_SLOT" } },
+		buttons = { { code = "PASS", enabled = true }, { code = "MS", roll = true, enabled = true },
+			{ code = "OS", roll = true, enabled = true } } }
+	for k, v in pairs(over or {}) do d[k] = v end
+	return d
+end
+
+local function showPopup(cards, width)
+	FDCP.PopupBoard.Build = function() return { cards = cards } end
+	P():Refresh()
+	local f = P().frame
+	f:SetWidth(width)
+	sized(f)
+	P():Layout()
+	return f
+end
+
+-- The popup's grip sticks out of its right edge on purpose: it is not content.
+local function popupProblems(f, where)
+	f.grip:Hide()
+	local out = problems(f, where)
+	f.grip:Show()
+	for i, c in ipairs(P().cards) do
+		if c:IsShown() then
+			-- the buttons stay on the card, side by side or one under the other, never on one another
+			for _, b in pairs(c.buttons) do
+				if b:IsShown() then
+					local br, cr = rect(b), rect(c)
+					if br.r > cr.r - 16 + EPS or br.l < cr.l + 16 - EPS then out[#out + 1] = where .. ": card " .. i .. " button " .. b.code .. " is outside the card's padding" end
+				end
+			end
+		end
+	end
+	return out
+end
+
+for _, locale in ipairs({ "enUS", "itIT" }) do
+	describe("the loot popup layout in " .. locale, function()
+		before_boot(function(M)
+			setup(locale, 3)(M)
+			M.items.Add(LONG_ITEM)
+			M.items.Add(SHORT_ITEM)
+			_G.INVTYPE_HEAD, _G.INVTYPE_FINGER = "Head", "Finger"
+		end)
+
+		it("has no overlap and nothing outside the card, for every hint, at the narrowest and the default width", function()
+			local found = {}
+			local function add(list) for _, p in ipairs(list) do found[#found + 1] = p end end
+			local variants = {}
+			for code in pairs(P().HINTS) do
+				variants[#variants + 1] = { name = code, card = popupCard({ hint = code }) }
+			end
+			table.sort(variants, function(a, b) return a.name < b.name end)
+			variants[#variants + 1] = { name = "rolled", card = popupCard({ hint = "ROLLED", rolled = true,
+				buttons = { { code = "PASS" }, { code = "MS", roll = true, selected = true }, { code = "OS", roll = true } } }) }
+			variants[#variants + 1] = { name = "short", card = popupCard({ itemID = SHORT_ITEM.id, boss = nil, upgrade = nil,
+				credits = nil, position = nil, council = true, category = nil }) }
+			variants[#variants + 1] = { name = "paused reroll", card = popupCard({ kind = "REROLL", hint = "REROLL", paused = true,
+				buttons = { { code = "MS", roll = true, enabled = true } } }) }
+			for _, width in ipairs({ P().MIN_W, P().DEFAULT_W, P().MAX_W }) do
+				for _, v in ipairs(variants) do
+					local f = showPopup({ v.card }, width)
+					add(popupProblems(f, ("%s %d %s"):format(locale, width, v.name)))
+				end
+				-- two rounds open: the cards are stacked, the second one under the first
+				local f = showPopup({ popupCard(), popupCard({ key = "1:2", itemID = SHORT_ITEM.id, hint = "LATER" }) }, width)
+				add(popupProblems(f, ("%s %d two cards"):format(locale, width)))
+			end
+			-- the timer turns into "Paused" without a new layout: the eyebrow still stops before it
+			local f = showPopup({ popupCard() }, P().MIN_W)
+			P().board.cards[1].paused = true
+			FDCP.PopupBoard.Build = function() return { cards = { popupCard({ paused = true }) } } end
+			P():RefreshTimer()
+			add(popupProblems(f, locale .. " paused by the ticker"))
+			report(found)
+		end)
+
+		it("shares the row among the buttons by what their texts need, and stacks them when even that is too wide", function()
+			local function fake(text)
+				local b = CreateFrame("Button", nil, UIParent)
+				b.label = b:CreateFontString(nil, "OVERLAY")
+				b.label:SetText(text)
+				return b
+			end
+			local widths, rows = P().ButtonWidths({ fake("Pass"), fake("Roll"), fake("Roll") }, 348)
+			eq(rows, 1); eq(widths[1], widths[2], "short texts: the same share")
+			widths, rows = P().ButtonWidths({ fake("Pass"), fake("Tira Main-spec"), fake("Tira Off-spec") }, 348)
+			eq(rows, 1)
+			truthy(widths[2] > widths[1], "the long text gets more room")
+			truthy(widths[1] + widths[2] + widths[3] + 16 <= 348, "the row is not wider than the card")
+			widths, rows = P().ButtonWidths({ fake(("x"):rep(40)), fake(("y"):rep(40)), fake("Pass") }, 348)
+			eq(rows, 3, "too long for one row: one button a row")
+			eq(widths[3], 348)
+		end)
+	end)
+end

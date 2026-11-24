@@ -21,7 +21,7 @@ Dall'alto in basso:
 - **La barra del timer**, che si svuota col passare del tempo, e **la riga di aiuto**.
 - **Tre pulsanti: Passo, Tira Main-spec, Tira Off-spec.** È tutto quello che scegli.
 
-Il popup è una finestra a sé: **trascinalo da una card qualsiasi** per spostarlo, e trascina la maniglia sottile sul bordo destro per allargarlo. Posizione e larghezza sono ricordate per ogni personaggio.
+Il popup è una finestra a sé: **trascinalo da una card qualsiasi** per spostarlo, e trascina la maniglia sottile sul bordo destro per allargarlo. Posizione e larghezza sono ricordate per ogni personaggio. Una card si allunga per far stare un suggerimento lungo; se un popup stretto non ha spazio per i tre pulsanti affiancati, vanno uno sotto l'altro.
 
 ## I tre pulsanti
 

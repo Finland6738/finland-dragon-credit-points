@@ -21,7 +21,7 @@ From top to bottom:
 - **The timer bar**, which empties as the time runs out, and **the line of help**.
 - **Three buttons: Pass, Roll Main-spec, Roll Off-spec.** That is all you choose.
 
-The popup is a window of its own: **drag it by any card** to move it, and drag the thin handle on its right edge to make it wider. The place and the width are remembered for each character.
+The popup is a window of its own: **drag it by any card** to move it, and drag the thin handle on its right edge to make it wider. The place and the width are remembered for each character. A card grows to fit a long hint; when a narrow popup has no room for the three buttons side by side, they go one under the other.
 
 ## The three buttons
 
