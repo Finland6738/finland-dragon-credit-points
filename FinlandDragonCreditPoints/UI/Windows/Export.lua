@@ -137,6 +137,7 @@ function ExportWindow:Build(pane)
 	edit:SetMultiLine(true)
 	edit:SetAutoFocus(false)
 	edit:SetWidth(math.max(200, (pane:GetWidth() or 600) - 40))
+	scroll:SetScript("OnSizeChanged", function(_, w) if w and w > 0 then edit:SetWidth(w) end end)   -- the box follows the window
 	if Theme.fontObjects.Mono then edit:SetFontObject(Theme.fontObjects.Mono)
 	elseif Theme.fontObjects.Body then edit:SetFontObject(Theme.fontObjects.Body) end
 	Theme.Text(edit, "text-1")

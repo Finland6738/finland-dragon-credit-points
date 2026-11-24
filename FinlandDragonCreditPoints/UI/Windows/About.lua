@@ -88,14 +88,14 @@ function AboutWindow:Build(pane)
 	card.title = Theme.NewText(card, "H2", "text-1")
 	card.title:SetPoint("TOPLEFT", logo, "TOPRIGHT", 14, -6)
 	card.version = text("Small", "text-3", card.title, -4)
-	card.madeBy = text("Body", "text-1", logo, -14)
-	card.madeBy:SetPoint("TOPLEFT", logo, "BOTTOMLEFT", 0, -14)
+	card.madeBy = text("Body", "text-1", logo, -10)
+	card.madeBy:SetPoint("TOPLEFT", logo, "BOTTOMLEFT", 0, -10)
 	card.purpose = text("Body", "text-2", card.madeBy)
 	card.guild = text("Body", "text-2", card.purpose)
 	for _, fs in ipairs({ card.madeBy, card.purpose, card.guild }) do   -- the text stops at the logo
 		fs:SetPoint("RIGHT", nebula, "LEFT", -16, 0)
 	end
-	card.support = text("Body", "text-2", card.guild, -10)
+	card.support = text("Body", "text-2", card.guild, -8)
 	-- the copy boxes, two per row
 	card.links = {}
 	for i, link in ipairs(self.LINKS) do
@@ -115,7 +115,8 @@ function AboutWindow:Build(pane)
 	end
 	card.license = Theme.NewText(card, "Body", "text-2")
 	local rows = math.floor((#self.LINKS + 1) / 2)
-	card.license:SetPoint("TOPLEFT", card.support, "BOTTOMLEFT", 0, -10 - rows * 58 - 6)
+	-- (tight spacing: the page fits the smallest window in Italian, fix/settings-layout)
+	card.license:SetPoint("TOPLEFT", card.support, "BOTTOMLEFT", 0, -10 - rows * 58)
 	card.license:SetPoint("RIGHT", card, "RIGHT", -16, 0)
 	card.license:SetJustifyH("LEFT")
 	card.third = text("Small", "text-3", card.license)

@@ -43,11 +43,11 @@ I tuoi **profili** conservano le tue impostazioni (tema, caratteri, effetti, ani
 
 ## Regole
 
-A sinistra l'elenco delle pagine, a destra i campi della pagina su una card:
+A sinistra l'elenco delle pagine, a destra i campi della pagina su una card: una tabella a due colonne, un campo per riga, la descrizione a sinistra e il valore a destra. Una pagina lunga scorre con la rotella del mouse (una barra sottile a destra mostra dove sei); una scelta lunga in un menu a tendina viene accorciata e il suo tooltip la mostra intera. Le schede **Personali** e **Permessi** usano la stessa tabella.
 
 - **Serata e sessione**: se una serata deve aprirla un ufficiale, chi conferma un'assegnazione (il master looter, in automatico dopo una pausa, o il council), i passi automatici, i secondi di un giro di roll.
 - **Priorità**: chi ha la precedenza (meno crediti, meno crediti per serata, roll più alto), gli spareggi, i reroll di fila, se l'addon è necessario, se la risposta off-spec è ammessa, cosa succede a un pezzo che nessuno vuole o a un BoE.
-- **Costi**: il costo di ogni categoria e qualità, in una griglia (*Council* nella colonna dei leggendari vuol dire che il costo lo decide il council; scrivi la parola per rimetterlo).
+- **Costi**: il costo di ogni categoria e qualità, una riga ciascuno (*Arma · Epico*; *Council* nella colonna dei leggendari vuol dire che il costo lo decide il council; scrivi la parola per rimetterlo).
 - **Moltiplicatori**: il fattore sul costo di ogni risposta, della dimensione del raid e della difficoltà.
 - **Membri e crediti**: solo i main, da dove partono i nuovi arrivati (meno crediti del gruppo nel preset della gilda, media, mediana, zero, fisso), l'arrotondamento, i crediti con cui parte una season e la **penalità di assenza** (crediti aggiunti per una serata saltata, 1 nel preset, 0 la spegne) con l'interruttore che la scrive alla chiusura senza la conferma di un officer (spento nel preset).
 - **Loot council**: se i membri devono essere nel raid, il voto, le segnalazioni per le richieste dispendiose, chi vede i badge di upgrade e l'elenco dei nomi del council (vuoto: chi ha il rango).

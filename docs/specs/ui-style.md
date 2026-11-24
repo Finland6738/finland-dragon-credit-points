@@ -119,7 +119,7 @@ le texture le genera `tools/make_media.py`.
 | **Tooltip** | invertito (fondo `text-1`, testo `bg`), 13 px | frame proprio dell'addon; `GameTooltip` del gioco solo per gli oggetti (confronto e link) e mai riskinnato |
 | **Dialog** | raggio 28, velo sfocato, entrata che sale | velo scuro senza sfocatura, card raggio 18, entrata `Alpha` + `Translation` 320 ms, strato `DIALOG` |
 | **Toast / snackbar** | 380 px, `raised`, icona colorata | uguale, in basso a destra della finestra, dissolvenza dopo 4 s |
-| **Switch, campi, slider** | switch 44×26, campi `surface-2` | `CheckButton`, `EditBox`, `Slider` su 9-slice; la selezione a tendina è una lista propria (niente `UIDropDownMenu`, causa taint) |
+| **Switch, campi, slider** | switch 44×26, campi `surface-2` | `CheckButton`, `EditBox`, `Slider` su 9-slice; la selezione a tendina è una lista propria (niente `UIDropDownMenu`, causa taint), su una riga: una scelta lunga si accorcia e il tooltip la mostra intera. I moduli delle Impostazioni sono tabelle a due colonne, descrizione e valore (`Widgets.FormList`), che scorrono con la rotella; un pulsante spento resta leggibile (il principale diventa piatto `surface-3` con testo `text-3`) |
 | **Scheletri di caricamento** | luccichio `surface-2`/`surface-3` | rettangoli `surface-2` con `Alpha` ciclica; servono poco (i dati sono locali) |
 | **Icone** | Lucide (ISC) come maschere | foglio di icone bianche TGA 256×256 (Lucide ISC o Material Symbols Apache-2.0) con `SetSpriteSheetCell`; `SetSVG` solo dopo una prova in gioco |
 

@@ -48,7 +48,7 @@ function Widgets.Switch(parent, opts)
 	local setEnabled = b.SetEnabled
 	function b:SetEnabled(enabled)
 		setEnabled(self, enabled and true or false)
-		self:SetAlpha(enabled and 1 or 0.45)
+		self:SetAlpha(enabled and 1 or Widgets.DISABLED_ALPHA)
 	end
 	b:SetScript("OnClick", function(self)
 		if self:IsEnabled() then self:SetOn(not self.on) end
@@ -130,6 +130,7 @@ function Widgets.Select(parent, opts)
 	sel.label:SetPoint("LEFT", sel, "LEFT", 10, 0)
 	sel.label:SetPoint("RIGHT", sel, "RIGHT", -26, 0)
 	sel.label:SetJustifyH("LEFT")
+	Widgets.TruncatedTip(sel, sel.label)   -- one line: a long choice is cut, the tooltip shows all of it
 	sel.arrow = sel:CreateTexture(nil, "OVERLAY")
 	sel.arrow:SetTexture(Assets.textures.icons.path)
 	sel.arrow:SetTexCoord(Assets.IconCoords("chevron"))
@@ -280,4 +281,168 @@ end
 function Widgets.PaintClassMark(square, r, g, b)
 	square:SetColorTexture(r, g, b, 1)
 	if square.glow then square.glow:SetVertexColor(r, g, b, 0.5) end
+end
+
+-- --- Truncated text ---------------------------------------------------------------------------------------------------
+
+-- A one-line text that may be cut ("..."): while the mouse is on `owner` and the text is cut, the tooltip shows all of it.
+function Widgets.TruncatedTip(owner, fs)
+	fs:SetWordWrap(false)
+	if fs.SetMaxLines then fs:SetMaxLines(1) end
+	local function cut()
+		if fs.IsTruncated then return fs:IsTruncated() end
+		return (fs:GetStringWidth() or 0) > (fs:GetWidth() or 0) + 0.5
+	end
+	owner:HookScript("OnEnter", function(self)
+		if not GameTooltip or not cut() then return end
+		GameTooltip:SetOwner(self, "ANCHOR_TOP")
+		GameTooltip:SetText(fs:GetText() or "")
+		GameTooltip:Show()
+		self.tipShown = true
+	end)
+	owner:HookScript("OnLeave", function(self)
+		if self.tipShown and GameTooltip then GameTooltip:Hide() end
+		self.tipShown = nil
+	end)
+end
+
+-- --- FormList ---------------------------------------------------------------------------------------------------------
+
+-- A form as a table of two columns, one field per row: the description on the left (it wraps, and the row grows to fit
+-- it), the value on the right, every value starting at the same x. The rows that do not fit in the frame scroll with the
+-- mouse wheel; a thin bar on the right shows where the view is. The caller anchors the frame (its size is the view) and
+-- parents each row's control to `list:Row(i)`. Lua 5.1, unprotected frames.
+-- opts: rowHeight (34), pad (16, left and right), gap (16, between the columns), labelShare (0.5: the part of the width the
+-- descriptions take, between labelMin 180 and labelMax 380), step (the points of a wheel notch, 40: whole rows).
+--   :Row(i)                      the row i (built the first time): `.label` is its description
+--   :SetRow(i, control, width)   the value of row i: `width` = a number of points, "fill" (to the right edge) or nil (its own)
+--   :SetCount(n)                 rows 1..n are the form; the others hide
+--   :Layout()                    places the rows (also on a resize, a scroll and :SetCount)
+--   :Scroll(points), :ScrollTo(points), :Offset(), :ContentHeight()
+Widgets.FORM_ROW_H = 34
+function Widgets.FormList(parent, opts)
+	opts = opts or {}
+	local f = CreateFrame("Frame", nil, parent)
+	f.rowH = opts.rowHeight or Widgets.FORM_ROW_H
+	f.pad, f.gap = opts.pad or 16, opts.gap or 16
+	f.share, f.labelMin, f.labelMax = opts.labelShare or 0.5, opts.labelMin or 180, opts.labelMax or 380
+	f.step = opts.step or 40
+	f.rows, f.count, f.offset, f.total = {}, 0, 0, 0
+	f.track = f:CreateTexture(nil, "BORDER")
+	Theme.Fill(f.track, "border-subtle")
+	f.track:SetWidth(3)
+	f.track:SetPoint("TOPRIGHT", f, "TOPRIGHT", -2, 0)
+	f.track:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -2, 0)
+	f.thumb = f:CreateTexture(nil, "ARTWORK")
+	Theme.Fill(f.thumb, "border-strong")
+	f.thumb:SetWidth(3)
+	f:EnableMouseWheel(true)
+
+	function f:Row(i)
+		local row = self.rows[i]
+		if not row then
+			row = CreateFrame("Frame", nil, self)
+			row.label = Theme.NewText(row, "Body", "text-2")
+			row.label:SetJustifyH("LEFT")
+			row.label:SetJustifyV("MIDDLE")
+			row.label:SetWordWrap(true)
+			row:Hide()
+			self.rows[i] = row
+		end
+		return row
+	end
+	function f:SetRow(i, control, width)
+		local row = self:Row(i)
+		row.control, row.controlWidth = control, width
+	end
+	function f:SetCount(n)
+		self.count = n
+		for i = n + 1, #self.rows do self.rows[i]:Hide() end
+		self:Layout()
+	end
+	function f:Offset() return self.offset end
+	function f:ContentHeight() return self.total end
+	-- The widths of the two columns for the frame's width: the x of the values and the room they have.
+	function f:Columns()
+		local W = self:GetWidth() or 0
+		if W < 200 then W = 600 end
+		local inner = W - 2 * self.pad - 8   -- 8: the scroll bar
+		local labelW = math.floor(math.min(self.labelMax, math.max(self.labelMin, inner * self.share)))
+		local valueX = self.pad + labelW + self.gap
+		return labelW, valueX, inner + self.pad - valueX
+	end
+	function f:Layout()
+		local labelW, valueX, valueW = self:Columns()
+		local H = self:GetHeight() or 0
+		-- the heights first: a row is as tall as its description or its control needs
+		local y, places = 0, {}
+		for i = 1, self.count do
+			local row = self.rows[i]
+			local c = row.control
+			local w = row.controlWidth
+			if c then
+				if w == "fill" then c:SetWidth(valueW) elseif type(w) == "number" then c:SetWidth(math.min(w, valueW)) end
+			end
+			row.label:SetWidth(labelW)
+			-- the wrapped height the client gives, or (whichever is larger) the lines the text's width needs: a client that
+			-- answers the height of one line must not leave a wrapped description taller than its row
+			local _, size = row.label:GetFont()
+			local lines = math.ceil((row.label:GetStringWidth() or 0) * 1.08 / labelW)
+			local textH = math.max(row.label:GetStringHeight() or 0, math.max(1, lines) * ((size or 13) + 3))
+			local controlH = c and c:GetHeight() or 0
+			local h = math.max(self.rowH, math.ceil(textH) + 12, math.ceil(controlH) + 6)
+			places[i] = { y = y, h = h }
+			y = y + h
+		end
+		self.total, self.places = y, places
+		-- the view always starts at the top of a row; the last one it can start at shows the end of the form
+		local maxOffset = 0
+		for i = 1, self.count do
+			if y - places[i].y <= H + 0.5 or i == self.count then maxOffset = places[i].y break end
+		end
+		if self.offset > maxOffset then self.offset = maxOffset end
+		if self.offset < 0 then self.offset = 0 end
+		for i = 1, self.count do
+			local row, p = self.rows[i], places[i]
+			local top = p.y - self.offset
+			row:ClearAllPoints()
+			row:SetPoint("TOPLEFT", self, "TOPLEFT", 0, -top)
+			row:SetPoint("RIGHT", self, "RIGHT", -8, 0)
+			row:SetHeight(p.h)
+			row.label:ClearAllPoints()
+			row.label:SetPoint("LEFT", row, "LEFT", self.pad, 0)
+			if row.control then
+				row.control:ClearAllPoints()
+				row.control:SetPoint("LEFT", row, "LEFT", valueX, 0)
+			end
+			-- a row shows only when all of it is in the view (no clipping, so a dropdown never gets cut)
+			row:SetShown(top >= -0.5 and top + p.h <= H + 0.5)
+		end
+		local scrolls = y > H + 0.5 and H > 0
+		self.track:SetShown(scrolls)
+		self.thumb:SetShown(scrolls)
+		if scrolls then
+			local th = math.max(24, H * H / y)
+			self.thumb:SetHeight(th)
+			self.thumb:ClearAllPoints()
+			self.thumb:SetPoint("TOPRIGHT", self, "TOPRIGHT", -2, -(maxOffset > 0 and (H - th) * self.offset / maxOffset or 0))
+		end
+	end
+	function f:ScrollTo(points)
+		self.offset = math.max(0, points or 0)
+		self:Layout()
+	end
+	-- Scrolls by about `points`, a whole row at least, so that the view starts at the top of a row.
+	function f:Scroll(points)
+		local places = self.places or {}
+		if #places == 0 or points == 0 then return end
+		local k = 1
+		for i = 1, self.count do if places[i] and places[i].y <= self.offset + 0.5 then k = i end end
+		local steps = math.max(1, math.floor(math.abs(points) / self.rowH + 0.5))
+		k = math.min(math.max(1, k + (points > 0 and steps or -steps)), self.count)
+		self:ScrollTo(places[k] and places[k].y or 0)
+	end
+	f:SetScript("OnMouseWheel", function(self, delta) self:Scroll(-delta * self.step) end)
+	f:SetScript("OnSizeChanged", function(self) self:Layout() end)
+	return f
 end

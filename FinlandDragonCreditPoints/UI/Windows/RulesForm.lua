@@ -1,8 +1,10 @@
 -- RulesForm: the guild's rules as a form (docs/ANALISI.md §10, docs/specs/ui-style.md §6, M7-2). Lua 5.1; unprotected frames.
 -- One component for the Settings tab's Rules and Site sub-tabs: a list of pages on the left (the Site one has a single page),
 -- the fields of the chosen page on a card (a switch, a field, a choice, a line of text: Domain/RuleFields.lua says which), and the
--- Save and Revert buttons at the bottom. Everybody sees the rules; only the Guild Master can change them: for everybody
--- else the controls are off and the buttons are not there (App/SettingsController.lua refuses the write all the same).
+-- Save and Revert buttons at the bottom. The fields are a table of two columns (Widgets.FormList): one field per row, its
+-- description on the left (wrapped, the row grows), its value on the right; a long page scrolls with the mouse wheel.
+-- Everybody sees the rules; only the Guild Master can change them: for everybody else the controls are off and the buttons
+-- are not there (App/SettingsController.lua refuses the write all the same).
 -- The edits go to a draft copy of the rules; Save checks it (Rules.Validate), asks for an explicit confirmation when a season is
 -- open (the change is kept in the ledger, audited) and writes the whole configuration with SettingsController:ApplyRules.
 -- What does not draw (reading, writing, parsing, the permission) is in Domain/RuleFields.lua and App/SettingsController.lua.
@@ -15,8 +17,9 @@ if ns.addon then ns.addon.RulesForm = RulesForm end   -- also reachable from tes
 local Theme, Widgets = ns.Theme, ns.Widgets
 local L = ns.L
 
-RulesForm.ROW_H, RulesForm.MAX_ROWS = 32, 24
-RulesForm.COLUMNS = { costs = 3, readiness = 3 }   -- the matrix: one row per category, a column per quality; the readiness page: many short switches
+-- The width of a value: a choice, a number (the cost cells hold "council" too); a wide field (a text) fills the column.
+RulesForm.CHOICE_W, RulesForm.NUMBER_W = 220, 90
+RulesForm.FOOTER_H = 56   -- the room of the Save and Revert buttons (only for who may change the rules)
 RulesForm.MAX_LISTED = 8            -- changes listed in the confirmation
 
 local Form = {}
@@ -86,45 +89,43 @@ function RulesForm.New(parent, opts)
 	card.save:SetPoint("BOTTOMRIGHT", card, "BOTTOMRIGHT", -16, 14)
 	card.revert = Widgets.Button(card, { text = L["SETTINGS_REVERT"], style = "ghost", width = 130, onClick = function() f:OnRevert() end })
 	card.revert:SetPoint("RIGHT", card.save, "LEFT", -8, 0)
-	for i = 1, RulesForm.MAX_ROWS do
-		local row = CreateFrame("Frame", nil, card)
-		row:SetHeight(RulesForm.ROW_H - 4)
-		row.label = Theme.NewText(row, "Body", "text-2")
-		row.label:SetPoint("LEFT", row, "LEFT", 0, 0)
-		row.label:SetJustifyH("LEFT")
-		row:Hide()
-		f.rows[i] = row
-	end
-	card:SetScript("OnSizeChanged", function() f:Layout() end)
+	f.form = Widgets.FormList(card, {})
+	f:AnchorForm(false)
 	f.draft = ns.Rules.Copy(SC():Rules())
 	f.page = opts.pages[1]
 	if f.list then f.list:Select(f.page) else f:SetPage(f.page) end
 	return f
 end
 
--- The control a row uses for a kind, built the first time.
+-- The field list sits between the note (it may wrap) and the bottom of the card, above the buttons when they are there.
+function Form:AnchorForm(withFooter)
+	local form, card = self.form, self.card
+	form:ClearAllPoints()
+	form:SetPoint("TOPLEFT", card.note, "BOTTOMLEFT", -16, -10)
+	form:SetPoint("BOTTOMRIGHT", card, "BOTTOMRIGHT", 0, withFooter and RulesForm.FOOTER_H or 10)
+	self.withFooter = withFooter
+end
+
+-- The control a row uses for a kind, built the first time (the FormList places it), and its width.
 local function control(self, row, field)
 	local kind = field.kind
 	if kind == "bool" then
 		if not row.switch then
 			row.switch = Widgets.Switch(row, { onChange = function(on) self:OnEdit(row.field, on) end })
-			row.switch:SetPoint("RIGHT", row, "RIGHT", 0, 0)
 		end
-		return row.switch
+		return row.switch, nil
 	elseif kind == "choice" then
 		if not row.select then
-			row.select = Widgets.Select(row, { width = 170, rows = 5, onSelect = function(id) self:OnEdit(row.field, id) end })
-			row.select:SetPoint("RIGHT", row, "RIGHT", 0, 0)
+			row.select = Widgets.Select(row, { width = RulesForm.CHOICE_W, rows = 5, onSelect = function(id) self:OnEdit(row.field, id) end })
 		end
-		return row.select
+		return row.select, RulesForm.CHOICE_W
 	end
 	if not row.edit then
-		row.edit = Widgets.EditBox(row, { width = 80, maxLetters = 200, onChange = function(text, user)
+		row.edit = Widgets.EditBox(row, { width = RulesForm.NUMBER_W, maxLetters = 200, onChange = function(text, user)
 			if user then self:OnTyped(row, text) end
 		end })
-		row.edit:SetPoint("RIGHT", row, "RIGHT", 0, 0)
 	end
-	return row.edit
+	return row.edit, field.wide and "fill" or RulesForm.NUMBER_W
 end
 
 -- A field takes the keyboard only for who may change the rules; a switch or a choice just turns off.
@@ -133,7 +134,7 @@ local function setEditable(c, editable)
 		if c.edit.SetEnabled then c.edit:SetEnabled(editable) end
 		c.edit:EnableMouse(editable)
 		if not editable then c.edit:ClearFocus() end
-		c:SetAlpha(editable and 1 or 0.6)
+		c:SetAlpha(editable and 1 or Widgets.DISABLED_ALPHA)
 	else
 		c:SetEnabled(editable)
 	end
@@ -148,59 +149,40 @@ function Form:SetPage(id)
 	self.page = id
 	self.fields = RF.Page(id)
 	self.card.title:SetText(L["RULEPAGE_" .. id:upper()])
-	for i, row in ipairs(self.rows) do
-		local field = self.fields[i]
+	-- the rows are pooled across the pages: each one gets its field, its one control (the others of the row hide) and the
+	-- control's width again, so nothing of the page before stays (FormList hides the rows past the page's fields)
+	for i, field in ipairs(self.fields) do
+		local row = self.form:Row(i)
+		self.rows[i] = row
 		row.field = field
-		if field then
-			row.label:SetText(RulesForm.LabelOf(field))
-			for _, c in ipairs({ row.switch, row.edit, row.select }) do if c then c:Hide() end end
-			local c = control(self, row, field)
-			c:Show()
-			if field.kind == "choice" then
-				local choices = {}
-				for _, o in ipairs(field.options) do choices[#choices + 1] = { id = o.value, text = L[o.key] } end
-				c:SetChoices(choices)
-			end
+		row.label:SetText(RulesForm.LabelOf(field))
+		-- (not ipairs over { row.switch, row.edit, row.select }: it stops at the first control the row never built, which
+		-- left the controls of the page before on screen)
+		if row.switch then row.switch:Hide() end
+		if row.edit then row.edit:Hide() end
+		if row.select then row.select:Hide() end
+		local c, width = control(self, row, field)
+		c:Show()
+		if field.kind == "choice" then
+			local choices = {}
+			for _, o in ipairs(field.options) do choices[#choices + 1] = { id = o.value, text = L[o.key] } end
+			c:SetChoices(choices)
 		end
-		row:SetShown(field ~= nil)
+		self.form:SetRow(i, c, width)
 	end
-	self:Layout()
+	for i = #self.fields + 1, #self.rows do self.rows[i].field = nil end
+	self.form:ScrollTo(0)
+	self.form:SetCount(#self.fields)
 	self:Paint()
 	self:Update()
 end
 
 function Form:ActivePage() return self.page end
 
--- Puts the rows in a grid: two columns (three for the matrix), a wide field takes a whole row.
+-- Places the rows again (the FormList does it on a resize by itself).
 function Form:Layout()
-	local card = self.card
 	if not self.fields then return end
-	local W = (card:GetWidth() or 0) > 100 and card:GetWidth() or 700
-	local cols = RulesForm.COLUMNS[self.page] or 2
-	local gap = 16
-	local colW = math.floor((W - 32 - gap * (cols - 1)) / cols)
-	local col, line = 0, 0
-	for i, field in ipairs(self.fields) do
-		local row = self.rows[i]
-		if row then
-			if field.wide and col ~= 0 then col, line = 0, line + 1 end
-			local x = 16 + col * (colW + gap)
-			local width = field.wide and (W - 32) or colW
-			row:SetWidth(width)
-			row:ClearAllPoints()
-			row:SetPoint("TOPLEFT", self.card, "TOPLEFT", x, -(72 + line * RulesForm.ROW_H))
-			local controlW = (field.kind == "choice" and 170) or (field.kind == "bool" and 44) or 80
-			if field.wide then
-				controlW = width - 220
-				if row.edit then row.edit:SetWidth(controlW) end
-			end
-			row.label:SetWidth(math.max(60, width - controlW - 8))
-			if field.wide then col, line = 0, line + 1 else
-				col = col + 1
-				if col >= cols then col, line = 0, line + 1 end
-			end
-		end
-	end
+	self.form:Layout()
 end
 
 -- Shows the draft's values in the controls (silently: nothing is edited by being drawn).
@@ -243,11 +225,13 @@ function Form:Update()
 	end
 	card.save:SetShown(editable)
 	card.revert:SetShown(editable)
+	if editable ~= self.withFooter then self:AnchorForm(editable) end
 	if editable then
 		card.note:SetText(L["RULEHINT_" .. self.page:upper()])
 	else
 		card.note:SetText(L["SETTINGS_READONLY"])
 	end
+	self:Layout()   -- the note may take another line, the footer may come or go
 	self:ShowPending()
 end
 

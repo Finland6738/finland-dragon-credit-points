@@ -22,7 +22,7 @@ local L = ns.L
 
 SettingsWindow.SUBTABS = { "personal", "profiles", "rules", "permissions", "site", "season", "about" }
 SettingsWindow.RULE_PAGES = { "session", "priority", "costs", "multipliers", "members", "council", "legendary", "messages", "readiness", "upgrade" }
-SettingsWindow.ROW_H = 36
+SettingsWindow.CHOICE_W = 220   -- the dropdowns of the Personal and Permissions tables
 
 local function SC() return ns.SettingsController end
 local function RF() return ns.RulesForm end
@@ -149,55 +149,60 @@ function SettingsWindow:BuildPersonal(pane)
 	card.message:SetPoint("BOTTOMLEFT", card, "BOTTOMLEFT", 16, 18)
 	card.message:SetPoint("RIGHT", card, "RIGHT", -16, 0)
 	card.message:SetJustifyH("LEFT")
+	-- one table of two columns: the description, the value (Widgets.FormList)
+	local form = Widgets.FormList(card, {})
+	form:SetPoint("TOPLEFT", card.hint, "BOTTOMLEFT", -16, -10)
+	form:SetPoint("BOTTOMRIGHT", card, "BOTTOMRIGHT", 0, 40)
+	pane.form = form
 	local c = {}
 	pane.controls = c
-	local function label(x, y, key)
-		local fs = Theme.NewText(card, "Body", "text-2")
-		fs:SetPoint("TOPLEFT", card, "TOPLEFT", x, -y)
-		fs:SetText(L[key])
-		return fs
+	local n = 0
+	local function add(name, key, make, width)
+		n = n + 1
+		local row = form:Row(n)
+		row.label:SetText(L[key])
+		c[name] = make(row)
+		form:SetRow(n, c[name], width)
 	end
 	local function say(ok, code, text)
 		if ok then self:PersonalMessage(text or "") else self:PersonalMessage(SettingsWindow.ErrorText(code), true) end
 	end
-	local function switch(name, x, y, key)
-		label(x, y + 4, key)
-		local s = Widgets.Switch(card, { onChange = function(on) say(SC():SetPersonal(name, on)) end })
-		s:SetPoint("TOPLEFT", card, "TOPLEFT", x + 250, -y)
-		c[name] = s
+	local function switch(name, key)
+		add(name, key, function(row)
+			return Widgets.Switch(row, { onChange = function(on) say(SC():SetPersonal(name, on)) end })
+		end)
 	end
-	local function choice(name, x, y, key, choices, onSelect)
-		label(x, y + 4, key)
-		local s = Widgets.Select(card, { width = 170, rows = 5, choices = choices, onSelect = onSelect })
-		s:SetPoint("TOPLEFT", card, "TOPLEFT", x + 250, -y)
-		c[name] = s
+	local function choice(name, key, choices, onSelect)
+		add(name, key, function(row)
+			return Widgets.Select(row, { width = SettingsWindow.CHOICE_W, rows = 5, choices = choices, onSelect = onSelect })
+		end, SettingsWindow.CHOICE_W)
 	end
-	local X1, X2, Y = 16, 430, 74
 	-- the look
 	local themes = {}
 	for _, id in ipairs(Theme.List()) do themes[#themes + 1] = { id = id, text = Theme.Name(id) } end
-	choice("theme", X1, Y, "PERSONAL_THEME", themes, function(id) say(SC():SetPersonal("theme", id)) end)
-	choice("fontSource", X1, Y + 40, "PERSONAL_FONT", { { id = "addon", text = L["PERSONAL_FONT_ADDON"] },
+	choice("theme", "PERSONAL_THEME", themes, function(id) say(SC():SetPersonal("theme", id)) end)
+	choice("fontSource", "PERSONAL_FONT", { { id = "addon", text = L["PERSONAL_FONT_ADDON"] },
 		{ id = "game", text = L["PERSONAL_FONT_GAME"] } }, function(id) say(SC():SetPersonal("fontSource", id)) end)
-	switch("effects", X1, Y + 80, "PERSONAL_EFFECTS")
-	switch("animations", X1, Y + 120, "PERSONAL_ANIMATIONS")
-	switch("sounds", X1, Y + 160, "PERSONAL_SOUNDS")
+	switch("effects", "PERSONAL_EFFECTS")
+	switch("animations", "PERSONAL_ANIMATIONS")
+	switch("sounds", "PERSONAL_SOUNDS")
 	-- the languages
 	local languages, auto = {}, { { id = "auto", text = L["LANGUAGE_AUTO"] } }
 	for _, lang in ipairs(ns.Locale.Languages()) do
 		languages[#languages + 1] = { id = lang.code, text = lang.name }
 		auto[#auto + 1] = { id = lang.code, text = lang.name }
 	end
-	choice("language", X2, Y, "PERSONAL_LANGUAGE", auto, function(id)
+	choice("language", "PERSONAL_LANGUAGE", auto, function(id)
 		local ok, code = SC():SetLanguage(id)
 		say(ok, code, L["LANGUAGE_SET"]:format(id == "auto" and L["LANGUAGE_AUTO"] or id))
 	end)
-	choice("guildLanguage", X2, Y + 40, "PERSONAL_GUILD_LANGUAGE", languages, function(id) say(SC():SetPersonal("guildLanguage", id)) end)
+	choice("guildLanguage", "PERSONAL_GUILD_LANGUAGE", languages, function(id) say(SC():SetPersonal("guildLanguage", id)) end)
 	-- the popup (M7-5c: the personal stat weights and the wishlist are gone)
-	label(X2, Y + 84, "PERSONAL_POPUP")
-	c.popup = Widgets.Button(card, { text = L["PERSONAL_POPUP_RESET"], style = "secondary", width = 170, height = 28,
-		onClick = function() SC():ResetPopup(); say(true, nil, L["PERSONAL_POPUP_DONE"]) end })
-	c.popup:SetPoint("TOPLEFT", card, "TOPLEFT", X2 + 250, -(Y + 80))
+	add("popup", "PERSONAL_POPUP", function(row)
+		return Widgets.Button(row, { text = L["PERSONAL_POPUP_RESET"], style = "secondary", width = SettingsWindow.CHOICE_W, height = 28,
+			onClick = function() SC():ResetPopup(); say(true, nil, L["PERSONAL_POPUP_DONE"]) end })
+	end)
+	form:SetCount(n)
 end
 
 -- locale-key: PERSONAL_POPUP_DONE
@@ -211,6 +216,7 @@ end
 function SettingsWindow:RefreshPersonal()
 	local pane = self.root.panes.personal
 	local c, Config = pane.controls, ns.Config
+	pane.form:Layout()
 	c.theme:Select(ns.Theme.Current(), true)
 	c.fontSource:Select(Config:Get("fontSource"), true)
 	for _, name in ipairs({ "effects", "animations", "sounds" }) do c[name]:SetOn(Config:Get(name) == true, true) end
@@ -238,12 +244,12 @@ function SettingsWindow:BuildPermissions(pane)
 	card.note:SetJustifyH("LEFT")
 	-- the review of a guild rank change (the Guild Master only)
 	card.review = Theme.NewText(card, "Body", "warn")
-	card.review:SetPoint("TOPLEFT", card, "TOPLEFT", 16, -64)
+	card.review:SetPoint("TOPLEFT", card.note, "BOTTOMLEFT", 0, -10)
 	card.review:SetPoint("RIGHT", card, "RIGHT", -230, 0)
 	card.review:SetJustifyH("LEFT")
 	card.review:SetJustifyV("TOP")
 	card.reviewDone = Widgets.Button(card, { text = L["PERMS_REVIEW_DONE"], style = "secondary", width = 200, onClick = function() SettingsWindow:OnReviewDone() end })
-	card.reviewDone:SetPoint("TOPRIGHT", card, "TOPRIGHT", -16, -62)
+	card.reviewDone:SetPoint("TOPRIGHT", card.note, "BOTTOMRIGHT", 0, -8)
 	card.message = Theme.NewText(card, "Small", "text-2")
 	card.message:SetPoint("BOTTOMLEFT", card, "BOTTOMLEFT", 16, 22)
 	card.message:SetPoint("RIGHT", card, "RIGHT", -300, 0)
@@ -252,35 +258,36 @@ function SettingsWindow:BuildPermissions(pane)
 	card.save:SetPoint("BOTTOMRIGHT", card, "BOTTOMRIGHT", -16, 14)
 	card.revert = Widgets.Button(card, { text = L["SETTINGS_REVERT"], style = "ghost", width = 130, onClick = function() SettingsWindow:ReloadPermissions() end })
 	card.revert:SetPoint("RIGHT", card.save, "LEFT", -8, 0)
+	-- one table of two columns: the permission, the rank it needs (Widgets.FormList; it scrolls on a small window)
+	pane.form = Widgets.FormList(card, {})
 	pane.rows = {}
 	for i, p in ipairs(ns.Permissions.LIST) do
-		local row = { permission = p }
-		row.label = Theme.NewText(card, "Body", "text-2")
+		local frame = pane.form:Row(i)
+		local row = { permission = p, frame = frame, label = frame.label }
 		row.label:SetText(L[permKey(p)])
-		row.select = Widgets.Select(card, { width = 190, rows = 6, onSelect = function(id) SettingsWindow:OnRankPicked(p, id) end })
+		row.select = Widgets.Select(frame, { width = SettingsWindow.CHOICE_W, rows = 6, onSelect = function(id) SettingsWindow:OnRankPicked(p, id) end })
+		pane.form:SetRow(i, row.select, SettingsWindow.CHOICE_W)
 		pane.rows[i] = row
 	end
+	pane.form:SetCount(#pane.rows)
 	pane.draft = nil
 	self.permissionsPane = pane
 	self:LayoutPermissions()
 end
 
--- Two columns of six, below the review banner when there is one.
+-- The table sits below the note, or below the review banner when there is one, and above the buttons when they are there.
 function SettingsWindow:LayoutPermissions()
 	local pane = self.permissionsPane
 	local card = pane.card
-	local top = pane.reviewShown and 128 or 76
-	local W = (card:GetWidth() or 0) > 100 and card:GetWidth() or 900
-	local colW = math.floor((W - 48) / 2)
-	for i, row in ipairs(pane.rows) do
-		local col, line = math.floor((i - 1) / 6), (i - 1) % 6
-		local x = 16 + col * (colW + 16)
-		row.label:ClearAllPoints()
-		row.label:SetPoint("TOPLEFT", card, "TOPLEFT", x, -(top + line * SettingsWindow.ROW_H + 6))
-		row.label:SetWidth(colW - 210)
-		row.select:ClearAllPoints()
-		row.select:SetPoint("TOPLEFT", card, "TOPLEFT", x + colW - 190, -(top + line * SettingsWindow.ROW_H))
+	local form = pane.form
+	form:ClearAllPoints()
+	if pane.reviewShown then
+		form:SetPoint("TOPLEFT", card.review, "BOTTOMLEFT", -16, -16)
+	else
+		form:SetPoint("TOPLEFT", card.note, "BOTTOMLEFT", -16, -10)
 	end
+	form:SetPoint("BOTTOMRIGHT", card, "BOTTOMRIGHT", 0, card.save:IsShown() and 56 or 40)
+	form:Layout()
 end
 
 -- The text of a rank index in the dropdowns: "1 · Officer" (the game's name) or "Rank 3" when the client gives none.

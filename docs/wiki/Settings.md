@@ -43,11 +43,11 @@ Your **profiles** keep your own settings (theme, fonts, effects, animations, sou
 
 ## Rules
 
-A list of pages on the left, the fields of the page on a card:
+A list of pages on the left, the fields of the page on a card: a table of two columns, one field per row, the description on the left and the value on the right. A long page scrolls with the mouse wheel (a thin bar on the right shows where you are); a long choice in a dropdown is cut, and its tooltip shows all of it. The **Personal** and **Permissions** tabs use the same table.
 
 - **Night and session**: whether an officer must open the night, who confirms an award (the master looter, automatic after a pause, or the council), the automatic steps, the seconds of a roll round.
 - **Priority**: who goes first (fewest credits, fewest credits per night, highest roll), the tie-breaks, the rerolls in a row, whether the addon is required, whether the off-spec answer is allowed, what happens to an item nobody wants or a BoE.
-- **Costs**: the cost of each category and quality, in a grid (*Council* in the legendary column means the council sets the cost; type the word to put it back).
+- **Costs**: the cost of each category and quality, one row each (*Weapon · Epic*; *Council* in the legendary column means the council sets the cost; type the word to put it back).
 - **Multipliers**: the cost factor of each response, of the raid size and of the difficulty.
 - **Members and credits**: main characters only, how late joiners start (fewest credits of the pool in the guild's preset, average, median, zero, fixed), the rounding, the credits a season starts with, and the **absence penalty** (credits added for a missed night, 1 in the preset, 0 turns it off) with the switch that writes it at the close without an officer's confirmation (off in the preset).
 - **Loot council**: whether its members must be in the raid, the vote, the flags for wasteful requests, who sees the upgrade badges, and the list of council names (empty: whoever has the rank).

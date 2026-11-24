@@ -71,25 +71,31 @@ function ProfilesWindow:Build(pane)
 	self.copy = Widgets.Button(card, { text = L["PROFILES_COPY"], style = "secondary", width = 80, height = 28,
 		onClick = function() ProfilesWindow:OnCopy() end })
 	self.copy:SetPoint("TOPLEFT", card, "TOPLEFT", 276, -126)
-	self.delete = Widgets.Button(card, { text = L["PROFILES_DELETE"], style = "ghost", width = 80, height = 28,
+	-- the four actions of the list are one column of the same framed buttons (ghost ones looked like bare text)
+	self.delete = Widgets.Button(card, { text = L["PROFILES_DELETE"], style = "secondary", width = 80, height = 28,
 		onClick = function() ProfilesWindow:OnDelete() end })
 	self.delete:SetPoint("TOPLEFT", card, "TOPLEFT", 276, -160)
-	self.reset = Widgets.Button(card, { text = L["PROFILES_RESET"], style = "ghost", width = 80, height = 28,
+	self.reset = Widgets.Button(card, { text = L["PROFILES_RESET"], style = "secondary", width = 80, height = 28,
 		onClick = function() ProfilesWindow:OnReset() end })
 	self.reset:SetPoint("TOPLEFT", card, "TOPLEFT", 276, -194)
 	-- the presets of the rules
 	text("Body", "text-2", 400, 70, L["PROFILES_PRESETS"])
 	self.presets = Widgets.ChoiceList(card, { rows = 5, rowHeight = 24, width = 300, onSelect = function(id) ProfilesWindow.preset = id; ProfilesWindow:PaintPreset() end })
 	self.presets:SetPoint("TOPLEFT", card, "TOPLEFT", 400, -92)
+	self.presets:SetPoint("RIGHT", card, "RIGHT", -16, 0)   -- as wide as the card allows; a longer name is cut (tooltip)
 	self.presetNote = text("Small", "text-3", 400, 220, "")
+	self.presetNote:SetPoint("RIGHT", card, "RIGHT", -16, 0)
+	self.presetNote:SetJustifyH("LEFT")
 	self.apply = Widgets.Button(card, { text = L["PROFILES_PRESET_APPLY"], style = "primary", width = 140, height = 28,
 		onClick = function() ProfilesWindow:OnApplyPreset() end })
-	self.apply:SetPoint("TOPLEFT", card, "TOPLEFT", 400, -236)
-	-- the profile string
-	text("Body", "text-2", 16, 280, L["PROFILES_STRING"])
+	self.apply:SetPoint("TOPLEFT", self.presetNote, "BOTTOMLEFT", 0, -6)   -- under the note, however many lines it takes
+	-- the profile string: below the presets' button
+	self.stringTitle = Theme.NewText(card, "Body", "text-2")
+	self.stringTitle:SetPoint("TOPLEFT", self.apply, "BOTTOMLEFT", 16 - 400, -18)
+	self.stringTitle:SetText(L["PROFILES_STRING"])
 	self.import = Widgets.Button(card, { text = L["PROFILES_IMPORT"], style = "secondary", width = 130, height = 28,
 		onClick = function() ProfilesWindow:OnImport() end })
-	self.import:SetPoint("TOPRIGHT", card, "TOPRIGHT", -16, -276)
+	self.import:SetPoint("TOPRIGHT", self.presetNote, "BOTTOMRIGHT", 0, -48)   -- the line of the title (6 + 28 + 18 - 4)
 	self.select = Widgets.Button(card, { text = L["PROFILES_SELECT"], style = "secondary", width = 120, height = 28,
 		onClick = function() ProfilesWindow:SelectAll() end })
 	self.select:SetPoint("RIGHT", self.import, "LEFT", -8, 0)
@@ -101,7 +107,7 @@ function ProfilesWindow:Build(pane)
 	self.field.fill:SetAllPoints(self.field)
 	self.field.ring = Theme.Slice(self.field, "rr_ring_8", "border", "BORDER")
 	self.field.ring:SetAllPoints(self.field)
-	self.field:SetPoint("TOPLEFT", card, "TOPLEFT", 16, -312)
+	self.field:SetPoint("TOPLEFT", self.stringTitle, "BOTTOMLEFT", 0, -16)
 	self.field:SetPoint("BOTTOMRIGHT", card, "BOTTOMRIGHT", -16, 48)
 	local scroll = CreateFrame("ScrollFrame", nil, self.field)
 	scroll:SetPoint("TOPLEFT", self.field, "TOPLEFT", 10, -8)
@@ -110,6 +116,7 @@ function ProfilesWindow:Build(pane)
 	edit:SetMultiLine(true)
 	edit:SetAutoFocus(false)
 	edit:SetWidth(math.max(200, (pane:GetWidth() or 700) - 80))
+	scroll:SetScript("OnSizeChanged", function(_, w) if w and w > 0 then edit:SetWidth(w) end end)   -- the box follows the window
 	if Theme.fontObjects.Mono then edit:SetFontObject(Theme.fontObjects.Mono)
 	elseif Theme.fontObjects.Body then edit:SetFontObject(Theme.fontObjects.Body) end
 	Theme.Text(edit, "text-1")

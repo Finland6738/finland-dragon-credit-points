@@ -1923,7 +1923,11 @@ più le preferenze personali: posizione dei popup, suoni, pesi delle statistiche
 **Come è fatto (M7-2).** La scheda **Impostazioni** è `UI/Windows/Settings.lua` (le sotto-schede Personali · Regole ·
 Permessi · Sito · Season; Season è la pagina di M6-1b, `UI/Windows/Season.lua`) sopra `App/SettingsController.lua`;
 il modulo di regole è `UI/Windows/RulesForm.lua` sopra `Domain/RuleFields.lua` (puro: per ogni valore delle regole
-dice il percorso, il tipo, i limiti e le chiavi di testo; `Get`, `Set`, `Parse`). **Personali**: tema, caratteri,
+dice il percorso, il tipo, i limiti e le chiavi di testo; `Get`, `Set`, `Parse`). Ogni modulo della scheda (Personali,
+Regole, Permessi, Sito) è una **tabella a due colonne** (`Widgets.FormList`): un campo per riga, la descrizione a
+sinistra (va a capo e la riga cresce), il valore a destra, tutti i valori alla stessa x; una pagina lunga scorre con la
+rotella, a righe intere, con una barra sottile a destra (fix/settings-layout: le griglie a due e tre colonne di prima
+sovrapponevano testi e controlli nel client). **Personali**: tema, caratteri,
 effetti neon, animazioni, suoni (`sounds`, nuova voce del profilo: un breve suono quando compare il popup), lingua
 personale e lingua dei messaggi per tutti, posizione del popup (si rimette al centro), pesi personali e wishlist
 (`App/PersonalUpgrade.lua`); nessuna è condivisa. **Regole**: dieci pagine (Serata e sessione · Priorità · Costi ·

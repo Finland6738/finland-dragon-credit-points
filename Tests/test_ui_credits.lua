@@ -154,6 +154,9 @@ describe("the Credits tab", function()
 
 	local function open()
 		Mock.Slash("/fdcp")
+		-- a tall window: the mock computes the table's height from its anchors (Tests/mock/27_layout.lua), and these tests
+		-- read the whole queue without scrolling
+		FDCP.MainWindow.frame:SetSize(960, 900)
 		FDCP.MainWindow:SelectTab("credits")
 		CW():Refresh()
 		return CW().root

@@ -32,6 +32,7 @@ local BUTTON_STYLES = {
 }
 Widgets.BUTTON_STYLES = BUTTON_STYLES
 Widgets.HOVER, Widgets.PRESSED = 0.08, 0.12   -- the white layers of the states (docs/specs/ui-style.md §3)
+Widgets.DISABLED_ALPHA = 0.6                    -- a control that is off stays readable (a read-only form is mostly off)
 
 -- opts: text, style ("primary" | "secondary" | "ghost" | "neon"), width, height, onClick.
 -- The primary button has the amber glow of the site (dark themes, "Neon effects"), the neon one a magenta ring and glow;
@@ -51,9 +52,17 @@ function Widgets.Button(parent, opts)
 		b.fill = Theme.Slice(b, "rr_fill_8", style.fill, "BACKGROUND")
 		b.fill:SetAllPoints(b)
 		if style.gradient then
-			Theme.Call(b.fill, function(region)   -- amber -> coral, two colours (the spec: SetGradient)
-				if region.SetGradient then region:SetGradient("HORIZONTAL", gradientColor("accent"), gradientColor("accent-2")) end
-			end)
+			-- amber -> coral, two colours (the spec: SetGradient); a button that is off is flat surface-3 (no gradient at
+			-- half alpha, whose dark text on a muddy red could not be read)
+			b.paintGradient = function(region)
+				if not region.SetGradient then return end
+				if b.off then
+					region:SetGradient("HORIZONTAL", gradientColor("surface-3"), gradientColor("surface-3"))
+				else
+					region:SetGradient("HORIZONTAL", gradientColor("accent"), gradientColor("accent-2"))
+				end
+			end
+			Theme.Call(b.fill, b.paintGradient)
 		end
 	end
 	if style.ring then
@@ -67,8 +76,14 @@ function Widgets.Button(parent, opts)
 	b.over:SetAlpha(0)
 	b.label = Theme.NewText(b, "Button", style.ink)
 	b.label:SetPoint("CENTER", b, "CENTER", 0, 0)
-	b.label:SetText(opts.text or "")
-	function b:SetLabel(text) self.label:SetText(text or "") end
+	-- the button is as wide as asked, wider when its text needs it (a longer translation never spills out of it)
+	b.minWidth = opts.width or 120
+	function b:Fit()
+		local need = math.ceil((self.label:GetStringWidth() or 0) + 28)
+		self:SetWidth(math.max(self.minWidth, need))
+	end
+	function b:SetLabel(text) self.label:SetText(text or ""); self:Fit() end
+	b:SetLabel(opts.text)
 	local function layer(self)
 		if not self:IsEnabled() then return 0 end
 		if self.pressed then return Widgets.PRESSED end
@@ -79,10 +94,26 @@ function Widgets.Button(parent, opts)
 	b:SetScript("OnLeave", function(self) self.hot, self.pressed = false, false; paint(self) end)
 	b:SetScript("OnMouseDown", function(self) self.pressed = true; paint(self) end)
 	b:SetScript("OnMouseUp", function(self) self.pressed = false; paint(self) end)
+	-- Off: the filled styles (primary, neon) turn into a flat surface-3 shape with text-3 and no glow, the others dim;
+	-- either way the label stays readable.
 	local setEnabled = b.SetEnabled
 	function b:SetEnabled(enabled)
-		setEnabled(self, enabled and true or false)
-		self:SetAlpha(enabled and 1 or 0.45)
+		enabled = enabled and true or false
+		setEnabled(self, enabled)
+		local flat = style.gradient or style.glow
+		self.off = not enabled
+		if flat then
+			self:SetAlpha(1)
+			if self.fill then
+				Theme.Tint(self.fill, enabled and style.fill or "surface-3")
+				if self.paintGradient then self.paintGradient(self.fill) end
+			end
+			if self.ring then Theme.Tint(self.ring, enabled and style.ring or "border") end
+			if self.glow then Theme.GlowShow(self.glow, enabled) end
+			Theme.Text(self.label, enabled and style.ink or "text-3")
+		else
+			self:SetAlpha(enabled and 1 or Widgets.DISABLED_ALPHA)
+		end
 		if not enabled then self.hot, self.pressed = false, false end
 		paint(self)
 	end
@@ -473,6 +504,7 @@ function Widgets.ChoiceList(parent, opts)
 		b.label:SetPoint("LEFT", b, "LEFT", 22, 0)
 		b.label:SetPoint("RIGHT", b, "RIGHT", -6, 0)
 		b.label:SetJustifyH("LEFT")
+		Widgets.TruncatedTip(b, b.label)   -- one line per row: a long choice is cut, the tooltip shows all of it
 		b:SetScript("OnClick", function(self) if self.choice then f:Select(self.choice.id) end end)
 		b:Hide()
 		f.rows[i] = b
