@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-11-24
+
 ### Added
 
 - M8-3: the raid readiness tab and the notify button (owner request of 2026-11-24; [ADR 0010](docs/adr/0010-self-reported-transient-readiness.md), analysis §4.2; wiki [Raid Readiness](docs/wiki/Raid-Readiness.md)). Built on the data of M8-2; the protocol does not change.
