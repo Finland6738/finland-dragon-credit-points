@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-11-24
+
 ### Added
 
 - M8-1: a public read-only API for other addons (owner decision of 2026-11-24, Accord SPEC-10 Q10; [ADR 0009](docs/adr/0009-public-read-only-api.md), analysis §8.6; question 6 of §13 revised). New `App/PublicAPI.lua` defines the global `FinlandDragonCreditPointsAPI`, which never changes its name:

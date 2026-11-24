@@ -30,7 +30,7 @@ Apri **Impostazioni › Info**, oppure scrivi `/fdcp about` (`/fdcp about chat` 
 
 ## Versione
 
-**1.0.1** è la prima versione pubblicata: tutto l'addon (roster e serate, crediti, sessioni di loot, council, storico ed esportazione, impostazioni, tre temi, italiano e inglese) con il logo della community NEBULA nei crediti. È stato costruito e provato offline; le verifiche nel gioco vero sono nella checklist di rilascio del repository, quindi segnala ogni stranezza con una issue. L'elenco completo delle modifiche è nel [changelog](https://github.com/Finland6738/finland-dragon-credit-points/blob/main/CHANGELOG.md).
+**1.0.2** aggiunge un'API in sola lettura per gli altri addon ([[API per altri addon|API-for-Addons-it]]): possono leggere crediti, roster e serata, mai presenze, assenze o council. **1.0.1** è stata la prima versione pubblicata: tutto l'addon (roster e serate, crediti, sessioni di loot, council, storico ed esportazione, impostazioni, tre temi, italiano e inglese) con il logo della community NEBULA nei crediti. È stato costruito e provato offline; le verifiche nel gioco vero sono nella checklist di rilascio del repository, quindi segnala ogni stranezza con una issue. L'elenco completo delle modifiche è nel [changelog](https://github.com/Finland6738/finland-dragon-credit-points/blob/main/CHANGELOG.md).
 
 ## Sostegno
 
