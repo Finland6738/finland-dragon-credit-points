@@ -36,7 +36,7 @@ Because of the initial credits and the adjustments, the total can be more than t
 ## Filters, sorting, your row
 
 - **All / Tank / Healer / DPS** and the **Class** button (click it to step through the classes, and back to all) filter the rows. The queue place does not change: it is always the place in the whole queue.
-- The **Horde / Alliance** switch picks the faction's queue; it starts on your own.
+- The top right of the tab names your guild's faction. In the game Horde and Alliance are two different guilds with their own data, so the table is your guild's queue and there is no faction switch.
 - Click a header to sort by it, again to reverse.
 - Your own row (or the row of your main, when you play an alt) is highlighted with an amber bar.
 

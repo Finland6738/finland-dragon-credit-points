@@ -36,7 +36,7 @@ Per i crediti iniziali e le correzioni, il totale può essere più della somma d
 ## Filtri, ordinamento, la tua riga
 
 - **Tutti / Tank / Healer / DPS** e il pulsante **Classe** (cliccalo per scorrere le classi e tornare a tutte) filtrano le righe. Il posto in fila non cambia: è sempre il posto nella fila intera.
-- L'interruttore **Orda / Alleanza** sceglie la fila della fazione; parte dalla tua.
+- In alto a destra la scheda dice la fazione della tua gilda. Nel gioco Orda e Alleanza sono due gilde diverse con i propri dati, quindi la tabella è la fila della tua gilda e non c'è un selettore di fazione.
 - Clicca un'intestazione per ordinare, di nuovo per invertire.
 - La tua riga (o quella del tuo main, se giochi un alt) è evidenziata con una barra ambra.
 

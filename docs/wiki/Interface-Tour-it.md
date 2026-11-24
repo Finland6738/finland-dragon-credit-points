@@ -12,7 +12,7 @@ La finestra è costruita: la aprono `/fdcp`, il pulsante della minimappa (il log
 
 | Scheda | Che cosa trovi |
 |---|---|
-| **Roster** | Il roster dei raid come sul sito: una colonna per tank, healer e DPS, con i posti liberi e chi è in prova. Gli officer vedono anche la lineup della serata, la panchina e chi nel raid ha l'addon. |
+| **Roster** | Il roster dei raid della fazione della tua gilda come sul sito: una colonna per tank, healer e DPS, con i posti liberi e chi è in prova. I giocatori ci entrano da qui (**Entra nel roster**); gli officer approvano le richieste, aggiungono giocatori direttamente o tutto il gruppo raid, e vedono la lineup della serata, la panchina e chi nel raid ha l'addon. |
 | **Crediti** | La tabella dei crediti della season come sul sito: una colonna per serata, il tuo totale e il tuo posto nella fila del loot. Meno crediti vuol dire più precedenza. |
 | **Progress** | Ogni boss di ogni raid, con la data della prima uccisione della tua gilda e dell'altra, come sul sito. |
 | **Loot** | La sessione di loot del master looter: i pezzi, chi ha risposto, i roll e il vincitore proposto. Gli altri la vedono in sola lettura. Sotto-schede: **Sessione**, **Da consegnare** e **Council** (le segnalazioni, il voto, l'annullamento di un'assegnazione, la correzione dei crediti, l'audit e i progetti leggendari: [[Council|Council-it]]). |

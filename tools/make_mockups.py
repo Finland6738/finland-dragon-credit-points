@@ -185,8 +185,9 @@ def roster_scene():
                                  t("Who is declared as a main for the season. Socials and alts are not listed here.",
                                    "Chi è dichiarato main per la season. Social e alt non compaiono qui."))
                   + f"""
-<div class="row">{seg([t("Horde", "Orda"), t("Alliance", "Alleanza")], t("Horde", "Orda"))}<span class="sp"></span>
-{badge(t("12 players · 2 on trial · 0 without spec", "12 giocatori · 2 in prova · 0 senza spec"), "")}</div>
+<div class="row">{badge(t("Horde", "Orda"), "accent")} {badge(t("12 players · 2 on trial · 0 without spec", "12 giocatori · 2 in prova · 0 senza spec"), "")}
+<span class="sp"></span>{btn(t("Join the roster", "Entra nel roster"), "primary", True)} {btn(t("Link as alt", "Collega come alt"), "ghost", True)}
+{btn(t("Add a player", "Aggiungi giocatore"), "", True)} {btn(t("Add the raid group", "Aggiungi il raid"), "", True)}</div>
 <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-items:start">{cols}</div>""")
 
 

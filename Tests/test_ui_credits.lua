@@ -246,14 +246,14 @@ describe("the Credits tab", function()
 		truthy(root.cards.S2.table.empty:IsShown())
 	end)
 
-	it("the faction switch shows the other queue", function()
+	it("shows the queue of the guild's faction, without a faction switch", function()
 		bound()
 		local root = open()
-		RC():SetFaction("Alliance")
-		local rows = root.cards.S2.table:VisibleRows()
-		eq(#rows, 1)
-		eq(rows[1].cells[2]:GetText(), "Fenn")
-		eq(rows[1].cells[4]:GetText(), "+2")
+		eq(root.faction:GetObjectType(), "FontString", "the faction is a text, not a switch")
+		eq(root.faction:GetText(), "Horde")
+		for _, r in ipairs(root.cards.S2.table:VisibleRows()) do
+			truthy(r.cells[2]:GetText() ~= "Fenn", "Fenn (Alliance) belongs to the other guild")
+		end
 	end)
 
 	it("the player's own row is highlighted", function()

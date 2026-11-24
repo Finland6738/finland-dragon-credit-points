@@ -1,5 +1,5 @@
 -- The Roster tab (M3-7): UI/Widgets/DataTable.lua (sort, pool, wheel), App/RosterController.lua and UI/Windows/Roster.lua
--- (the three role columns, the faction switch, the officers' status buttons and inbox), UI/Windows/Nights.lua (open and
+-- (the three role columns, the guild's faction in the header, the officers' status buttons and inbox), UI/Windows/Nights.lua (open and
 -- close a night, the lineup, the proposed bench, the attendance for officers only). docs/ANALISI.md §6, §9.3.
 local function Lg() return FDCP.Ledger end
 local function Sn() return FDCP.Season end
@@ -159,16 +159,13 @@ describe("the pool", function()
 		eq(rows[2].spec:GetText(), "Holy")
 	end)
 
-	it("the faction switch shows the other pool", function()
+	it("shows the pool of the guild's faction, without a faction switch", function()
 		bound()
 		local pool = open()
-		pool.faction.buttons.Alliance:Click()
-		eq(RC():Faction(), "Alliance")
-		eq(pool.cards.DAMAGER.count:GetText(), "1/34")
-		eq(names(texts(pool.cards.DAMAGER.rows)), "Fenn")
-		eq(pool.cards.TANK.count:GetText(), "0/2")
-		pool.faction.buttons.Horde:Click()
-		eq(pool.cards.TANK.count:GetText(), "1/2")
+		isNil(pool.faction)
+		eq(RC():Faction(), "Horde")
+		eq(pool.eyebrow:GetText(), "THE RAIDERS OF THE SEASON · HORDE")
+		eq(pool.cards.DAMAGER.count:GetText(), "2/34", "Fenn (Alliance) belongs to the other guild")
 	end)
 
 	it("an officer changes a status with the row's button; the ledger holds the change", function()
@@ -233,7 +230,7 @@ describe("the pool", function()
 		eq(pool.cards.TANK.free:GetText(), "1 posti liberi")
 		eq(pool.cards.TANK.title:GetText(), "Tank")
 		eq(RW().root.sub.buttons.night.label:GetText(), "Serata")
-		eq(pool.faction.buttons.Horde.label:GetText(), "Orda")
+		contains(pool.eyebrow:GetText(), "ORDA")
 	end)
 
 	it("has the three sub-tabs, the pool first", function()

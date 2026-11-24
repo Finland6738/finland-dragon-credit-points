@@ -12,19 +12,34 @@ La scheda **Roster** ha tre sotto-schede: **Pool**, **Serata** e **Addon** ([[Co
 
 I raider della season, come sul sito: una card per **Tank**, **Healer** e **DPS**.
 
-- Il selettore in alto a destra sceglie la fazione (**Orda** / **Alleanza**); parte dalla tua.
+- Il titolo dice la fazione della tua gilda (**Orda** o **Alleanza**). Nel gioco le due fazioni sono due gilde diverse (Nebulah e Nebulaa), ognuna con i propri dati, quindi non c'è un selettore di fazione: vedi il pool della tua gilda.
 - Ogni card mostra il conteggio contro l'obiettivo, per esempio **1/2**, una barra sottile a gradiente e "N posti liberi" finché il ruolo non è pieno. Gli obiettivi vengono dalla dimensione del raid del pacchetto della season e dal minimo di tank e healer della gilda; gli altri posti sono per i danni.
 - Ogni riga ha un quadratino nel colore della classe, il nome (con `+2` se il giocatore ha due alt), la spec principale dichiarata e il marchio **PROVA** per i membri in prova. Una card lunga si scorre con la rotellina.
 - Sotto il titolo una riga conta i giocatori, quelli in prova e quelli che non hanno dichiarato la spec.
+
+### Entrare nel roster (ogni giocatore)
+
+I pulsanti in alto a destra dipendono da dove sei nella season aperta:
+
+- **Entra nel roster** quando non sei nel pool. Si apre un piccolo modulo: la classe viene dal gioco; scegli la **spec principale (MS1)** (obbligatoria) e, se vuoi, la **seconda spec (MS2)**, la **spec che vorresti (OS)**, i **giorni in cui puoi raidare** e una **nota breve**. **Invia** manda la richiesta agli officer della gilda.
+- **Collega come alt** quando questo personaggio è un alt: scegli il tuo main dalla lista e **Invia**. Un alt non ha crediti propri: usa quelli del main.
+- **Dichiara le spec** quando un officer ti ha aggiunto senza dichiarazione (per esempio con **Aggiungi il raid**): lo stesso modulo, e un officer la approva.
+
+Sotto i pulsanti una riga segue la tua richiesta: *in attesa di invio* (per esempio durante il blocco della chat), *inviata, in attesa di un officer*, *ricevuta da un officer, in attesa*, *approvata* o *rifiutata*. Se nessun officer era online, l'addon rimanda la richiesta una volta dopo il tuo prossimo accesso. Puoi mandare una nuova richiesta dopo 30 secondi; sostituisce quella in attesa.
+
+Una volta approvata, la dichiarazione resta fissa per la season: per cambiarla poi, chiedi a un officer.
 
 ### Officer
 
 Chi ha il permesso *gestire il roster* (gli officer, di default) vede anche:
 
 - **Metti in prova / Rendi raider** su ogni riga: cambia lo stato del membro. Il cambio è scritto nel registro e annotato come ogni altro.
-- **Richieste da approvare**: le dichiarazioni per entrare nel pool e i collegamenti di alt che i giocatori chiedono. **Approva** scrive il membro (con i crediti da nuovo arrivato delle regole della gilda) o il collegamento; **Rifiuta** scarta la richiesta.
+- **Richieste da approvare**: le dichiarazioni per entrare nel pool e i collegamenti di alt che i giocatori chiedono. **Approva** scrive il membro (con i crediti da nuovo arrivato delle regole della gilda) o il collegamento; **Rifiuta** scarta la richiesta. Il giocatore vede la decisione e la richiesta sparisce anche dalle liste degli altri officer.
+- **Aggiungi giocatore**: una lista dei personaggi del gruppo raid e della gilda che non sono nel pool (prima il raid, con la classe letta dal gioco). Scegline uno, compila MS1 (e MS2, OS, giorni, nota se li conosci), premi **Aggiungi al roster** e conferma: la finestra mostra i crediti con cui parte il giocatore (la regola dei ritardatari della gilda).
+- **Aggiungi il raid**: aggiunge in un colpo ogni membro di gilda del tuo raid che non è ancora nel pool, dopo una conferma che li elenca. Entrano **senza dichiarazione** (solo la classe), con i crediti da nuovo arrivato; poi ognuno manda **Dichiara le spec** dalla propria finestra e tu la approvi. I giocatori fuori dalla gilda non vengono mai aggiunti.
+- Sotto le richieste, la riga **Senza dichiarazione** elenca i membri che devono ancora dichiarare.
 
-I membri vedono il pool ma nessun pulsante e nessuna richiesta.
+I membri vedono il pool ma nessun pulsante da officer e nessuna richiesta. Sul client di un membro, che non tiene un registro proprio, il Pool mostra i pulsanti per entrare e rimanda alla scheda **Crediti**, che mostra la tabella degli officer.
 
 ## Serata
 

@@ -18,3 +18,4 @@ They record *why* the project is built a certain way. A decision that changes is
 | [0008](0008-automatic-upgrade-badge.md) | An automatic upgrade badge by quality tier, against the gear of the fight | accepted |
 | [0009](0009-public-read-only-api.md) | A public read-only API for other addons | accepted |
 | [0010](0010-self-reported-transient-readiness.md) | Raid readiness is self-reported and transient | accepted |
+| [0011](0011-roster-requests-and-direct-additions.md) | Roster requests over GUILD, direct additions, the raid group without a declaration | accepted |

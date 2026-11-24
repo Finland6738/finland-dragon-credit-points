@@ -80,6 +80,7 @@ App\ProgressController.lua
 App\SiteExportService.lua
 Net\Sync.lua
 Net\Snapshot.lua
+Net\RosterNet.lua
 App\SeasonController.lua
 App\BackupService.lua
 App\AddonCheck.lua
@@ -109,6 +110,7 @@ UI\AddonPanel.lua
 UI\ReadinessPanel.lua
 UI\Windows\Nights.lua
 UI\Windows\Roster.lua
+UI\Windows\RosterForms.lua
 UI\Windows\Credits.lua
 UI\Windows\Progress.lua
 UI\Windows\MLSession.lua

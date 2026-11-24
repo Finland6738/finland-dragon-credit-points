@@ -325,7 +325,7 @@ function HistoryWindow:Refresh()
 end
 
 if ns.Bus then
-	for _, ev in ipairs({ "ROSTER_UPDATED", "ROSTER_VIEW_CHANGED", "GUILD_RANKS_READY", "GUILD_KEY_CHANGED", "NIGHT_OPENED", "NIGHT_CLOSED" }) do
+	for _, ev in ipairs({ "ROSTER_UPDATED", "GUILD_RANKS_READY", "GUILD_KEY_CHANGED", "NIGHT_OPENED", "NIGHT_CLOSED" }) do
 		ns.Bus:On(ev, function() HistoryWindow:Refresh() end, HistoryWindow)
 	end
 end

@@ -12,7 +12,7 @@ The window itself is built: `/fdcp`, the minimap button (the guild logo) or the 
 
 | Tab | What you find there |
 |---|---|
-| **Roster** | The raid roster as on the site: one column each for tanks, healers and DPS, with free slots and trial members. Officers also see the night's lineup and bench, and who in the raid has the addon. |
+| **Roster** | The raid roster of your guild's faction as on the site: one column each for tanks, healers and DPS, with free slots and trial members. Players join it from here (**Join the roster**); officers approve the requests, add players directly or add the whole raid group, and see the night's lineup and bench, and who in the raid has the addon. |
 | **Credits** | The season's credits table as on the site: one column per raid night, your total and your place in the loot queue. Fewer credits means more priority. |
 | **Progress** | Every boss of every raid, with the date of your guild's first kill and the other guild's, as on the site: see [The Progress tab](#the-progress-tab). |
 | **Loot** | The master looter's loot session: the items, who answered, the rolls and the proposed winner. Everyone else sees it read-only. Sub-tabs: **Session**, **To deliver** and **Council** (the flags, the vote, cancelling an award, correcting credits, the audit and the legendary projects: [[Council|Council]]). |

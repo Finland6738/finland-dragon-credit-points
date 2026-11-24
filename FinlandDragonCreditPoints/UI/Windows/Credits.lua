@@ -168,10 +168,9 @@ function CreditsWindow:Build(page)
 	root.title:SetPoint("TOPLEFT", root.eyebrow, "BOTTOMLEFT", 0, -6)
 	root.title:SetText(L["TAB_CREDITS"])
 
-	root.faction = Widgets.Segmented(root, {
-		{ id = "Horde", text = L["FACTION_Horde"] }, { id = "Alliance", text = L["FACTION_Alliance"] },
-	}, function(id) RC():SetFaction(id); CreditsWindow:Refresh() end)
-	root.faction:SetPoint("TOPRIGHT", root, "TOPRIGHT", 0, -12)
+	-- the faction of the player's guild (one guild is one faction in game: no switch, fix/roster-join)
+	root.faction = Theme.NewText(root, "BodyMedium", "text-2")
+	root.faction:SetPoint("TOPRIGHT", root, "TOPRIGHT", 0, -16)
 
 	local roles = { { id = "ALL", text = L["CREDITS_ALL"] } }
 	for _, r in ipairs(self.ROLES) do roles[#roles + 1] = { id = r, text = ns.RosterWindow.RoleName(r) } end
@@ -290,7 +289,7 @@ function CreditsWindow:Refresh()
 	local root = self.root
 	if not root then return end
 	local src = self:Source()
-	root.faction:Select(RC() and RC():Faction() or "Horde")
+	root.faction:SetText(ns.RosterWindow.FactionName(RC() and RC():Faction() or "Horde"))
 	root.classBtn:SetLabel((self.class and ns.RosterWindow.ClassName(self.class) or L["CREDITS_CLASS"]) .. " ▾")
 	local seasons = {}
 	if src and src.snapshot then
@@ -342,7 +341,7 @@ function CreditsWindow:Refresh()
 end
 
 if ns.Bus then
-	for _, ev in ipairs({ "ROSTER_UPDATED", "ROSTER_VIEW_CHANGED", "GUILD_RANKS_READY", "GUILD_KEY_CHANGED", "NIGHT_OPENED", "NIGHT_CLOSED",
+	for _, ev in ipairs({ "ROSTER_UPDATED", "GUILD_RANKS_READY", "GUILD_KEY_CHANGED", "NIGHT_OPENED", "NIGHT_CLOSED",
 	"CREDIT_SNAPSHOT", "LEDGER_SYNCED" }) do
 		ns.Bus:On(ev, function() CreditsWindow:Refresh() end, CreditsWindow)
 	end

@@ -105,7 +105,7 @@ le texture le genera `tools/make_media.py`.
 | **Finestra** | fondo `bg`, bordo `border`, raggio 12, ombra grande | `Frame` con texture 9-slice `rr_fill_12` (fill) + `rr_ring_12` (bordo 1 px) + ombra sfocata; mobile, posizione ricordata per personaggio, Esc chiude |
 | **Barra del titolo** | — (il sito ha un'intestazione con il logo) | 52 pt, `surface-1`, logo della gilda tondo con piccolo bagliore ambra, "DRAGON CREDIT POINTS" in Orbitron, sottotitolo mono (season · fazione), chip di stato, chiudi |
 | **Schede (underline)** | altezza 44, testo 14/500, scheda attiva `text-1` con barra di 2 px `accent` in basso | pulsanti propri (non `PanelTemplates`), indicatore = texture di 2 pt che scorre in 200 ms (`Translation`) o compare in dissolvenza |
-| **Selettore a pillole** (fazione, sotto-schede) | contenitore `surface-2`, segmento attivo `raised` con ombra | 9-slice pillola; segmento attivo con texture `raised` e riga di luce |
+| **Selettore a pillole** (sotto-schede, filtri) | contenitore `surface-2`, segmento attivo `raised` con ombra | 9-slice pillola; segmento attivo con texture `raised` e riga di luce |
 | **Card** | `surface-1`, bordo `border-subtle`, raggio 18, ombra 2; al passaggio bordo `border-strong` | fill + ring + ombra (massimo 4 regioni per card); niente inclinazione 3D né bagliore che segue il mouse |
 | **Fisarmonica della season** | riga 68 px: icona Σ, titolo, sottotitolo mono, conteggio, freccia che ruota | riga 58 pt; la freccia ruota con `Rotation` 320 ms; il corpo si apre senza animazione dell'altezza (si mostra e si fa scorrere) |
 | **Tabella crediti** | intestazioni maiuscole su `surface-2`, colonne ordinabili, prima e ultima colonna fisse, `+N` mono in `accent-text`, totale in pastiglia `surface-3` | intestazione fuori dalla lista; righe in `ScrollBox` con `DataProvider` (ripiego `FauxScrollFrame`); ordinamento nel Domain; colonne fisse = due liste sincronizzate; righe riciclate da un pool |
@@ -195,7 +195,7 @@ che un rango non può usare non compaiono (§3.9 dell'analisi).
 
 | Scheda | Contenuto | Sotto-schede (selettore a pillole) | Chi la vede | Passo |
 |---|---|---|---|---|
-| **Roster** | tre colonne per ruolo come sul sito, posti liberi, Trial; selettore di fazione | Pool · Serata (lineup, panchina, presenze) · Addon (chi ha l'addon, avviso in `/raid`) | tutti (Serata e Addon solo con i permessi) | M3-6, M3-7 |
+| **Roster** | tre colonne per ruolo come sul sito, posti liberi, Trial; la fazione della gilda nel titolo (nessun selettore: due gilde, due registri); Entra nel roster, Collega come alt, Aggiungi giocatore, Aggiungi il raid | Pool · Serata (lineup, panchina, presenze) · Addon (chi ha l'addon, avviso in `/raid`) | tutti (Serata e Addon solo con i permessi) | M3-6, M3-7 |
 | **Crediti** | la tabella del sito: season a fisarmonica, una colonna per run con `+N`, totale, precedenza; filtri per ruolo e classe; la propria riga evidenziata | — | tutti | M3-8 |
 | **Progress** | una card per istanza come sul sito: copertina, barra per fazione, boss su due colonne con teschio e data della prima uccisione per fazione | — | tutti | M3-8b |
 | **Loot** | sessione del master looter: pezzi a sinistra, candidati con crediti, risposta e roll a destra, proposta, conferma, intervento del council; per gli altri la stessa vista in sola lettura | Sessione · Council | ML e council (gli altri in sola lettura) | M4-5, M5-8 |
@@ -243,7 +243,7 @@ L'elenco con titoli e descrizioni per la galleria di CurseForge è in [assets/CU
 | ![Loot](mockups/fdcp-loot-session-it.webp) | **Loot › Sessione** (master looter): pezzi, candidati, roll, colonna Upgrade, proposta e segnali del council |
 | ![Council](mockups/fdcp-council-it.webp) | **Loot › Council**: segnali, prove di imbroglio con Penalizza +2, voto, assegnazioni |
 | ![Crediti](mockups/fdcp-credits-it.webp) | **Crediti**: season a fisarmonica, serate come colonne, totale e fila; la propria riga evidenziata |
-| ![Roster](mockups/fdcp-roster-it.webp) | **Roster › Pool**: colonne per ruolo, posti liberi, Trial, selettore di fazione |
+| ![Roster](mockups/fdcp-roster-it.webp) | **Roster › Pool**: colonne per ruolo, posti liberi, Trial, la fazione della gilda, i pulsanti per entrare e aggiungere |
 | ![Serata](mockups/fdcp-night-it.webp) | **Roster › Serata**: formazione, panchina (anche da soli) e penalità di assenza proposte |
 | ![Progress](mockups/fdcp-progress-it.webp) | **Progress**: prima uccisione per boss e per fazione, come sul sito |
 | ![Impostazioni](mockups/fdcp-settings-it.webp) | **Impostazioni › Personali**: tema Nebula, Aurora o Drago, effetti, suoni, lingua |

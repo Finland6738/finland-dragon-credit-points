@@ -488,14 +488,22 @@ local function checkRequest(L, req, config)
 	if req.faction ~= nil and not Ledger().FACTIONS[req.faction] then return nil, "faction" end
 	if req.kind == "JOIN" then
 		if not isName(req.member) then return nil, "member" end
-		if state.members[req.member] then return nil, "ALREADY_JOINED" end
-		if state.alts[req.member] and (config or Members().DefaultConfig()).mainOnly then return nil, "IS_ALT" end
+		local cur = state.members[req.member]
+		-- a member already in the pool without a declaration (added by an officer, "Add the raid group") may still send
+		-- one: approved, it becomes a ROSTER_CHANGED of the officer (Roster.Approve)
+		if cur and cur.declared then return nil, "ALREADY_JOINED" end
+		if not cur and state.alts[req.member] and (config or Members().DefaultConfig()).mainOnly then
+			return nil, "IS_ALT"
+		end
+		if cur and cur.class and req.class and req.class ~= cur.class then return nil, "SPEC_CLASS" end
 		local decl, code = Roster.Complete(req)
 		if not decl then return nil, code end
-		local bad = twinProblem(state, req.member, req.faction, decl.twin)
+		if cur and cur.class and decl.class ~= cur.class then return nil, "SPEC_CLASS" end
+		local bad = twinProblem(state, req.member, req.faction or (cur and cur.faction), decl.twin)
 		if bad then return nil, bad end
 		out.member, out.faction = req.member, req.faction
 		for k, v in pairs(decl) do out[k] = v end
+		out.declare = cur and true or nil
 	else
 		if not isName(req.alt) or req.alt == req.main then return nil, "alt" end
 		if not isName(req.main) then return nil, "main" end
@@ -580,7 +588,16 @@ function Roster.Approve(R, L, id, draft, config, opts)
 	if r.state ~= "PENDING" then return nil, "REQUEST_CLOSED" end
 	if type(draft) ~= "table" then return nil, "event" end
 	local e, code
-	if r.kind == "JOIN" then
+	local cur = r.kind == "JOIN" and Roster.Get(L, r.season, r.member)
+	if cur and not cur.declared then
+		-- the declaration of a member already in the pool: the officer's correction (the status stays the officer's)
+		local set = {}
+		for _, f in ipairs(Roster.FIELDS) do
+			if f ~= "status" and r[f] ~= nil then set[f] = r[f] end
+		end
+		e, code = Roster.Change(L, { author = draft.author, ts = draft.ts, season = r.season, member = r.member, set = set,
+			reason = "DECLARATION" }, opts)
+	elseif r.kind == "JOIN" then
 		local d = { author = draft.author, ts = draft.ts, season = r.season, member = r.member, faction = r.faction,
 			nights = draft.nights, late = draft.late }
 		for _, f in ipairs(Roster.FIELDS) do d[f] = r[f] end
@@ -601,6 +618,42 @@ function Roster.Reject(R, id, by, ts)
 	if r.state ~= "PENDING" then return nil, "REQUEST_CLOSED" end
 	r.state, r.by, r.decidedAt = "REJECTED", by, ts
 	return true
+end
+
+-- Another officer decided a request (the decision heard on the network): it leaves the inbox here too. `state` is
+-- "APPROVED" or "REJECTED". Returns true, or nil and "REQUEST_UNKNOWN" / "REQUEST_CLOSED" / "state".
+function Roster.Close(R, id, state, by, ts)
+	if state ~= "APPROVED" and state ~= "REJECTED" then return nil, "state" end
+	local r = type(R) == "table" and R.items[id]
+	if not r then return nil, "REQUEST_UNKNOWN" end
+	if r.state ~= "PENDING" then return nil, "REQUEST_CLOSED" end
+	r.state, r.by, r.decidedAt = state, by, ts
+	return true
+end
+
+-- True when the ledger already holds what a request asks: the member is in the pool with a declaration (a JOIN), the alt
+-- is linked to that main (an ALT). An officer's approval on another client reaches this one through the ledger sync.
+function Roster.Done(L, r)
+	if type(r) ~= "table" then return false end
+	local state = Roster.State(L, r.season)
+	if r.kind == "JOIN" then
+		local m = state.members[r.member]
+		return m ~= nil and m.declared == true
+	end
+	return state.alts[r.alt] == r.main
+end
+
+-- Closes the pending requests the ledger already settled (Roster.Done): they are marked APPROVED without an author.
+-- Returns how many.
+function Roster.Settle(R, L, ts)
+	local n = 0
+	for _, r in pairs(type(R) == "table" and R.items or {}) do
+		if r.state == "PENDING" and Season().Get(L, r.season) and Roster.Done(L, r) then
+			r.state, r.decidedAt = "APPROVED", ts
+			n = n + 1
+		end
+	end
+	return n
 end
 
 -- Drops the requests that are no longer pending (approved and rejected ones) older than `before` (a time), and the
