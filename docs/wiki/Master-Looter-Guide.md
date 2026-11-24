@@ -92,6 +92,8 @@ Everything the addon writes in `/raid` is written in the **guild language** the 
 
 Sort by clicking a header. The list is ordered main-spec first, then fewest credits, then the highest roll. In a reroll the players who are not tied are dimmed.
 
+Every cell takes one line. In a narrow window a long text (an upgrade badge, a note) is cut at its column: hover the row to read it whole in the tooltip. The proposal under the table grows with its sentence and the lines under it, and the table ends above it.
+
 A player who rolls without the addon is **not** counted: the roll appears with *The addon is not active* so you see it, and they cannot answer.
 
 ## Council flags

@@ -40,6 +40,13 @@ All notable changes to this project are documented here. The format follows [Kee
   - Wiki [Rolling for Loot](docs/wiki/Rolling-for-Loot.md) (EN + IT).
   - Tests: `Tests/test_ui_layout.lua` lays out the popup for every hint, rolled, paused, a reroll, a short item with no badge, and two cards stacked, at the narrowest, default and widest width, in English and Italian.
   - **Not verified in the game:** the popup with the real fonts (the mock approximates their width), and where the game cuts a long eyebrow.
+- The layout of the master looter's window, **Loot › Session**, checked with the same layout test as Settings (owner request of 2026-11-25). Wiki [Master Looter Guide](docs/wiki/Master-Looter-Guide.md) (EN + IT).
+  - **The candidates' table** had fixed columns (credits, response, upgrade, roll) wider than the card. At the default window the *Candidate* column was about 20 points wide, and at the smallest one it had none: the names, *0* credits and the titles *CANDIDATE* / *CREDITS* were drawn over one another. The upgrade column now shares the free width with the name and the notes, and the fixed columns are narrower. A cut cell shows whole in the row's tooltip.
+  - `Widgets.DataTable` (every table of the addon): a cell or a title is one line and is cut at its column instead of wrapping over the next row. In a narrow table the fixed columns shrink, never under half their width, so that a flexible column keeps at least 56 points a share.
+  - **The proposal strip** was 60 points high: a long proposal (*Proposal: Aurel, 1 credit. Main-spec: … won the reroll among the tied.*) ran into the line under it (*Some rolls were discarded…*). The strip now grows with both texts and the table ends above it, also when the window is resized.
+  - **Loot › Council**: the status line had no width and ran past the window. It is now one line up to the right edge, cut, with the whole text in a tooltip.
+  - Tests: `Tests/test_ui_layout.lua` runs a boss from the window's buttons and lays it out at every step (collecting, rolling, answers with a discarded roll, reroll, proposal, the Modify dialog, the next item, paused), then **Deliver** and **Council**. It runs at the smallest and the default size, in English and in Italian.
+  - **Not verified in the game:** the window with the real fonts (the mock approximates their width), the cut cells and the row tooltip, and the Council tab in a session with a proposal (checked only outside the council).
 
 ## [1.0.3] - 2026-11-24
 

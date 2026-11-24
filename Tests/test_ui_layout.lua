@@ -384,3 +384,110 @@ for _, locale in ipairs({ "enUS", "itIT" }) do
 		end)
 	end)
 end
+
+-- The master looter's window (UI/Windows/MLSession.lua, Loot > Session and Deliver, and the Modify dialog): a boss run from
+-- the window's buttons, laid out at every step, at the minimum and the default size, in English and in Italian.
+local ML_REALM = "Camelot"
+local function mlFull(name) return name .. "-" .. ML_REALM end
+local ML_PLAYERS = { "Aurel", "Bryn", "Corin", "Dara" }
+local ML_BOSS = "Creature-0-3-2000-1-11502-0000A1B2C3"
+local function mlLink(id, name) return "|cffa335ee|Hitem:" .. id .. "::::::::70:::::|h[" .. name .. "]|h|r" end
+local ML_ITEMS = {
+	{ id = 19601, name = "Stormrider's Eternal Crown of the Burning Legion", equipLoc = "INVTYPE_HEAD", classID = 4, subclassID = 4 },
+	{ id = 19602, name = "Ring", equipLoc = "INVTYPE_FINGER", classID = 4, subclassID = 0 },
+	{ id = 19603, name = "Blade of the Ancient Twilight Dragonflight", equipLoc = "INVTYPE_WEAPON", classID = 2, subclassID = 7 },
+}
+
+local function mlBench()
+	local SC, PS, Codec = FDCP.SessionController, FDCP.Protocol.Session, FDCP.Codec
+	local L1 = FDCP.Ledger.New()
+	assert(FDCP.Season.Open(L1, { author = mlFull("Dara"), ts = 1, season = "S1", instances = { { id = 9001, size = 20 } } }))
+	SC:Bind(L1, {})
+	SC.Env = function(self) return { ledger = self:Ledger() } end
+	local slots = {}
+	for i, def in ipairs(ML_ITEMS) do slots[i] = { link = mlLink(def.id, def.name), name = def.name, quality = 4, sources = { ML_BOSS, 1 } } end
+	Mock.loot.Set{ method = "master", masterLooter = true, threshold = 3, slots = slots }
+	Mock.encounter.Start(601, "Boss")
+	Mock.encounter.End(601, "Boss", true)
+	if SC.session then SC.session.rules.session.buttonRollsOnly = false end
+	Mock.loot.Open()
+	local present, with = {}, {}
+	for _, p in ipairs(ML_PLAYERS) do present[mlFull(p)] = true; with[mlFull(p)] = true end
+	present[mlFull("Edda")] = true   -- no addon: the warning button shows
+	assert(SC:Step({ type = "SET_RAID", present = present, addon = with }))
+	local b = {}
+	function b.respond(name, rs)
+		local s = SC.session
+		if mlFull(name) == mlFull("Dara") then return assert(PS:Respond(rs)) end
+		Mock.chat.Receive("FDCP1", Codec:Encode("SRESP", { s = s.id, i = s.active, r = s.net.rounds[s.active], rs = rs }), "RAID", name)
+	end
+	function b.roll(name, value) Mock.loot.Roll(name, value, 1, 100) end
+	return b
+end
+
+for _, locale in ipairs({ "enUS", "itIT" }) do
+	describe("the master looter's window layout in " .. locale, function()
+		before_boot(function(M)
+			setup(locale, 0)(M)
+			M.player.name, M.player.realm = "Dara", ML_REALM
+			for _, def in ipairs(ML_ITEMS) do
+				M.items.Add{ id = def.id, link = mlLink(def.id, def.name), name = def.name, quality = 4, equipLoc = def.equipLoc,
+					classID = def.classID, subclassID = def.subclassID, level = 70 }
+			end
+			_G.INVTYPE_HEAD, _G.INVTYPE_FINGER, _G.INVTYPE_WEAPON = "Head", "Finger", "One-Hand"
+		end)
+
+		for _, size in ipairs({ "min", "default" }) do
+			it("has no overlap and nothing outside its pane at every step of a boss, at the " .. size .. " size", function()
+				local W, SC = FDCP.MLSession, FDCP.SessionController
+				local b = mlBench()
+				FDCP.AddonCheck.CanManage = function() return true end
+				local f = FDCP.MainWindow.frame
+				FDCP.MainWindow:Open("loot")
+				f:SetSize(SIZES[size][1], SIZES[size][2])
+				sized(f)
+				Mock.FinishAnimations()
+				local found = {}
+				local function check(step)
+					W:Refresh()
+					local where = ("%s %s %s"):format(locale, size, step)
+					for _, p in ipairs(problems(W.root, where)) do found[#found + 1] = p end
+					if W:DialogOpen() then
+						for _, p in ipairs(problems(W.dlg.frame, where .. " dialog")) do found[#found + 1] = p end
+					end
+				end
+				check("collecting")
+				W.ui.main:Click()
+				check("rolling")
+				b.respond("Aurel", "MS"); b.respond("Bryn", "MS"); b.respond("Corin", "OS"); b.respond("Dara", "PASS")
+				b.roll("Edda", 77); b.roll("Aurel", 50)
+				check("answers")
+				b.roll("Bryn", 50)
+				check("reroll")
+				b.roll("Aurel", 80); b.roll("Bryn", 20)
+				check("proposal")
+				-- the candidates' names keep a readable column, and a cut cell shows whole in the row's tooltip
+				local t = W.ui.card.table
+				truthy(t.pos[1].w >= 100, "the candidate column is " .. t.pos[1].w .. " points wide")
+				for i, c in ipairs(t.columns) do truthy(t.pos[i].w >= 40, c.id .. " is " .. t.pos[i].w .. " points wide") end
+				local row = t.rows[1]
+				row.cells[4]:SetText(("Medium upgrade · ilvl +26 "):rep(3))
+				Mock.RunScript(row, "OnEnter")
+				truthy(GameTooltip:IsShown(), "a cut cell shows in the row's tooltip")
+				Mock.RunScript(row, "OnLeave")
+				W.ui.modify:Click()
+				check("modify")
+				W:CloseDialog()
+				W.ui.main:Click()
+				check("next item")
+				SC:Command("PAUSE")
+				check("paused")
+				W.root.sub:Select("deliver")
+				check("deliver")
+				W.root.sub:Select("council")
+				check("council")
+				report(found)
+			end)
+		end
+	end)
+end

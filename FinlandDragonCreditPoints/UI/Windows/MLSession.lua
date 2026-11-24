@@ -24,6 +24,7 @@ local Theme, Widgets = ns.Theme, ns.Widgets
 local L = ns.L
 
 MLSession.ITEM_ROWS, MLSession.ITEM_H, MLSession.LIST_W = 6, 62, 300
+MLSession.STRIP_H = 60   -- the proposal strip's least height (it grows with its text: MLSession:FitStrip)
 MLSession.TICK = 1   -- seconds between two redraws of the timer while the tab is on screen
 MLSession.SUBTABS = { "session", "deliver", "council" }   -- Council: UI/Windows/Council.lua (M5-8)
 
@@ -136,22 +137,22 @@ local function candidateColumns()
 		return text
 	end
 	return {
-		{ id = "name", title = L["ML_COL_CANDIDATE"], flex = 1, text = function(d) return d.name end,
+		{ id = "name", title = L["ML_COL_CANDIDATE"], flex = 1.2, text = function(d) return d.name end,
 			value = function(d) return d.name:lower() end,
 			render = function(fs, d)
 				fs:SetText(d.name)
 				Theme.ClassText(fs, ns.RosterWindow.ClassColor(d.class))
 			end },
-		{ id = "credits", title = L["ML_COL_CREDITS"], width = 76, align = "CENTER", mono = true,
+		{ id = "credits", title = L["ML_COL_CREDITS"], width = 56, align = "CENTER", mono = true,
 			text = function(d) return d.credits or "·" end, value = function(d) return d.credits or -1 end },
-		{ id = "response", title = L["ML_COL_RESPONSE"], width = 150,
+		{ id = "response", title = L["ML_COL_RESPONSE"], width = 104,
 			text = function(d)
 				if not d.response then return "·" end
 				return ns.Reasons.Text("RESPONSE", d.response)
 			end,
 			token = function(d) return COLUMN_TOKENS[d.response] or "text-3" end,
 			value = function(d) return d.tier or 99 end },
-		{ id = "upgrade", title = L["ML_COL_UPGRADE"], width = 230,   -- the badge the player's client sent (M7-5c)
+		{ id = "upgrade", title = L["ML_COL_UPGRADE"], flex = 1.3,   -- the badge the player's client sent (M7-5c)
 			text = function(d)
 				if not d.upgrade then return "·" end
 				return ns.UpgradeAdvisor.Text(d.upgrade)
@@ -167,9 +168,9 @@ local function candidateColumns()
 				if u.usable == false then return 6 end
 				return ns.UpgradeAdvisor.ORDER[u.verdict] or 7
 			end },
-		{ id = "roll", title = L["ML_COL_ROLL"], width = 60, align = "RIGHT", mono = true,
+		{ id = "roll", title = L["ML_COL_ROLL"], width = 44, align = "RIGHT", mono = true,
 			text = function(d) return d.roll or "—" end, value = function(d) return d.roll or -1 end },
-		{ id = "note", title = L["ML_COL_NOTES"], flex = 1.7, sortable = false, text = noteText,
+		{ id = "note", title = L["ML_COL_NOTES"], flex = 0.8, sortable = false, text = noteText,
 			token = function(d)
 				if d.flag or (d.flags and #d.flags > 0) then return "warn" end
 				return d.proposed and "ok" or "text-3"
@@ -178,12 +179,26 @@ local function candidateColumns()
 end
 
 -- The tooltip of a candidate's row: the badge for each spec the player's client sent, what is worn, how the badge is read
--- (M7-5c).
+-- (M7-5c); and the whole text of any cell its column cut (a narrow window).
 function MLSession:ShowCandidateTip(row)
 	local d, tip, A = row.data, GameTooltip, ns.UpgradeAdvisor
-	if not d or not tip or not d.upgradeMS then return end
+	if not d or not tip then return end
+	local cut, columns = {}, self.ui and self.ui.card.table.columns or {}
+	for i, fs in ipairs(row.cells or {}) do
+		-- the upgrade badge is said in full by the lines below when the player's client sent it
+		local said = columns[i] and columns[i].id == "upgrade" and d.upgradeMS
+		if i > 1 and columns[i] and not said and fs.IsTruncated and fs:IsTruncated() then
+			cut[#cut + 1] = columns[i].title .. ": " .. (fs:GetText() or "")
+		end
+	end
+	if not d.upgradeMS and #cut == 0 then return end
 	tip:SetOwner(row, "ANCHOR_RIGHT")
 	tip:SetText(d.name)
+	if not d.upgradeMS then
+		for _, line in ipairs(cut) do tip:AddLine(line, 0.9, 0.9, 0.9, true) end
+		tip:Show()
+		return
+	end
 	local lines = A.Lines(d.upgradeMS, "MS")
 	for _, line in ipairs(lines) do tip:AddLine(line, 1, 1, 1, true) end
 	if d.upgradeOS then
@@ -192,6 +207,7 @@ function MLSession:ShowCandidateTip(row)
 	local names = A.EquippedNames(d.equipped)
 	if #names > 0 then tip:AddLine(L["UPG_EQUIPPED"]:format(table.concat(names, ", ")), 0.8, 0.8, 0.8, true) end
 	tip:AddLine(L["UPG_RULE"], 0.6, 0.6, 0.6, true)
+	for _, line in ipairs(cut) do tip:AddLine(line, 0.9, 0.9, 0.9, true) end
 	tip:Show()
 end
 
@@ -337,12 +353,12 @@ function MLSession:BuildSession(pane)
 		end,
 	})
 	card.table:SetPoint("TOPLEFT", card, "TOPLEFT", 8, -84)
-	card.table:SetPoint("BOTTOMRIGHT", card, "BOTTOMRIGHT", -8, 128)
+	card.table:SetPoint("BOTTOMRIGHT", card, "BOTTOMRIGHT", -8, 62 + MLSession.STRIP_H + 6)   -- MLSession:FitStrip moves it
 	card.table:SetEmptyText(L["ML_NO_CANDIDATES"])
 
 	-- the proposal strip: the addon's sentence, then what to look at
 	card.strip = CreateFrame("Frame", nil, card)
-	card.strip:SetHeight(60)
+	card.strip:SetHeight(MLSession.STRIP_H)
 	card.strip:SetPoint("BOTTOMLEFT", card, "BOTTOMLEFT", 16, 62)
 	card.strip:SetPoint("BOTTOMRIGHT", card, "BOTTOMRIGHT", -16, 62)
 	card.strip.fill = Theme.Slice(card.strip, "rr_fill_12", "surface-2", "BACKGROUND")
@@ -353,10 +369,11 @@ function MLSession:BuildSession(pane)
 	card.strip.main:SetJustifyH("LEFT")
 	card.strip.main:SetJustifyV("TOP")
 	card.strip.sub = Theme.NewText(card.strip, "Small", "warn")
-	card.strip.sub:SetPoint("BOTTOMLEFT", card.strip, "BOTTOMLEFT", 14, 8)
-	card.strip.sub:SetPoint("BOTTOMRIGHT", card.strip, "BOTTOMRIGHT", -14, 8)
+	card.strip.sub:SetPoint("TOPLEFT", card.strip.main, "BOTTOMLEFT", 0, -4)
+	card.strip.sub:SetPoint("TOPRIGHT", card.strip.main, "BOTTOMRIGHT", 0, -4)
 	card.strip.sub:SetJustifyH("LEFT")
-	card.strip.sub:SetJustifyV("BOTTOM")
+	card.strip.sub:SetJustifyV("TOP")
+	card:SetScript("OnSizeChanged", function() MLSession:FitStrip() end)   -- a narrower card wraps the sentence more
 
 	-- the buttons: the main action at the far right, then Modify, Reject, Correct and Remove
 	s.main = Widgets.Button(card, { text = "", style = "primary", width = 170, height = 36, onClick = function()
@@ -630,7 +647,22 @@ local function paintDetail(self, board)
 	end
 	card.strip.main:SetText(main)
 	card.strip.sub:SetText(sub)
+	self:FitStrip()
 	self:PaintTimer(board)
+end
+
+-- The strip grows with its sentence and the lines under it (a long proposal wraps, above all in Italian or in a narrow
+-- window) and the candidates' table ends above it: the two texts never run into each other or out of the strip.
+function MLSession:FitStrip()
+	local card = self.ui and self.ui.card
+	if not card then return end
+	local strip = card.strip
+	local h = 9 + math.ceil(strip.main:GetStringHeight() or 0)
+	if (strip.sub:GetText() or "") ~= "" then h = h + 4 + math.ceil(strip.sub:GetStringHeight() or 0) end
+	h = math.max(MLSession.STRIP_H, h + 9)
+	strip:SetHeight(h)
+	card.table:SetPoint("BOTTOMRIGHT", card, "BOTTOMRIGHT", -8, 62 + h + 6)
+	if card.table.Layout then card.table:Layout() end
 end
 
 -- The "to deliver" list: the rows, the selection (kept while its item is still undelivered, else the first row) and

@@ -26,6 +26,8 @@ local function keyOf(col, data)
 	return tonumber(v) or v:lower()
 end
 
+Widgets.TABLE_MIN_FLEX = 56   -- the least width a flexible column gets for each share of flex
+
 function Widgets.DataTable(parent, columns, opts)
 	opts = opts or {}
 	local rowH, headH = opts.rowHeight or 30, opts.headerHeight or 28
@@ -47,17 +49,22 @@ function Widgets.DataTable(parent, columns, opts)
 	t.empty = Theme.NewText(t.list, "Body", "text-3")
 	t.empty:SetPoint("TOPLEFT", t.list, "TOPLEFT", 12, -12)
 
-	-- the column positions: the fixed ones keep their width, the flexible ones share what is left
+	-- the column positions: the fixed ones keep their width, the flexible ones share what is left. In a narrow table the
+	-- fixed ones shrink (never under half their width) so that every flexible one keeps at least MIN_FLEX points a share:
+	-- a flexible column never ends at zero width with its text drawn over the next one.
 	local function widths()
 		local total = (t:GetWidth() or 0) > 50 and t:GetWidth() or 800
 		local fixed, flex = 0, 0
 		for _, c in ipairs(columns) do
 			if c.width then fixed = fixed + c.width else flex = flex + (c.flex or 1) end
 		end
-		local free = max(total - fixed - 16, 0)
+		local scale = 1
+		local room = total - 16 - flex * Widgets.TABLE_MIN_FLEX
+		if fixed > 0 and flex > 0 and room < fixed then scale = max(room / fixed, 0.5) end
+		local free = max(total - 16 - fixed * scale, 0)
 		local out, x = {}, 8
 		for i, c in ipairs(columns) do
-			local w = c.width or (flex > 0 and floor(free * (c.flex or 1) / flex) or 0)
+			local w = c.width and floor(c.width * scale) or (flex > 0 and floor(free * (c.flex or 1) / flex) or 0)
 			out[i] = { x = x, w = w }
 			x = x + w
 		end
@@ -79,6 +86,7 @@ function Widgets.DataTable(parent, columns, opts)
 		b.label = Theme.NewText(b, "Th", "text-3")
 		b.label:SetAllPoints(b)
 		b.label:SetJustifyH(c.align or "LEFT")
+		b.label:SetWordWrap(false)   -- a title longer than its column is cut, never wrapped over the list
 		b.label:SetText((c.title or ""):upper())
 		b.col = c
 		if c.sortable ~= false then b:SetScript("OnClick", function() t:SortBy(c.id) end) end
@@ -114,6 +122,7 @@ function Widgets.DataTable(parent, columns, opts)
 		r.cells = {}
 		for ci, c in ipairs(columns) do
 			r.cells[ci] = Theme.NewText(r, c.mono and "Mono" or "Body", "text-1")
+			r.cells[ci]:SetWordWrap(false)   -- one line a row: a longer text is cut at its column
 		end
 		r:SetScript("OnEnter", function(self) Theme.Fill(self.hover, "surface-2", 1) end)
 		r:SetScript("OnLeave", function(self) Theme.Fill(self.hover, "surface-2", 0) end)

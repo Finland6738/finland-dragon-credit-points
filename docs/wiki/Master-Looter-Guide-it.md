@@ -92,6 +92,8 @@ Tutto quello che l'addon scrive in `/raid` è scritto nella **lingua della gilda
 
 Ordina cliccando su un'intestazione. La lista è in ordine: prima main-spec, poi meno crediti, poi il roll più alto. In un reroll i giocatori non pari sono attenuati.
 
+Ogni cella sta su una riga. In una finestra stretta un testo lungo (un badge di upgrade, una nota) viene accorciato alla sua colonna: passa sopra la riga per leggerlo intero nel tooltip. La proposta sotto la tabella si allunga con la sua frase e le righe sotto, e la tabella finisce sopra di essa.
+
 Un giocatore che rolla senza l'addon **non** conta: il roll compare con *L'addon non è attivo* così lo vedi, e lui non può rispondere.
 
 ## Segnalazioni del council

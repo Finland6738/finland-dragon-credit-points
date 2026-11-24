@@ -60,10 +60,21 @@ function CouncilWindow:Build(pane, frame)
 	root.title = Theme.NewText(root, "H1", "text-1")
 	root.title:SetPoint("TOPLEFT", root.eyebrow, "BOTTOMLEFT", 0, -4)
 	root.title:SetText(L["COUNCIL_TITLE"])
+	-- the status and the message take one line each up to the right edge (the views start at a fixed height below them):
+	-- a longer one is cut, and the status shows whole in a tooltip
 	root.status = Theme.NewText(root, "Small", "text-2")
 	root.status:SetPoint("TOPLEFT", root.title, "BOTTOMLEFT", 0, -4)
+	root.status:SetPoint("RIGHT", root, "RIGHT", 0, 0)
+	root.status:SetJustifyH("LEFT")
+	root.statusHit = CreateFrame("Frame", nil, root)
+	root.statusHit:SetAllPoints(root.status)
+	root.statusHit:EnableMouse(true)
+	Widgets.TruncatedTip(root.statusHit, root.status)
 	root.message = Theme.NewText(root, "Small", "text-2")
 	root.message:SetPoint("TOPLEFT", root.status, "BOTTOMLEFT", 0, -2)
+	root.message:SetPoint("RIGHT", root, "RIGHT", 0, 0)
+	root.message:SetJustifyH("LEFT")
+	root.message:SetWordWrap(false)
 
 	root.adjust = Widgets.Button(root, { text = L["COUNCIL_ADJUST_BUTTON"], style = "secondary", width = 170, height = 32,
 		onClick = function() CouncilWindow:OpenDialog("adjust") end })
