@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [1.0.4] - 2026-11-25
+
 ### Changed
 
 - The addon carries no link to the NEBULA community site or to GitHub any more; the only link left is the Ko-fi page (owner rule of 2026-11-24).
